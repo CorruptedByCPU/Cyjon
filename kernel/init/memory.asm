@@ -49,8 +49,6 @@ kernel_init_memory:
 	call	kernel_panic
 
 .found:
-	xchg	bx,bx
-
 	; pobierz i zamień rozmiar przestrzeni na ilość stron
 	mov	rcx,	qword [rbx + KERNEL_INIT_MEMORY_MULTIBOOT_STRUCTURE_MEMORY_MAP.limit]
 	shr	rcx,	STATIC_DIVIDE_BY_PAGE_shift	; resztę z dzielenia porzucamy (niepełna strona jest bezużyteczna)
@@ -99,4 +97,4 @@ kernel_init_memory:
 
 	; zarezerwuj przestrzeń o danym rozmiarze w binarnej mapie pamięci jądra systemu
 	mov	rcx,	rdi
-	call	kernel_memory_alloc_space_internal
+	call	kernel_memory_alloc

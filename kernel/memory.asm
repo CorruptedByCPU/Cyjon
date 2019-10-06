@@ -15,200 +15,38 @@ kernel_memory_lock_semaphore		db	STATIC_FALSE
 
 ;===============================================================================
 ; wejście:
-;	rbp - ilość stron zarezerwowanych, z których procedura powinna skorzystać
-; wyjście:
-;	Flaga CF, jeśli brak danej przestrzeni
-;	rdi - wskaźnik BEZWZGLĘDNY przydzielonej przestrzeni o rozmiarze 4 KiB
-kernel_memory_alloc_page_internal:
-	; zachowaj oryginalne rejestry
-	push	rsi
-
-	; skorzystaj z binarnej mapy pamięci jądra systemu
-	mov	rsi,	qword [kernel_memory_map_address]
-
-	; uzyskaj wyłączny dostęp do binarnej mapy pamięci jądra systemu
-	call	kernel_memory_lock
-
-	; wykorzystać stronę zarezerwowaną?
-	test	rbp,	rbp
-	jz	.unreserved	; nie
-
-	; ilość stron zarezerwowanych
-	dec	rbp	; mniejsz o jedną
-
-	; ilość stron dostępnych
-	inc	qword [kernel_page_free_count]	; zwiększ o jedną
-
-	; wykorzystano zarezerwowaną stronę
-	dec	qword [kernel_page_reserved_count]
-	jns	.unreserved	; opracja poprawna
-
-	; błąd krytyczny
-	xchg	bx,bx
-
-	nop
-
-	; zatrzymaj dalsze wykonywanie kodu
-	jmp	$
-
-.unreserved:
-	; pobierz adres wolnej strony
-	call	kernel_memory_alloc_page
-	jc	.error	; brak dostępnych stron
-
-	; zwolnij dostęp do binarnej mapy pamięci jądra systemu
-	mov	byte [kernel_memory_lock_semaphore],	STATIC_FALSE
-
-	; koryguj adres na bezwzględny
-	add	rdi,	KERNEL_BASE_address
-
-.error:
-	; przywróć oryginalne rejestry
-	pop	rsi
-
-	; powrót z procedury
-	ret
-
-;===============================================================================
-; wejście:
 ;	rcx - rozmiar przestrzeni w stronach
+;	rbp - ilość stron zarezerowanych do wykorzystania
 ; wyjście:
-;	Flaga CF, jeśli brak danej przestrzeni
-;	rdi - wskaźnik BEZWZGLĘDNY do udostępnionej przestrzeni
-kernel_memory_alloc_space_internal:
-	; zachowaj oryginalne rejestry
-	push	rsi
-
-	; skorzystaj z binarnej mapy pamięci jądra systemu
-	mov	rsi,	qword [kernel_memory_map_address]
-
-	; uzyskaj wyłączny dostęp do binarnej mapy pamięci jądra systemu
-	call	kernel_memory_lock
-
-	; pobierz adres dostępnej przestrzeni
-	call	kernel_memory_alloc_space
-	jc	.error	; brak dostępnej przestrzeni o podanym rozmiarze
-
-	; ilość dostępnych stron zmniejsz o rozmiar przestrzeni
-	sub	qword [kernel_page_free_count],	rcx
-
-	; zwolnij dostęp do binarnej mapy pamięci jądra systemu
-	mov	byte [kernel_memory_lock_semaphore],	STATIC_FALSE
-
-	; koryguj adres na bezwzględny
-	add	rdi,	KERNEL_BASE_address
-
-.error:
-	; przywróć oryginalne rejestry
-	pop	rsi
-
-	; powrót z procedury
-	ret
-
-;===============================================================================
-kernel_memory_lock:
-	; zablokuj dostęp do binarnej mapy pamięci
-	macro_close	kernel_memory_lock_semaphore, 0
-
-	; powrót z procedury
-	ret
-
-;===============================================================================
-; wejście:
-;	rsi - wskaźnik do binarnej mapy pamięci
-; wyjście:
-;	Flaga CF, jeśli brak danej przestrzeni
-;	rdi - wskaźnik WZGLĘDNY do udostępnionej przestrzeni o rozmiarze 4 KiB
-kernel_memory_alloc_page:
-	; zachowaj oryginalne rejestry
-	push	rcx
-	push	rsi
-
-	; możliwe jest przydzielenie strony?
-	cmp	qword [kernel_page_free_count],	STATIC_EMPTY
-	je	.error	; nie
-
-	; ilość możliwych stron do przydzielenia
-	dec	qword [kernel_page_free_count]	; zmniejsz o jedną
-
-	; ilość bitów na blok binarnej mapy pamięci
-	mov	rcx,	STATIC_STRUCTURE_BLOCK.link << STATIC_MULTIPLE_BY_8_shift
-
-	; zresetuj wskaźnik dostępnej strony
-	xor	edi,	edi
-
-.search:
-	; znaleziono wolną stronę?
-	bt	qword [rsi],	rdi
-	jc	.found	; tak
-
-	; przesuń wskaźnik na następny bit
-	inc	rdi
-
-	; koniec bloku binarnej mapy?
-	cmp	rdi,	rcx
-	jne	.search	; nie
-
-	; błąd krytyczny
-	xchg	bx,bx
-
-	nop
-
-	; zatrzymaj dalsze wykonywanie kodu
-	jmp	$
-
-.found:
-	; wyłącz bit reprezentujący stronę
-	btr	qword [rsi],	rdi
-
-	; zwróć WZGLĘDNY adres strony
-	shl	rdi,	STATIC_MULTIPLE_BY_PAGE_shift
-
-	; zakończ procedurę
-	jmp	.end
-
-.error:
-	; flaga, błąd
-	stc
-
-.end:
-	; przywróć oryginalne rejestry
-	pop	rsi
-	pop	rcx
-
-	; powrót z procedury
-	ret
-
-;===============================================================================
-; wejście:
-;	rcx - rozmiar przestrzeni w stronach
-;	rsi - wskaźnik do binarnej mapy pamięci
-; wyjście:
-;	Flaga CF, jeśli brak danej przestrzeni
-;	rdi - wskaźnik WZGLĘDNY do udostępnionej przestrzeni o rozmiarze w RCX
-kernel_memory_alloc_space:
+;	Flaga CF, jeśli brak dostępnej
+;	rdi - wskaźnik do przydzielonej przestrzeni
+;	rbp - ilość pozostałych stron zarezerwowanych
+kernel_memory_alloc:
 	; zachowaj oryginalne rejestry
 	push	rax
-	push	rbx
 	push	rdx
 	push	rsi
+	push	rbp
 	push	rcx
 
 	; zresetuj numer pierwszego bitu poszukiwanej przestrzeni
 	mov	rax,	STATIC_MAX_unsigned
 
-	; ilość bitów na blok binarnej mapy pamięci
-	mov	rcx,	STATIC_STRUCTURE_BLOCK.link << STATIC_MULTIPLE_BY_8_shift
+	; pobierz ilość opisanych stron w binarnej mapie pamięci
+	mov	rcx,	qword [kernel_page_total_count]
+
+	; przeszukaj binarną mapę pamięci od początku
+	mov	rsi,	qword [kernel_memory_map_address]
 
 .reload:
-	; ilość bitów wchodzących w skład ropatrywanej przestrzeni
+	; ilość stron wchodzących w skład rozpatrywanej przestrzeni
 	xor	edx,	edx
 
 .search:
 	; sprawdź następną stronę
 	inc	rax
 
-	; koniec bitów w bloku binarnej mapy pamięci?
+	; koniec binarnej mapy pamięci?
 	cmp	rax,	rcx
 	je	.error	; tak
 
@@ -216,7 +54,7 @@ kernel_memory_alloc_space:
 	bt	qword [rsi],	rax
 	jnc	.search	; nie
 
-	; numer pierwszego bitu wchodzącego w skład poszukiwanej przestrzeni
+	; zachowaj numer pierwszego bitu wchodzącego w skład poszukiwanej przestrzeni
 	mov	rbx,	rax
 
 .check:
@@ -230,7 +68,7 @@ kernel_memory_alloc_space:
 	cmp	rdx,	qword [rsp]
 	je	.found	; tak
 
-	; koniec bitów w bloku binarnej mapy pamięci?
+	; koniec binarnej mapy pamięci?
 	cmp	rax,	rcx
 	je	.error	; tak
 
@@ -238,7 +76,7 @@ kernel_memory_alloc_space:
 	bt	qword [rsi],	rax
 	jc	.check	; tak
 
-	; rozpatrywana przestrzeń jest niepełna, znajdź nową
+	; rozpatrywana przestrzeń jest niepełna, znajdź następną
 	jmp	.reload
 
 .error:
@@ -249,31 +87,61 @@ kernel_memory_alloc_space:
 	jmp	.end
 
 .found:
-	; zapamiętaj numer pierwszej strony przestrzeni
+	; ustaw numer pierwszej strony przestrzeni do zablokowania
 	mov	rax,	rbx
 
 .lock:
 	; zwolnij kolejne strony wchodzące w skład znalezionej przestrzeni
-	btr	qword [rsi],	rbx
+	btr	qword [rsi],	rax
 
+	; wykorzystaj zarezerwowaną stronę?
+	test	rbp,	rbp
+	jz	.empty	; nie
+
+	; ilość zarezerwowanych stron mniejszyła się
+	dec	rbp
+	dec	dword [kernel_page_reserved_count]
+
+	; kontynuuj
+	jmp	.next
+
+.empty:
+	; ilość dostępnych stron zmiejszyła się
+	dec	qword [kernel_page_free_count]
+
+.next:
 	; następna strona
-	inc	rbx
+	inc	rax
 
 	; koniec przetwarzania przestrzeni?
 	dec	rdx
 	jnz	.lock	; nie, kontynuuj
 
-	; zwróć adres WZGLĘDNY odnalezionej przestrzeni
-	mov	rdi,	rax
+	; przelicz numer pierwszej strony przestrzeni na adres WZGLĘDNY
+	mov	rdi,	rbx
 	shl	rdi,	STATIC_MULTIPLE_BY_PAGE_shift
 
+	; koryguj o adres początku opisanej przestrzeni przez binarną mapę pamięci
+	add	rdi,	KERNEL_BASE_address
+
 .end:
+	; zwolnij dostęp do binarnej mapy pamięci
+	mov	byte [kernel_memory_lock_semaphore],	STATIC_FALSE
+
 	; przywróć oryginalne rejestry
 	pop	rcx
 	pop	rsi
 	pop	rdx
 	pop	rbx
 	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+kernel_memory_lock:
+	; zablokuj dostęp do binarnej mapy pamięci
+	macro_close	kernel_memory_lock_semaphore, 0
 
 	; powrót z procedury
 	ret
