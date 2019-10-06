@@ -21,10 +21,28 @@
 	%include	"kernel/init/long_mode.asm"
 
 	;-----------------------------------------------------------------------
-	; utworzenie binarnej mapy pamięci i oznaczenie w niej jądra systemu
-	;-----------------------------------------------------------------------
-	%include	"kernel/init/memory.asm"
-
+	; zmienne - wykorzystywane podczas inicjalizacji środowiska jądra systemu
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/data.asm"
 	;-----------------------------------------------------------------------
+
+	;-----------------------------------------------------------------------
+	; multiboot - nagłówek dla programu rozruchowego GRUB
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/multiboot.asm"
+
+;===============================================================================
+; 64 bitowy kod jądra systemu ==================================================
+;===============================================================================
+[BITS 64]
+
+kernel_init_long_mode:
+	;-----------------------------------------------------------------------
+	; inicjalizacja przestrzeni trybu tekstowego
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/video.asm"
+
+	;-----------------------------------------------------------------------
+	; utworzenie binarnej mapy pamięci i oznaczenie w niej jądra systemu
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/memory.asm"
