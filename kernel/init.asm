@@ -46,3 +46,8 @@ kernel_init_long_mode:
 	; utworzenie binarnej mapy pamięci i oznaczenie w niej jądra systemu
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/memory.asm"
+
+	;-----------------------------------------------------------------------
+	; przetworzenie tablic ACPI
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/acpi.asm"

@@ -44,8 +44,8 @@ kernel_init_memory:
 	jnz	.search	; nie
 
 	; ustaw komunikat błędu: uszkodzona tablica mapy pamięci
-	mov	ecx,	kernel_init_memory_string_error_end - kernel_init_memory_string_error
-	mov	rsi,	kernel_init_memory_string_error
+	mov	ecx,	kernel_init_string_error_memory_end - kernel_init_string_error_memory
+	mov	rsi,	kernel_init_string_error_memory
 	call	kernel_panic
 
 .found:

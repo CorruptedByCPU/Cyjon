@@ -33,11 +33,14 @@ kernel:
 	; do prawidłowej pracy jądra systemu
 	;-----------------------------------------------------------------------
 	%include	"kernel/macro/close.asm"
+	%include	"kernel/macro/apic.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/panic.asm"
 	%include	"kernel/page.asm"
 	%include	"kernel/memory.asm"
 	%include	"kernel/video.asm"
+	%include	"kernel/apic.asm"
+	%include	"kernel/io_apic.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/page_align_up.asm"
 	%include	"library/page_from_size.asm"
