@@ -21,6 +21,11 @@
 	%include	"kernel/init/long_mode.asm"
 
 	;-----------------------------------------------------------------------
+	; domyślny komunikat błędu
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/panic.asm"
+
+	;-----------------------------------------------------------------------
 	; zmienne - wykorzystywane podczas inicjalizacji środowiska jądra systemu
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/data.asm"
@@ -51,3 +56,13 @@ kernel_init_long_mode:
 	; przetworzenie tablic ACPI
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/acpi.asm"
+
+	;-----------------------------------------------------------------------
+	; utwórz stronicowanie docelowe jądra systemu
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/page.asm"
+
+	;-----------------------------------------------------------------------
+	; utwórz Globalną Tablicę Deskryptorów
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/gdt.asm"

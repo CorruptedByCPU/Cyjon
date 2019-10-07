@@ -15,6 +15,27 @@ kernel_memory_lock_semaphore		db	STATIC_FALSE
 
 ;===============================================================================
 ; wejście:
+;	rbp - ilość stron zarezerowanych do wykorzystania
+; wyjście:
+;	Flaga CF, jeśli brak dostępnej
+;	rdi - wskaźnik do przydzielonej przestrzeni
+;	rbp - ilość pozostałych stron zarezerwowanych
+kernel_memory_alloc_page:
+	; zachowaj oryginalne rejestry
+	push	rcx
+
+	; przydziel przestrzeń o rozmiarze jednej strony
+	mov	ecx,	0x01
+	call	kernel_memory_alloc
+
+	; przywróć oryginalne rejestry
+	pop	rcx
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
 ;	rcx - rozmiar przestrzeni w stronach
 ;	rbp - ilość stron zarezerowanych do wykorzystania
 ; wyjście:
@@ -24,6 +45,7 @@ kernel_memory_lock_semaphore		db	STATIC_FALSE
 kernel_memory_alloc:
 	; zachowaj oryginalne rejestry
 	push	rax
+	push	rbx
 	push	rdx
 	push	rsi
 	push	rbp
@@ -130,6 +152,7 @@ kernel_memory_alloc:
 
 	; przywróć oryginalne rejestry
 	pop	rcx
+	pop	rbp
 	pop	rsi
 	pop	rdx
 	pop	rbx

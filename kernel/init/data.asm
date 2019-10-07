@@ -7,6 +7,8 @@ kernel_init_string_video_welcome_end:
 
 kernel_init_string_error_memory		db	"Init: Memory map, error."
 kernel_init_string_error_memory_end:
+kernel_init_string_error_memory_low	db	"Not enough memory."
+kernel_init_string_error_memory_low_end:
 kernel_init_string_error_acpi		db	"ACPI table not found."
 kernel_init_string_error_acpi_end:
 kernel_init_string_error_acpi_2		db	"No support for ACPI v2.0+ version."
