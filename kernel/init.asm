@@ -76,3 +76,8 @@ kernel_init_long_mode:
 	; konfiguruj zegar czasu rzeczywistego - uptime systemu
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/rtc.asm"
+
+	;-----------------------------------------------------------------------
+	; utwórz kolejkę zada
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/task.asm"
