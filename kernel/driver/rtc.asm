@@ -49,8 +49,6 @@ driver_rtc_time						dq	STATIC_EMPTY
 ;===============================================================================
 ; domyślna procedura obsługi przerwania zegara czasu rzeczywistego
 driver_rtc:
-	xchg	bx,bx
-
 	; zachowaj oryginalne rejestry
 	push	rax
 

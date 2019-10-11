@@ -41,6 +41,11 @@
 ;===============================================================================
 [BITS 64]
 
+	;-----------------------------------------------------------------------
+	; procdura inicjalizująca kontroler APIC
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/apic.asm"
+
 kernel_init_long_mode:
 	;-----------------------------------------------------------------------
 	; inicjalizacja przestrzeni trybu tekstowego
@@ -81,3 +86,14 @@ kernel_init_long_mode:
 	; utwórz kolejkę zada
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/task.asm"
+
+	;-----------------------------------------------------------------------
+	; konfiguruj wew. przerwanie kontrolera (przełączanie zadań)
+	;-----------------------------------------------------------------------
+	call	kernel_init_apic
+
+	; ustaw domyślny czas pomiędzy wywołaniami przerwania (jednostki)
+	mov	dword [rsi + KERNEL_APIC_TICR_register],	DRIVER_RTC_Hz
+
+	; poinformuj APIC o obsłużeniu aktualnego przerwania sprzętowego
+	mov	dword [rsi + KERNEL_APIC_EOI_register],	STATIC_EMPTY
