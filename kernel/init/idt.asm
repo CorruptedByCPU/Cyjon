@@ -33,7 +33,3 @@ kernel_init_idt:
 	;-----------------------------------------------------------------------
 	; załaduj Tablicę Deskryptorów Przerwań
 	lidt	[kernel_idt_header]
-
-	;-----------------------------------------------------------------------
-	; włącz wyjątki, przerwania (sprzętowe i programowe)
-	sti
