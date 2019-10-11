@@ -66,3 +66,8 @@ kernel_init_long_mode:
 	; utwórz Globalną Tablicę Deskryptorów
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/gdt.asm"
+
+	;-----------------------------------------------------------------------
+	; utwórz Tablicę Deskryptorów Przerwań
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/idt.asm"
