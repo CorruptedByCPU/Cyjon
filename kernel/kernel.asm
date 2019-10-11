@@ -45,6 +45,8 @@ kernel:
 	%include	"kernel/idt.asm"
 	%include	"kernel/task.asm"
 	;-----------------------------------------------------------------------
+	%include	"kernel/driver/rtc.asm"
+	;-----------------------------------------------------------------------
 	%include	"library/page_align_up.asm"
 	%include	"library/page_from_size.asm"
 	;-----------------------------------------------------------------------

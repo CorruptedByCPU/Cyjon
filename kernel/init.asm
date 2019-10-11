@@ -71,3 +71,8 @@ kernel_init_long_mode:
 	; utwórz Tablicę Deskryptorów Przerwań
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/idt.asm"
+
+	;-----------------------------------------------------------------------
+	; konfiguruj zegar czasu rzeczywistego - uptime systemu
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/rtc.asm"
