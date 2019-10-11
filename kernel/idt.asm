@@ -113,6 +113,7 @@ kernel_idt_spurious_interrupt:
 	iretq
 
 ;===============================================================================
+; obsługa nieprawidłowego przerwania programowego
 kernel_idt_interrupt_software:
 	; zwróć informację o błędzie
 	or	word [rsp + KERNEL_STRUCTURE_TASK_IRETQ.eflags],	KERNEL_TASK_EFLAGS_cf
