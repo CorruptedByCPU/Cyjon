@@ -168,3 +168,74 @@ kernel_memory_lock:
 
 	; powrót z procedury
 	ret
+
+;===============================================================================
+; wejście:
+;	rdi - adres strony do zwolnienia
+kernel_memory_release_page:
+	; zachowaj oryginalne rejestry i flagi
+	push	rax
+	push	rcx
+	push	rdx
+	push	rsi
+	push	rdi
+
+	; pobierz adres początku binarnej mapy pamięci
+	mov	rsi,	qword [kernel_memory_map_address]
+
+	; przelicz adres strony na numer bitu
+	mov	rax,	rdi
+	sub	rax,	KERNEL_BASE_address
+	shr	rax,	KERNEL_PAGE_SIZE_shift
+
+	; oblicz prdesunięcie względem początku binarnej mapy pamięci
+	mov	rcx,	64
+	xor	rdx,	rdx	; wyczyść starszą część
+	div	rcx
+
+	; prdesuń wskaźnik na "pakiet"
+	shl	rax,	STATIC_MULTIPLE_BY_8_shift
+	add	rsi,	rax
+
+	; włącz bit odpowiadający za zwalnianą stronę
+	bts	qword [rsi],	rdx
+
+	; zwiększamy ilość dostępnych stron o jedną
+	inc	qword [kernel_page_free_count]
+
+	; przywróć oryginalne rejestry i flagi
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rcx - ilość kolejnych stron do zwolnienia
+;	rdi - wskaźnik do pierwszej strony
+kernel_memory_release:
+	; zachowaj oryginalne rejestry i flagi
+	push	rcx
+	push	rdi
+
+.loop:
+	; zwolnij pierwszą stronę
+	call	kernel_memory_release_page
+
+	; przesuń wskaźnik na następną stronę
+	add	rdi,	KERNEL_PAGE_SIZE_byte
+
+	; pozostały strony do zwolnienia?
+	dec	rcx
+	jnz	.loop	; tak
+
+	; przywróć oryginalne rejestry i flagi
+	pop	rdi
+	pop	rcx
+
+	; powrót z procedury
+	ret

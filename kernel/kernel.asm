@@ -22,8 +22,6 @@ init:
 	;-----------------------------------------------------------------------
 	%include	"kernel/init.asm"
 
-clean:
-
 kernel:
 	; zatrzymaj dalsze wykonywanie kodu
 	jmp	$

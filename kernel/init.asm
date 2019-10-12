@@ -104,3 +104,16 @@ kernel_init_long_mode:
 	mov	dword [rsi + KERNEL_APIC_EOI_register],	STATIC_EMPTY
 
 	; za chwilę wywołana zostanie procedura kolejki zadań!
+
+kernel_init_clean:
+	;-----------------------------------------------------------------------
+	; usuń wszystkie procedury inicjalizacyjne - odzyskujemy miejsce
+	;-----------------------------------------------------------------------
+
+	; rozmiar przestrzeni inicjalizacyjnej
+	mov	ecx,	kernel_init_clean - $$
+	call	library_page_from_size	; w stronach
+
+	; zwolnij
+	mov	rdi,	KERNEL_BASE_address
+	call	kernel_memory_release
