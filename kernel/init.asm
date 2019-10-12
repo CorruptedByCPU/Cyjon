@@ -83,7 +83,12 @@ kernel_init_long_mode:
 	%include	"kernel/init/rtc.asm"
 
 	;-----------------------------------------------------------------------
-	; utwórz kolejkę zada
+	; skonfiguruj obsługę urządzeń wskazujących
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/ps2.asm"
+
+	;-----------------------------------------------------------------------
+	; utwórz kolejkę zadań
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/task.asm"
 
@@ -95,5 +100,7 @@ kernel_init_long_mode:
 	; ustaw domyślny czas pomiędzy wywołaniami przerwania (jednostki)
 	mov	dword [rsi + KERNEL_APIC_TICR_register],	DRIVER_RTC_Hz
 
-	; poinformuj APIC o obsłużeniu aktualnego przerwania sprzętowego
+	; poinformuj APIC o obsłużeniu aktualnego przerwania sprzętowego lokalnego
 	mov	dword [rsi + KERNEL_APIC_EOI_register],	STATIC_EMPTY
+
+	; za chwilę wywołana zostanie procedura kolejki zadań!
