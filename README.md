@@ -13,4 +13,4 @@ Prosty i wielozadaniowy system operacyjny, napisany w języku asemblera dla proc
 
 ### Uruchomienie:
 
-	qemu-system-x86_64 -drive file=build/disk.raw,media=disk,format=raw -m 2
+	qemu-system-x86_64 -drive file=build/disk.raw,media=disk,format=raw -m 2 -smp 1 -rtc base=localtime
