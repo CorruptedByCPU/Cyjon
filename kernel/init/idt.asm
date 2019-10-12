@@ -24,6 +24,20 @@ kernel_init_idt:
 	call	kernel_idt_update
 
 	;-----------------------------------------------------------------------
+	; domyślna obsługa przerwań sprzętowych
+	mov	rax,	kernel_idt_interrupt_hardware
+	mov	bx,	KERNEL_IDT_TYPE_irq
+	mov	ecx,	16	; domyślna ilość przerwań sprzętowych kontrolera PIC
+	call	kernel_idt_update
+
+	;-----------------------------------------------------------------------
+	; domyślna obsługa przerwań sprzętowych
+	mov	rax,	kernel_idt_interrupt_software
+	mov	bx,	KERNEL_IDT_TYPE_isr
+	mov	ecx,	208	; domyślna ilość przerwań sprzętowych kontrolera PIC
+	call	kernel_idt_update
+
+	;-----------------------------------------------------------------------
 	; podłącz procedurę obsługi "spurious interrupt"
 	mov	rax,	255
 	mov	bx,	KERNEL_IDT_TYPE_irq

@@ -88,7 +88,7 @@ kernel_init_long_mode:
 	%include	"kernel/init/task.asm"
 
 	;-----------------------------------------------------------------------
-	; konfiguruj wew. przerwanie kontrolera (przełączanie zadań)
+	; konfiguruj wew. przerwanie lokalnego kontrolera APIC (przełączanie zadań w kolejce)
 	;-----------------------------------------------------------------------
 	call	kernel_init_apic
 

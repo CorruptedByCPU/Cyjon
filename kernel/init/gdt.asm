@@ -110,3 +110,13 @@ kernel_init_gdt:
 
 	; załaduj deskryptor Task State Segment
 	ltr	word [kernel_gdt_tss_bsp_selector]
+
+	; zresetuj deskryptory niewykorzystywane
+	mov	fs,	ax
+	mov	gs,	ax
+
+	; przeładuj głównedeskryptory
+	mov	ax,	KERNEL_STRUCTURE_GDT.ds_ring0
+	mov	ds,	ax	; danych
+	mov	es,	ax	; ekstra
+	mov	ss,	ax	; stosu

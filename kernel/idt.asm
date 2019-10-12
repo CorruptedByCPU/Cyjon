@@ -103,12 +103,22 @@ kernel_idt_exception_default:
 
 	nop
 
-	; zatrzymaj pracę procesora logicznego
-	iret
+	; wróć do zadania
+	iretq
 
 ;===============================================================================
-; obsługa przerwania "losowego"
-kernel_idt_spurious_interrupt:
+; domyślna obsługa przerwania sprzętowego
+kernel_idt_interrupt_hardware:
+	; zachowaj oryginalne rejestry
+	push	rdi
+
+	; poinformuj APIC o obsłużeniu aktualnego przerwania sprzętowego
+	mov	rdi,	qword [kernel_apic_base_address]
+	mov	dword [rdi + KERNEL_APIC_EOI_register],	STATIC_EMPTY
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+
 	; wróć do zadania
 	iretq
 
@@ -118,5 +128,11 @@ kernel_idt_interrupt_software:
 	; zwróć informację o błędzie
 	or	word [rsp + KERNEL_STRUCTURE_TASK_IRETQ.eflags],	KERNEL_TASK_EFLAGS_cf
 
+	; wróć do zadania
+	iretq
+
+;===============================================================================
+; obsługa przerwania "nieobsłużonego"
+kernel_idt_spurious_interrupt:
 	; wróć do zadania
 	iretq
