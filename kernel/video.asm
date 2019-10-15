@@ -21,6 +21,8 @@ kernel_video_pointer			dq	KERNEL_VIDEO_BASE_address
 kernel_video_cursor			dd	STATIC_EMPTY	; x
 					dd	STATIC_EMPTY	; y
 
+kernel_video_char_color_and_background	db	0x07
+
 ;===============================================================================
 kernel_video_dump:
 	; zachowaj oryginalne rejestry
@@ -94,21 +96,13 @@ kernel_video_string:
 	push	rcx
 	push	rdx
 	push	rsi
-	push	rdi
-
-	; ustaw wskaźnik na ostatnią pozycję w przestrzeni pamięci trybu tekstowego
-	mov	rdi,	qword [kernel_video_pointer]
 
 	; wyświetlić jakąkolwiek ilość znaków z ciągu?
 	test	rcx,	rcx
 	jz	.end	; nie
 
-	; domyślny kolor i tło ciągu
-	mov	ah,	0x07
-
-	; pozycja kursora na osi X,Y
-	mov	ebx,	dword [kernel_video_cursor]
-	mov	edx,	dword [kernel_video_cursor + STATIC_DWORD_SIZE_byte]
+	; pobierz kolor i tło znaków
+	mov	ah,	byte [kernel_video_char_color_and_background]
 
 .loop:
 	; pobierz kod ASCII z ciągu
@@ -133,18 +127,7 @@ kernel_video_string:
 	jnz	.loop
 
 .end:
-	; zachowaj aktualną pozycję wskaźnika w przestrzeni pamięci trybu tekstowego
-	mov	qword [kernel_video_pointer],	rdi
-
-	; zachowaj aktualną pozycję kursora w przestrzeni pamięci trybu tekstowego
-	mov	dword [kernel_video_cursor],	ebx
-	mov	dword [kernel_video_cursor + STATIC_DWORD_SIZE_byte],	edx
-
-	; koryguj pozycję kursora
-	call	kernel_video_cursor_set
-
 	; przywróć oryginalne rejestry
-	pop	rdi
 	pop	rsi
 	pop	rdx
 	pop	rcx
@@ -157,19 +140,24 @@ kernel_video_string:
 ;===============================================================================
 ; wejście:
 ;	al - kod ASCII znaku
-;	ah - kolor tła/znaku
-;	ebx - pozycja kursora na osi X
 ;	rcx - ilość kopii do wyświetlenia
-;	edx - pozycja kursora na osi Y
-;	rdi - pozycja wskaźnika(znaku) w przestrzeni pamięci trybu tekstowego
-; wyjście:
-;	ebx - nowa pozycja kursora na osi X
-;	edx - nowa pozycja kursora na osi Y
-;	rdi - nowa pozycja wskaźnika w przestrzeni pamięci trybu tekstowego
 kernel_video_char:
 	; zachowaj oryginalne rejestry
 	push	rax
+	push	rbx
 	push	rcx
+	push	rdx
+	push	rdi
+
+	; pobierz kolor znaku/tła
+	mov	ah,	byte [kernel_video_char_color_and_background]
+
+	; pozycja kursora na osi X,Y
+	mov	ebx,	dword [kernel_video_cursor]
+	mov	edx,	dword [kernel_video_cursor + STATIC_DWORD_SIZE_byte]
+
+	; ustaw wskaźnik na ostatnią pozycję w przestrzeni pamięci trybu tekstowego
+	mov	rdi,	qword [kernel_video_pointer]
 
 .loop:
 	; znak "nowej linii"?
@@ -209,8 +197,21 @@ kernel_video_char:
 	dec	rcx
 	jnz	.loop	; nie
 
+	; zachowaj aktualną pozycję kursora w przestrzeni pamięci trybu tekstowego
+	mov	dword [kernel_video_cursor],	ebx
+	mov	dword [kernel_video_cursor + STATIC_DWORD_SIZE_byte],	edx
+
+	; zachowaj aktualną pozycję wskaźnika w przestrzeni pamięci trybu tekstowego
+	mov	qword [kernel_video_pointer],	rdi
+
+	; koryguj pozycję kursora
+	call	kernel_video_cursor_set
+
 	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rdx
 	pop	rcx
+	pop	rbx
 	pop	rax
 
 	; powrót z procedury
@@ -239,8 +240,6 @@ kernel_video_char:
 
 ;-------------------------------------------------------------------------------
 .backspace:
-	xchg	bx,bx
-
 	; kursor znajduje się na początku linii?
 	test	ebx,	ebx
 	jz	.begin	; tak
@@ -273,4 +272,105 @@ kernel_video_char:
 	jmp	.continue
 
 ;===============================================================================
+; wejście:
+;	rax - wartość do wyświetlenia
+;	rbx - system liczbowy
+;	rcx - rozmiar wypełnienia przed liczbą
+;	rdx  - kod ASCII wypełnienia
+kernel_video_number:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rdx
+	push	rbp
+	push	r8
+	push	r9
+
+	; podstawa liczby w odpowiednim zakresie?
+	cmp	bl,	2
+	jb	.error	; nie
+	cmp	bl,	36
+	ja	.error	; nie
+
+	; zachowaj wartość prefiksa
+	mov	r8,	rdx
+	sub	r8,	0x30
+
+	; wyczyść starszą część / resztę z dzielenia
+	xor	rdx,	rdx
+
+	; utwórz stos zmiennych lokalnych
+	mov	rbp,	rsp
+
+.loop:
+	; oblicz resztę z dzielenia
+	div	rbx
+
+	; zapisz resztę z dzielenia do zmiennych lokalnych
+	push	rdx
+	dec	rcx	; zmniejsz rozmiar prefiksu
+
+	; wyczyść resztę z dzielenia
+	xor	rdx,	rdx
+
+	; przeliczać dalej?
+	test	rax,	rax
+	jnz	.loop	; tak
+
+	; uzupełnić prefiks?
+	cmp	rcx,	STATIC_EMPTY
+	jle	.print	; nie
+
+.prefix:
+	; uzupełnij wartość o prefiks
+	push	r8
+
+	; uzupełniać dalej?
+	dec	rcx
+	jnz	.prefix	; tak
+
+.print:
+	; wyświetl każdą cyfrę
+	mov	ecx,	0x01	; 1 raz
+
+	; pozostały cyfry do wyświetlenia?
+	cmp	rsp,	rbp
+	je	.end	; nie
+
+	; pobierz cyfrę
+	pop	rax
+
+	; przemianuj cyfrę na kod ASCII
+	add	rax,	0x30
+
+	; system liczbowy powyżej podstawy 10?
+	cmp	al,	0x3A
+	jb	.no	; nie
+
+	; koryguj kod ASCII do podstawy liczbowej
+	add	al,	0x07
+
+.no:
+	; wyświetl cyfrę
+	call	kernel_video_char
+
+	; kontynuuj
+	jmp	.print
+
+.error:
+	; flaga, błąd
+	stc
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	r9
+	pop	r8
+	pop	rbp
+	pop	rdx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
 kernel_video_scroll:
+	jmp	$

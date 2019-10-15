@@ -2,6 +2,6 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
-kernel_init_video:
-	; wyczyść przestrzeń pamięci trybu tekstowego
-	call	kernel_video_dump
+service_shell_string_prompt_with_new_line	db	STATIC_ASCII_NEW_LINE
+service_shell_string_prompt			db	STATIC_COLOR_ASCII_RED, "# ", STATIC_COLOR_ASCII_DEFAULT
+service_shell_string_prompt_end:

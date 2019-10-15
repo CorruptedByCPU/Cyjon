@@ -23,8 +23,13 @@ init:
 	%include	"kernel/init.asm"
 
 kernel:
+	; wyświetl komunikat
+	mov	ecx,	kernel_string_welcome_end - kernel_string_welcome
+	mov	rsi,	kernel_string_welcome
+	call	kernel_video_string
+
 	; zatrzymaj dalsze wykonywanie kodu
-	jmp	$
+	jmp	service_shell
 
 	;-----------------------------------------------------------------------
 	; procedury, makra, dane, biblioteki, usługi - wszystko co niezbędne
@@ -45,6 +50,8 @@ kernel:
 	;-----------------------------------------------------------------------
 	%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/ps2.asm"
+	;-----------------------------------------------------------------------
+	%include	"kernel/service/shell.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/page_align_up.asm"
 	%include	"library/page_from_size.asm"

@@ -567,7 +567,7 @@ driver_ps2_keyboard_matrix_change:
 
 ;===============================================================================
 ; wyjście:
-;	Flaga CF - jeśli brak klawisza
+;	Flaga ZF - jeśli brak klawisza
 ;	ax - kod ASCII klawisza lub jego sekwencja
 driver_ps2_keyboard_read:
 	; pobierz kod ASCII i usuń z bufora

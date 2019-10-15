@@ -2,17 +2,18 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
-kernel_init_string_video_welcome	db	"Welcome!", STATIC_ASCII_NEW_LINE
-kernel_init_string_video_welcome_end:
-
 kernel_init_string_error_memory		db	"Init: Memory map, error."
 kernel_init_string_error_memory_end:
 kernel_init_string_error_memory_low	db	"Not enough memory."
 kernel_init_string_error_memory_low_end:
-kernel_init_string_error_acpi		db	"ACPI table not found."
+kernel_init_string_acpi_search		db	"I am looking for an RSDP table, "
+kernel_init_string_acpi_search_end:
+kernel_init_string_acpi_search_found:	db	"found.", STATIC_ASCII_NEW_LINE
+kernel_init_string_acpi_search_found_end:
+kernel_init_string_acpi_version_2	db	"ACPI 2.0+ version.", STATIC_ASCII_NEW_LINE
+kernel_init_string_acpi_version_2_end:
+kernel_init_string_error_acpi		db	"not found."
 kernel_init_string_error_acpi_end:
-kernel_init_string_error_acpi_2		db	"No support for ACPI v2.0+ version."
-kernel_init_string_error_acpi_2_end:
 kernel_init_string_error_acpi_corrupted	db	"ACPI table, corrupted."
 kernel_init_string_error_acpi_corrupted_end:
 kernel_init_string_error_apic		db	"APIC table not found."

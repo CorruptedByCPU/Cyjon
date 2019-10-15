@@ -18,6 +18,15 @@ struc	ACPI_STRUCTURE_RSDP
 	.SIZE:
 endstruc
 
+struc	ACPI_STRUCTURE_RSDP_20
+	.rsdp				resb	ACPI_STRUCTURE_RSDP.SIZE
+	.length				resb	4
+	.xsdt_address			resb	8
+	.checksum			resb	1
+	.reserved			resb	3
+	.SIZE:
+endstruc
+
 struc	ACPI_STRUCTURE_RSDT
 	.signature			resb	4
 	.length				resb	4
@@ -320,11 +329,15 @@ kernel_init_acpi:
 	jmp	.madt_next_entry
 
 .extended:
-	; ustaw komunikat błędu: nieobsługiwana wersja tablicy ACPI
-	mov	ecx,	kernel_init_string_error_acpi_2_end - kernel_init_string_error_acpi_2
-	mov	rsi,	kernel_init_string_error_acpi_2
+	; pobierz adres tablicy XSDT na podstawie wskaźnika w nagłówku
+	mov	rax,	qword [rsi + ACPI_STRUCTURE_RSDP_20.xsdt_address]
 
-	; wyświetl komunikat
-	jmp	kernel_panic
+	; wyświetl informację o wersji
+	mov	ecx,	kernel_init_string_acpi_version_2_end - kernel_init_string_acpi_version_2
+	mov	rsi,	kernel_init_string_acpi_version_2
+	call	kernel_video_string
+
+	; zatrzymaj dalsze wykonywanie kodu
+	jmp	$
 
 .end:
