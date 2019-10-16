@@ -80,10 +80,48 @@ STATIC_NOTHING						equ	0x90	; nop instruction
 
 STATIC_MAX_unsigned					equ	-1
 
-STATIC_NUMBER_SYSTEM_binary				equ	2
-STATIC_NUMBER_SYSTEM_octal				equ	8
-STATIC_NUMBER_SYSTEM_decimal				equ	10
-STATIC_NUMBER_SYSTEM_hexadecimal			equ	16
+STATIC_NUMBER_SYSTEM_binary				equ	0x02
+STATIC_NUMBER_SYSTEM_octal				equ	0x08
+STATIC_NUMBER_SYSTEM_decimal				equ	0x0A
+STATIC_NUMBER_SYSTEM_hexadecimal			equ	0x10
+
+STATIC_ASCII_SEQUENCE_length				equ	0x06
+
+%define	STATIC_COLOR_ASCII_DEFAULT				STATIC_COLOR_ASCII_GREEN
+%define	STATIC_COLOR_ASCII_BLACK				"\e[30m"
+%define	STATIC_COLOR_ASCII_BLUE					"\e[34m"
+%define	STATIC_COLOR_ASCII_GREEN				"\e[32m"
+%define	STATIC_COLOR_ASCII_CYAN					"\e[36m"
+%define	STATIC_COLOR_ASCII_RED					"\e[31m"
+%define	STATIC_COLOR_ASCII_MAGENTA				"\e[35m"
+%define	STATIC_COLOR_ASCII_BROWN				"\e[33m"
+%define	STATIC_COLOR_ASCII_GRAY_LIGHT				"\e[37m"
+%define	STATIC_COLOR_ASCII_GRAY					"\e[90m"
+%define	STATIC_COLOR_ASCII_BLUE_LIGHT				"\e[94m"
+%define	STATIC_COLOR_ASCII_GREEN_LIGHT				"\e[92m"
+%define	STATIC_COLOR_ASCII_CYAN_LIGHT				"\e[96m"
+%define	STATIC_COLOR_ASCII_RED_LIGHT				"\e[91m"
+%define	STATIC_COLOR_ASCII_MAGENTA_LIGHT			"\e[95m"
+%define	STATIC_COLOR_ASCII_YELLOW				"\e[93m"
+%define	STATIC_COLOR_ASCII_WHITE				"\e[39m"
+
+STATIC_COLOR_default					equ	STATIC_COLOR_green
+STATIC_COLOR_black					equ	0
+STATIC_COLOR_blue					equ	1
+STATIC_COLOR_green					equ	2
+STATIC_COLOR_cyan					equ	3
+STATIC_COLOR_red					equ	4
+STATIC_COLOR_magenta					equ	5
+STATIC_COLOR_brown					equ	6
+STATIC_COLOR_gray_light					equ	7
+STATIC_COLOR_gray					equ	8
+STATIC_COLOR_blue_light					equ	9
+STATIC_COLOR_green_light				equ	10
+STATIC_COLOR_cyan_light					equ	11
+STATIC_COLOR_red_light					equ	12
+STATIC_COLOR_magenta_light				equ	13
+STATIC_COLOR_yellow					equ	14
+STATIC_COLOR_white					equ	15
 
 struc	STATIC_STRUCTURE_BLOCK
 	.data						resb	KERNEL_PAGE_SIZE_byte - STATIC_QWORD_SIZE_byte

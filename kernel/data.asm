@@ -35,7 +35,7 @@ kernel_idt_header:
 ;===============================================================================
 ; STATIC
 ;===============================================================================
-kernel_string_welcome					db	"Cyjon is ready.", STATIC_ASCII_NEW_LINE
+kernel_string_welcome					db	STATIC_COLOR_ASCII_GREEN_LIGHT, "Cyjon is ready.", STATIC_ASCII_NEW_LINE
 kernel_string_welcome_end:
 
 kernel_string_space					db	STATIC_ASCII_SPACE
