@@ -42,6 +42,7 @@ kernel:
 	%include	"kernel/data.asm"
 	%include	"kernel/idt.asm"
 	%include	"kernel/task.asm"
+	%include	"kernel/network.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/ps2.asm"

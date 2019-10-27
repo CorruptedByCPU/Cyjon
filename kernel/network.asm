@@ -98,9 +98,8 @@ struc	KERNEL_STRUCTURE_NETWORK_PORT
 	.SIZE:
 endstruc
 
-kernel_network_ip_identification		dw	0x0001
-
-kernel_network_port_table			dq	STATIC_EMPTY
+kernel_network_rx_count				dq	STATIC_EMPTY
+kernel_network_tx_count				dq	STATIC_EMPTY
 
 ;===============================================================================
 ; wejście:

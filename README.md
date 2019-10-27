@@ -7,6 +7,11 @@ Prosty i wielozadaniowy system operacyjny, napisany w języku asemblera dla proc
 ### Wymagania:
 
   - 2 MiB pamięci RAM
+  - klawiatura na porcie PS2
+
+### Opcjonalne:
+
+  - kontroler sieci Intel 82540EM (E1000)
 
 ### Kompilacja:
 
