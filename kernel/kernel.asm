@@ -23,12 +23,7 @@ init:
 	%include	"kernel/init.asm"
 
 kernel:
-	; wyświetl komunikat
-	mov	ecx,	kernel_string_welcome_end - kernel_string_welcome
-	mov	rsi,	kernel_string_welcome
-	call	kernel_video_string
-
-	; zatrzymaj dalsze wykonywanie kodu
+	; przejdź do powłoki systemu
 	jmp	service_shell
 
 	;-----------------------------------------------------------------------
@@ -50,6 +45,8 @@ kernel:
 	;-----------------------------------------------------------------------
 	%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/ps2.asm"
+	%include	"kernel/driver/pci.asm"
+	%include	"kernel/driver/network/i82540em.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/service/shell.asm"
 	;-----------------------------------------------------------------------

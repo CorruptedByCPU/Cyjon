@@ -1,9 +1,7 @@
 
-qemu.bat
-nasm.exe
-make.bat
-heksedit.dll
-Frhed.exe
-bx_enh_dbg.ini
-bochs.bxrc
-bochs.bat
+*.bat
+*.dll
+*.ini
+*.bxrc
+*.cfg
+*.exe

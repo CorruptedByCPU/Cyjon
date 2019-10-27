@@ -88,6 +88,11 @@ kernel_init_long_mode:
 	%include	"kernel/init/ps2.asm"
 
 	;-----------------------------------------------------------------------
+	; inicjalizuj jeden z dostępnych interfejsów sieciowych
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/network.asm"
+
+	;-----------------------------------------------------------------------
 	; utwórz kolejkę zadań
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/task.asm"
