@@ -41,7 +41,7 @@ struc	KERNEL_STRUCTURE_NETWORK_MAC
 	.SIZE:
 endstruc
 
-struc	KERNEL_STRUCTURE_NETWORK_FRAME_ETHER
+struc	KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET
 	.target					resb	0x06
 	.source					resb	0x06
 	.type					resb	0x02
@@ -101,12 +101,96 @@ endstruc
 kernel_network_rx_count				dq	STATIC_EMPTY
 kernel_network_tx_count				dq	STATIC_EMPTY
 
+align	STATIC_QWORD_SIZE_byte
+kernel_network_packet_arp_answer:
+						; Ethernet
+						db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+						db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+						dw	KERNEL_NETWORK_FRAME_ETHER_TYPE_arp
+						; ARP
+						dw	KERNEL_NETWORK_FRAME_ARP_HTYPE_ethernet
+						dw	KERNEL_NETWORK_FRAME_ARP_PTYPE_ipv4
+						db	KERNEL_NETWORK_FRAME_ARP_HAL_mac
+						db	KERNEL_NETWORK_FRAME_ARP_PAL_ipv4
+						dw	KERNEL_NETWORK_FRAME_ARP_OPCODE_answer
+						db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+						db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+						db	0x00, 0x00, 0x00, 0x00
+						db	0x00, 0x00, 0x00, 0x00
+
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do pakietu
 kernel_network:
+	; protokół ARP?
+	cmp	word [rsi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.type],	KERNEL_NETWORK_FRAME_ETHER_TYPE_arp
+	je	kernel_network_arp	; tak
+
 	; protokół nieobsługiwany
 
 .end:
 	; powrót z procedury
 	ret
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do pakietu przychodzącego
+kernel_network_arp:
+	; zachowaj oryginalny rejestr
+	push	rax
+
+	; adresowanie sprzętowe typu Ethernet?
+	cmp	word [rsi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.SIZE + KERNEL_STRUCTURE_NETWORK_FRAME_ARP.htype],	KERNEL_NETWORK_FRAME_ARP_HTYPE_ethernet
+	jne	.omit	; nie
+
+	; protokół typu IPv4?
+	cmp	word [rsi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.SIZE + KERNEL_STRUCTURE_NETWORK_FRAME_ARP.ptype],	KERNEL_NETWORK_FRAME_ARP_PTYPE_ipv4
+	jne	.omit	; nie
+
+	; rozmiar adresu MAC prawidłowy?
+	cmp	byte [rsi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.SIZE + KERNEL_STRUCTURE_NETWORK_FRAME_ARP.hal],	KERNEL_NETWORK_FRAME_ARP_HAL_mac
+	jne	.omit	; nie
+
+	; rozmiar adresu IPv4 prawidłowy?
+	cmp	byte [rsi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.SIZE + KERNEL_STRUCTURE_NETWORK_FRAME_ARP.pal],	KERNEL_NETWORK_FRAME_ARP_PAL_ipv4
+	jne	.omit	; nie
+
+	; czy zapytanie dotyczy naszego adresu IP?
+	mov	eax,	dword [driver_nic_i82540em_ipv4_address]
+	cmp	eax,	dword [rsi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.SIZE + KERNEL_STRUCTURE_NETWORK_FRAME_ARP.target_ip]
+	jne	.omit	; nie
+
+	; zachowaj oryginalne rejestry
+	push	rdi
+
+	; ustaw wskaźnik na pakiet zwrotny
+	mov	rdi,	kernel_network_packet_arp_answer
+
+	; zwróć w odpowiedzi nasz adres IPv4
+	mov	dword [rdi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.SIZE + KERNEL_STRUCTURE_NETWORK_FRAME_ARP.source_ip],	eax
+
+	; zwróć do nadawcy ramkę ARP i Ethernet
+	mov	rax,	qword [rsi + KERNEL_STRUCTURE_NETWORK_FRAME_ARP.source_mac]
+	mov	dword [rdi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.target],	eax
+	mov	dword [rdi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.SIZE + KERNEL_STRUCTURE_NETWORK_FRAME_ARP.target_mac],	eax
+	shr	rax,	STATIC_MOVE_HIGH_TO_EAX_shift
+	mov	word [rdi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.target + KERNEL_STRUCTURE_NETWORK_MAC.4],	ax
+	mov	word [rdi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.SIZE + KERNEL_STRUCTURE_NETWORK_FRAME_ARP.target_mac + KERNEL_STRUCTURE_NETWORK_MAC.4],	ax
+
+	; zwróć w odpowiedzi IPv4 nadawcy
+	mov	eax,	dword [rsi + KERNEL_STRUCTURE_NETWORK_FRAME_ARP.source_ip]
+	mov	dword [rdi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.SIZE + KERNEL_STRUCTURE_NETWORK_FRAME_ARP.target_ip],	eax
+
+	; wyślij odpowiedź
+	mov	eax,	KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.SIZE + KERNEL_STRUCTURE_NETWORK_FRAME_ARP.SIZE
+	call	driver_nic_i82540em_transfer
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+
+.omit:
+	; przywróć oryginalny rejestr
+	pop	rax
+
+	; powrót z procedury obsługi pakietu ARP
+	jmp	kernel_network.end

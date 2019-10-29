@@ -198,12 +198,53 @@ driver_nic_i82540em_promiscious_mode_semaphore	db	STATIC_TRUE
 driver_nic_i82540em_ipv4_address		db	10, 0, 0, 64
 ;~ driver_nic_i82540em_ipv4_address		dd	STATIC_EMPTY
 driver_nic_i82540em_ipv4_mask			db	255, 255, 255, 0
-; ~ driver_nic_i82540em_ipv4_mask			dd	STATIC_EMPTY
+; ~ driver_nic_i82540em_ipv4_mask		dd	STATIC_EMPTY
 driver_nic_i82540em_ipv4_gateway		db	10, 0, 0, 1
 ;~ driver_nic_i82540em_ipv4_gateway		dd	STATIC_EMPTY
 driver_nic_i82540em_vlan			dw	STATIC_EMPTY
 
 driver_nic_i82540em_rx_count			dq	STATIC_EMPTY
+driver_nic_i82540em_tx_count			dq	STATIC_EMPTY
+
+;===============================================================================
+; wejście:
+;	ax - rozmiar pakietu do wysłania
+;	rdi - wskaźnik do pakietu
+driver_nic_i82540em_transfer:
+	; zachowaj oryginalne rejestry
+	push	rsi
+	push	rax
+
+	; ustaw wskaźnik na deskryptor bufora
+	mov	rsi,	qword [driver_nic_i82540em_tx_base_address]
+
+	; wskaź pakiet do wysłania
+	mov	qword [rsi + DRIVER_NIC_I82540EM_TDESC_BASE_ADDRESS],	rdi
+
+	; ustaw rozmiar pakietu do wysłania wraz z flagami
+	movzx	eax,	word [rsp]
+	add	rax,	DRIVER_NIC_I82540EM_TDESC_CMD_RS
+	or	rax,	DRIVER_NIC_I82540EM_TDESC_CMD_IFCS
+	or	rax,	DRIVER_NIC_I82540EM_TDESC_CMD_EOP
+	mov	qword [rsi + DRIVER_NIC_I82540EM_TDESC_LENGTH_AND_FLAGS],	rax
+
+	; poinformuj o 1 deskryptorze do przetworzenia, wskazując względny początek i jego koniec
+	mov	rax,	qword [driver_nic_i82540em_mmio_base_address]
+	mov	dword [rax + DRIVER_NIC_I82540EM_TDH],	0x00
+	mov	dword [rax + DRIVER_NIC_I82540EM_TDT],	0x10
+
+.status:
+	; sprawdź status deskryptora
+	mov	rax,	DRIVER_NIC_I82540EM_TDESC_STATUS_DD
+	test	rax,	qword [rsi + DRIVER_NIC_I82540EM_TDESC_LENGTH_AND_FLAGS]
+	jz	.status	; pakiet nie został przesłany do FIFO, sprawdź raz jeszcze
+
+	; przywróć oryginalne rejestry
+	pop	rax
+	pop	rsi
+
+	; powrót z procedury
+	ret
 
 ;===============================================================================
 driver_nic_i82540em_irq:
@@ -259,9 +300,9 @@ driver_nic_i82540em_irq:
 	je	.receive	; tak
 
 	; pobierz adres MAC z ramki Ethernet (docelowy)
-	mov	eax,	dword [rsi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHER.target + KERNEL_STRUCTURE_NETWORK_MAC.2]
+	mov	eax,	dword [rsi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.target + KERNEL_STRUCTURE_NETWORK_MAC.2]
 	shl	rax,	STATIC_MOVE_AX_TO_HIGH_shift
-	or	ax,	word [rsi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHER.target]
+	or	ax,	word [rsi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.target]
 
 	; czy pakiet jest skierowany do każdego?
 	mov	rcx,	KERNEL_NETWORK_MAC_mask
@@ -449,7 +490,7 @@ driver_nic_i82540em_setup:
 	or	eax,	DRIVER_NIC_I82540EM_RCTL_BAM	; przeznaczone dla wszystkich
 	or	eax,	DRIVER_NIC_I82540EM_RCTL_SECRC	; usuń CRC z końca pakietu
 	; or	eax,	DRIVER_NIC_I82540EM_RCTL_SBP	; odbieraj uszkodzone uszkodzone
-	; or	eax,	DRIVER_NIC_I82540EM_RCTL_MPE	; przeznaczone dla większości
+	or	eax,	DRIVER_NIC_I82540EM_RCTL_MPE	; przeznaczone dla większości
 	mov	dword [rsi + DRIVER_NIC_I82540EM_RCTL],	eax
 
 	;-----------------------------------------------------------------------
