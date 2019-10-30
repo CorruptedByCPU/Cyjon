@@ -51,9 +51,11 @@ kernel:
 	;-----------------------------------------------------------------------
 	%include	"kernel/service/shell.asm"
 	;-----------------------------------------------------------------------
+	%include	"library/input.asm"
 	%include	"library/page_align_up.asm"
 	%include	"library/page_from_size.asm"
 	%include	"library/string_compare.asm"
+	%include	"library/string_trim.asm"
 	;-----------------------------------------------------------------------
 
 kernel_end:
