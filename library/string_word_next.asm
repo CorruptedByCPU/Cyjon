@@ -8,7 +8,7 @@
 ;	rsi - wskaźnik do ciągu
 ; wyjście:
 ;	Flaga CF - jeśli błąd
-;	rcx - rozmiar pierwszego znalezionego "słowa"
+;	rbx - rozmiar pierwszego znalezionego "słowa"
 ;	rsi - wskaźnik bezwzględny w ciągu do odnalezionego "słowa"
 library_string_word_next:
 	; zachowaj oryginalne rejestry
@@ -88,7 +88,7 @@ library_string_word_next:
 	pop	rsi
 
 	; zwróć rozmiar "słowa"
-	mov	qword [rsp],	rax
+	mov	rbx,	rax
 
 	; flaga, sukces
 	clc
