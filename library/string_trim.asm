@@ -4,15 +4,19 @@
 
 ;===============================================================================
 ; wejście:
-;	rbx	- ilość znaków w buiforze
-;	rsi	- wskaźnik do buifora
+;	rcx	- ilość znaków w ciągu
+;	rsi	- wskaźnik do ciągu
 ; wyjście:
-;	Flaga CF - buifor pusty
-;	rbx	- ilość znaków w buforze bez "białych" znaków lub wartość nieokreślona gdy flaga CF
-;	rsi	- wskaźnik początku bufora bez "białych" znaków lub wartość nieokreślona gdy flaga CF
+;	Flaga CF - ciąg pusty
+;	rcx	- ilość znaków w ciągu bez "białych" znaków
+;	rsi	- wskaźnik początku ciągu bez "białych" znaków
 library_string_trim:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rsi
+
 	; ciąg pusty?
-	test	rbx,	rbx
+	test	rcx,	rcx
 	jz	.error	; tak
 
 .prefix:
@@ -29,19 +33,19 @@ library_string_trim:
 	jne	.prefix_ready	; nie
 
 .prefix_found:
-	; przesuń wskaźnik na nastepny znak w buforze
+	; przesuń wskaźnik na nastepny znak w ciągu
 	inc	rsi
 
-	; ilość znaków w buforze
-	dec	rbx
-	jnz	.prefix	; przetwórz pozostałą zawartość bufora
+	; ilość znaków w ciągu
+	dec	rcx
+	jnz	.prefix	; przetwórz pozostałą zawartość ciągu
 
-	; bufor pusty
+	; ciąg pusty
 	jmp	.error
 
 .prefix_ready:
-	; przesuń wskaźnik na koniec bufora
-	add	rsi,	rbx
+	; przesuń wskaźnik na koniec ciągu
+	add	rsi,	rcx
 
 .suffix:
 	; spacja?
@@ -57,19 +61,23 @@ library_string_trim:
 	jne	.suffix_ready	; nie
 
 .suffix_found:
-	; przesuń wskaźnik na poprzedni znak w buforze
+	; przesuń wskaźnik na poprzedni znak w ciągu
 	dec	rsi
 
-	; ilość znaków w buforze
-	dec	rbx
-	jnz	.suffix	; przetwórz pozostałą zawartość bufora
+	; ilość znaków w ciągu
+	dec	rcx
+	jnz	.suffix	; przetwórz pozostałą zawartość ciągu
 
-	; bufor pusty
+	; ciąg pusty
 	jmp	.error
 
 .suffix_ready:
-	; ustaw wskaźnik na początek bufora bez znaków "białych"
-	sub	rsi,	rbx
+	; ustaw wskaźnik na początek ciągu bez "białych" znaków
+	sub	rsi,	rcx
+
+	; zwróć właściwości nowego ciągu
+	mov	qword [rsp],	rsi
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rcx
 
 	; flaga, sukces
 	clc
@@ -82,5 +90,9 @@ library_string_trim:
 	stc
 
 .end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rcx
+
 	; powrót z procedury
 	ret

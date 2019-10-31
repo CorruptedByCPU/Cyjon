@@ -43,6 +43,11 @@ service_shell:
 	call	library_string_trim
 	jc	service_shell	; bufor pusty lub przerwano wprowadzanie
 
+	xchg	bx,bx
+
+	; znajdź nazwę polecenia
+	call	library_string_word_next
+
 	; wróć do głównej pętli
 	jmp	service_shell
 

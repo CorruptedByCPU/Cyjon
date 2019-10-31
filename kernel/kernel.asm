@@ -56,6 +56,7 @@ kernel:
 	%include	"library/page_from_size.asm"
 	%include	"library/string_compare.asm"
 	%include	"library/string_trim.asm"
+	%include	"library/string_word_next.asm"
 	;-----------------------------------------------------------------------
 
 kernel_end:
