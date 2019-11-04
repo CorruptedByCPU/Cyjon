@@ -173,6 +173,9 @@ DRIVER_NIC_I82540EM_RA				equ	0x5400	; Receive Address
 
 DRIVER_NIC_I82540EM_EEPROM_MANAGEMENT_CONTROL_ENABLE_ARP_RESPONSE	equ	1000000000000000b
 
+DRIVER_NIC_I82540EM_CTRL_RDESC_STATUS_DD_bit	equ	0
+DRIVER_NIC_I82540EM_CTRL_RDESC_STATUS_EOP_bit	equ	1
+
 struc	DRIVER_NIC_I82540EM_STRUCTURE_RCTL_RDESC_entry
 	.base_address				resb	8
 	.length					resb	2
@@ -181,11 +184,6 @@ struc	DRIVER_NIC_I82540EM_STRUCTURE_RCTL_RDESC_entry
 	.errors					resb	1
 	.special				resb	2
 endstruc
-DRIVER_NIC_I82540EM_CTRL_RDESC_STATUS_DD_bit	equ	0
-DRIVER_NIC_I82540EM_CTRL_RDESC_STATUS_EOP_bit	equ	1
-
-
-driver_nic_i82540em_tx_semaphore		db	STATIC_FALSE
 
 driver_nic_i82540em_mmio_base_address		dq	STATIC_EMPTY
 driver_nic_i82540em_irq_number			db	STATIC_EMPTY
@@ -300,9 +298,9 @@ driver_nic_i82540em_irq:
 	je	.receive	; tak
 
 	; pobierz adres MAC z ramki Ethernet (docelowy)
-	mov	eax,	dword [rsi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.target + KERNEL_STRUCTURE_NETWORK_MAC.2]
+	mov	eax,	dword [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.target + KERNEL_NETWORK_STRUCTURE_MAC.2]
 	shl	rax,	STATIC_MOVE_AX_TO_HIGH_shift
-	or	ax,	word [rsi + KERNEL_STRUCTURE_NETWORK_FRAME_ETHERNET.target]
+	or	ax,	word [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.target]
 
 	; czy pakiet jest skierowany do każdego?
 	mov	rcx,	KERNEL_NETWORK_MAC_mask
@@ -402,21 +400,21 @@ driver_nic_i82540em:
 	mov	eax,	dword [rsi + DRIVER_NIC_I82540EM_EERD]
 	shr	eax,	STATIC_MOVE_HIGH_TO_AX_shift
 	; zachowaj
-	mov	word [driver_nic_i82540em_mac_address + KERNEL_STRUCTURE_NETWORK_MAC.0],	ax
+	mov	word [driver_nic_i82540em_mac_address + KERNEL_NETWORK_STRUCTURE_MAC.0],	ax
 
 	; odczytaj zawartość rejestru pod adresem 0x01
 	mov	dword [rsi + DRIVER_NIC_I82540EM_EERD],	0x00000101
 	mov	eax,	dword [rsi + DRIVER_NIC_I82540EM_EERD]
 	shr	eax,	STATIC_MOVE_HIGH_TO_AX_shift
 	; zachowaj
-	mov	word [driver_nic_i82540em_mac_address + KERNEL_STRUCTURE_NETWORK_MAC.2],	ax
+	mov	word [driver_nic_i82540em_mac_address + KERNEL_NETWORK_STRUCTURE_MAC.2],	ax
 
 	; odczytaj zawartość rejestru pod adresem 0x02
 	mov	dword [rsi + DRIVER_NIC_I82540EM_EERD],	0x00000201
 	mov	eax,	dword [rsi + DRIVER_NIC_I82540EM_EERD]
 	shr	eax,	STATIC_MOVE_HIGH_TO_AX_shift
 	; zachowaj
-	mov	word [driver_nic_i82540em_mac_address + KERNEL_STRUCTURE_NETWORK_MAC.4],	ax
+	mov	word [driver_nic_i82540em_mac_address + KERNEL_NETWORK_STRUCTURE_MAC.4],	ax
 
  	; wyłącz wszystkie typy przerwań na kontrolerze
 	mov	dword [rsi + DRIVER_NIC_I82540EM_IMC],	STATIC_MAX_unsigned	; dokumentacja, strona 312/410

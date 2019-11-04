@@ -4,6 +4,8 @@ Prosty i wielozadaniowy system operacyjny, napisany w języku asemblera dla proc
 
 ![screenshot](https://raw.githubusercontent.com/blackend/cyjon/master/cyjon.png)
 
+![screenshot](https://raw.githubusercontent.com/blackend/cyjon/master/ping.png)
+
 ### Wymagania:
 
   - 2 MiB pamięci RAM
