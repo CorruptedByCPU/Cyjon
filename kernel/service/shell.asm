@@ -43,9 +43,13 @@ service_shell:
 	call	library_string_trim
 	jc	service_shell	; bufor pusty lub przerwano wprowadzanie
 
-	; wróć do głównej pętli
-	jmp	service_shell
+	; znajdź nazwę polecenia
+	call	library_string_word_next
+
+	; przetwórz polecenie
+	jmp	service_shell_prompt
 
 	;-----------------------------------------------------------------------
 	%include	"kernel/service/shell/data.asm"
+	%include	"kernel/service/shell/prompt.asm"
 	;-----------------------------------------------------------------------

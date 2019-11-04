@@ -50,10 +50,19 @@ kernel_video_dump:
 	push	rdi
 
 	; wyczyść przestrzeń pamięci trybu tekstowego "jasno-szarymi znakami spacji"
-	mov	rax,	0x0720072007200720
-	mov	ecx,	(KERNEL_VIDEO_LINE_SIZE_byte * KERNEL_VIDEO_WIDTH_char)
+	mov	ax,	0x0720
+	mov	ecx,	KERNEL_VIDEO_WIDTH_char * KERNEL_VIDEO_HEIGHT_char
 	mov	rdi,	KERNEL_VIDEO_BASE_address
-	rep	stosq
+	rep	stosw
+
+	; ustaw wskaźnik kursora w przestrzeni pamięci na początek
+	mov	qword [kernel_video_pointer],	KERNEL_VIDEO_BASE_address
+
+	; ustaw wirtualny kursor na na początek przestrzeni ekranu
+	mov	qword [kernel_video_cursor],	STATIC_EMPTY
+
+	; ustaw sprzętowy kursor na miejsce
+	call	kernel_video_cursor_set
 
 	; przywróć oryginalne rejestry
 	pop	rdi

@@ -9,14 +9,15 @@
 ;	rsi - wskaźnik do początku bufora
 ; wyjście:
 ;	Falga CF - użytkownik przerwał wprowadzanie (np. klawisz ESC) lub bufor pusty
-;	rbx - ilość znaków w buforze lub wartość nieokreślona gdy flaga CF
+;	rcx - ilość znaków w buforze
 library_input:
 	; zachowaj oryginalne rejestry
 	push	rax
+	push	rbx
 	push	rsi
 	push	rcx
 
-	; wyświetlić zawartośćbufora?
+	; wyświetlić zawartość bufora?
 	cmp	rbx,	STATIC_EMPTY
 	je	.loop	; nie
 
@@ -107,6 +108,9 @@ library_input:
 	test	rbx,	rbx
 	jz	.empty	; tak
 
+	; zwróć ilość znaków w buforze
+	mov	qword [rsp],	rbx
+
 	; flaga, sukces
 	clc
 
@@ -121,6 +125,7 @@ library_input:
 	; przywróć oryginalne rejestry
 	pop	rcx
 	pop	rsi
+	pop	rbx
 	pop	rax
 
 	; powrót z liblioteki
