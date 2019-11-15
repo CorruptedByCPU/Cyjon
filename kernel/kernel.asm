@@ -24,7 +24,10 @@ init:
 
 kernel:
 	; przejdź do powłoki systemu
-	jmp	service_shell
+	; jmp	service_shell
+
+	; przejdź do usługi HTTP
+	jmp	service_http
 
 	;-----------------------------------------------------------------------
 	; procedury, makra, dane, biblioteki, usługi - wszystko co niezbędne
@@ -50,6 +53,7 @@ kernel:
 	%include	"kernel/driver/network/i82540em.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/service/shell.asm"
+	%include	"kernel/service/http.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/input.asm"
 	%include	"library/page_align_up.asm"

@@ -20,12 +20,12 @@ kernel_init_network:
 	; inicjalizuj kontroler
 	call	driver_nic_i82540em
 
-	; uzupełnij pakiet ARP(+Ethernet) o adres MAC kontrolera sieciowego
-	mov	rax,	qword [driver_nic_i82540em_mac_address]
-	mov	dword [kernel_network_packet_arp_reply + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.source],	eax
-	mov	dword [kernel_network_packet_arp_reply + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ARP.source_mac],	eax
-	shr	rax,	STATIC_MOVE_HIGH_TO_EAX_shift
-	mov	word [kernel_network_packet_arp_reply + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.source + KERNEL_NETWORK_STRUCTURE_MAC.4],	ax
-	mov	word [kernel_network_packet_arp_reply + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ARP.source_mac + KERNEL_NETWORK_STRUCTURE_MAC.4],	ax
+	; przygotuj miejsce pod tablicę portów
+	call	kernel_memory_alloc_page
+	jc	kernel_panic	; brak miejsca
+
+	; wyczyść tablicę i zapamiętaj wskaźnik
+	call	kernel_page_drain
+	mov	qword [kernel_network_port_table],	rdi
 
 .end:

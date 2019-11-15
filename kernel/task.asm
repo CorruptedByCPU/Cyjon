@@ -432,3 +432,49 @@ kernel_task_pid_check:
 
 	; powrót z procedury
 	ret
+
+;===============================================================================
+; wyjście:
+;	rax - PID procesu aktywnego
+kernel_task_active_pid:
+	; zachowaj oryginalne rejestry
+	push	rdi
+
+	; pobierz wskaźnik do aktywnego procesu
+	call	kernel_task_active
+
+	; zwróć PID procesu
+	mov	rax,	qword [rdi + KERNEL_STRUCTURE_TASK.pid]
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+
+	; powrót z podprocedury
+	ret
+
+;===============================================================================
+; wyjście:
+;	rdi - wskaźnik do pozycji zadania procesora logicznego
+kernel_task_active:
+	; zachowaj oryginalne rejestry
+	push	rax
+
+	; wyłącz wywłaszczanie (rezerwujemy ID procesora obsługującego procedurę)
+	cli
+
+	; pobierz identyfikator procesora logicznego
+	call	kernel_apic_id_get
+
+	; ustaw wskaźnik na pozycje zadania procesora logicznego
+	shl	rax,	STATIC_MULTIPLE_BY_8_shift
+	mov	rdi,	qword [kernel_task_active_list]
+	mov	rdi,	qword [rdi + rax]
+
+	; włącz wywłaszczanie
+	sti
+
+	; przywróć oryginalne rejestry
+	pop	rax
+
+	; powrót z procedury
+	ret
