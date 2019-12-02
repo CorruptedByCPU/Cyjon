@@ -8,6 +8,9 @@ KERNEL_NETWORK_PORT_SIZE_page			equ	0x01	; tablica przechowująca stan portów
 KERNEL_NETWORK_PORT_FLAG_empty			equ	0x00
 KERNEL_NETWORK_PORT_FLAG_ready			equ	0x01
 
+KERNEL_NETWORK_STACK_SIZE_page			equ	0x01	; ilość stron przeznaczonych na stos
+KERNEL_NETWORK_STACK_FLAG_busy			equ	10000000b
+
 KERNEL_NETWORK_FRAME_ETHERNET_TYPE_arp		equ	0x0608	; 0x0806
 KERNEL_NETWORK_FRAME_ETHERNET_TYPE_ip		equ	0x0008	; 0x0800
 
@@ -44,7 +47,10 @@ KERNEL_NETWORK_FRAME_TCP_FLAGS_ack		equ	0000000000010000b
 KERNEL_NETWORK_FRAME_TCP_FLAGS_urg		equ	0000000000100000b
 KERNEL_NETWORK_FRAME_TCP_FLAGS_bsy		equ	0000100000000000b	; flaga prywatna
 KERNEL_NETWORK_FRAME_TCP_FLAGS_bsy_bit		equ	11
+KERNEL_NETWORK_FRAME_TCP_OPTION_MSS_default	equ	0xB4050402	; Big-Endian
 KERNEL_NETWORK_FRAME_TCP_OPTION_KIND_mss	equ	0x02	; Max Segment Size
+KERNEL_NETWORK_FRAME_TCP_WINDOW_SIZE_default	equ	0x05B4	; Little-Endian
+
 
 struc	KERNEL_NETWORK_STRUCTURE_MAC
 	.0					resb	1
@@ -130,6 +136,22 @@ struc	KERNEL_NETWORK_STRUCTURE_FRAME_TCP_PSEUDO_HEADER
 	.SIZE:
 endstruc
 
+struc	KERNEL_NETWORK_STRUCTURE_TCP_STACK
+	.source_mac						resb	8
+	.source_ipv4						resb	4
+	.source_sequence					resb	4
+	.sequence						resb	4
+	.acknowledgement					resb	4
+	.window_size						resb	2
+	.source_port						resb	2
+	.host_port						resb	2
+	.status							resb	2
+	.flags							resb	2
+	.sequence_request					resb	4
+	.identification						resb	2
+	.SIZE:
+endstruc
+
 kernel_network_rx_count				dq	STATIC_EMPTY
 kernel_network_tx_count				dq	STATIC_EMPTY
 
@@ -177,13 +199,14 @@ kernel_network_packet_icmp_reply_end:
 
 kernel_network_port_table			dq	STATIC_EMPTY
 
+kernel_network_stack_address			dq	STATIC_EMPTY
+
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do pakietu
-kernel_network_ip_tcp:
+kernel_network_tcp:
 	; zachowaj oryginalne rejestry
 	push	rax
-	push	rdi
 
 	; pobierz numer portu docelowego
 	movzx	eax,	word [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.port_target]
@@ -193,11 +216,212 @@ kernel_network_ip_tcp:
 	cmp	ax,	512
 	jnb	.end	; nie, zignoruj pakiet
 
-	; cdn
+	; port docelowy jest pusty?
+	shl	eax,	STATIC_MULTIPLE_BY_8_shift
+	add	rax,	qword [kernel_network_port_table]
+	cmp	qword [rax],	STATIC_EMPTY
+	je	.end	; tak, zignoruj pakiet
+
+	; prośba o nawiązanie połączenia?
+	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.flags],	KERNEL_NETWORK_FRAME_TCP_FLAGS_syn
+	je	kernel_network_tcp_syn	; tak
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rax
+
+	; usuń kod błędu z stosu
+	add	rsp,	STATIC_QWORD_SIZE_byte
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do pakietu
+kernel_network_tcp_syn:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; przeszukaj stos TCP
+	mov	rcx,	(KERNEL_NETWORK_STACK_SIZE_page << KERNEL_PAGE_SIZE_shift) / KERNEL_NETWORK_STRUCTURE_TCP_STACK.SIZE
+	mov	rdi,	qword [kernel_network_stack_address]
+
+.search:
+	; za wolnym miejscem
+	lock	bts word [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.status],	KERNEL_NETWORK_STACK_FLAG_busy
+	jnc	.found	; znaleziono
+
+	; przesuń wskaźnik na następny wpis połączenia
+	add	rdi,	KERNEL_NETWORK_STRUCTURE_TCP_STACK.SIZE
+
+	; przeszukano cały stos TCP?
+	dec	rcx
+	jnz	.search	; nie, szukaj dalej
+
+	; brak miejsca na zarejestrowanie nowego połączenia
+	jmp	.end
+
+.found:
+	;-----------------------------------------------------------------------
+	; zarejestruj połączenie na stosie
+	;-----------------------------------------------------------------------
+
+	; oblicz względną pozycję ramki TCP
+	movzx	ecx,	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.version_and_ihl]
+	and	cl,	KERNEL_NETWORK_FRAME_IP_HEADER_LENGTH_mask
+	shl	cl,	STATIC_MULTIPLE_BY_4_shift
+
+	; zamień na adres względny ramki TCP
+	add	ecx,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE
+
+	;-----------------------------------------------------------------------
+
+	; zachowaj numer portu usługi
+	mov	ax,	word [rsi + rcx + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.port_target]
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.host_port],	ax
+
+	; zachowaj numer portu nadawcy
+	mov	ax,	word [rsi + rcx + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.port_source]
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.source_port],	ax
+
+	; zachowaj numer sekwencji nadawcy
+	mov	eax,	dword [rsi + rcx + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.sequence]
+	bswap	eax	; zachowaj w formacie Little-Endian
+	inc	eax	; potwierdź otrzymanie chęci nawiązania połączenia
+	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.source_sequence],	eax
+
+	; zachowaj adres MAC nadawcy
+	mov	rcx,	qword [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.source]
+	mov	qword [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.source_mac],	rcx
+
+	; zachowaj adres IPv4 nadawcy
+	mov	ecx,	dword [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.source_address]
+	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.source_ipv4],	ecx
+
+	;-----------------------------------------------------------------------
+
+	; nasz identyfikator
+	mov	word [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.identification],	STATIC_EMPTY
+
+	; nasz numer sekwencji
+	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.sequence],	STATIC_EMPTY
+
+	; domyślny rozmiar okna
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.window_size],	KERNEL_NETWORK_FRAME_TCP_WINDOW_SIZE_default
+
+	; oczekuj danego numeru sekwencji
+	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.sequence_request],	eax
+
+	;-----------------------------------------------------------------------
+
+	; akceptuj połączenie
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags],	KERNEL_NETWORK_FRAME_TCP_FLAGS_syn | KERNEL_NETWORK_FRAME_TCP_FLAGS_ack
+
+	;-----------------------------------------------------------------------
+	; połączenie zarejestrowane
+	;-----------------------------------------------------------------------
+	mov	rsi,	rdi
+
+	;-----------------------------------------------------------------------
+	; wyślij odpowiedź
+	;-----------------------------------------------------------------------
+
+	; przygotuj miejsce na odpowiedź
+	call	kernel_memory_alloc_page
+	jc	.error
+
+	; spakuj dane ramki TCP
+	mov	bl,	(KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE >> STATIC_DIVIDE_BY_4_shift) << STATIC_MOVE_AL_HALF_TO_HIGH_shift
+	mov	ecx,	KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE
+	call	kernel_network_tcp_wrap
+
+	; wyślij pakiet
+	mov	ax,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE + STATIC_DWORD_SIZE_byte
+	call	driver_nic_i82540em_transfer
+
+	jmp	.end
+
+.error:
+	; wyrejestruj połączenie
+	mov	byte [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.status],	STATIC_EMPTY
 
 .end:
 	; przywróć oryginalne rejestry
 	pop	rdi
+	pop	rsi
+	pop	rcx
+
+	; powrót z procedury
+	jmp	kernel_network_tcp.end
+
+;===============================================================================
+; wejście:
+;	bl - rozmiar nagłówka TCP
+;	ecx - rozmiar ramki TCP w Bajtach
+;	rsi - wskaźnik do właściwości połączenia
+;	rdi - wskaźnik do przestrzeni pakietu do wysłania
+kernel_network_tcp_wrap:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rcx
+	push	rdi
+
+	; ustaw port źródłowy(usługi) i docelowy
+	mov	ax,	word [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.host_port]
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.port_source],	ax
+	mov	ax,	word [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.source_port]
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.port_target],	ax
+
+	; nasz numer sekwencji
+	mov	eax,	dword [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.sequence]
+	bswap	eax	; zamień na Big-Endian
+	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.sequence],	eax
+
+	; numer sekwencji oczekiwany przez adresata
+	mov	eax,	dword [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.source_sequence]
+	bswap	eax	; zamień na Big-Endian
+	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.acknowledgement],	eax
+
+	; rozmiar nagłówka ramki TCP
+	mov	byte [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.header_length],	bl
+
+	; zwróć aktualny stan flag
+	mov	al,	byte [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags]
+	mov	byte [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.flags],	al
+
+	; rozmiar okna
+	mov	ax,	word [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.window_size]
+	rol	ax,	STATIC_REPLACE_AL_WITH_HIGH_shift	; zamień na Big-Endian
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.window_size],	ax
+
+	; wyczyść sumę kontrolną i pole urgent pointer
+	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.checksum_and_urgent_pointer],	STATIC_EMPTY
+
+	; konfiguruj pseudo nagłówek TCP
+	call	kernel_network_tcp_pseudo_header
+
+	; suma kontrolna ramki TCP
+	shr	ecx,	STATIC_DIVIDE_BY_2_shift	; zamień na słowa
+	add	rdi,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE
+	call	kernel_network_checksum
+	rol	ax,	STATIC_REPLACE_AL_WITH_HIGH_shift	; zamień na Big-Endian
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.checksum],	ax
+
+	; spakuj dane ramki IP
+	mov	rax,	qword [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.source_mac]
+	mov	bl,	KERNEL_NETWORK_FRAME_IP_PROTOCOL_TCP
+	shl	ecx,	STATIC_MULTIPLE_BY_2_shift	; zamień na Bajty
+	sub	rdi,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE ; cofnij wskaźnik na przestrzeń pakietu do wysłania
+	call	kernel_network_ip_wrap
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rcx
+	pop	rbx
 	pop	rax
 
 	; powrót z procedury
@@ -205,10 +429,122 @@ kernel_network_ip_tcp:
 
 ;===============================================================================
 ; wejście:
+;	rax - adres MAC odbiorcy
+;	bl - typ protokołu
+;	cx - rozmiar danych w Bajtach
+;	rsi - wskaźnik do właściwości połączenia
+;	rdi - wskaźnik do przestrzeni pakietu do wysłania
+kernel_network_ip_wrap:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rax
+
+	; wersja IP
+	mov	byte [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.version_and_ihl],	KERNEL_NETWORK_FRAME_IP_VERSION_4 | KERNEL_NETWORK_FRAME_IP_HEADER_LENGTH_default
+
+	; wyczyść opcje niewykorzystywane
+	mov	byte [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.dscp_and_ecn],	STATIC_EMPTY
+
+	; ustaw rozmiar ramki IP
+	add	cx,	KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE
+	rol	cx,	STATIC_REPLACE_AL_WITH_HIGH_shift
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.total_length],	cx
+
+	; ustaw identyfikator
+	mov	ax,	word [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.identification]
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.identification],	ax
+
+	; ustaw domyślne flagi
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.f_and_f],	KERNEL_NETWORK_FRAME_IP_F_AND_F_do_not_fragment
+
+	; standardowy rozmiar TTL
+	mov	byte [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.ttl],	KERNEL_NETWORK_FRAME_IP_TTL_default
+
+	; typ protokołu
+	mov	byte [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.protocol],	bl
+
+	; wyczyść sumę kontrolną
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.checksum],	STATIC_EMPTY
+
+	; ustaw nadawcę (ja)
+	mov	eax,	dword [driver_nic_i82540em_ipv4_address]
+	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.source_address],	eax
+
+	; ustaw adresata
+	mov	eax,	dword [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.source_ipv4]
+	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.destination_address],	eax
+
+	; ustaw sumę kontrolną ramki IP
+	xor	eax,	eax
+	mov	ecx,	KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE >> STATIC_DIVIDE_BY_2_shift
+	add	rdi,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE
+	call	kernel_network_checksum
+	rol	ax,	STATIC_REPLACE_AL_WITH_HIGH_shift	; zamień na Big-Endian
+	sub	rdi,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.checksum],	ax
+
+	; spakuj ramkę IP
+	pop	rax
+	mov	cx,	KERNEL_NETWORK_FRAME_ETHERNET_TYPE_ip
+	call	kernel_network_ethernet_wrap
+
+	; przywróć oryginalne rejestry
+	pop	rcx
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	ecx - rozmiar ramki TCP w Bajtach
+;	rsi - wskaźnik do właściwości połączenia
+;	rdi - wskaźnik do przestrzeni pakietu do wysłania
+; wyjście:
+;	eax - suma kontrolna pseudo nagłówka
+kernel_network_tcp_pseudo_header:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rdi
+
+	; konfiguruj pseudo nagłówek
+
+	; nadawca
+	mov	eax,	dword [driver_nic_i82540em_ipv4_address]
+	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE - KERNEL_NETWORK_STRUCTURE_FRAME_TCP_PSEUDO_HEADER.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP_PSEUDO_HEADER.source_ipv4],	eax
+
+	; adresat
+	mov	eax,	dword [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.source_ipv4]
+	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE - KERNEL_NETWORK_STRUCTURE_FRAME_TCP_PSEUDO_HEADER.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP_PSEUDO_HEADER.target_ipv4],	eax
+
+	; wyczyść wartość zarezerwowaną
+	mov	byte [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE - KERNEL_NETWORK_STRUCTURE_FRAME_TCP_PSEUDO_HEADER.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP_PSEUDO_HEADER.reserved],	STATIC_EMPTY
+
+	; protokół
+	mov	byte [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE - KERNEL_NETWORK_STRUCTURE_FRAME_TCP_PSEUDO_HEADER.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP_PSEUDO_HEADER.protocol],	KERNEL_NETWORK_FRAME_TCP_PROTOCOL_default
+
+	; rozmiar ramki TCP
+	rol	cx,	STATIC_REPLACE_AL_WITH_HIGH_shift	; zamień na Big-Endian
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE - KERNEL_NETWORK_STRUCTURE_FRAME_TCP_PSEUDO_HEADER.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP_PSEUDO_HEADER.segment_length],	cx
+
+	; oblicz sumę kontrolną pseudo nagłówka
+	xor	eax,	eax
+	mov	ecx,	KERNEL_NETWORK_STRUCTURE_FRAME_TCP_PSEUDO_HEADER.SIZE >> STATIC_DIVIDE_BY_2_shift
+	add	rdi,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE - KERNEL_NETWORK_STRUCTURE_FRAME_TCP_PSEUDO_HEADER.SIZE
+	call	kernel_network_checksum_part
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rcx
+
+	; powrót z podprocedury
+	ret
+
+;===============================================================================
+; wejście:
 ;	cx - numer portu
 ; wyjście:
 ;	Flags CF, jeśli zajęty
-kernel_network_ip_tcp_port_assign:
+kernel_network_tcp_port_assign:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rcx
@@ -246,9 +582,14 @@ kernel_network_ip_tcp_port_assign:
 	ret
 
 ;===============================================================================
+; THREAD
+;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do pakietu
 kernel_network:
+	; upewnij się by nie korzystać z stron zarezerwowanych
+	xor	ebp,	ebp
+
 	; protokół ARP?
 	cmp	word [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.type],	KERNEL_NETWORK_FRAME_ETHERNET_TYPE_arp
 	je	kernel_network_arp	; tak
@@ -260,8 +601,12 @@ kernel_network:
 	; protokół nieobsługiwany
 
 .end:
-	; powrót z procedury
-	ret
+	; zwolnij przestrzeń pakietu
+	mov	rdi,	rsi
+	call	kernel_memory_release_page
+
+	; pobierz wskaźnik do wątku w kolejce zadań
+	jmp	kernel_task_kill_me
 
 ;===============================================================================
 ; wejście:
@@ -343,11 +688,11 @@ kernel_network_arp:
 kernel_network_ip:
 	; protokół ICMP?
 	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.protocol],	KERNEL_NETWORK_FRAME_IP_PROTOCOL_ICMP
-	je	kernel_network_ip_icmp	; tak
+	je	kernel_network_icmp	; tak
 
 	; protokół TCP?
 	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.protocol],	KERNEL_NETWORK_FRAME_IP_PROTOCOL_TCP
-	je	kernel_network_ip_tcp	; tak
+	je	kernel_network_tcp	; tak
 
 	; powrót z procedury
 	jmp	kernel_network.end
@@ -355,7 +700,7 @@ kernel_network_ip:
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do pakietu przychodzącego
-kernel_network_ip_icmp:
+kernel_network_icmp:
 	; zachowaj oryginalne rejestry
 	push	rsi
 
@@ -486,6 +831,43 @@ kernel_network_checksum:
 
 	; zwróć wynik w odwrotnej notacji
 	not	ax
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rcx
+	pop	rbx
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rax - pusty lub kontynuacja poprzedniej sumy kontrolnej
+;	ecx - rozmiar przestrzeni w słowach (po 2 Bajty)
+;	rdi - wskaźnik do przeliczanej przestrzeni
+; wyjście:
+;	ax - suma kontrolna (Little-Endian)
+kernel_network_checksum_part:
+	; zachowaj oryginalne rejestry
+	push	rbx
+	push	rcx
+	push	rdi
+
+	xor	ebx,	ebx
+
+.calculate:
+	; pobierz 2 Bajty z przeliczanej przestrzeni
+	mov	bx,	word [rdi]
+	rol	bx,	STATIC_REPLACE_AL_WITH_HIGH_shift	; Big-Endian
+
+	; dodaj do akumulatora
+	add	rax,	rbx
+
+	; przesuń wskaźnik na następny fragment
+	add	rdi,	STATIC_WORD_SIZE_byte
+
+	; przetwórz pozostałą przestrzeń
+	loop	.calculate
 
 	; przywróć oryginalne rejestry
 	pop	rdi

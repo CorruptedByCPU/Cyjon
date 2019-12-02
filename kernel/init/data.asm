@@ -27,3 +27,9 @@ kernel_init_smp_semaphore		db	STATIC_FALSE
 kernel_init_ap_count			db	STATIC_EMPTY
 
 kernel_init_apic_id_highest		db	STATIC_EMPTY
+
+kernel_init_services_list:
+	dq	tresher
+
+	; koniec usług
+	dq	STATIC_EMPTY

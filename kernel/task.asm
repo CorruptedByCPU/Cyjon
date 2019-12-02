@@ -16,7 +16,7 @@ KERNEL_TASK_EFLAGS_default		equ	KERNEL_TASK_EFLAGS_if
 
 KERNEL_TASK_FLAG_active			equ	0000000000000001b
 KERNEL_TASK_FLAG_closed			equ	0000000000000010b
-KERNEL_TASK_FLAG_daemon			equ	0000000000000100b
+KERNEL_TASK_FLAG_service		equ	0000000000000100b
 KERNEL_TASK_FLAG_processing		equ	0000000000001000b
 KERNEL_TASK_FLAG_secured		equ	0000000000010000b
 KERNEL_TASK_FLAG_thread			equ	0000000000100000b
@@ -212,7 +212,7 @@ kernel_task:
 
 ;===============================================================================
 ; wejście:
-;	rbx - flagi zadania
+;	bx - flagi zadania
 ;	r11 - adres tablicy PML4 zadania
 ; wyjście:
 ;	Flaga CF, jeśli brak wolnego miejsca w kolejce
@@ -478,3 +478,14 @@ kernel_task_active:
 
 	; powrót z procedury
 	ret
+
+;===============================================================================
+kernel_task_kill_me:
+	; pobierz wskaźnik do wątku w kolejce zadań
+	call	kernel_task_active
+
+	; oznacz wątek jako zakończony
+	or	word [rdi + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_closed
+
+	; zatrzymaj dalsze wykonywanie kodu wątku
+	jmp	$

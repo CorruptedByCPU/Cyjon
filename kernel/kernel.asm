@@ -46,12 +46,14 @@ kernel:
 	%include	"kernel/idt.asm"
 	%include	"kernel/task.asm"
 	%include	"kernel/network.asm"
+	%include	"kernel/thread.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/ps2.asm"
 	%include	"kernel/driver/pci.asm"
 	%include	"kernel/driver/network/i82540em.asm"
 	;-----------------------------------------------------------------------
+	%include	"kernel/service/tresher.asm"
 	%include	"kernel/service/shell.asm"
 	%include	"kernel/service/http.asm"
 	;-----------------------------------------------------------------------

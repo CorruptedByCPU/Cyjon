@@ -206,6 +206,35 @@ driver_nic_i82540em_tx_count			dq	STATIC_EMPTY
 
 ;===============================================================================
 ; wejście:
+;	rdi - wskaźnik do nowej przestrzeni pakietów przychodzących
+; wyjście:
+;	Flaga CF - jeśli błąd
+driver_nic_i82540em_rx_release:
+	; zachowaj oryginalny rejestr
+	push	rax
+	push	rdi
+
+	; ustaw wskaźnik na pierwszy deskryptor
+	mov	rax,	qword [driver_nic_i82540em_rx_base_address]
+
+	; przygotuj nową przestrzeń
+	call	kernel_memory_alloc_page
+	jc	.end	; brak wolnej przestrzeni
+
+	; ustaw nową przestrzeń
+	mov	qword [rax + DRIVER_NIC_I82540EM_TDESC_BASE_ADDRESS],	rdi
+
+.end:
+	; przywróć oryginalny rejestr
+	pop	rdi
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+
+;===============================================================================
+; wejście:
 ;	ax - rozmiar pakietu do wysłania
 ;	rdi - wskaźnik do pakietu
 driver_nic_i82540em_transfer:
@@ -220,7 +249,7 @@ driver_nic_i82540em_transfer:
 	mov	qword [rsi + DRIVER_NIC_I82540EM_TDESC_BASE_ADDRESS],	rdi
 
 	; ustaw rozmiar pakietu do wysłania wraz z flagami
-	movzx	eax,	word [rsp]
+	and	eax,	STATIC_WORD_mask
 	add	rax,	DRIVER_NIC_I82540EM_TDESC_CMD_RS
 	or	rax,	DRIVER_NIC_I82540EM_TDESC_CMD_IFCS
 	or	rax,	DRIVER_NIC_I82540EM_TDESC_CMD_EOP
@@ -312,8 +341,12 @@ driver_nic_i82540em_irq:
 	jne	.receive_end	; nie
 
 .receive:
-	; obsłuż pakiet
-	call	kernel_network
+	; zwolnij przestrzeń pakietu dla wątku
+	call	driver_nic_i82540em_rx_release
+
+	; obsłuż pakiet w nowym wątku
+	mov	rdi,	kernel_network
+	call	kernel_thread_exec
 
 .receive_end:
 	; poinformuj kontroler o zakończeniu przetwarzania pakietu

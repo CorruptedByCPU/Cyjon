@@ -28,4 +28,12 @@ kernel_init_network:
 	call	kernel_page_drain
 	mov	qword [kernel_network_port_table],	rdi
 
+	; przygotuj miejsce pod stos TCP/IP
+	call	kernel_memory_alloc_page
+	jc	kernel_panic	; brak miejsca
+
+	; wyczyść tablicę i zapamiętaj wskaźnik
+	call	kernel_page_drain
+	mov	qword [kernel_network_stack_address],	rdi
+
 .end:

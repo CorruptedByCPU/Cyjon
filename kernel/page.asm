@@ -782,3 +782,94 @@ kernel_page_secure:
 
 	; powrót z procedury
 	ret
+
+;===============================================================================
+; wejście:
+;	rbx - poziom tablicy PML rozpoczynający
+;	rcx - ilość rekordów do zwolnienia z tablicy PML4
+;	rdi - wskaźnik do pierwszego rekordu tablicy PML4
+kernel_page_release_pml:
+	; wejdź do następnego poziomu tablicy PML
+	dec	rbx
+	mov	rcx,	KERNEL_PAGE_RECORDS_amount	; ilość rekordów do zwolnienia w następnym poziomie tablicy PML
+
+	; aktualna tablica PML1?
+	cmp	rbx,	0x01
+	je	.continue	; jeśli tak, kontynuuj
+
+.loop:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rdi
+
+	; sprawdź czy rekord jest pusty
+	cmp	qword [rdi],	STATIC_EMPTY
+	je	.empty	; tak, pomiń
+
+	; pobierz adres tablicy następnego poziomu tablicy PML
+	mov	rdi,	qword [rdi]
+	and	di,	KERNEL_PAGE_mask	; usuń flagi z adres następnej tablicy PML
+
+	; zapamiętaj adres nowej tablicy PML
+	push	rdi
+
+	; rekurencja, do czasu wejścia do tablicy PML1
+	call	kernel_page_release_pml
+
+	; przywróć adres tablicy PML aktualnie przetwarzanego rekordu
+	pop	rdi
+
+	; zwolnij tablicę z stronicowania
+	call	kernel_memory_release_page
+
+	; strona odzyskana z tablic stronicowania
+	dec	qword [kernel_page_paged_count]
+
+	; wróć do poprzedniego poziomu tablicy PML
+	inc	rbx
+
+.empty:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rcx
+
+	; następny rekord aktualnej tablicy PML
+	add	rdi,	STATIC_QWORD_SIZE_byte
+
+	; przeszukaj kolejne rekordy
+	dec	rcx
+	jnz	.loop
+
+.end:
+	; powrót z procedury
+	ret
+
+.continue:
+	; sprawdź czy rekord jest pusty
+	cmp	qword [rdi],	STATIC_EMPTY
+	jne	.after	; jeśli nie, zwolnij przestrzeń opisywaną przez rekord
+
+.next:
+	add	rdi,	STATIC_QWORD_SIZE_byte	; następny rekord
+	dec	rcx
+	jnz	.continue
+
+	; powrót z procedury
+	ret
+
+.after:
+	; zachowaj oryginalny rejestr
+	push	rdi
+
+	; pobierz adres przestrzeni do zwolnienia
+	mov	rdi,	qword [rdi]
+	and	di,	KERNEL_PAGE_mask	; usuń flagi
+
+	; wyczyść i zwolnij przestrzeń
+	call	kernel_memory_release_page
+
+	;przywróć oryginalny rejestr
+	pop	rdi
+
+	; przetwórz następny rekord
+	jmp	.next

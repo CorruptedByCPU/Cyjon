@@ -98,6 +98,11 @@ kernel_init_long_mode:
 	%include	"kernel/init/task.asm"
 
 	;-----------------------------------------------------------------------
+	; dodaj do kolejki zadań zestaw usług zarządzających środowiskiem jądra systemu
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/services.asm"
+
+	;-----------------------------------------------------------------------
 	; konfiguruj wew. przerwanie lokalnego kontrolera APIC (przełączanie zadań w kolejce)
 	;-----------------------------------------------------------------------
 	call	kernel_init_apic
