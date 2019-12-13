@@ -35,6 +35,7 @@ kernel:
 	;-----------------------------------------------------------------------
 	%include	"kernel/macro/close.asm"
 	%include	"kernel/macro/apic.asm"
+	%include	"kernel/macro/debug.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/panic.asm"
 	%include	"kernel/page.asm"

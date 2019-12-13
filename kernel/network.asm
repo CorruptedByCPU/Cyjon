@@ -137,18 +137,18 @@ struc	KERNEL_NETWORK_STRUCTURE_FRAME_TCP_PSEUDO_HEADER
 endstruc
 
 struc	KERNEL_NETWORK_STRUCTURE_TCP_STACK
-	.source_mac						resb	8
-	.source_ipv4						resb	4
-	.source_sequence					resb	4
-	.sequence						resb	4
-	.acknowledgement					resb	4
-	.window_size						resb	2
-	.source_port						resb	2
-	.host_port						resb	2
-	.status							resb	2
-	.flags							resb	2
-	.sequence_request					resb	4
-	.identification						resb	2
+	.source_mac				resb	8
+	.source_ipv4				resb	4
+	.source_sequence			resb	4
+	.host_sequence				resb	4
+	.request_acknowledgement		resb	4
+	.window_size				resb	2
+	.source_port				resb	2
+	.host_port				resb	2
+	.status					resb	2
+	.flags					resb	2
+	.flags_request				resb	2
+	.identification				resb	2
 	.SIZE:
 endstruc
 
@@ -202,8 +202,50 @@ kernel_network_port_table			dq	STATIC_EMPTY
 kernel_network_stack_address			dq	STATIC_EMPTY
 
 ;===============================================================================
+; THREAD
+;===============================================================================
 ; wejście:
-;	rsi - wskaźnik do pakietu
+;	rsi - wskaźnik do pakietu przychodzącego
+kernel_network:
+	; upewnij się by nie korzystać z stron zarezerwowanych
+	xor	ebp,	ebp
+
+	; protokół ARP?
+	cmp	word [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.type],	KERNEL_NETWORK_FRAME_ETHERNET_TYPE_arp
+	je	kernel_network_arp	; tak
+
+	; protokół IP?
+	cmp	word [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.type],	KERNEL_NETWORK_FRAME_ETHERNET_TYPE_ip
+	je	kernel_network_ip	; tak
+
+	; protokół nieobsługiwany
+
+.end:
+	; zwolnij przestrzeń pakietu
+	mov	rdi,	rsi
+	call	kernel_memory_release_page
+
+	; zakończ wątek
+	jmp	kernel_task_kill_me
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do pakietu przychodzącego
+kernel_network_ip:
+	; protokół ICMP?
+	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.protocol],	KERNEL_NETWORK_FRAME_IP_PROTOCOL_ICMP
+	je	kernel_network_icmp	; tak
+
+	; protokół TCP?
+	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.protocol],	KERNEL_NETWORK_FRAME_IP_PROTOCOL_TCP
+	je	kernel_network_tcp	; tak
+
+	; powrót z procedury
+	jmp	kernel_network.end
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do pakietu przychodzącego
 kernel_network_tcp:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -226,6 +268,18 @@ kernel_network_tcp:
 	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.flags],	KERNEL_NETWORK_FRAME_TCP_FLAGS_syn
 	je	kernel_network_tcp_syn	; tak
 
+	; odszukaj połączenie dotyczące pakietu
+	call	kernel_network_tcp_find
+	jc	.end	; brak nawiązanego połączenia z danym pakietem
+
+	; akceptacja wysłanych danych?
+	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.flags],	KERNEL_NETWORK_FRAME_TCP_FLAGS_ack
+	je	kernel_network_tcp_ack	; tak
+
+	; zakończenie połączenia?
+	test	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.flags],	KERNEL_NETWORK_FRAME_TCP_FLAGS_fin
+	jnz	kernel_network_tcp_fin	; tak
+
 .end:
 	; przywróć oryginalne rejestry
 	pop	rax
@@ -234,13 +288,205 @@ kernel_network_tcp:
 	add	rsp,	STATIC_QWORD_SIZE_byte
 
 	; powrót z procedury
-	ret
+	jmp	kernel_network.end
+
 
 ;===============================================================================
 ; wejście:
-;	rsi - wskaźnik do pakietu
+;	rbx - rozmiar nagłówka IP
+;	rsi - wskaźnik do pakietu przychodzącego
+;	rdi - wskaźnik do połączenia na stosie
+kernel_network_tcp_fin:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; ustaw wskaźnik do połączenia w rejestrze źródłowym
+	xchg	rsi,	rdi
+
+	; usuń flagę ACK nawet, jeśli nie była oczekiwana
+	and	byte [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags_request],	~KERNEL_NETWORK_FRAME_TCP_FLAGS_ack
+
+	;-----------------------------------------------------------------------
+
+	; zachowaj numer sekwencji nadawcy
+	mov	eax,	dword [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + rbx + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.sequence]
+	bswap	eax	; zachowaj w formacie Little-Endian
+	inc	eax	; potwierdź otrzymanie chęci zakończenia połączenia
+	mov	dword [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.source_sequence],	eax
+
+	;-----------------------------------------------------------------------
+
+	; nasz numer sekwencji
+	mov	eax,	dword [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.request_acknowledgement]
+	inc	eax
+	mov	dword [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.host_sequence],	eax
+
+	; nasz identyfikator
+	inc	eax
+	mov	dword [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.request_acknowledgement],	eax
+
+	;-----------------------------------------------------------------------
+
+	; zamknięcie połączenia
+	mov	word [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags],	KERNEL_NETWORK_FRAME_TCP_FLAGS_ack | KERNEL_NETWORK_FRAME_TCP_FLAGS_fin
+
+	; oczekuj flagi ACK w odpowiedzi
+	mov	word [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags_request],	KERNEL_NETWORK_FRAME_TCP_FLAGS_ack
+
+	;-----------------------------------------------------------------------
+	; wyślij odpowiedź
+	;-----------------------------------------------------------------------
+
+	; przygotuj miejsce na odpowiedź
+	call	kernel_memory_alloc_page
+	jc	.error
+
+	; spakuj dane ramki TCP
+	mov	bl,	(KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE >> STATIC_DIVIDE_BY_4_shift) << STATIC_MOVE_AL_HALF_TO_HIGH_shift
+	mov	ecx,	KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE
+	call	kernel_network_tcp_wrap
+
+	; wyślij pakiet
+	mov	ax,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE + STATIC_DWORD_SIZE_byte
+	call	driver_nic_i82540em_transfer
+
+	; połączenie zatwierdzone
+	jmp	.end
+
+.error:
+	; wyrejestruj połączenie
+	mov	byte [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.status],	STATIC_EMPTY
+
+.end:
+	; przywóć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rcx
+	pop	rbx
+	pop	rax
+
+	; powrót z procedury
+	jmp	kernel_network_tcp.end
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do pakietu przychodzącego
+;	rdi - wskaźnik do połączenia na stosie
+kernel_network_tcp_ack:
+	; zachowaj oryginalne rejestry
+	push	rsi
+	push	rdi
+
+	; oczekiwaliśmy potwierdzenia?
+	test	word [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags_request],	KERNEL_NETWORK_FRAME_TCP_FLAGS_ack
+	jz	.end	; nie
+
+	; usuń oczekiwaną flagę z stosu
+	and	word [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags_request],	~KERNEL_NETWORK_FRAME_TCP_FLAGS_ack
+
+	; połączenie zostało zakończone?
+	test	word [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags],	KERNEL_NETWORK_FRAME_TCP_FLAGS_fin | KERNEL_NETWORK_FRAME_TCP_FLAGS_ack
+	jz	.end	; nie
+
+	; zwolnij wpis na stosie dotyczący połączenia
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags],	STATIC_EMPTY
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+
+	; powrót z procedury
+	jmp	kernel_network_tcp.end
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do pakietu przychodzącego
+; wyjście:
+;	rbx - rozmiar nagłówka ramki IP
+;	rdi - wskaźnik do połączenia
+kernel_network_tcp_find:
+ 	; zachowaj oryginalne rejestry
+ 	push	rax
+ 	push	rcx
+	push	rbx
+ 	push	rdi
+
+	; rozmiar nagłówka ramki IP
+	movzx	ebx,	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.version_and_ihl]
+	and	bl,	KERNEL_NETWORK_FRAME_IP_HEADER_LENGTH_mask
+	shl	bl,	STATIC_MULTIPLE_BY_4_shift
+
+	; przeszukaj stos TCP
+	mov	rcx,	(KERNEL_NETWORK_STACK_SIZE_page << KERNEL_PAGE_SIZE_shift) / KERNEL_NETWORK_STRUCTURE_TCP_STACK.SIZE
+	mov	rdi,	qword [kernel_network_stack_address]
+
+.loop:
+	; adres MAC klienta, poprawny?
+	mov	eax,	dword [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.source]
+	rol	rax,	STATIC_REPLACE_EAX_WITH_HIGH_shift
+	mov	ax,	word [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.source + KERNEL_NETWORK_STRUCTURE_MAC.4]
+	ror	rax,	STATIC_REPLACE_EAX_WITH_HIGH_shift
+	cmp	qword [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.source_mac],	rax
+	jne	.next	; nie, następny wpis
+
+	; adres IPv4 klienta, poprawny?
+	mov	eax,	dword [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.source_ipv4]
+	cmp	dword [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.source_address],	eax
+	jne	.next	; nie, następny wpis
+
+	; port docelowy poprawny?
+	mov	ax,	word [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.host_port]
+	cmp	word [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + rbx + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.port_target],	ax
+	jne	.next	; nie, następny wpis
+
+	; port źródłowy, porawny?
+	mov	ax,	word [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.source_port]
+	cmp	word [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + rbx + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.port_source],	ax
+	je	.found	; nie, następny wpis
+
+.next:
+	; przesuń wskaźnik na następny wpis
+	add	rdi,	KERNEL_NETWORK_STRUCTURE_TCP_STACK.SIZE
+
+	; koniec stosu?
+	dec	rcx
+	jnz	.loop	; nie
+
+	; brak zarejestrowanego połączenia dla pakietu przychodzącego
+ 	stc
+
+ 	; koniec procedury
+ 	jmp	.end
+
+.found:
+	; zwróć rozmiar nagłówka IPv4
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rbx
+
+	; zwróć wskaźnik do połączenia
+	mov	qword [rsp],	rdi
+
+.end:
+ 	; przywróć oryginalne rejestry
+ 	pop	rdi
+	pop	rbx
+ 	pop	rcx
+ 	pop	rax
+
+ 	; powrót z procedury
+ 	ret
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do pakietu przychodzącego
 kernel_network_tcp_syn:
 	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
 	push	rcx
 	push	rsi
 	push	rdi
@@ -295,6 +541,8 @@ kernel_network_tcp_syn:
 
 	; zachowaj adres MAC nadawcy
 	mov	rcx,	qword [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.source]
+	shl	rcx,	STATIC_MOVE_AX_TO_HIGH_shift
+	shr	rcx,	STATIC_MOVE_HIGH_TO_AX_shift
 	mov	qword [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.source_mac],	rcx
 
 	; zachowaj adres IPv4 nadawcy
@@ -304,21 +552,21 @@ kernel_network_tcp_syn:
 	;-----------------------------------------------------------------------
 
 	; nasz identyfikator
-	mov	word [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.identification],	STATIC_EMPTY
+	mov	word [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.request_acknowledgement],	STATIC_EMPTY + 0x01
 
 	; nasz numer sekwencji
-	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.sequence],	STATIC_EMPTY
+	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.host_sequence],	STATIC_EMPTY
 
 	; domyślny rozmiar okna
 	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.window_size],	KERNEL_NETWORK_FRAME_TCP_WINDOW_SIZE_default
-
-	; oczekuj danego numeru sekwencji
-	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.sequence_request],	eax
 
 	;-----------------------------------------------------------------------
 
 	; akceptuj połączenie
 	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags],	KERNEL_NETWORK_FRAME_TCP_FLAGS_syn | KERNEL_NETWORK_FRAME_TCP_FLAGS_ack
+
+	; oczekuj flagi ACK w odpowiedzi
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags_request],	KERNEL_NETWORK_FRAME_TCP_FLAGS_ack
 
 	;-----------------------------------------------------------------------
 	; połączenie zarejestrowane
@@ -342,6 +590,7 @@ kernel_network_tcp_syn:
 	mov	ax,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE + STATIC_DWORD_SIZE_byte
 	call	driver_nic_i82540em_transfer
 
+	; połączenie zatwierdzone
 	jmp	.end
 
 .error:
@@ -353,6 +602,8 @@ kernel_network_tcp_syn:
 	pop	rdi
 	pop	rsi
 	pop	rcx
+	pop	rbx
+	pop	rax
 
 	; powrót z procedury
 	jmp	kernel_network_tcp.end
@@ -377,7 +628,7 @@ kernel_network_tcp_wrap:
 	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.port_target],	ax
 
 	; nasz numer sekwencji
-	mov	eax,	dword [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.sequence]
+	mov	eax,	dword [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.host_sequence]
 	bswap	eax	; zamień na Big-Endian
 	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.sequence],	eax
 
@@ -582,33 +833,6 @@ kernel_network_tcp_port_assign:
 	ret
 
 ;===============================================================================
-; THREAD
-;===============================================================================
-; wejście:
-;	rsi - wskaźnik do pakietu
-kernel_network:
-	; upewnij się by nie korzystać z stron zarezerwowanych
-	xor	ebp,	ebp
-
-	; protokół ARP?
-	cmp	word [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.type],	KERNEL_NETWORK_FRAME_ETHERNET_TYPE_arp
-	je	kernel_network_arp	; tak
-
-	; protokół IP?
-	cmp	word [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.type],	KERNEL_NETWORK_FRAME_ETHERNET_TYPE_ip
-	je	kernel_network_ip	; tak
-
-	; protokół nieobsługiwany
-
-.end:
-	; zwolnij przestrzeń pakietu
-	mov	rdi,	rsi
-	call	kernel_memory_release_page
-
-	; pobierz wskaźnik do wątku w kolejce zadań
-	jmp	kernel_task_kill_me
-
-;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do pakietu przychodzącego
 kernel_network_arp:
@@ -678,21 +902,6 @@ kernel_network_arp:
 .omit:
 	; przywróć oryginalny rejestr
 	pop	rax
-
-	; powrót z procedury
-	jmp	kernel_network.end
-
-;===============================================================================
-; wejście:
-;	rsi - wskaźnik do pakietu przychodzącego
-kernel_network_ip:
-	; protokół ICMP?
-	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.protocol],	KERNEL_NETWORK_FRAME_IP_PROTOCOL_ICMP
-	je	kernel_network_icmp	; tak
-
-	; protokół TCP?
-	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.protocol],	KERNEL_NETWORK_FRAME_IP_PROTOCOL_TCP
-	je	kernel_network_tcp	; tak
 
 	; powrót z procedury
 	jmp	kernel_network.end

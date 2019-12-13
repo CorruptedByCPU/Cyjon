@@ -106,6 +106,12 @@ kernel_idt_exception_default:
 	; wróć do zadania
 	iretq
 
+	;===============
+	; DEBUG SYMBOL =
+	;===============
+	macro_debug	"kernel_idt_exception_default"
+	;-----------------------------------------------------------------------
+
 ;===============================================================================
 ; domyślna obsługa przerwania sprzętowego
 kernel_idt_interrupt_hardware:
