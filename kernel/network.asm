@@ -2,11 +2,17 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
+KERNEL_NETWORK_RECEIVE_PUSH_WAIT_limit		equ	3
+
 KERNEL_NETWORK_MAC_mask				equ	0x0000FFFFFFFFFFFF
 
 KERNEL_NETWORK_PORT_SIZE_page			equ	0x01	; tablica przechowująca stan portów
-KERNEL_NETWORK_PORT_FLAG_empty			equ	0x00
-KERNEL_NETWORK_PORT_FLAG_ready			equ	0x01
+KERNEL_NETWORK_PORT_FLAG_empty			equ	000000001b
+KERNEL_NETWORK_PORT_FLAG_received		equ	000000010b
+KERNEL_NETWORK_PORT_FLAG_send			equ	000000100b
+KERNEL_NETWORK_PORT_FLAG_BIT_empty		equ	0
+KERNEL_NETWORK_PORT_FLAG_BIT_received		equ	1
+KERNEL_NETWORK_PORT_FLAG_BIT_send		equ	2
 
 KERNEL_NETWORK_STACK_SIZE_page			equ	0x01	; ilość stron przeznaczonych na stos
 KERNEL_NETWORK_STACK_FLAG_busy			equ	10000000b
@@ -152,6 +158,14 @@ struc	KERNEL_NETWORK_STRUCTURE_TCP_STACK
 	.SIZE:
 endstruc
 
+struc	KERNEL_NETWORK_STRUCTURE_PORT
+	.cr3_and_flags				resb	8
+	.tcp_connection				resb	8
+	.size					resb	8
+	.address				resb	8
+	.SIZE:
+endstruc
+
 kernel_network_rx_count				dq	STATIC_EMPTY
 kernel_network_tx_count				dq	STATIC_EMPTY
 
@@ -221,12 +235,24 @@ kernel_network:
 	; protokół nieobsługiwany
 
 .end:
+	; przestrzeń pakietu została przekazana do innego procesu?
+	test	rsi,	rsi
+	jz	.empty	; tak
+
 	; zwolnij przestrzeń pakietu
 	mov	rdi,	rsi
 	call	kernel_memory_release_page
 
+.empty:
 	; zakończ wątek
 	jmp	kernel_task_kill_me
+
+;===============================================================================
+; wejście:
+;	rbx - identyfikator portu
+;	rcx - rozmiar danych w Bajtach
+;	rsi - wskaźnik do przestrzeni danych
+kernel_network_tcp_port_send:
 
 ;===============================================================================
 ; wejście:
@@ -259,7 +285,7 @@ kernel_network_tcp:
 	jnb	.end	; nie, zignoruj pakiet
 
 	; port docelowy jest pusty?
-	shl	eax,	STATIC_MULTIPLE_BY_8_shift
+	shl	eax,	STATIC_MULTIPLE_BY_32_shift
 	add	rax,	qword [kernel_network_port_table]
 	cmp	qword [rax],	STATIC_EMPTY
 	je	.end	; tak, zignoruj pakiet
@@ -280,6 +306,10 @@ kernel_network_tcp:
 	test	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.flags],	KERNEL_NETWORK_FRAME_TCP_FLAGS_fin
 	jnz	kernel_network_tcp_fin	; tak
 
+	; przesłanie danych bezpośrednio do procesu?
+	test	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.flags],	KERNEL_NETWORK_FRAME_TCP_FLAGS_psh | KERNEL_NETWORK_FRAME_TCP_FLAGS_ack
+	jnz	kernel_network_tcp_psh_ack	; tak
+
 .end:
 	; przywróć oryginalne rejestry
 	pop	rax
@@ -290,6 +320,179 @@ kernel_network_tcp:
 	; powrót z procedury
 	jmp	kernel_network.end
 
+;===============================================================================
+; wejście:
+;	ax - flagi ramki TCP
+;	rbx - rozmiar nagłówka IP
+;	ecx - rozmiar danych w Bajtach do potwierdzenia
+;	rsi - wskaźnik do pakietu przychodzącego
+;	rdi - wskaźnik do połączenia na stosie
+;kernel_network_tcp_ack_send:
+;	; zachowaj oryginalne rejestry
+;	push	rax
+;	push	rbx
+;	push	rcx
+;	push	rsi
+;	push	rdi
+;
+;	; ustaw wskaźnik do połączenia w rejestrze źródłowym
+;	xchg	rsi,	rdi
+;
+;	; nie oczekujemy jakiejkolwiek odpowiedzi
+;	mov	byte [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags_request],	STATIC_EMPTY
+;
+;	;-----------------------------------------------------------------------
+;
+;	; pobierz numer sekwencji nadawcy
+;	mov	eax,	dword [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + rbx + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.sequence]
+;	bswap	eax	; zachowaj w formacie Little-Endian
+;
+;	; potwierdź otrzymanie X Bajtów danych
+;	add	eax,	ecx
+;
+;	; zachowaj numer sekwencji nadawcy
+;	mov	dword [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.source_sequence],	eax
+;
+;	;-----------------------------------------------------------------------
+;
+;	; potwierdzenie
+;	mov	word [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags],	KERNEL_NETWORK_FRAME_TCP_FLAGS_ack
+;
+;	;-----------------------------------------------------------------------
+;	; wyślij odpowiedź
+;	;-----------------------------------------------------------------------
+;
+;	; przygotuj miejsce na odpowiedź
+;	call	kernel_memory_alloc_page
+;	jc	.end
+;
+;	; spakuj dane ramki TCP
+;	mov	bl,	(KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE >> STATIC_DIVIDE_BY_4_shift) << STATIC_MOVE_AL_HALF_TO_HIGH_shift
+;	mov	ecx,	KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE
+;	call	kernel_network_tcp_wrap
+;
+;	; wyślij pakiet
+;	mov	ax,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE + STATIC_DWORD_SIZE_byte
+;	call	driver_nic_i82540em_transfer
+;
+;	; połączenie zatwierdzone
+;	jmp	.end
+;
+;.end:
+;	; przywóć oryginalne rejestry
+;	pop	rdi
+;	pop	rsi
+;	pop	rcx
+;	pop	rbx
+;	pop	rax
+;
+;	; powrót z procedury
+;	ret
+
+;===============================================================================
+; wejście:
+;	rbx - rozmiar nagłówka IP
+;	rsi - wskaźnik do pakietu przychodzącego
+;	rdi - wskaźnik do połączenia na stosie
+kernel_network_tcp_psh_ack:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rdx
+	push	rdi
+	push	rsi
+
+	; pobierz rozmiar danych w ramce TCP
+	movzx	ecx,	word [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.total_length]
+	rol	cx,	STATIC_REPLACE_AL_WITH_HIGH_shift	; Little-Endian
+	sub	cx,	bx	; koryguj rozmiar o nagłówek IP
+
+	; zachowaj rozmiar danych ramki TCP w zmiennej lokalnej
+	push	rcx
+
+	; pobierz numer portu docelowego
+	movzx	eax,	word [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + rbx + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.port_target]
+	rol	ax,	STATIC_REPLACE_AL_WITH_HIGH_shift	; Little-Endian
+	shl	rax,	STATIC_MULTIPLE_BY_32_shift	; zamień na przesunięcie wew. tablicy portów
+
+	; oblicz rozmiar nagłówka TCP
+	movzx	edx,	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + rbx + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.header_length]
+	shr	dl,	STATIC_MOVE_AL_HALF_TO_HIGH_shift	; przesuń ilość podwójnych słów na młodszą pozycję
+	shl	dx,	STATIC_MULTIPLE_BY_4_shift	; zamień ilość podwójnych słów na Bajty
+
+	; przesuń na początek przestrzeni pakietu
+	mov	rdi,	rsi
+
+	; zawartość danych ramki TCP
+	add	rsi,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE
+	add	rsi,	rbx
+	add	rsi,	rdx
+
+	; wykonaj
+	rep	movsb
+
+	; wyczyść pozostałą przestrzeń ramki
+	mov	rcx,	KERNEL_PAGE_SIZE_byte
+	sub	rcx,	qword [rsp]
+	rep	stosb
+
+	; ustaw wskaźnik na wpis dla portu w tablicy
+	mov	rsi,	qword [kernel_network_port_table]
+	add	rsi,	rax
+
+	; ilość czasu jaką odczekany na wykonanie poniższej operacji
+	mov	cl,	KERNEL_NETWORK_RECEIVE_PUSH_WAIT_limit
+
+.wait:
+	; czekaj na zwolnienie danych na porcie
+	bts	word [rsi + KERNEL_NETWORK_STRUCTURE_PORT.cr3_and_flags],	KERNEL_NETWORK_PORT_FLAG_BIT_empty
+	jnc	.empty	; w porcie znajdują się już dane, czekaj
+
+	; odczekaj kolejkę
+	hlt
+
+	; koniec oczekiwania?
+	dec	cl
+	jnz	.wait	; nie
+
+	; port w dalszym ciągu zapełniony danymi
+
+	; zwolnij zmienną lokalną
+	add	rsp,	STATIC_QWORD_SIZE_byte
+
+	; koniec obsługi
+	jmp	.end
+
+.empty:
+	; uzupełnij wpis o
+
+	; identyfikator połączenia
+	mov	rax,	qword [rsp + STATIC_QWORD_SIZE_byte * 0x02]
+	mov	qword [rsi + KERNEL_NETWORK_STRUCTURE_PORT.tcp_connection],	rax
+
+	; rozmair danych przestrzeni
+	pop	qword [rsi + KERNEL_NETWORK_STRUCTURE_PORT.size]
+
+	; wskaźnik do danych przestrzeni
+	mov	rax,	qword [rsp]
+	mov	qword [rsi + KERNEL_NETWORK_STRUCTURE_PORT.address],	rax
+
+	; oznacz port flagą: dane otrzymane
+	or	byte [rsi + KERNEL_NETWORK_STRUCTURE_PORT.cr3_and_flags],	KERNEL_NETWORK_PORT_FLAG_received
+
+	; przestrzeń przekazana do procesu
+	mov	qword [rsp],	STATIC_EMPTY
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rdi
+	pop	rdx
+	pop	rcx
+	pop	rax
+
+	; powrót z procedury
+	jmp	kernel_network_tcp.end
 
 ;===============================================================================
 ; wejście:
@@ -702,6 +905,7 @@ kernel_network_ip_wrap:
 	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.total_length],	cx
 
 	; ustaw identyfikator
+	inc	word [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.identification]
 	mov	ax,	word [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.identification]
 	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.identification],	ax
 
@@ -807,12 +1011,12 @@ kernel_network_tcp_port_assign:
 
 	; zamień numer portu na wskaźnik pośredni
 	and	ecx,	STATIC_WORD_mask
-	shl	cx,	STATIC_MULTIPLE_BY_8_shift
+	shl	cx,	STATIC_MULTIPLE_BY_32_shift
 
 	; pobierz PID procesu
-	call	kernel_task_active_pid
+	mov	rax,	cr3
 
-	; załaduj do tablicy portów identyfikator właściciela
+	; załaduj do tablicy portów identyfikator właściciela (zarazem wyczyść flagi)
 	mov	rdi,	qword [kernel_network_port_table]
 	mov	qword [rdi + rcx],	rax
 
@@ -826,6 +1030,71 @@ kernel_network_tcp_port_assign:
 .end:
 	; przywróć oryginalne rejestry
 	pop	rdi
+	pop	rcx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	ecx - numer portu do sprawdzenia
+; wyjście:
+;	Flaga CF, jeśli brak danych na porcie
+;	rbx - identyfikator połączenia
+;	ecx - rozmiar danych w przestrzeni
+;	rsi - wskaźnik do przestrzeni danych
+kernel_network_tcp_port_receive:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rsi
+
+	; zamień numer portu na wskaźnik pośredni
+	and	ecx,	STATIC_WORD_mask
+	shl	cx,	STATIC_MULTIPLE_BY_32_shift
+
+	; ustaw wskaźnik wpis portu w tablicy
+	mov	rsi,	qword [kernel_network_port_table]
+	add	rsi,	rcx
+
+	; pobierz CR3 procesu
+	mov	rax,	cr3
+
+	; port należy do procesu?
+	mov	rcx,	qword [rsi + KERNEL_NETWORK_STRUCTURE_PORT.cr3_and_flags]
+	and	cx,	KERNEL_PAGE_mask
+	cmp	rcx,	rax
+	jne	.error	; nie
+
+	; port zawiera dane do przetworzenia?
+	test	word [rsi + KERNEL_NETWORK_STRUCTURE_PORT.cr3_and_flags],	KERNEL_NETWORK_PORT_FLAG_empty | KERNEL_NETWORK_PORT_FLAG_received
+	jz	.error	; nie
+
+	; wyłącz flagę: dane przychodzące
+	and	word [rsi + KERNEL_NETWORK_STRUCTURE_PORT.cr3_and_flags],	~KERNEL_NETWORK_PORT_FLAG_BIT_received
+
+	; zwróć identyfikator połączenia
+	mov	rbx,	qword [rsi + KERNEL_NETWORK_STRUCTURE_PORT.tcp_connection]
+
+	; zwróć rozmiar danych w przestrzeni
+	mov	rcx,	qword [rsi + KERNEL_NETWORK_STRUCTURE_PORT.size]
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rcx
+
+	; zwróć wskaźnik do przestrzeni danych
+	mov	rsi,	qword [rsi + KERNEL_NETWORK_STRUCTURE_PORT.address]
+	mov	qword [rsp],	rsi
+
+	; zwróć do procesu informacje
+	jmp	.end
+
+.error:
+	; flaga, błąd
+	stc
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
 	pop	rcx
 	pop	rax
 
