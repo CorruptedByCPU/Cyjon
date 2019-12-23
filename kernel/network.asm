@@ -57,7 +57,6 @@ KERNEL_NETWORK_FRAME_TCP_OPTION_MSS_default	equ	0xB4050402	; Big-Endian
 KERNEL_NETWORK_FRAME_TCP_OPTION_KIND_mss	equ	0x02	; Max Segment Size
 KERNEL_NETWORK_FRAME_TCP_WINDOW_SIZE_default	equ	0x05B4	; Little-Endian
 
-
 struc	KERNEL_NETWORK_STRUCTURE_MAC
 	.0					resb	1
 	.1					resb	1
@@ -169,48 +168,6 @@ endstruc
 kernel_network_rx_count				dq	STATIC_EMPTY
 kernel_network_tx_count				dq	STATIC_EMPTY
 
-align	STATIC_QWORD_SIZE_byte
-kernel_network_packet_arp_reply:
-						; Ethernet
-						db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-						db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-						dw	KERNEL_NETWORK_FRAME_ETHERNET_TYPE_arp
-						; ARP
-						dw	KERNEL_NETWORK_FRAME_ARP_HTYPE_ethernet
-						dw	KERNEL_NETWORK_FRAME_ARP_PTYPE_ipv4
-						db	KERNEL_NETWORK_FRAME_ARP_HAL_mac
-						db	KERNEL_NETWORK_FRAME_ARP_PAL_ipv4
-						dw	KERNEL_NETWORK_FRAME_ARP_OPCODE_answer
-						db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-						db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-						db	0x00, 0x00, 0x00, 0x00
-						db	0x00, 0x00, 0x00, 0x00
-kernel_network_packet_arp_reply_end:
-
-align	STATIC_QWORD_SIZE_byte
-kernel_network_packet_icmp_reply:
-						; Ethernet
-						db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-						db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-						dw	KERNEL_NETWORK_FRAME_ETHERNET_TYPE_ip
-						; IPv4
-						db	KERNEL_NETWORK_FRAME_IP_HEADER_LENGTH_default | KERNEL_NETWORK_FRAME_IP_VERSION_4
-						db	0x00
-						dw	(KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ICMP.SIZE >> STATIC_REPLACE_AL_WITH_HIGH_shift) | (KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ICMP.SIZE << STATIC_REPLACE_AL_WITH_HIGH_shift)
-						dw	0x0000
-						dw	0x0000
-						db	KERNEL_NETWORK_FRAME_IP_TTL_default
-						db	KERNEL_NETWORK_FRAME_IP_PROTOCOL_ICMP
-						dw	0x0000	; suma kontrolna
-						dd	0x00000000
-						dd	0x00000000
-						; ICMP
-						db	KERNEL_NETWORK_FRAME_ICMP_TYPE_REPLY
-						db	0x00
-						dw	0x0000	; suma kontrolna
-						dd	0x00000000
-kernel_network_packet_icmp_reply_end:
-
 kernel_network_port_table			dq	STATIC_EMPTY
 
 kernel_network_stack_address			dq	STATIC_EMPTY
@@ -247,12 +204,16 @@ kernel_network:
 	; zakończ wątek
 	jmp	kernel_task_kill_me
 
+	macro_debug	"kernel_network"
+
 ;===============================================================================
 ; wejście:
 ;	rbx - identyfikator portu
 ;	rcx - rozmiar danych w Bajtach
 ;	rsi - wskaźnik do przestrzeni danych
 kernel_network_tcp_port_send:
+	xchg	bx,bx
+	jmp	$
 
 ;===============================================================================
 ; wejście:
@@ -262,12 +223,15 @@ kernel_network_ip:
 	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.protocol],	KERNEL_NETWORK_FRAME_IP_PROTOCOL_ICMP
 	je	kernel_network_icmp	; tak
 
-	; protokół TCP?
-	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.protocol],	KERNEL_NETWORK_FRAME_IP_PROTOCOL_TCP
-	je	kernel_network_tcp	; tak
+;	; protokół TCP?
+;	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.protocol],	KERNEL_NETWORK_FRAME_IP_PROTOCOL_TCP
+;	je	kernel_network_tcp	; tak
 
+.end:
 	; powrót z procedury
 	jmp	kernel_network.end
+
+	macro_debug	"kernel_network_ip"
 
 ;===============================================================================
 ; wejście:
@@ -320,74 +284,7 @@ kernel_network_tcp:
 	; powrót z procedury
 	jmp	kernel_network.end
 
-;===============================================================================
-; wejście:
-;	ax - flagi ramki TCP
-;	rbx - rozmiar nagłówka IP
-;	ecx - rozmiar danych w Bajtach do potwierdzenia
-;	rsi - wskaźnik do pakietu przychodzącego
-;	rdi - wskaźnik do połączenia na stosie
-;kernel_network_tcp_ack_send:
-;	; zachowaj oryginalne rejestry
-;	push	rax
-;	push	rbx
-;	push	rcx
-;	push	rsi
-;	push	rdi
-;
-;	; ustaw wskaźnik do połączenia w rejestrze źródłowym
-;	xchg	rsi,	rdi
-;
-;	; nie oczekujemy jakiejkolwiek odpowiedzi
-;	mov	byte [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags_request],	STATIC_EMPTY
-;
-;	;-----------------------------------------------------------------------
-;
-;	; pobierz numer sekwencji nadawcy
-;	mov	eax,	dword [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + rbx + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.sequence]
-;	bswap	eax	; zachowaj w formacie Little-Endian
-;
-;	; potwierdź otrzymanie X Bajtów danych
-;	add	eax,	ecx
-;
-;	; zachowaj numer sekwencji nadawcy
-;	mov	dword [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.source_sequence],	eax
-;
-;	;-----------------------------------------------------------------------
-;
-;	; potwierdzenie
-;	mov	word [rsi + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags],	KERNEL_NETWORK_FRAME_TCP_FLAGS_ack
-;
-;	;-----------------------------------------------------------------------
-;	; wyślij odpowiedź
-;	;-----------------------------------------------------------------------
-;
-;	; przygotuj miejsce na odpowiedź
-;	call	kernel_memory_alloc_page
-;	jc	.end
-;
-;	; spakuj dane ramki TCP
-;	mov	bl,	(KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE >> STATIC_DIVIDE_BY_4_shift) << STATIC_MOVE_AL_HALF_TO_HIGH_shift
-;	mov	ecx,	KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE
-;	call	kernel_network_tcp_wrap
-;
-;	; wyślij pakiet
-;	mov	ax,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE + STATIC_DWORD_SIZE_byte
-;	call	driver_nic_i82540em_transfer
-;
-;	; połączenie zatwierdzone
-;	jmp	.end
-;
-;.end:
-;	; przywóć oryginalne rejestry
-;	pop	rdi
-;	pop	rsi
-;	pop	rcx
-;	pop	rbx
-;	pop	rax
-;
-;	; powrót z procedury
-;	ret
+	macro_debug	"kernel_network_tcp"
 
 ;===============================================================================
 ; wejście:
@@ -494,6 +391,8 @@ kernel_network_tcp_psh_ack:
 	; powrót z procedury
 	jmp	kernel_network_tcp.end
 
+	macro_debug	"kernel_network_tcp_psh_ack"
+
 ;===============================================================================
 ; wejście:
 ;	rbx - rozmiar nagłówka IP
@@ -575,6 +474,8 @@ kernel_network_tcp_fin:
 	; powrót z procedury
 	jmp	kernel_network_tcp.end
 
+	macro_debug	"kernel_network_tcp_fin"
+
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do pakietu przychodzącego
@@ -605,6 +506,8 @@ kernel_network_tcp_ack:
 
 	; powrót z procedury
 	jmp	kernel_network_tcp.end
+
+	macro_debug	"kernel_network_tcp_ack"
 
 ;===============================================================================
 ; wejście:
@@ -682,6 +585,8 @@ kernel_network_tcp_find:
 
  	; powrót z procedury
  	ret
+
+	macro_debug	"kernel_network_tcp_find"
 
 ;===============================================================================
 ; wejście:
@@ -811,6 +716,8 @@ kernel_network_tcp_syn:
 	; powrót z procedury
 	jmp	kernel_network_tcp.end
 
+	macro_debug	"kernel_network_tcp_syn"
+
 ;===============================================================================
 ; wejście:
 ;	bl - rozmiar nagłówka TCP
@@ -881,6 +788,8 @@ kernel_network_tcp_wrap:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_network_tcp_wrap"
+
 ;===============================================================================
 ; wejście:
 ;	rax - adres MAC odbiorcy
@@ -949,6 +858,8 @@ kernel_network_ip_wrap:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_network_ip_wrap"
+
 ;===============================================================================
 ; wejście:
 ;	ecx - rozmiar ramki TCP w Bajtach
@@ -994,6 +905,8 @@ kernel_network_tcp_pseudo_header:
 	; powrót z podprocedury
 	ret
 
+	macro_debug	"kernel_network_tcp_pseudo_header"
+
 ;===============================================================================
 ; wejście:
 ;	cx - numer portu
@@ -1035,6 +948,8 @@ kernel_network_tcp_port_assign:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_network_tcp_port_assign"
 
 ;===============================================================================
 ; wejście:
@@ -1101,6 +1016,8 @@ kernel_network_tcp_port_receive:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_network_tcp_port_receive"
+
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do pakietu przychodzącego
@@ -1132,8 +1049,18 @@ kernel_network_arp:
 	; zachowaj oryginalne rejestry
 	push	rdi
 
-	; ustaw wskaźnik na pakiet zwrotny
-	mov	rdi,	kernel_network_packet_arp_reply
+	; przygotuj przesterzeń pod odpowiedź
+	call	kernel_memory_alloc_page
+	jc	.error	; brak wolnego miejsca, nie odpowiadaj
+
+	;-----------------------------------------------------------------------
+	; wypełnij ramki domyślnymi wartościami
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.type],	KERNEL_NETWORK_FRAME_ETHERNET_TYPE_arp
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ARP.htype],	KERNEL_NETWORK_FRAME_ARP_HTYPE_ethernet
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ARP.ptype],	KERNEL_NETWORK_FRAME_ARP_PTYPE_ipv4
+	mov	byte [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ARP.hal],	KERNEL_NETWORK_FRAME_ARP_HAL_mac
+	mov	byte [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ARP.pal],	KERNEL_NETWORK_FRAME_ARP_PAL_ipv4
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ARP.opcode],	KERNEL_NETWORK_FRAME_ARP_OPCODE_answer
 
 	; zwróć w odpowiedzi IPv4 kontrolera sieciowego
 	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ARP.source_ip],	eax
@@ -1144,11 +1071,11 @@ kernel_network_arp:
 
 	; uzupełnij ramki ARP i Ethernet o adres MAC kontrolera sieciowego
 	mov	rax,	qword [driver_nic_i82540em_mac_address]
-	mov	dword [kernel_network_packet_arp_reply + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.source],	eax
-	mov	dword [kernel_network_packet_arp_reply + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ARP.source_mac],	eax
+	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.source],	eax
+	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ARP.source_mac],	eax
 	shr	rax,	STATIC_MOVE_HIGH_TO_EAX_shift
-	mov	word [kernel_network_packet_arp_reply + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.source + KERNEL_NETWORK_STRUCTURE_MAC.4],	ax
-	mov	word [kernel_network_packet_arp_reply + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ARP.source_mac + KERNEL_NETWORK_STRUCTURE_MAC.4],	ax
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.source + KERNEL_NETWORK_STRUCTURE_MAC.4],	ax
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ARP.source_mac + KERNEL_NETWORK_STRUCTURE_MAC.4],	ax
 
 	; uzupełnij ramkę ARP o adres MAC adresata
 	mov	rax,	qword [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ARP.source_mac]
@@ -1162,9 +1089,10 @@ kernel_network_arp:
 	call	kernel_network_ethernet_wrap
 
 	; wyślij odpowiedź
-	mov	eax,	kernel_network_packet_arp_reply_end - kernel_network_packet_arp_reply
-	call	driver_nic_i82540em_transfer
+	mov	eax,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ARP.SIZE
+	call	service_tx_add
 
+.error:
 	; przywróć oryginalne rejestry
 	pop	rdi
 
@@ -1174,6 +1102,8 @@ kernel_network_arp:
 
 	; powrót z procedury
 	jmp	kernel_network.end
+
+	macro_debug	"kernel_network_arp"
 
 ;===============================================================================
 ; wejście:
@@ -1186,10 +1116,25 @@ kernel_network_icmp:
 	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ICMP.type],	KERNEL_NETWORK_FRAME_ICMP_TYPE_REQUEST
 	jne	.end	; nie, brak obsługi
 
-	;-----------------------------------------------------------------------
-	; przygotuj odpowiedź
-	;-----------------------------------------------------------------------
-	mov	rdi,	kernel_network_packet_icmp_reply + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE
+	; przygotuj przestrzeń pod odpowiedź
+	call	kernel_memory_alloc_page
+	jc	.end	; brak wolnego miejsca, nie odpowiadaj
+
+	; wypełnij ramki domyślnymi wartościami
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.type],	KERNEL_NETWORK_FRAME_ETHERNET_TYPE_ip
+	mov	byte [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.version_and_ihl],	KERNEL_NETWORK_FRAME_IP_HEADER_LENGTH_default | KERNEL_NETWORK_FRAME_IP_VERSION_4
+	mov	byte [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.dscp_and_ecn],	STATIC_EMPTY
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.total_length],	(KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ICMP.SIZE >> STATIC_REPLACE_AL_WITH_HIGH_shift) | (KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ICMP.SIZE << STATIC_REPLACE_AL_WITH_HIGH_shift)
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.identification],	STATIC_EMPTY
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.f_and_f],	STATIC_EMPTY
+	mov	byte [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.ttl],	KERNEL_NETWORK_FRAME_IP_TTL_default
+	mov	byte [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.protocol],	KERNEL_NETWORK_FRAME_IP_PROTOCOL_ICMP
+	mov	word [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ICMP.type],	KERNEL_NETWORK_FRAME_ICMP_TYPE_REPLY
+	mov	byte [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ICMP.code],	STATIC_EMPTY
+	mov	dword [rdi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ICMP.reserved],	STATIC_EMPTY
+
+	; przesuń wskaźnik na ramkę ICMP
+	add	rdi,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE
 
 	; zwróć identyfikator i sekwencję
 	mov	eax,	dword [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ICMP.reserved]
@@ -1236,7 +1181,7 @@ kernel_network_icmp:
 	call	kernel_network_ethernet_wrap
 
 	; wyślij odpowiedź -----------------------------------------------------
-	mov	eax,	kernel_network_packet_icmp_reply_end - kernel_network_packet_icmp_reply
+	mov	eax,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ICMP.SIZE
 	call	driver_nic_i82540em_transfer
 
 .end:
@@ -1244,7 +1189,9 @@ kernel_network_icmp:
 	pop	rsi
 
 	; powrót z procedury
-	jmp	kernel_network.end
+	jmp	kernel_network_ip.end
+
+	macro_debug	"kernel_network_icmp"
 
 ;===============================================================================
 ; wejście:
@@ -1270,6 +1217,8 @@ kernel_network_ethernet_wrap:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_network_ethernet_wrap"
 
 ;===============================================================================
 ; wejście:
@@ -1318,6 +1267,8 @@ kernel_network_checksum:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_network_checksum"
+
 ;===============================================================================
 ; wejście:
 ;	rax - pusty lub kontynuacja poprzedniej sumy kontrolnej
@@ -1354,3 +1305,5 @@ kernel_network_checksum_part:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_network_checksum_part"

@@ -210,6 +210,8 @@ kernel_task:
 	; powrót z procedury
 	iretq
 
+	macro_debug	"kernel_task"
+
 ;===============================================================================
 ; wejście:
 ;	bx - flagi zadania
@@ -268,6 +270,8 @@ kernel_task_add:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_task_add"
 
 ;===============================================================================
 ; wyjście:
@@ -351,6 +355,8 @@ kernel_task_queue:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_task_queue"
+
 ;===============================================================================
 ; wyjście:
 ;	ecx - unikalny identyfikator
@@ -372,6 +378,8 @@ kernel_task_pid_get:
 
 	; powrót z podprocedury
 	ret
+
+	macro_debug	"kernel_task_pid_get"
 
 ;===============================================================================
 ; wejście:
@@ -433,6 +441,8 @@ kernel_task_pid_check:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_task_pid_check"
+
 ;===============================================================================
 ; wyjście:
 ;	rax - PID procesu aktywnego
@@ -451,6 +461,8 @@ kernel_task_active_pid:
 
 	; powrót z podprocedury
 	ret
+
+	macro_debug	"kernel_task_active_pid"
 
 ;===============================================================================
 ; wyjście:
@@ -479,6 +491,8 @@ kernel_task_active:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_task_active"
+
 ;===============================================================================
 kernel_task_kill_me:
 	; pobierz wskaźnik do wątku w kolejce zadań
@@ -489,3 +503,5 @@ kernel_task_kill_me:
 
 	; zatrzymaj dalsze wykonywanie kodu wątku
 	jmp	$
+
+	macro_debug	"kernel_task_kill_me"

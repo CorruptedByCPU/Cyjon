@@ -3,11 +3,11 @@
 ;===============================================================================
 
 %MACRO	macro_debug	1
+%ifdef	DEBUG
 	jmp	%%skip
 
-%ifdef	DEBUG
 	db	"^ ", %1
-%endif
 
 %%skip:
+%endif
 %ENDMACRO

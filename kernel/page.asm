@@ -41,6 +41,8 @@ kernel_page_drain:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_page_drain"
+
 ;-------------------------------------------------------------------------------
 ; uwagi:
 ;	rcx - zniszczony
@@ -79,6 +81,8 @@ kernel_page_drain_few:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_page_drain_few"
 
 ;===============================================================================
 ; wejście:
@@ -160,6 +164,8 @@ kernel_page_map_physical:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_page_map_physical"
 
 ;===============================================================================
 ; wejście:
@@ -258,6 +264,8 @@ kernel_page_map_logical:
 
 	; koniec
 	jmp	.end
+
+	macro_debug	"kernel_page_map_logical"
 
 ;===============================================================================
 ; wejście:
@@ -456,6 +464,8 @@ kernel_page_prepare:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_page_prepare"
+
 ;===============================================================================
 ; opcjonalnie:
 ;	rbp - ilość stron zarezerwowanych (jeśli procedura ma z nich korzystać)
@@ -636,6 +646,8 @@ kernel_page_pml1:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_page_pml1"
+
 ;===============================================================================
 ; wejście:
 ;	rsi - adres źródłowy tablicy PML4
@@ -738,6 +750,8 @@ kernel_page_merge:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_page_merge"
+
 ;===============================================================================
 ; wejście:
 ;	rcx - ilość stron do zarezerwowania
@@ -782,6 +796,8 @@ kernel_page_secure:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_page_secure"
 
 ;===============================================================================
 ; wejście:
@@ -873,3 +889,5 @@ kernel_page_release_pml:
 
 	; przetwórz następny rekord
 	jmp	.next
+
+	macro_debug	"kernel_page_release_pml1"

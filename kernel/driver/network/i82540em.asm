@@ -191,6 +191,7 @@ driver_nic_i82540em_rx_base_address		dq	STATIC_EMPTY
 driver_nic_i82540em_tx_base_address		dq	STATIC_EMPTY
 driver_nic_i82540em_mac_address			dq	STATIC_EMPTY
 
+driver_nic_i82540em_tx_queue_empty_semaphore	db	STATIC_TRUE
 driver_nic_i82540em_promiscious_mode_semaphore	db	STATIC_TRUE
 
 driver_nic_i82540em_ipv4_address		db	10, 0, 0, 64
@@ -242,6 +243,11 @@ driver_nic_i82540em_transfer:
 	push	rsi
 	push	rax
 
+.wait:
+	; kolejka na interfejsie sieciowym pusta?
+	cmp	byte [driver_nic_i82540em_tx_queue_empty_semaphore],	STATIC_TRUE
+	jne	.wait	; nie, czekaj na zwolnienie
+
 	; ustaw wskaźnik na deskryptor bufora
 	mov	rsi,	qword [driver_nic_i82540em_tx_base_address]
 
@@ -254,6 +260,9 @@ driver_nic_i82540em_transfer:
 	or	rax,	DRIVER_NIC_I82540EM_TDESC_CMD_IFCS
 	or	rax,	DRIVER_NIC_I82540EM_TDESC_CMD_EOP
 	mov	qword [rsi + DRIVER_NIC_I82540EM_TDESC_LENGTH_AND_FLAGS],	rax
+
+	; kolejka deskryptorów uzupełniona
+	mov	byte [driver_nic_i82540em_tx_queue_empty_semaphore],	STATIC_FALSE
 
 	; poinformuj o 1 deskryptorze do przetworzenia, wskazując względny początek i jego koniec
 	mov	rax,	qword [driver_nic_i82540em_mmio_base_address]
@@ -295,8 +304,12 @@ driver_nic_i82540em_irq:
 
 	; kolejka pakietów wychodzących pusta?
 	bt	eax,	DRIVER_NIC_I82540EM_ICR_TXQE
-	jc	.end	; tak
+	jnc	.tx_not_empty	; nie
 
+	; kolejka deskryptorów pusta
+	mov	byte [driver_nic_i82540em_tx_queue_empty_semaphore],	STATIC_TRUE
+
+.tx_not_empty:
 	; brak dostępnych deskryptorów do obsługi pakietów przychodzących?
 	bt	eax,	DRIVER_NIC_I82540EM_ICR_RXO
 	jnc	.end	; nie
@@ -368,11 +381,7 @@ driver_nic_i82540em_irq:
 	; powrót z przerwania sprzętowego
 	iretq
 
-	;===============
-	; DEBUG SYMBOL =
-	;===============
 	macro_debug	"driver_nic_i82540em_irq"
-	;-----------------------------------------------------------------------
 
 ;===============================================================================
 ; wejście:

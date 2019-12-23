@@ -34,6 +34,8 @@ kernel_memory_alloc_page:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_memory_alloc_page"
+
 ;===============================================================================
 ; wejście:
 ;	rcx - rozmiar przestrzeni w stronach
@@ -161,6 +163,8 @@ kernel_memory_alloc:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_memory_alloc"
+
 ;===============================================================================
 kernel_memory_lock:
 	; zablokuj dostęp do binarnej mapy pamięci
@@ -168,6 +172,8 @@ kernel_memory_lock:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_memory_lock"
 
 ;===============================================================================
 ; wejście:
@@ -213,6 +219,8 @@ kernel_memory_release_page:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_memory_release_page"
+
 ;===============================================================================
 ; wejście:
 ;	rcx - ilość kolejnych stron do zwolnienia
@@ -239,3 +247,5 @@ kernel_memory_release:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_memory_release"

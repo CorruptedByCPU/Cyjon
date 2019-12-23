@@ -29,7 +29,8 @@ kernel_init_ap_count			db	STATIC_EMPTY
 kernel_init_apic_id_highest		db	STATIC_EMPTY
 
 kernel_init_services_list:
-	dq	tresher
+	dq	service_tresher
+	dq	service_tx
 
 	; koniec usług
 	dq	STATIC_EMPTY

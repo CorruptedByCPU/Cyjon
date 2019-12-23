@@ -22,6 +22,8 @@ init:
 	;-----------------------------------------------------------------------
 	%include	"kernel/init.asm"
 
+; wyrównaj pozycję kodu jądra systemu do pełnej strony
+align	KERNEL_PAGE_SIZE_byte,	db	STATIC_NOTHING
 kernel:
 	; przejdź do powłoki systemu
 	; jmp	service_shell
@@ -57,6 +59,7 @@ kernel:
 	%include	"kernel/service/tresher.asm"
 	%include	"kernel/service/shell.asm"
 	%include	"kernel/service/http.asm"
+	%include	"kernel/service/tx.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/input.asm"
 	%include	"library/page_align_up.asm"

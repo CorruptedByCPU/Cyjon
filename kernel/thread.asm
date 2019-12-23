@@ -11,6 +11,7 @@ kernel_thread_exec:
 	push	rax
 	push	rbx
 	push	rcx
+	push	rdx
 	push	rdi
 	push	r8
 	push	r11
@@ -23,13 +24,10 @@ kernel_thread_exec:
 	call	kernel_page_drain
 
 	; utwórz nowy stos kontekstu dla wątku
-	mov	rax,	rsp
-	and	ax,	KERNEL_PAGE_mask
+	mov	rax,	KERNEL_STACK_address
 	mov	ebx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
-	mov	rcx,	KERNEL_MEMORY_HIGH_VIRTUAL_address
-	sub	rcx,	rsp
+	mov	ecx,	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	mov	r11,	rdi
-	call	library_page_from_size
 	call	kernel_page_map_logical
 
 	; odstaw na początek stosu kontekstu zadania, spreparowane dane powrotu z przerwania sprzętowego "kernel_task"
@@ -74,6 +72,7 @@ kernel_thread_exec:
 	pop	rdi
 	pop	r8
 	pop	rdi
+	pop	rdx
 	pop	rcx
 	pop	rbx
 	pop	rax

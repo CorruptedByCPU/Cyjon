@@ -40,6 +40,8 @@ kernel_idt_mount:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_idt_mount"
+
 ;===============================================================================
 ; wejście:
 ;	rax - adres logiczny procedury obsługi
@@ -95,6 +97,8 @@ kernel_idt_update:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_idt_update"
+
 ;===============================================================================
 ; domyślna obsługa wyjątku procesora
 kernel_idt_exception_default:
@@ -106,11 +110,34 @@ kernel_idt_exception_default:
 	; wróć do zadania
 	iretq
 
-	;===============
-	; DEBUG SYMBOL =
-	;===============
 	macro_debug	"kernel_idt_exception_default"
-	;-----------------------------------------------------------------------
+
+;===============================================================================
+kernel_idt_exception_general_protection_fault:
+	; przerwij pracę debugera Bochs
+	xchg	bx,bx
+
+	nop
+	nop
+
+	; powrót do zadania
+	iretq
+
+	macro_debug	"kernel_idt_exception_general_protection_fault"
+
+;===============================================================================
+kernel_idt_exception_page_fault:
+	; przerwij pracę debugera Bochs
+	xchg	bx,bx
+
+	nop
+	nop
+	nop
+
+	; powrót do zadania
+	iretq
+
+	macro_debug	"kernel_idt_exception_page_fault"
 
 ;===============================================================================
 ; domyślna obsługa przerwania sprzętowego
@@ -128,6 +155,8 @@ kernel_idt_interrupt_hardware:
 	; wróć do zadania
 	iretq
 
+	macro_debug	"kernel_idt_interrupt_hardware"
+
 ;===============================================================================
 ; obsługa nieprawidłowego przerwania programowego
 kernel_idt_interrupt_software:
@@ -137,8 +166,12 @@ kernel_idt_interrupt_software:
 	; wróć do zadania
 	iretq
 
+	macro_debug	"kernel_idt_interrupt_software"
+
 ;===============================================================================
 ; obsługa przerwania "nieobsłużonego"
 kernel_idt_spurious_interrupt:
 	; wróć do zadania
 	iretq
+
+	macro_debug	"kernel_idt_spurious_interrupt"

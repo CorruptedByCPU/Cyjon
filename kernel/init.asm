@@ -127,3 +127,6 @@ kernel_init_clean:
 	; zwolnij
 	mov	rdi,	KERNEL_BASE_address
 	call	kernel_memory_release
+
+	; skocz do głównej pętli jądra systemu
+	jmp	kernel
