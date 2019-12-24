@@ -1,0 +1,1 @@
+ip.addr eq 192.168.0.5 and ip.addr eq 192.168.0.64 and !tcp.analysis.out_of_order and !tcp.analysis.retransmission and !tcp.analysis.keep_alive and !tcp.analysis.keep_alive_ack and !tcp.analysis.duplicate_ack

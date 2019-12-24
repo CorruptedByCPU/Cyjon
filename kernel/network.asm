@@ -41,7 +41,7 @@ KERNEL_NETWORK_FRAME_ICMP_TYPE_REQUEST		equ	0x08
 KERNEL_NETWORK_FRAME_ICMP_TYPE_REPLY		equ	0x00
 
 
-KERNEL_NETWORK_FRAME_TCP_HEADER_LENGTH_default	equ	0x40	; 8 * 0x04 = 20 Bajtów
+KERNEL_NETWORK_FRAME_TCP_HEADER_LENGTH_default	equ	0x50	; 5 * 0x04 = 20 Bajtów
 KERNEL_NETWORK_FRAME_TCP_FLAGS_fin		equ	0000000000000001b
 KERNEL_NETWORK_FRAME_TCP_FLAGS_syn		equ	0000000000000010b
 KERNEL_NETWORK_FRAME_TCP_FLAGS_rst		equ	0000000000000100b
@@ -210,8 +210,53 @@ kernel_network:
 ;	rcx - rozmiar danych w Bajtach
 ;	rsi - wskaźnik do przestrzeni danych
 kernel_network_tcp_port_send:
-	xchg	bx,bx
-	jmp	$
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; przygotuj przestrzeń pod odpowiedź
+	call	kernel_memory_alloc_page
+	jc	.end	; brak miejsca
+
+	; zachowaj rozmiar i wskaźnik do przestrzeni danych
+	push	rcx
+	push	rdi
+
+	; dołącz dane odpowiedzi
+	add	rdi,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE
+	rep	movsb
+
+	; przywróć rozmiar i wskaźnik do przestrzeni danych
+	pop	rdi
+	pop	rcx
+
+	inc	dword [rbx + KERNEL_NETWORK_STRUCTURE_TCP_STACK.host_sequence]
+	mov	byte [rbx + KERNEL_NETWORK_STRUCTURE_TCP_STACK.flags],	KERNEL_NETWORK_FRAME_TCP_FLAGS_psh | KERNEL_NETWORK_FRAME_TCP_FLAGS_ack
+
+	; wypełnij ramki pakietu
+	add	rcx,	KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE + 0x01
+	mov	rsi,	rbx
+	mov	bl,	KERNEL_NETWORK_FRAME_TCP_HEADER_LENGTH_default
+	call	kernel_network_tcp_wrap
+
+	; wyślij pakiet
+	mov	rax,	rcx
+	add	rax,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE
+	call	service_tx_add
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rcx
+	pop	rbx
+	pop	rax
+
+	; powrót z procedury
+	ret
 
 ;===============================================================================
 ; wejście:
@@ -221,9 +266,9 @@ kernel_network_ip:
 	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.protocol],	KERNEL_NETWORK_FRAME_IP_PROTOCOL_ICMP
 	je	kernel_network_icmp	; tak
 
-;	; protokół TCP?
-;	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.protocol],	KERNEL_NETWORK_FRAME_IP_PROTOCOL_TCP
-;	je	kernel_network_tcp	; tak
+	; protokół TCP?
+	cmp	byte [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.protocol],	KERNEL_NETWORK_FRAME_IP_PROTOCOL_TCP
+	je	kernel_network_tcp	; tak
 
 .end:
 	; powrót z procedury
@@ -452,7 +497,7 @@ kernel_network_tcp_fin:
 
 	; wyślij pakiet
 	mov	ax,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE + STATIC_DWORD_SIZE_byte
-	call	driver_nic_i82540em_transfer
+	call	service_tx_add
 
 	; połączenie zatwierdzone
 	jmp	.end
@@ -694,7 +739,7 @@ kernel_network_tcp_syn:
 
 	; wyślij pakiet
 	mov	ax,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_TCP.SIZE + STATIC_DWORD_SIZE_byte
-	call	driver_nic_i82540em_transfer
+	call	service_tx_add
 
 	; połączenie zatwierdzone
 	jmp	.end
@@ -1180,7 +1225,7 @@ kernel_network_icmp:
 
 	; wyślij odpowiedź -----------------------------------------------------
 	mov	eax,	KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_IP.SIZE + KERNEL_NETWORK_STRUCTURE_FRAME_ICMP.SIZE
-	call	driver_nic_i82540em_transfer
+	call	service_tx_add
 
 .end:
 	; przywróć oryginalne rejestry

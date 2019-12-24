@@ -8,6 +8,7 @@
 %MACRO	service_http_macro_foot	0
 	db	"<hr />", STATIC_ASCII_NEW_LINE
 	db	"Cyjon v", KERNEL_version, ".", KERNEL_revision, " (HTTP Service v", SERVICE_HTTP_version, ".", SERVICE_HTTP_revision, ")"
+	db	"<style>* { font: 12px/150% 'Courier New', 'DejaVu Sans Mono', Monospace, Verdana; }</style>", STATIC_ASCII_NEW_LINE
 %ENDMACRO
 
 service_http:
@@ -20,7 +21,8 @@ service_http:
 	call	kernel_network_tcp_port_receive
 	jc	.loop	; nie, sprawdź raz jeszcze
 
-	xchg	bx,bx
+	; zachowaj wskaźnik przestrzeni zapytania
+	push	rsi
 
 	; zapytanie o rdzeń usługi?
 	mov	ecx,	service_http_get_root_end - service_http_get_root
@@ -44,8 +46,12 @@ service_http:
 	; wyślij odpowiedź
 	call	kernel_network_tcp_port_send
 
-	; zatrzymaj dalsze wykonywanie kodu
-	jmp	$
+	; przywróć wskaźnik przestrzeni zapytania i zwolnij
+	pop	rdi
+	call	kernel_memory_release_page
+
+	; powrót do pętli głównej usługi
+	jmp	.loop
 
 service_http_get_root		db	"GET / "
 service_http_get_root_end:
@@ -53,7 +59,6 @@ service_http_get_root_end:
 service_http_200_default	db	"HTTP/1.0 200 OK", STATIC_ASCII_NEW_LINE
 				db	"Content-Type: text/html", STATIC_ASCII_NEW_LINE
 				db	STATIC_ASCII_NEW_LINE
-				db	"<style>* { font: 12px/150% 'Courier New', 'DejaVu Sans Mono', Monospace, Verdana; }</style>", STATIC_ASCII_NEW_LINE
 				db	"Hello, World!", STATIC_ASCII_NEW_LINE
 				service_http_macro_foot
 service_http_200_default_end:
