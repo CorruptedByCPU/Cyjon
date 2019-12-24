@@ -249,3 +249,211 @@ kernel_memory_release:
 	ret
 
 	macro_debug	"kernel_memory_release"
+
+;===============================================================================
+; wejście:
+;	rcx - rozmiar przestrzeni w stronach
+;	rdi - wskaźnik do początku przestrzeni
+;	r11 - wskaźnik do tablicy PML4 przestrzeni
+kernel_memory_release_foreign:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rdx
+	push	rdi
+	push	r8
+	push	r9
+	push	r10
+	push	r12
+	push	r13
+	push	r14
+	push	r15
+	push	r11
+	push	rcx
+
+	;-----------------------------------------------------------------------
+	; oblicz numer wpisu w tablicy PML4 na podstawie otrzymanego adresu fizycznego/logicznego
+	mov	rcx,	KERNEL_PAGE_PML3_SIZE_byte
+	xor	rdx,	rdx	; wyczyść starszą część
+	div	rcx
+
+	; zachowaj
+	mov	r15,	rax
+
+	; przesuń wskaźnik w tablicy PML4 na dany wpis
+	shl	rax,	STATIC_MULTIPLE_BY_8_shift	; zamień na Bajty
+	add	r11,	rax
+
+	; pobierz wskaźnik tablicy PML3 z wpisu tablicy PML4
+	mov	rax,	qword [r11]
+	xor	al,	al	; usuń flagi wpisu
+
+	; zachowaj wskaźnik tablicy PML3
+	mov	r10,	rax
+
+	;-----------------------------------------------------------------------
+	; oblicz numer wpisu w tablicy PML3 na podstawie pozostałego adresu fizycznego/logicznego
+	mov	rax,	rdx	; przywróć resztę z dzielenia
+	mov	rcx,	KERNEL_PAGE_PML2_SIZE_byte
+	xor	rdx,	rdx	; wyczyść starszą część
+	div	rcx
+
+	; zachowaj
+	mov	r14,	rax
+
+	; przesuń wskaźnik w tablicy PML3 na wpis
+	shl	rax,	STATIC_MULTIPLE_BY_8_shift	; zamień na Bajty
+	add	r10,	rax
+
+	; pobierz adres tablicy PML2 z wpisu tablicy PML3
+	mov	rax,	qword [r10]
+	xor	al,	al	; usuń flagi wpisu
+
+	; zachowaj wskaźnik tablicy PML2
+	mov	r9,	rax
+
+	;-----------------------------------------------------------------------
+	; oblicz numer wpisu w tablicy PML2 na podstawie pozostałego adresu fizycznego/logicznego
+	mov	rax,	rdx	; przywróć resztę z dzielenia
+	mov	rcx,	KERNEL_PAGE_PML1_SIZE_byte
+	xor	rdx,	rdx	; wyczyść starszą część
+	div	rcx
+
+	; zachowaj
+	mov	r13,	rax
+
+	; przesuń wskaźnik w tablicy PML2 na wpis
+	shl	rax,	STATIC_MULTIPLE_BY_8_shift	; zamień na Bajty
+	add	r9,	rax
+
+	; pobierz adres tablicy PML1 z wpisu tablicy PML2
+	mov	rax,	qword [r9]
+	xor	al,	al	; usuń flagi wpisu
+
+	; zachowaj wskaźnik tablicy PML2
+	mov	r8,	rax
+
+	;-----------------------------------------------------------------------
+	; oblicz numer wpisu w tablicy PML1 na podstawie pozostałego adresu fizycznego/logicznego
+	mov	rax,	rdx	; przywróć resztę z dzielenia
+	mov	rcx,	KERNEL_PAGE_SIZE_byte
+	xor	rdx,	rdx	; wyczyść starszą część
+	div	rcx
+
+	; zachowaj
+	mov	r12,	rax
+
+	; przesuń wskaźnik w tablicy PML1 na wpis
+	shl	rax,	STATIC_MULTIPLE_BY_8_shift	; zamień na Bajty
+	add	r8,	rax
+
+	; rozmiar przestrzeni do zwolnienia w stronach
+	mov	rcx,	qword [rsp]
+
+.pml1:
+	; zwolnij przestrzeń
+	mov	rdi,	qword [r8]
+	and	di,	KERNEL_PAGE_mask
+	call	kernel_memory_release_page
+
+	; zwolnij wpis w tablicy PMLx
+	mov	qword [r8],	STATIC_EMPTY
+
+	; następny wpis tablicy tablicy PML1
+	add	r8,	STATIC_QWORD_SIZE_byte
+	inc	r12
+
+	; koniec przetwarzania?
+	dec	rcx
+	jz	.end	; tak
+
+	; koniec tablicy PML1
+	cmp	r12,	KERNEL_PAGE_RECORDS_amount
+	jne	.pml1	; nie
+
+.pml2:
+	; następny wpis w tablicy PML2
+	add	r9,	STATIC_QWORD_SIZE_byte
+	inc	r13
+
+	; koniec tablicy PML2?
+	cmp	r13,	KERNEL_PAGE_RECORDS_amount
+	je	.pml3	; tak
+
+	; pobierz adres tablicy PML1
+	mov	r8,	qword [r9]
+	xor	r8b,	r8b	; usuń flagi
+
+	; wyczyść ilość przetworzonych wpisów
+	xor	r12,	r12
+
+	; kontynuuj
+	jmp	.pml1
+
+.pml3:
+	; następny wpis w tablicy PML3
+	add	r10,	STATIC_QWORD_SIZE_byte
+	inc	r14
+
+	; koniec tablicy PML3?
+	cmp	r14,	KERNEL_PAGE_RECORDS_amount
+	je	.pml4	; tak
+
+	; pobierz adres tablicy PML2
+	mov	r9,	qword [r10]
+	xor	r9b,	r9b	; usuń flagi
+
+	; wyczyść ilość przetworzonych wpisów
+	xor	r13,	r13
+
+	; kontynuuj
+	jmp	.pml2
+
+.pml4:
+	; następny wpis w tablicy PML4
+	add	r11,	STATIC_QWORD_SIZE_byte
+	inc	r15
+
+	; koniec tablicy PML4?
+	cmp	r15,	KERNEL_PAGE_RECORDS_amount
+	je	.pml5	; tak... że jak?
+
+	; pobierz adres tablicy PML3
+	mov	r10,	qword [r11]
+	xor	r10b,	r10b	; usuń flagi
+
+	; wyczyść ilość przetworzonych wpisów
+	xor	r14,	r14
+
+	; kontynuuj
+	jmp	.pml3
+
+.pml5:
+	xchg	bx,bx
+
+	nop
+	nop
+	nop
+	nop
+
+	; zatrzymaj dalsze wykonywanie kodu
+	jmp	$
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rcx
+	pop	r11
+	pop	r15
+	pop	r14
+	pop	r13
+	pop	r12
+	pop	r10
+	pop	r9
+	pop	r8
+	pop	rdi
+	pop	rdx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"kernel_memory_release_foreign"

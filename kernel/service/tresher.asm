@@ -8,19 +8,37 @@ service_tresher:
 	call	service_tresher_search
 
 	; zapamiętaj adres tablicy PML4 procesu
-	push	qword [rsi + KERNEL_STRUCTURE_TASK.cr3]
+	mov	r11,	qword [rsi + KERNEL_STRUCTURE_TASK.cr3]
 
-	; zwolnij przestrzeń pamięci przeznaczoną dla procesu
+	; ustaw wskaźnik na podstawę przestrzeni stosu kontekstu
+	mov	rax,	KERNEL_MEMORY_HIGH_VIRTUAL_address
+
+	; pobierz rozmiar stosu wątku
+	movzx	ecx,	word [rsi + KERNEL_STRUCTURE_TASK.stack]
+
+	; koryguj pozycję wskaźnika
+	mov	rbx,	rcx
+	shl	rbx,	KERNEL_PAGE_SIZE_shift
+	sub	rax,	rbx
+
+	; zwolnij przestrzeń stosu kontekstu wątku
+	call	kernel_memory_release_foreign
+
+	; proces był wątkiem?
+	test	word [rsi + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_thread
+	jz	.pml4	; tak, brak przestrzeni kodu/danych
+
+	; zwolnij przestrzeń kodu/danych procesu
 	mov	rbx,	4	; podstawowy poziom tablicy przetwarzanej
 	mov	rcx,	1	; ile pozostało rekordów w tablicy PML4 do zwolnienia
-	mov	rdi,	qword [rsp]	; adres tablicy PML4 procesu
-	add	rdi,	KERNEL_PAGE_SIZE_byte - (257 * STATIC_QWORD_SIZE_byte)	; rozpocznij zwalnianie przestrzeni od przestrzeni stosu kontekstu procesu
+	mov	rdi,	r11	; wskaźnik do tablicy PML4
+	add	rdi,	KERNEL_PAGE_SIZE_byte - (256 * STATIC_QWORD_SIZE_byte)	; wpis w tablicy PML4 reprezentujący przestrzeń kodu/danych procesu
 	call	kernel_page_release_pml.loop
 
-	; przywróć adres tablicy PML4 procesu
-	pop	rdi
-
-	; zwolnij przestrzeń
+.pml4:
+	; zwolnij przestrzeń tablicy PML4 wątku
+	mov	rdi,	r11
+	call	kernel_page_purge	; zwalnia przestrzeń, którą zajmują puste tablice
 	call	kernel_memory_release_page
 
 	; strona odzyskana z tablic stronicowania

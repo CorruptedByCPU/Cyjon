@@ -194,12 +194,14 @@ driver_nic_i82540em_mac_address			dq	STATIC_EMPTY
 driver_nic_i82540em_tx_queue_empty_semaphore	db	STATIC_TRUE
 driver_nic_i82540em_promiscious_mode_semaphore	db	STATIC_TRUE
 
-driver_nic_i82540em_ipv4_address		db	10, 0, 0, 64
-;~ driver_nic_i82540em_ipv4_address		dd	STATIC_EMPTY
+; driver_nic_i82540em_ipv4_address		dd	STATIC_EMPTY
+; driver_nic_i82540em_ipv4_address		db	10, 0, 0, 64
+driver_nic_i82540em_ipv4_address		db	192, 168, 0, 64
+; driver_nic_i82540em_ipv4_mask			dd	STATIC_EMPTY
 driver_nic_i82540em_ipv4_mask			db	255, 255, 255, 0
-; ~ driver_nic_i82540em_ipv4_mask		dd	STATIC_EMPTY
-driver_nic_i82540em_ipv4_gateway		db	10, 0, 0, 1
-;~ driver_nic_i82540em_ipv4_gateway		dd	STATIC_EMPTY
+; driver_nic_i82540em_ipv4_gateway		dd	STATIC_EMPTY
+; driver_nic_i82540em_ipv4_gateway		db	10, 0, 0, 1
+driver_nic_i82540em_ipv4_gateway		db	192, 168, 0, 1
 driver_nic_i82540em_vlan			dw	STATIC_EMPTY
 
 driver_nic_i82540em_rx_count			dq	STATIC_EMPTY

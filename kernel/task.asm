@@ -38,6 +38,7 @@ struc	KERNEL_STRUCTURE_TASK
 	.pid				resb	8	; identyfikator procesu
 	.time				resb	8	; czas uruchomienia procesu względem czasu życia jądra systemu
 	.flags				resb	2	; flagi stanu procesu
+	.stack				resb	2	; rozmiar przestrzeni stosu w stronach
 	.SIZE:
 endstruc
 
@@ -255,6 +256,9 @@ kernel_task_add:
 
 	; aktualizuj flagi zadania
 	or	word [rdi + KERNEL_STRUCTURE_TASK.flags],	bx
+
+	; domyślny rozmiar stosu
+	mov	word [rdi + KERNEL_STRUCTURE_TASK.stack],	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 
 	; zwróć wskaźnik do zadania
 	mov	qword [rsp],	rdi
@@ -499,6 +503,7 @@ kernel_task_kill_me:
 	call	kernel_task_active
 
 	; oznacz wątek jako zakończony
+	and	word [rdi + KERNEL_STRUCTURE_TASK.flags],	~KERNEL_TASK_FLAG_active
 	or	word [rdi + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_closed
 
 	; zatrzymaj dalsze wykonywanie kodu wątku

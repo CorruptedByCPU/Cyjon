@@ -26,6 +26,146 @@ kernel_page_paged_count		dq	STATIC_EMPTY
 
 ;===============================================================================
 ; wejście:
+;	r11 - wskaźnik do tablicy PML4
+kernel_page_purge:
+	; zachowaj oryginalne rejestry
+	push	rbx
+	push	rcx
+	push	rdi
+
+	; aktualny poziom tablicy
+	mov	bl,	0x04
+
+	; ustaw wskaźnik na przestrzeń tablicy PML4
+	mov	rdi,	r11
+
+.recursion:
+	; zchodzimy poziom niżej
+	dec	bl
+
+	; zachowaj licznik przetworzonych wpisów poprzedniej tablicy PMLx
+	push	rcx
+
+	; tablica pusta?
+	call	kernel_page_purge.table
+	jnc	.purge	; tak
+
+	; znajdujemy się w najniższym poziomie PMLx?
+	test	bl,	bl
+	jz	.continue	; tak
+
+	; ilość wpisów na tablicę
+	mov	ecx,	KERNEL_PAGE_RECORDS_amount
+
+.loop:
+	; wpis w tablicy PMLx?
+	cmp	qword [rdi],	STATIC_EMPTY
+	je	.empty	; nie
+
+	; zachowaj wskaźnik wpisu w aktualnej tablicy PMLx
+	push	rdi
+
+	; pobierz wskaźnik następnej tablicy PMLx
+	mov	rdi,	qword [rdi]
+	and	di,	KERNEL_PAGE_mask	; usuń flagi tablicy
+
+	; przetwórz następny poziom tablicy PMLx
+	call	kernel_page_purge.recursion
+
+	; przywróć wskaźnik wpisu w aktualnej tablicy PMLx
+	pop	rdi
+
+.empty:
+	;  następny wpis w tablicy PMLx
+	add	rdi,	STATIC_QWORD_SIZE_byte
+
+	; koniec aktualnej tablicy?
+	dec	ecx
+	jnz	.loop	; nie
+
+.continue:
+	; przywróć licznik przetworzonych wpisów poprzedniej tablicy PMLx
+	pop	rcx
+
+	; wchodzimy poziom wyżej
+	inc	bl
+
+	; przetworzono całą tablice PML4?
+	cmp	bl,	0x04
+	je	.end	; tak
+
+	; porót z podprocedury
+	ret
+
+.purge:
+	; tablica najwyższego poziomu?
+	test	rdi,	r11
+	jz	.end	; tak, koniec procedury
+
+	; zwolnij przestrzeń tablicy PMLx
+	call	kernel_memory_release_page
+
+	; zwolnij wpis w poprzedniej tablicy PMLx
+	mov	rdi,	qword [rsp + STATIC_QWORD_SIZE_byte * 0x02]
+	mov	qword [rdi],	STATIC_EMPTY
+
+	; kontynuuj
+	jmp	.continue
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rcx
+	pop	rbx
+
+	; powrót z procedury
+	ret
+
+;-------------------------------------------------------------------------------
+; wejście:
+;	rdi - wskaźnik do początku przestrzeni tablicy PMLx
+; wyjście:
+;	Flaga CF, jeśli tablica nie jest pusta
+.table:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rdi
+
+	; ilość wpisów na tablicę
+	mov	ecx,	KERNEL_PAGE_RECORDS_amount
+
+.table_check:
+	; tablica pusta?
+	cmp	qword [rdi],	STATIC_EMPTY
+	jne	.table_not_empty
+
+	; przesuń wskaźnik na następny wpis
+	add	rdi,	STATIC_QWORD_SIZE_byte
+
+	; następny wpis?
+	dec	ecx
+	jnz	.table_check	; tak
+
+	; sukces
+	clc
+
+	; koniec podprocedury
+	jmp	.table_end
+
+.table_not_empty:
+	; błąd
+	stc
+
+.table_end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rcx
+
+	; powrót z podprocedury
+	ret
+
+;===============================================================================
+; wejście:
 ;	rdi - adres strony do wyczyszczenia
 kernel_page_drain:
 	; zachowaj oryginalne rejestry
