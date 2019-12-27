@@ -98,6 +98,11 @@ kernel_init_long_mode:
 	%include	"kernel/init/task.asm"
 
 	;-----------------------------------------------------------------------
+	; przygotuj komunikację międzyprocesową
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/ipc.asm"
+
+	;-----------------------------------------------------------------------
 	; dodaj do kolejki zadań zestaw usług zarządzających środowiskiem jądra systemu
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/services.asm"
