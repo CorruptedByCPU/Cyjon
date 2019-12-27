@@ -123,17 +123,15 @@ kernel_ipc_insert:
 
 ;===============================================================================
 ; wejście:
-;	rdi - wskaźnik do miejsca docelowego, jeśli na wyjściu RCX == STATIC_EMPTY
+;	rdi - wskaźnik do miejsca docelowego
 ; wyjście:
 ;	Flaga CF jeśli brak wiadomości
-;	rcx - rozmiar danych w przestrzeni pod wskaźnikiem RSI
-;	rsi - wskaźnik do przestrzeni danych, jeśli RCX != STATIC_EMPTY
 kernel_ipc_receive:
 	; zachowaj oryginalne rejestry
 	push	rax
-	push	rdi
-	push	rsi
 	push	rcx
+	push	rsi
+	push	rdi
 
 	; pobierz PID procesu wywołującego
 	call	kernel_task_active
@@ -173,45 +171,40 @@ kernel_ipc_receive:
 	cmp	qword [rsi + KERNEL_IPC_STRUCTURE_LIST.ttl],	rax
 	jb	.next	; tak, znajdź następną
 
-	; wiadomość posiada przestrzeń do przekazania?
-	cmp	qword [rsi + KERNEL_IPC_STRUCTURE_LIST.size],	STATIC_EMPTY
-	je	.only_data	; nie
+	; uzyskaj wyłączny dostęp do listy komunikatów
+	macro_close	kernel_ipc_semaphore, 0
 
-	; zwróć rozmiar i wskaźnik do przestrzeni danych
-	mov	rax,	qword [rsi + KERNEL_IPC_STRUCTURE_LIST.size]
-	mov	qword [rsp],	rax
-	mov	rax,	qword [rsi + KERNEL_IPC_STRUCTURE_LIST.pointer]
-	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rax
-
-	; koniec przetwarzania wiadomości
-	jmp	.end
-
-.only_data:
 	; zachowaj wskaźnik początku wpisu
 	push	rsi
 
 	; odbierz treść komunikatu
 	mov	ecx,	KERNEL_IPC_STRUCTURE_LIST.SIZE
+	mov	rdi,	qword [rsp + STATIC_QWORD_SIZE_byte]
 	rep	movsb
 
 	; przywróć wskaźnik do początku wpisu
 	pop	rsi
 
-.end:
+	; zwróć informacje o właścicielu wiadomości
+	mov	rbx,	qword [rsi + KERNEL_IPC_STRUCTURE_LIST.pid_source]
+
 	; zwolnij wpis ustawiając TTL na przedawniony
 	mov	qword [rsi + KERNEL_IPC_STRUCTURE_LIST.ttl],	STATIC_EMPTY
 
 	; ilość komunikatów na liście
 	dec	qword [kernel_ipc_entry_count]
 
+	; zwolnij dostęp
+	mov	byte [kernel_ipc_semaphore],	STATIC_FALSE
+
 	; flaga, sukces
 	clc
 
 .error:
 	; przywróć oryginalne rejestry
-	pop	rcx
-	pop	rsi
 	pop	rdi
+	pop	rsi
+	pop	rcx
 	pop	rax
 
 	; powrót z procedury

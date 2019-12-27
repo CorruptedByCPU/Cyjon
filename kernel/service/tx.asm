@@ -10,27 +10,13 @@ struc	SERVICE_TX_STRUCTURE_CACHE
 	.SIZE:
 endstruc
 
-
 service_tx_pid			dq	STATIC_EMPTY
 
-service_tx_semaphore		db	STATIC_TRUE	; domyślnie zablokowany dostęp
-
-service_tx_cache_address	dq	STATIC_EMPTY
-service_tx_cache_pointer	dq	((SERVICE_TX_CACHE_SIZE_page << STATIC_MULTIPLE_BY_PAGE_shift) / SERVICE_TX_STRUCTURE_CACHE.SIZE) - 0x01	; liczymy od zera
+service_tx_ipc_message:
+	times	KERNEL_IPC_STRUCTURE_LIST.SIZE	db	STATIC_EMPTY
 
 ;===============================================================================
 service_tx:
-	; przygotuj przestrzeń pod bufor
-	mov	rcx,	SERVICE_TX_CACHE_SIZE_page
-	call	kernel_memory_alloc
-	jc	service_tx	; spróbuj raz jeszcze
-
-	; wyczyść bufor
-	call	kernel_page_drain_few
-
-	; zachowaj adres bufora
-	mov	qword [service_tx_cache_address],	rdi
-
 	; pobierz własny PID
 	call	kernel_task_active
 	mov	rax,	qword [rdi + KERNEL_STRUCTURE_TASK.pid]
@@ -38,105 +24,43 @@ service_tx:
 	; udostepnij własny PID dla pozostałych procesów
 	mov	qword [service_tx_pid],	rax
 
-.reload:
-	; odblokuj dostęp do bufora
-	mov	byte [service_tx_semaphore],	STATIC_FALSE
-
-	; ustaw wskaźnik na pierwszy wpis bufora
-	mov	rsi,	qword [service_tx_cache_address]
-
 .loop:
-	; bufor zablokowany?
-	cmp	byte [service_tx_semaphore],	STATIC_TRUE
-	je	.loop	; tak, czekaj na odblokowanie
+	; pobierz wiadomość
+	mov	rdi,	service_tx_ipc_message
+	call	kernel_ipc_receive
+	jc	.loop	; brak, sprawdź raz jeszcze
 
-	; brak wpisu?
-	cmp	qword [rsi],	STATIC_EMPTY
-	je	.loop	; czekaj (sprawdź) dalej
+	; pobierz rozmiar danych pakietu
+	mov	rcx,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.size]
 
-	; wyślij
-	mov	ax,	word [rsi + SERVICE_TX_STRUCTURE_CACHE.size]
-	mov	rdi,	qword [rsi + SERVICE_TX_STRUCTURE_CACHE.address]
-	call	driver_nic_i82540em_transfer
+	; brak danych?
+	test	rcx,	rcx
+	jz	.loop	; tak, zignoruj
 
-	; zablokuj dostęp do bufora
-	macro_close	service_tx_semaphore, 0
+	; wiadomość od usługi sieciowej?
+	mov	rbx,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pid_source]
+	cmp	rbx,	qword [service_network_pid]
+	je	.send	; tak, przetwórz
 
-	; usuń wpis
-
-	; zwolnij przestrzeń pakietu
-	call	kernel_memory_release_page
-
-	; ustaw wskaźniki na pozycję
-	mov	rdi,	rsi
-	add	rsi,	SERVICE_TX_STRUCTURE_CACHE.SIZE
-
-	; ilość wpisów do przesunięcia
-	mov	rcx,	((SERVICE_TX_CACHE_SIZE_page << STATIC_MULTIPLE_BY_PAGE_shift) / SERVICE_TX_STRUCTURE_CACHE.SIZE) - 0x01
-	sub	rcx,	qword [service_tx_cache_pointer]
-
-.move:
-	; przesuń pierwszy wpis
-	movsq
-	movsq
-
-	; koniec bufora?
-	dec	rcx
-	jnz	.move	; nie, kontynuuj
-
-	; ilość wolnych wpisów
-	inc	qword [service_tx_cache_pointer]
+	; pobierz adres przestrzeni
+	call	library_page_from_size
+	mov	rdi,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pointer]
+	call	kernel_memory_release
 
 	; powrót do pętli głównej
-	jmp	.reload
+	jmp	.loop
+
+.send:
+ 	; wyślij
+ 	mov	rax,	rcx
+ 	mov	rdi,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pointer]
+ 	call	driver_nic_i82540em_transfer
+
+	; zwolnij przesterzeń
+	call	library_page_from_size
+	call	kernel_memory_release
+
+	; powrót do pętli głównej
+	jmp	.loop
 
 	macro_debug	"service_tx"
-
-;===============================================================================
-; wejście:
-;	eax - rozmiar pakietu w Bajtach
-;	rdi - wskaźnik do przestrzeni pakietu
-; wyjście:
-;	Flaga CF - jeśli bufor pełny
-service_tx_add:
-	; zachowaj oryginalne rejestry
-	push	rsi
-
-	; zablokuj dostęp do bufora
-	macro_close	service_tx_semaphore, 0
-
-	; wolne miejsce w buforze?
-	cmp	qword [service_tx_cache_pointer],	STATIC_EMPTY
-	je	.error	; nie
-
-	; ustal pozycję wolnego wpisu
-	mov	rsi,	((SERVICE_TX_CACHE_SIZE_page << STATIC_MULTIPLE_BY_PAGE_shift) / SERVICE_TX_STRUCTURE_CACHE.SIZE) - 0x01
-	sub	rsi,	qword [service_tx_cache_pointer]
-	shl	rsi,	STATIC_MULTIPLE_BY_16_shift
-	add	rsi,	qword [service_tx_cache_address]
-
-	; ustaw informacje o pakiecie do wysłania
-	mov	dword [rsi + SERVICE_TX_STRUCTURE_CACHE.size],	eax
-	mov	qword [rsi + SERVICE_TX_STRUCTURE_CACHE.address],	rdi
-
-	; ilość wolnych wpisów
-	dec	qword [service_tx_cache_pointer]
-
-	; koniec obsługi zgłoszenia
-	jmp	.end
-
-.error:
-	; flaga, błąd
-	stc
-
-.end:
-	; odblokuj dostęp do bufora
-	mov	byte [service_tx_semaphore],	STATIC_FALSE
-
-	; przywróć oryginalne rejestry
-	pop	rsi
-
-	; powrót z procedury
-	ret
-
-	macro_debug	"service_tx_add"

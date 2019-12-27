@@ -171,6 +171,9 @@ service_network_port_table				dq	STATIC_EMPTY
 
 service_network_stack_address				dq	STATIC_EMPTY
 
+service_network_ipc_message:
+	times	KERNEL_IPC_STRUCTURE_LIST.SIZE		db	STATIC_EMPTY
+
 ;===============================================================================
 ; THREAD
 ;===============================================================================
@@ -189,8 +192,13 @@ service_network:
 
 .loop:
 	; pobierz wiadomość do nas
+	mov	rdi,	service_network_ipc_message
 	call	kernel_ipc_receive
 	jc	.loop	; brak, sprawdź raz jeszcze
+
+	; pobierz rozmiar i wskaźnik do przestrzeni
+	mov	rcx,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.size]
+	mov	rsi,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pointer]
 
 	; protokół ARP?
 	cmp	word [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.type],	SERVICE_NETWORK_FRAME_ETHERNET_TYPE_arp
@@ -207,7 +215,7 @@ service_network:
 	test	rsi,	rsi
 	jz	.loop	; tak
 
-	; zwolnij przestrzeń pakietu
+	; zwolnij przestrzeń danych pakietu
 	mov	rdi,	rsi
 	call	kernel_memory_release_page
 
@@ -215,6 +223,42 @@ service_network:
 	jmp	.loop
 
 	macro_debug	"service_network"
+
+;===============================================================================
+; wejście:
+;	rax - rozmiar pakietu w Bajtach
+;	rdi - wskaźnik do przestrzeni padanych pakietu
+; wyjście:
+;	Flaga CF, jeśli nie udało się wysłać
+service_network_transfer:
+	; zachowaj oryginalne rejestry
+	push	rbx
+	push	rcx
+	push	rsi
+
+	; usługa wysyłania danych przez interfejs sieciowy gotowa?
+	mov	rbx,	qword [service_tx_pid]
+	test	rbx,	rbx
+	jz	.error	; usługa nie gotowa
+
+	; rejestry na swoje miejsce
+	mov	rcx,	rax
+	mov	rsi,	rdi
+	call	kernel_ipc_insert
+	jnc	.end	; wysłano wiadomość
+
+.error:
+	; flaga, błąd
+	stc
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rcx
+	pop	rbx
+
+	; powrót z procedury
+	ret
 
 ;===============================================================================
 ; wejście:
@@ -257,7 +301,7 @@ service_network_tcp_port_send:
 	; wyślij pakiet
 	mov	rax,	rcx
 	add	rax,	SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.SIZE
-	call	service_tx_add
+	call	service_network_transfer
 
 .end:
 	; przywróć oryginalne rejestry
@@ -278,9 +322,9 @@ service_network_ip:
 	cmp	byte [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.protocol],	SERVICE_NETWORK_FRAME_IP_PROTOCOL_ICMP
 	je	service_network_icmp	; tak
 
-	; protokół TCP?
-	cmp	byte [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.protocol],	SERVICE_NETWORK_FRAME_IP_PROTOCOL_TCP
-	je	service_network_tcp	; tak
+	; ; protokół TCP?
+	; cmp	byte [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.protocol],	SERVICE_NETWORK_FRAME_IP_PROTOCOL_TCP
+	; je	service_network_tcp	; tak
 
 .end:
 	; powrót z procedury
@@ -509,7 +553,7 @@ service_network_tcp_fin:
 
 	; wyślij pakiet
 	mov	ax,	SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_TCP.SIZE + STATIC_DWORD_SIZE_byte
-	call	service_tx_add
+	call	service_network_transfer
 
 	; połączenie zatwierdzone
 	jmp	.end
@@ -539,6 +583,8 @@ service_network_tcp_ack:
 	; zachowaj oryginalne rejestry
 	push	rsi
 	push	rdi
+
+	xchg	bx,bx
 
 	; oczekiwaliśmy potwierdzenia?
 	test	word [rdi + SERVICE_NETWORK_STRUCTURE_TCP_STACK.flags_request],	SERVICE_NETWORK_FRAME_TCP_FLAGS_ack
@@ -751,7 +797,7 @@ service_network_tcp_syn:
 
 	; wyślij pakiet
 	mov	ax,	SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_TCP.SIZE + STATIC_DWORD_SIZE_byte
-	call	service_tx_add
+	call	service_network_transfer
 
 	; połączenie zatwierdzone
 	jmp	.end
@@ -1145,7 +1191,7 @@ service_network_arp:
 
 	; wyślij odpowiedź
 	mov	eax,	SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_ARP.SIZE
-	call	service_tx_add
+	call	service_network_transfer
 
 .error:
 	; przywróć oryginalne rejestry
@@ -1237,7 +1283,7 @@ service_network_icmp:
 
 	; wyślij odpowiedź -----------------------------------------------------
 	mov	eax,	SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_ICMP.SIZE
-	call	service_tx_add
+	call	service_network_transfer
 
 .end:
 	; przywróć oryginalne rejestry

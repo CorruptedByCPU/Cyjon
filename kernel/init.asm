@@ -88,6 +88,11 @@ kernel_init_long_mode:
 	%include	"kernel/init/ps2.asm"
 
 	;-----------------------------------------------------------------------
+	; przygotuj komunikację międzyprocesową
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/ipc.asm"
+
+	;-----------------------------------------------------------------------
 	; inicjalizuj jeden z dostępnych interfejsów sieciowych
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/network.asm"
@@ -96,11 +101,6 @@ kernel_init_long_mode:
 	; utwórz kolejkę zadań
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/task.asm"
-
-	;-----------------------------------------------------------------------
-	; przygotuj komunikację międzyprocesową
-	;-----------------------------------------------------------------------
-	%include	"kernel/init/ipc.asm"
 
 	;-----------------------------------------------------------------------
 	; dodaj do kolejki zadań zestaw usług zarządzających środowiskiem jądra systemu

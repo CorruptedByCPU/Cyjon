@@ -39,6 +39,7 @@ kernel:
 	%include	"kernel/macro/apic.asm"
 	%include	"kernel/macro/debug.asm"
 	;-----------------------------------------------------------------------
+	%include	"kernel/ipc.asm"
 	%include	"kernel/panic.asm"
 	%include	"kernel/page.asm"
 	%include	"kernel/memory.asm"
@@ -50,7 +51,6 @@ kernel:
 	%include	"kernel/task.asm"
 	%include	"kernel/network.asm"
 	%include	"kernel/thread.asm"
-	%include	"kernel/ipc.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/ps2.asm"

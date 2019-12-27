@@ -356,11 +356,15 @@ driver_nic_i82540em_irq:
 	jne	.receive_end	; nie
 
 .receive:
+	; przekaż przestrzeń z zawartością pakietu to usługi sieciowej
+	mov	rbx,	qword [service_network_pid]
+	test	rbx,	rbx
+	jz	.receive_end	; usługa sieciowa nie jest jeszcze dostępna, zignoruj przychodzący pakiet
+
 	; zwolnij przestrzeń pakietu dla wątku
 	call	driver_nic_i82540em_rx_release
 
-	; przekaż przestrzeń z zawartością pakietu to usługi sieciowej
-	mov	rbx,	qword [service_network_pid]
+	; wyślij wiadomość
 	mov	ecx,	KERNEL_PAGE_SIZE_byte	; domyślny rozmiar obsługiwanych pakietów, cdn.
 	call	kernel_ipc_insert
 
