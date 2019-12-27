@@ -331,7 +331,7 @@ driver_nic_i82540em_irq:
 	inc	qword [driver_nic_i82540em_rx_count]
 
 	; zwiększ licznik ogólny pakietów przychodzących
-	inc	qword [kernel_network_rx_count]
+	inc	qword [service_network_rx_count]
 
 	; pobierz z deskryptora pakietów przychodzących interfejsu sieciowego adres bufora przechowującego pakiet
 	mov	rsi,	qword [driver_nic_i82540em_rx_base_address]
@@ -342,12 +342,12 @@ driver_nic_i82540em_irq:
 	je	.receive	; tak
 
 	; pobierz adres MAC z ramki Ethernet (docelowy)
-	mov	eax,	dword [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.target + KERNEL_NETWORK_STRUCTURE_MAC.2]
+	mov	eax,	dword [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.target + SERVICE_NETWORK_STRUCTURE_MAC.2]
 	shl	rax,	STATIC_MOVE_AX_TO_HIGH_shift
-	or	ax,	word [rsi + KERNEL_NETWORK_STRUCTURE_FRAME_ETHERNET.target]
+	or	ax,	word [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.target]
 
 	; czy pakiet jest skierowany do każdego?
-	mov	rcx,	KERNEL_NETWORK_MAC_mask
+	mov	rcx,	SERVICE_NETWORK_MAC_mask
 	cmp	rax,	rcx
 	je	.receive	; tak
 
@@ -359,9 +359,10 @@ driver_nic_i82540em_irq:
 	; zwolnij przestrzeń pakietu dla wątku
 	call	driver_nic_i82540em_rx_release
 
-	; obsłuż pakiet w nowym wątku
-	mov	rdi,	kernel_network
-	call	kernel_thread_exec
+	; przekaż przestrzeń z zawartością pakietu to usługi sieciowej
+	mov	rbx,	qword [service_network_pid]
+	mov	ecx,	KERNEL_PAGE_SIZE_byte	; domyślny rozmiar obsługiwanych pakietów, cdn.
+	call	kernel_ipc_insert
 
 .receive_end:
 	; poinformuj kontroler o zakończeniu przetwarzania pakietu
@@ -450,21 +451,21 @@ driver_nic_i82540em:
 	mov	eax,	dword [rsi + DRIVER_NIC_I82540EM_EERD]
 	shr	eax,	STATIC_MOVE_HIGH_TO_AX_shift
 	; zachowaj
-	mov	word [driver_nic_i82540em_mac_address + KERNEL_NETWORK_STRUCTURE_MAC.0],	ax
+	mov	word [driver_nic_i82540em_mac_address + SERVICE_NETWORK_STRUCTURE_MAC.0],	ax
 
 	; odczytaj zawartość rejestru pod adresem 0x01
 	mov	dword [rsi + DRIVER_NIC_I82540EM_EERD],	0x00000101
 	mov	eax,	dword [rsi + DRIVER_NIC_I82540EM_EERD]
 	shr	eax,	STATIC_MOVE_HIGH_TO_AX_shift
 	; zachowaj
-	mov	word [driver_nic_i82540em_mac_address + KERNEL_NETWORK_STRUCTURE_MAC.2],	ax
+	mov	word [driver_nic_i82540em_mac_address + SERVICE_NETWORK_STRUCTURE_MAC.2],	ax
 
 	; odczytaj zawartość rejestru pod adresem 0x02
 	mov	dword [rsi + DRIVER_NIC_I82540EM_EERD],	0x00000201
 	mov	eax,	dword [rsi + DRIVER_NIC_I82540EM_EERD]
 	shr	eax,	STATIC_MOVE_HIGH_TO_AX_shift
 	; zachowaj
-	mov	word [driver_nic_i82540em_mac_address + KERNEL_NETWORK_STRUCTURE_MAC.4],	ax
+	mov	word [driver_nic_i82540em_mac_address + SERVICE_NETWORK_STRUCTURE_MAC.4],	ax
 
  	; wyłącz wszystkie typy przerwań na kontrolerze
 	mov	dword [rsi + DRIVER_NIC_I82540EM_IMC],	STATIC_MAX_unsigned	; dokumentacja, strona 312/410

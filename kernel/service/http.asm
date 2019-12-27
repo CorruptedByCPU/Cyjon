@@ -14,15 +14,12 @@
 service_http:
 	; zarejestruj port 80
 	mov	cx,	80
-	call	kernel_network_tcp_port_assign
+	call	service_network_tcp_port_assign
 
 .loop:
 	; otrzymaliśmy zapytanie?
-	call	kernel_network_tcp_port_receive
+	call	service_network_tcp_port_receive
 	jc	.loop	; nie, sprawdź raz jeszcze
-
-	; zachowaj wskaźnik przestrzeni zapytania
-	push	rsi
 
 	; zapytanie o rdzeń usługi?
 	mov	ecx,	service_http_get_root_end - service_http_get_root
@@ -44,14 +41,10 @@ service_http:
 
 .answer:
 	; wyślij odpowiedź
-	call	kernel_network_tcp_port_send
+	call	service_network_tcp_port_send
 
-	; przywróć wskaźnik przestrzeni zapytania i zwolnij
-	pop	rdi
-	call	kernel_memory_release_page
-
-	; powrót do pętli głównej usługi
-	jmp	.loop
+	; zatrzymaj dalsze wykonywanie kodu
+	jmp	$
 
 service_http_get_root		db	"GET / "
 service_http_get_root_end:

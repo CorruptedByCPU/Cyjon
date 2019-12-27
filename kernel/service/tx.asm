@@ -4,16 +4,19 @@
 
 SERVICE_TX_CACHE_SIZE_page	equ	1
 
-service_tx_semaphore		db	STATIC_TRUE	; domyślnie zablokowany dostęp
-
-service_tx_cache_address	dq	STATIC_EMPTY
-service_tx_cache_pointer	dq	((SERVICE_TX_CACHE_SIZE_page << STATIC_MULTIPLE_BY_PAGE_shift) / SERVICE_TX_STRUCTURE_CACHE.SIZE) - 0x01	; liczymy od zera
-
 struc	SERVICE_TX_STRUCTURE_CACHE
 	.size			resb	8
 	.address		resb	8
 	.SIZE:
 endstruc
+
+
+service_tx_pid			dq	STATIC_EMPTY
+
+service_tx_semaphore		db	STATIC_TRUE	; domyślnie zablokowany dostęp
+
+service_tx_cache_address	dq	STATIC_EMPTY
+service_tx_cache_pointer	dq	((SERVICE_TX_CACHE_SIZE_page << STATIC_MULTIPLE_BY_PAGE_shift) / SERVICE_TX_STRUCTURE_CACHE.SIZE) - 0x01	; liczymy od zera
 
 ;===============================================================================
 service_tx:
@@ -27,6 +30,13 @@ service_tx:
 
 	; zachowaj adres bufora
 	mov	qword [service_tx_cache_address],	rdi
+
+	; pobierz własny PID
+	call	kernel_task_active
+	mov	rax,	qword [rdi + KERNEL_STRUCTURE_TASK.pid]
+
+	; udostepnij własny PID dla pozostałych procesów
+	mov	qword [service_tx_pid],	rax
 
 .reload:
 	; odblokuj dostęp do bufora

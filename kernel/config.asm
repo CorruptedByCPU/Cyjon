@@ -11,7 +11,7 @@
 
 %define	KERNEL_name					"cyjon"
 %define	KERNEL_version					"0"
-%define	KERNEL_revision					"1163"
+%define	KERNEL_revision					"1164"
 %define	KERNEL_architecture				"x86_64"
 
 KERNEL_BASE_address					equ	0x0000000000100000
