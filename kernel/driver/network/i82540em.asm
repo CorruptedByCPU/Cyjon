@@ -35,12 +35,9 @@ DRIVER_NIC_I82540EM_FCAL			equ	0x0028	; Flow Control Address Low
 DRIVER_NIC_I82540EM_FCAH			equ	0x002C	; Flow Control Address High
 DRIVER_NIC_I82540EM_FCT				equ	0x0030	; Flow Control Type
 DRIVER_NIC_I82540EM_VET				equ	0x0038	; VLAN Ether Type
-DRIVER_NIC_I82540EM_ICR				equ	0x00C0	; Interrupt Cause Read
-DRIVER_NIC_I82540EM_ICR_TXDW			equ	0	; Transmit Descriptor Written Back
-DRIVER_NIC_I82540EM_ICR_TXQE			equ	1	; Transmit Queue Empty
-DRIVER_NIC_I82540EM_ICR_RXO			equ	6	; Receiver Overrun
-DRIVER_NIC_I82540EM_ICR_RXT0			equ	7	; Receiver Timer Interrupt
-DRIVER_NIC_I82540EM_ICR_SRPD			equ	16	; Small Receive Packet Detected
+DRIVER_NIC_I82540EM_ICR_register		equ	0x00C0	; Interrupt Cause Read
+DRIVER_NIC_I82540EM_ICR_register_flag_TXQE	equ	1	; Transmit Queue Empty
+DRIVER_NIC_I82540EM_ICR_register_flag_RXT0	equ	7	; Receiver Timer Interrupt
 DRIVER_NIC_I82540EM_ITR				equ	0x00C4	; Interrupt Throttling Register
 DRIVER_NIC_I82540EM_ICS				equ	0x00C8	; Interrupt Cause Set Register
 DRIVER_NIC_I82540EM_IMS				equ	0x00D0	; Interrupt Mask Set/Read Register
@@ -170,11 +167,10 @@ DRIVER_NIC_I82540EM_TSPMT			equ	0x3830	; TCP Segmentation Pad & Min Threshold
 DRIVER_NIC_I82540EM_RXCSUM			equ	0x5000	; RX Checksum Control
 DRIVER_NIC_I82540EM_MTA				equ	0x5200	; Multicast Table Array
 DRIVER_NIC_I82540EM_RA				equ	0x5400	; Receive Address
-
-DRIVER_NIC_I82540EM_EEPROM_MANAGEMENT_CONTROL_ENABLE_ARP_RESPONSE	equ	1000000000000000b
-
-DRIVER_NIC_I82540EM_CTRL_RDESC_STATUS_DD_bit	equ	0
-DRIVER_NIC_I82540EM_CTRL_RDESC_STATUS_EOP_bit	equ	1
+DRIVER_NIC_I82540EM_IP4AT_ADDR0			equ	0x5840
+DRIVER_NIC_I82540EM_IP4AT_ADDR1			equ	0x5848
+DRIVER_NIC_I82540EM_IP4AT_ADDR2			equ	0x5850
+DRIVER_NIC_I82540EM_IP4AT_ADDR3			equ	0x5858
 
 struc	DRIVER_NIC_I82540EM_STRUCTURE_RCTL_RDESC_entry
 	.base_address				resb	8
@@ -192,16 +188,16 @@ driver_nic_i82540em_tx_base_address		dq	STATIC_EMPTY
 driver_nic_i82540em_mac_address			dq	STATIC_EMPTY
 
 driver_nic_i82540em_tx_queue_empty_semaphore	db	STATIC_TRUE
-driver_nic_i82540em_promiscious_mode_semaphore	db	STATIC_TRUE
+driver_nic_i82540em_promiscious_mode_semaphore	db	STATIC_FALSE
 
 ; driver_nic_i82540em_ipv4_address		dd	STATIC_EMPTY
-; driver_nic_i82540em_ipv4_address		db	10, 0, 0, 64
-driver_nic_i82540em_ipv4_address		db	192, 168, 0, 64
+driver_nic_i82540em_ipv4_address		db	10, 0, 0, 64
+; driver_nic_i82540em_ipv4_address		db	192, 168, 0, 64
 ; driver_nic_i82540em_ipv4_mask			dd	STATIC_EMPTY
 driver_nic_i82540em_ipv4_mask			db	255, 255, 255, 0
 ; driver_nic_i82540em_ipv4_gateway		dd	STATIC_EMPTY
-; driver_nic_i82540em_ipv4_gateway		db	10, 0, 0, 1
-driver_nic_i82540em_ipv4_gateway		db	192, 168, 0, 1
+driver_nic_i82540em_ipv4_gateway		db	10, 0, 0, 1
+; driver_nic_i82540em_ipv4_gateway		db	192, 168, 0, 1
 driver_nic_i82540em_vlan			dw	STATIC_EMPTY
 
 driver_nic_i82540em_rx_count			dq	STATIC_EMPTY
@@ -269,7 +265,7 @@ driver_nic_i82540em_transfer:
 	; poinformuj o 1 deskryptorze do przetworzenia, wskazując względny początek i jego koniec
 	mov	rax,	qword [driver_nic_i82540em_mmio_base_address]
 	mov	dword [rax + DRIVER_NIC_I82540EM_TDH],	0x00
-	mov	dword [rax + DRIVER_NIC_I82540EM_TDT],	0x10
+	mov	dword [rax + DRIVER_NIC_I82540EM_TDT],	0x01
 
 .status:
 	; sprawdź status deskryptora
@@ -288,93 +284,50 @@ driver_nic_i82540em_transfer:
 driver_nic_i82540em_irq:
 	; zachowaj oryginalne rejestry
 	push	rax
+	push	rbx
 	push	rcx
+	push	rdx
 	push	rsi
 	pushf
 
 	; pobierz status kontrolera
 	mov	rsi,	qword [driver_nic_i82540em_mmio_base_address]
-	mov	eax,	dword [rsi + DRIVER_NIC_I82540EM_ICR]
+	mov	eax,	dword [rsi + DRIVER_NIC_I82540EM_ICR_register]
 
-	; przerwanie wywołane przez pakiet przychodzący?
-	bt	eax,	DRIVER_NIC_I82540EM_ICR_RXT0
-	jc	.incoming	; tak
-
-	; wykryto "mały" pakiet przychodzący?
-	bt	eax,	DRIVER_NIC_I82540EM_ICR_SRPD
-	jc	.end	; tak
-
-	; kolejka pakietów wychodzących pusta?
-	bt	eax,	DRIVER_NIC_I82540EM_ICR_TXQE
-	jnc	.tx_not_empty	; nie
+	; opróżniono kolejkę deskryptorów wychodzących?
+	bt	eax,	DRIVER_NIC_I82540EM_ICR_register_flag_TXQE
+	jnc	.no_txqe	; nie
 
 	; kolejka deskryptorów pusta
 	mov	byte [driver_nic_i82540em_tx_queue_empty_semaphore],	STATIC_TRUE
 
-.tx_not_empty:
-	; brak dostępnych deskryptorów do obsługi pakietów przychodzących?
-	bt	eax,	DRIVER_NIC_I82540EM_ICR_RXO
-	jnc	.end	; nie
+.no_txqe:
+	; pakiet przychodzący?
+	bt	eax,	DRIVER_NIC_I82540EM_ICR_register_flag_RXT0
+	jnc	.end
 
-	; brak obsługi stanu kontrolera sieciowego
-	xchg	bx,bx	; debug
-
-	nop
-	nop
-	nop
-
-	; brak obsługi
-	jmp	.end
-
-.incoming:
-	; zwiększ licznik pakietów przychodzących kontrolera sieci
-	inc	qword [driver_nic_i82540em_rx_count]
-
-	; zwiększ licznik ogólny pakietów przychodzących
-	inc	qword [service_network_rx_count]
-
-	; pobierz z deskryptora pakietów przychodzących interfejsu sieciowego adres bufora przechowującego pakiet
-	mov	rsi,	qword [driver_nic_i82540em_rx_base_address]
-	mov	rsi,	qword [rsi]
-
-	; odbieramy wszystkie pakiety? (nie interesuje nas do kogo były kierowane)
-	cmp	byte [driver_nic_i82540em_promiscious_mode_semaphore],	STATIC_TRUE
-	je	.receive	; tak
-
-	; pobierz adres MAC z ramki Ethernet (docelowy)
-	mov	eax,	dword [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.target + SERVICE_NETWORK_STRUCTURE_MAC.2]
-	shl	rax,	STATIC_MOVE_AX_TO_HIGH_shift
-	or	ax,	word [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.target]
-
-	; czy pakiet jest skierowany do każdego?
-	mov	rcx,	SERVICE_NETWORK_MAC_mask
-	cmp	rax,	rcx
-	je	.receive	; tak
-
-	; czy pakiet jest skierowany do nas?
-	cmp	rax,	qword [driver_nic_i82540em_mac_address]
-	jne	.receive_end	; nie
-
-.receive:
 	; przekaż przestrzeń z zawartością pakietu to usługi sieciowej
 	mov	rbx,	qword [service_network_pid]
 	test	rbx,	rbx
-	jz	.receive_end	; usługa sieciowa nie jest jeszcze dostępna, zignoruj przychodzący pakiet
+	jz	.end	; usługa sieciowa nie jest jeszcze dostępna, zignoruj przychodzący pakiet
 
-	; zwolnij przestrzeń pakietu dla wątku
+	; pobierz z deskryptora pakietów przychodzących interfejsu sieciowego adres i rozmiar danych bufora przechowującego pakiet
+	mov	rsi,	qword [driver_nic_i82540em_rx_base_address]
+	movzx	ecx,	word [rsi + DRIVER_NIC_I82540EM_STRUCTURE_RCTL_RDESC_entry.length]
+	mov	rsi,	qword [rsi + DRIVER_NIC_I82540EM_STRUCTURE_RCTL_RDESC_entry.base_address]
+
+	; przydziel nowy bufor pod pakiet
 	call	driver_nic_i82540em_rx_release
 
 	; wyślij wiadomość
-	mov	ecx,	KERNEL_PAGE_SIZE_byte	; domyślny rozmiar obsługiwanych pakietów, cdn.
 	call	kernel_ipc_insert
 
-.receive_end:
+.end:
 	; poinformuj kontroler o zakończeniu przetwarzania pakietu
 	mov	rsi,	qword [driver_nic_i82540em_mmio_base_address]
-	mov	dword [rsi + DRIVER_NIC_I82540EM_RDH],	STATIC_EMPTY
-	mov	dword [rsi + DRIVER_NIC_I82540EM_RDT],	STATIC_EMPTY
+	mov	dword [rsi + DRIVER_NIC_I82540EM_RDH],	0x00
+	mov	dword [rsi + DRIVER_NIC_I82540EM_RDT],	0x01
 
-.end:
 	; poinformuj APIC o obsłużeniu przerwania sprzętowego
 	mov	rax,	qword [kernel_apic_base_address]
 	mov	dword [rax + KERNEL_APIC_EOI_register],	STATIC_EMPTY
@@ -382,7 +335,9 @@ driver_nic_i82540em_irq:
 	; przywróć oryginalne rejestry
 	popf
 	pop	rsi
+	pop	rdx
 	pop	rcx
+	pop	rbx
 	pop	rax
 
 	; powrót z przerwania sprzętowego
@@ -391,7 +346,7 @@ driver_nic_i82540em_irq:
 	macro_debug	"driver_nic_i82540em_irq"
 
 ;===============================================================================
-; wejście:
+	; wejście:
 ;	rbx - szyna
 ;	rcx - urządzenie
 ;	rdx - funkcja
@@ -475,7 +430,7 @@ driver_nic_i82540em:
 	mov	dword [rsi + DRIVER_NIC_I82540EM_IMC],	STATIC_MAX_unsigned	; dokumentacja, strona 312/410
 
 	; usuń informacje o zalegających przerwaniach
-	mov	eax,	dword [rsi + DRIVER_NIC_I82540EM_ICR]	; dokumentacja, strona: 307/410, // As a result, reading this register implicitly acknowledges any pending interrupt events. Writing a 1b to any bit in the register also clears that bit. Writing a 0b to any bit has no effect on that bit. //
+	mov	eax,	dword [rsi + DRIVER_NIC_I82540EM_ICR_register]	; dokumentacja, strona: 307/410, // As a result, reading this register implicitly acknowledges any pending interrupt events. Writing a 1b to any bit in the register also clears that bit. Writing a 0b to any bit has no effect on that bit. //
 
 	; inicjalizuj kontroler
 	call	driver_nic_i82540em_setup
@@ -523,13 +478,11 @@ driver_nic_i82540em_setup:
 	; dokumentacja, strona 321/410, podpunkt 13.4.27
 	; obsługujemy jeden pakiet na raz, więc ustawiamy minimalne wartości
 	mov	dword [rsi + DRIVER_NIC_I82540EM_RDLEN],	DRIVER_NIC_I82540EM_RDLEN_default
-	mov	dword [rsi + DRIVER_NIC_I82540EM_RDH],	0x00	; pierwsze deskryptor w kolejce
-	mov	dword [rsi + DRIVER_NIC_I82540EM_RDT],	0x00	; ostatni deskryptor w kolejce
+	mov	dword [rsi + DRIVER_NIC_I82540EM_RDH],	0x00	; numer pierwszego dostępnego deskryptora na liście
+	mov	dword [rsi + DRIVER_NIC_I82540EM_RDT],	0x01	; pierwszy niedostępny deskryptor z listy
 
 	; przygotuj przestrzeń pod kolejkę pakietów przychodzących
-	mov	ecx,	DRIVER_NIC_I82540EM_RDLEN_default
-	call	library_page_from_size
-	call	kernel_memory_alloc
+	call	kernel_memory_alloc_page
 
 	; wstaw do pierwszego rekordu w tablicy deskryptorów
 	mov	rax,	qword [driver_nic_i82540em_rx_base_address]

@@ -11,15 +11,16 @@ struc	KERNEL_IPC_STRUCTURE_LIST
 	.ttl			resb	8
 	.pid_source		resb	8
 	.pid_destination	resb	8
+	.data:
 	.size			resb	8
 	.pointer		resb	8
-	.data			resb	32
+	.other			resb	24
 	.SIZE:
 endstruc
 
 kernel_ipc_semaphore		db	STATIC_FALSE
 kernel_ipc_base_address		dq	STATIC_EMPTY
-kernel_ipc_entry_count		dw	STATIC_EMPTY
+kernel_ipc_entry_count		dq	STATIC_EMPTY
 
 ;===============================================================================
 ; wejście:
@@ -34,76 +35,85 @@ kernel_ipc_insert:
 	push	rdi
 	push	rcx
 
-	; uzyskaj dostęp do listy komunikatów
-	macro_close	kernel_ipc_semaphore, 0
-
 	; pobierz PID procesu wywołującego
 	call	kernel_task_active
 	mov	rdx,	qword [rdi + KERNEL_STRUCTURE_TASK.pid]
 
+	; uzyskaj dostęp do listy komunikatów
+	macro_close	kernel_ipc_semaphore, 0
+
+.wait:
+	; brak miejsca na liście?
+	cmp	qword [kernel_ipc_entry_count],	KERNEL_IPC_ENTRY_limit
+	je	.wait	; czekaj na zwolnienie przynajmniej jednego miejsca
+
+.reload:
+	; pobierz aktualny czas systemu
+	mov	rax,	qword [driver_rtc_microtime]
+
+	; ilość dostępnych wpisów na liście
+	mov	rcx,	KERNEL_IPC_ENTRY_limit
+
 	; ustaw wskaźnik na początek listy
 	mov	rdi,	qword [kernel_ipc_base_address]
 
-.reload:
-	; maksymalna ilość wpisów na liście
-	mov	ecx,	KERNEL_IPC_ENTRY_limit
+.loop:
+	; wpis przeterminowany?
+	cmp	rax,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.ttl]
+	ja	.found	; tak
 
-.search:
-	; wpis przedawniony?
-	mov	rax,	qword [driver_rtc_microtime]
-	cmp	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.ttl],	rax
-	jb	.found	; tak, zastąp
-
-	; wolny wpis?
-	cmp	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.ttl],	STATIC_EMPTY
-	je	.found	; znaleziono
-
-	; prdesuń wskaźnik na następny wpis
+	; przesuń wskaźnik na następny wpis
 	add	rdi,	KERNEL_IPC_STRUCTURE_LIST.SIZE
 
-	; pozostały wpisy do przejrzenia?
+	; koniec miejsca?
 	dec	rcx
-	jnz	.search	; tak
+	jz	.reload	; tak
 
-	; przesuń wskaźnik na następny blok danych listy
-	and	di,	KERNEL_PAGE_mask
-	mov	rdi,	qword [rdi + STATIC_STRUCTURE_BLOCK.link]
-
-	; przetwórz następny blok
-	jmp	.reload
+	; powrót do pętli głównej
+	jmp	.loop
 
 .found:
-	; ustaw czas przedawnienia wiadomości
-	add	rax,	KERNEL_IPC_TTL_default
-	mov	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.ttl],	rax
-
 	; ustaw PID nadawcy
 	mov	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pid_source],	rdx
 
 	; ustaw PID odbiorcy
 	mov	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pid_destination],	rbx
 
-	; brak przestrzeni do przekazania?
+	; przywróć oryginalny rejestr
 	mov	rcx,	qword [rsp]
-	test	rcx,	rcx
-	jz	.only_data	; tak
 
-	; ustaw rozmiar i wskaźnik do przestrzeni danych
+	; rozmiar przestrzeni danych pusty?
+	test	rcx,	rcx
+	jz	.load	; tak, uzupełnij komunikat danymi z wskaźnika RSI
+
+	; ustaw rozmiar danych przestrzeni
 	mov	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.size],	rcx
+
+	; ustaw wskaźnik do przestrzeni danych
 	mov	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pointer],	rsi
 
-	; załadowano wiadomość
+	; koniec tworzenia wiadomości do procesu
 	jmp	.end
 
-.only_data:
+.load:
+	; zachowaj wskaźnik początku wpisu
+	push	rdi
+
 	; załaduj treść wiadomości
 	mov	ecx,	KERNEL_IPC_STRUCTURE_LIST.SIZE - KERNEL_IPC_STRUCTURE_LIST.data
 	add	rdi,	KERNEL_IPC_STRUCTURE_LIST.data
 	rep	movsb
 
+	; przywróć wskaźnik początku wpisu
+	pop	rdi
+
 .end:
 	; ilość wiadomości na liście
 	inc	qword [kernel_ipc_entry_count]
+
+	; ustaw czas przedawnienia wiadomości
+	add	rax,	KERNEL_IPC_TTL_default
+	mov	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.ttl],	rax
 
 	; zwolnij dostęp
 	mov	byte [kernel_ipc_semaphore],	STATIC_FALSE
@@ -137,17 +147,23 @@ kernel_ipc_receive:
 	call	kernel_task_active
 	mov	rax,	qword [rdi + KERNEL_STRUCTURE_TASK.pid]
 
+	; ilość dostępnych wpisów na liście
+	mov	rcx,	KERNEL_IPC_ENTRY_limit
+
 	; ustaw wskaźnik na początek listy
 	mov	rsi,	qword [kernel_ipc_base_address]
 
-.reload:
-	; maksymalna ilość wiadomości na liście
-	mov	ecx,	KERNEL_IPC_ENTRY_limit
+	; pobierz aktualny czas systemu
+	mov	rdi,	qword [driver_rtc_microtime]
 
-.search:
-	; szukaj wpisu przeznaczonego procesowi
+.loop:
+	; wpis dla procesu?
 	cmp	qword [rsi + KERNEL_IPC_STRUCTURE_LIST.pid_destination],	rax
-	je	.found	; znaleziono
+	jne	.next	; nie
+
+	; wiadomość przeterminowana?
+	cmp	rdi,	qword [rsi + KERNEL_IPC_STRUCTURE_LIST.ttl]
+	jbe	.found	; nie
 
 .next:
 	; przesuń wskaźnik na następny wpis
@@ -155,7 +171,7 @@ kernel_ipc_receive:
 
 	; pozostały wpisy do przejrzenia?
 	dec	rcx
-	jnz	.search	; tak
+	jnz	.loop	; tak
 
 	; brak wiadomości dla procesu
 
@@ -166,36 +182,16 @@ kernel_ipc_receive:
 	jmp	.error
 
 .found:
-	; wiadomość przeterminowana?
-	mov	rax,	qword [driver_rtc_microtime]
-	cmp	qword [rsi + KERNEL_IPC_STRUCTURE_LIST.ttl],	rax
-	jb	.next	; tak, znajdź następną
-
-	; uzyskaj wyłączny dostęp do listy komunikatów
-	macro_close	kernel_ipc_semaphore, 0
-
-	; zachowaj wskaźnik początku wpisu
-	push	rsi
-
-	; odbierz treść komunikatu
+	; prześlij komunikat do przestrzeni procesu
 	mov	ecx,	KERNEL_IPC_STRUCTURE_LIST.SIZE
-	mov	rdi,	qword [rsp + STATIC_QWORD_SIZE_byte]
+	mov	rdi,	qword [rsp]
 	rep	movsb
 
-	; przywróć wskaźnik do początku wpisu
-	pop	rsi
-
-	; zwróć informacje o właścicielu wiadomości
-	mov	rbx,	qword [rsi + KERNEL_IPC_STRUCTURE_LIST.pid_source]
-
-	; zwolnij wpis ustawiając TTL na przedawniony
-	mov	qword [rsi + KERNEL_IPC_STRUCTURE_LIST.ttl],	STATIC_EMPTY
+	; zwolnij wpis na liście
+	mov	qword [rsi - KERNEL_IPC_STRUCTURE_LIST.SIZE],	STATIC_EMPTY
 
 	; ilość komunikatów na liście
 	dec	qword [kernel_ipc_entry_count]
-
-	; zwolnij dostęp
-	mov	byte [kernel_ipc_semaphore],	STATIC_FALSE
 
 	; flaga, sukces
 	clc

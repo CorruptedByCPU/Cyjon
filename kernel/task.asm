@@ -2,12 +2,6 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
-kernel_task_address			dq	STATIC_EMPTY
-kernel_task_active_list			dq	STATIC_EMPTY
-
-kernel_task_pid_semaphore		db	STATIC_FALSE
-kernel_task_pid				dq	STATIC_EMPTY
-
 KERNEL_TASK_EFLAGS_if			equ	000000000000001000000000b
 KERNEL_TASK_EFLAGS_zf			equ	000000000000000001000000b
 KERNEL_TASK_EFLAGS_cf			equ	000000000000000000000001b
@@ -49,6 +43,12 @@ struc	KERNEL_STRUCTURE_TASK_IRETQ
 	.rsp						resb	8
 	.ds						resb	8
 endstruc
+
+kernel_task_address			dq	STATIC_EMPTY
+kernel_task_active_list			dq	STATIC_EMPTY
+
+kernel_task_pid_semaphore		db	STATIC_FALSE
+kernel_task_pid				dq	STATIC_EMPTY
 
 ;===============================================================================
 kernel_task:

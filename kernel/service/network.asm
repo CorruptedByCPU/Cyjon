@@ -103,6 +103,7 @@ struc	SERVICE_NETWORK_STRUCTURE_FRAME_ICMP
 	.code						resb	0x01
 	.checksum					resb	0x02
 	.reserved					resb	0x04
+	.data						resb	0x20
 	.SIZE:
 endstruc
 
@@ -1211,11 +1212,20 @@ service_network_arp:
 ;	rsi - wskaźnik do pakietu przychodzącego
 service_network_icmp:
 	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rcx
 	push	rsi
+	push	rdi
 
 	; zapytanie?
 	cmp	byte [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_ICMP.type],	SERVICE_NETWORK_FRAME_ICMP_TYPE_REQUEST
 	jne	.end	; nie, brak obsługi
+
+	; rozmiar nagłówka ramki IP
+	movzx	ebx,	byte [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.version_and_ihl]
+	and	bl,	SERVICE_NETWORK_FRAME_IP_HEADER_LENGTH_mask
+	shl	bl,	STATIC_MULTIPLE_BY_4_shift
 
 	; przygotuj przestrzeń pod odpowiedź
 	call	kernel_memory_alloc_page
@@ -1243,6 +1253,20 @@ service_network_icmp:
 
 	; wyczyść starą sumę kontrolną ramki ICMP
 	mov	word [rdi + SERVICE_NETWORK_STRUCTURE_FRAME_ICMP.checksum],	STATIC_EMPTY
+
+	; zachowaj wskaźniki
+	push	rsi
+	push	rdi
+
+	; zwróć dane ramki ICMP klienta
+	mov	ecx,	SERVICE_NETWORK_STRUCTURE_FRAME_ICMP.SIZE - SERVICE_NETWORK_STRUCTURE_FRAME_ICMP.data
+	add	rsi,	SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_ICMP.data
+	add	rdi,	SERVICE_NETWORK_STRUCTURE_FRAME_ICMP.data
+	rep	movsb
+
+	; przywróć wskaźniki
+	pop	rdi
+	pop	rsi
 
 	;-----------------------------------------------------------------------
 	; wylicz sumę kontrolną
@@ -1287,7 +1311,11 @@ service_network_icmp:
 
 .end:
 	; przywróć oryginalne rejestry
+	pop	rdi
 	pop	rsi
+	pop	rcx
+	pop	rbx
+	pop	rax
 
 	; powrót z procedury
 	jmp	service_network_ip.end

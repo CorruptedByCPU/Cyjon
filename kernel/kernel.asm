@@ -49,7 +49,6 @@ kernel:
 	%include	"kernel/data.asm"
 	%include	"kernel/idt.asm"
 	%include	"kernel/task.asm"
-	%include	"kernel/network.asm"
 	%include	"kernel/thread.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/driver/rtc.asm"
@@ -61,6 +60,7 @@ kernel:
 	%include	"kernel/service/shell.asm"
 	%include	"kernel/service/http.asm"
 	%include	"kernel/service/tx.asm"
+	%include	"kernel/service/network.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/input.asm"
 	%include	"library/page_align_up.asm"
