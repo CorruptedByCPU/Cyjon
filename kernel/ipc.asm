@@ -82,6 +82,17 @@ kernel_ipc_insert:
 	; przywróć oryginalny rejestr
 	mov	rcx,	qword [rsp]
 
+%ifdef	DEBUG
+	; debug
+	push	rcx
+	push	rsi
+	mov	ecx,	kernel_debug_string_ipc_insert_end - kernel_debug_string_ipc_insert
+	mov	rsi,	kernel_debug_string_ipc_insert
+	call	kernel_video_string
+	pop	rsi
+	pop	rcx
+%endif
+
 	; rozmiar przestrzeni danych pusty?
 	test	rcx,	rcx
 	jz	.load	; tak, uzupełnij komunikat danymi z wskaźnika RSI
@@ -186,6 +197,17 @@ kernel_ipc_receive:
 	mov	ecx,	KERNEL_IPC_STRUCTURE_LIST.SIZE
 	mov	rdi,	qword [rsp]
 	rep	movsb
+
+%ifdef	DEBUG
+	; debug
+	push	rcx
+	push	rsi
+	mov	ecx,	kernel_debug_string_ipc_remove_end - kernel_debug_string_ipc_remove
+	mov	rsi,	kernel_debug_string_ipc_remove
+	call	kernel_video_string
+	pop	rsi
+	pop	rcx
+%endif
 
 	; zwolnij wpis na liście
 	mov	qword [rsi - KERNEL_IPC_STRUCTURE_LIST.SIZE],	STATIC_EMPTY

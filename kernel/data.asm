@@ -38,3 +38,25 @@ kernel_idt_header:
 kernel_string_space					db	STATIC_ASCII_SPACE
 kernel_string_new_line					db	STATIC_ASCII_NEW_LINE
 kernel_string_dot					db	STATIC_ASCII_DOT
+
+;===============================================================================
+; DEBUG
+;===============================================================================
+kernel_debug_string_irq		db	"IRQ|"
+kernel_debug_string_irq_end:
+kernel_debug_string_tx_empty	db	"TX Empty", STATIC_ASCII_NEW_LINE
+kernel_debug_string_tx_empty_end:
+kernel_debug_string_rx		db	"RX|"
+kernel_debug_string_rx_end:
+kernel_debug_string_ipc_insert	db	"IPC+|"
+kernel_debug_string_ipc_insert_end:
+kernel_debug_string_ipc_remove	db	"IPC-|"
+kernel_debug_string_ipc_remove_end:
+kernel_debug_string_network	db	"Network|"
+kernel_debug_string_network_end:
+kernel_debug_string_ip		db	"IPv4|"
+kernel_debug_string_ip_end:
+kernel_debug_string_arp		db	"ARP|"
+kernel_debug_string_arp_end:
+kernel_debug_string_icmp	db	"ICMP|"
+kernel_debug_string_icmp_end:
