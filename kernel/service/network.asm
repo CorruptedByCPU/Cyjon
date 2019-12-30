@@ -197,17 +197,6 @@ service_network:
 	call	kernel_ipc_receive
 	jc	.loop	; brak, sprawdź raz jeszcze
 
-%ifdef	DEBUG
-	; debug
-	push	rcx
-	push	rsi
-	mov	ecx,	kernel_debug_string_network_end - kernel_debug_string_network
-	mov	rsi,	kernel_debug_string_network
-	call	kernel_video_string
-	pop	rsi
-	pop	rcx
-%endif
-
 	; pobierz rozmiar i wskaźnik do przestrzeni
 	mov	rcx,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.size]
 	mov	rsi,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pointer]
@@ -331,17 +320,6 @@ service_network_tcp_port_send:
 ; wejście:
 ;	rsi - wskaźnik do pakietu przychodzącego
 service_network_ip:
-%ifdef	DEBUG
-	; debug
-	push	rcx
-	push	rsi
-	mov	ecx,	kernel_debug_string_ip_end - kernel_debug_string_ip
-	mov	rsi,	kernel_debug_string_ip
-	call	kernel_video_string
-	pop	rsi
-	pop	rcx
-%endif
-
 	; protokół ICMP?
 	cmp	byte [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.protocol],	SERVICE_NETWORK_FRAME_IP_PROTOCOL_ICMP
 	je	service_network_icmp	; tak
@@ -1178,17 +1156,6 @@ service_network_arp:
 	call	kernel_memory_alloc_page
 	jc	.error	; brak wolnego miejsca, nie odpowiadaj
 
-%ifdef	DEBUG
-	; debug
-	push	rcx
-	push	rsi
-	mov	ecx,	kernel_debug_string_arp_end - kernel_debug_string_arp
-	mov	rsi,	kernel_debug_string_arp
-	call	kernel_video_string
-	pop	rsi
-	pop	rcx
-%endif
-
 	;-----------------------------------------------------------------------
 	; wypełnij ramki domyślnymi wartościami
 	mov	word [rdi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.type],	SERVICE_NETWORK_FRAME_ETHERNET_TYPE_arp
@@ -1255,17 +1222,6 @@ service_network_icmp:
 	; zapytanie?
 	cmp	byte [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_ICMP.type],	SERVICE_NETWORK_FRAME_ICMP_TYPE_REQUEST
 	jne	.end	; nie, brak obsługi
-
-%ifdef	DEBUG
-	; debug
-	push	rcx
-	push	rsi
-	mov	ecx,	kernel_debug_string_icmp_end - kernel_debug_string_icmp
-	mov	rsi,	kernel_debug_string_icmp
-	call	kernel_video_string
-	pop	rsi
-	pop	rcx
-%endif
 
 	; rozmiar nagłówka ramki IP
 	movzx	ebx,	byte [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.version_and_ihl]

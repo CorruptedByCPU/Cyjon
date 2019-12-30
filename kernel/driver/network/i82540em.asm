@@ -191,13 +191,13 @@ driver_nic_i82540em_tx_queue_empty_semaphore	db	STATIC_TRUE
 driver_nic_i82540em_promiscious_mode_semaphore	db	STATIC_FALSE
 
 ; driver_nic_i82540em_ipv4_address		dd	STATIC_EMPTY
-; driver_nic_i82540em_ipv4_address		db	10, 0, 0, 64
-driver_nic_i82540em_ipv4_address		db	192, 168, 0, 64
+driver_nic_i82540em_ipv4_address		db	10, 0, 0, 64
+; driver_nic_i82540em_ipv4_address		db	192, 168, 0, 64
 ; driver_nic_i82540em_ipv4_mask			dd	STATIC_EMPTY
 driver_nic_i82540em_ipv4_mask			db	255, 255, 255, 0
 ; driver_nic_i82540em_ipv4_gateway		dd	STATIC_EMPTY
-; driver_nic_i82540em_ipv4_gateway		db	10, 0, 0, 1
-driver_nic_i82540em_ipv4_gateway		db	192, 168, 0, 1
+driver_nic_i82540em_ipv4_gateway		db	10, 0, 0, 1
+; driver_nic_i82540em_ipv4_gateway		db	192, 168, 0, 1
 driver_nic_i82540em_vlan			dw	STATIC_EMPTY
 
 driver_nic_i82540em_rx_count			dq	STATIC_EMPTY
@@ -217,34 +217,12 @@ driver_nic_i82540em_irq:
 	mov	rsi,	qword [driver_nic_i82540em_mmio_base_address]
 	mov	eax,	dword [rsi + DRIVER_NIC_I82540EM_ICR_register]
 
-%ifdef	DEBUG
-	; debug
-	push	rcx
-	push	rsi
-	mov	ecx,	kernel_debug_string_irq_end - kernel_debug_string_irq
-	mov	rsi,	kernel_debug_string_irq
-	call	kernel_video_string
-	pop	rsi
-	pop	rcx
-%endif
-
 	; opróżniono kolejkę deskryptorów wychodzących?
 	bt	eax,	DRIVER_NIC_I82540EM_ICR_register_flag_TXQE
 	jnc	.no_txqe	; nie
 
 	; kolejka deskryptorów pusta
 	mov	byte [driver_nic_i82540em_tx_queue_empty_semaphore],	STATIC_TRUE
-
-%ifdef	DEBUG
-	; debug
-	push	rcx
-	push	rsi
-	mov	ecx,	kernel_debug_string_tx_empty_end - kernel_debug_string_tx_empty
-	mov	rsi,	kernel_debug_string_tx_empty
-	call	kernel_video_string
-	pop	rsi
-	pop	rcx
-%endif
 
 	; koniec obsługi przerwania
 	jmp	.end
@@ -253,17 +231,6 @@ driver_nic_i82540em_irq:
 	; pakiet przychodzący?
 	bt	eax,	DRIVER_NIC_I82540EM_ICR_register_flag_RXT0
 	jnc	.received
-
-%ifdef	DEBUG
-	; debug
-	push	rcx
-	push	rsi
-	mov	ecx,	kernel_debug_string_rx_end - kernel_debug_string_rx
-	mov	rsi,	kernel_debug_string_rx
-	call	kernel_video_string
-	pop	rsi
-	pop	rcx
-%endif
 
 	; przekaż przestrzeń z zawartością pakietu to usługi sieciowej
 	mov	rbx,	qword [service_network_pid]

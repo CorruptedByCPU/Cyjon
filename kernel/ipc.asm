@@ -5,7 +5,7 @@
 KERNEL_IPC_SIZE_page_default	equ	1
 KERNEL_IPC_ENTRY_limit		equ	(KERNEL_IPC_SIZE_page_default << KERNEL_PAGE_SIZE_shift) / KERNEL_IPC_STRUCTURE_LIST.SIZE
 
-KERNEL_IPC_TTL_default		equ	DRIVER_RTC_Hz / 100	; ~10ms
+KERNEL_IPC_TTL_default		equ	DRIVER_RTC_Hz / 10	; ~100ms
 
 struc	KERNEL_IPC_STRUCTURE_LIST
 	.ttl			resb	8
@@ -67,10 +67,10 @@ kernel_ipc_insert:
 
 	; koniec miejsca?
 	dec	rcx
-	jz	.reload	; tak
+	jz	.loop	; tak
 
 	; powrót do pętli głównej
-	jmp	.loop
+	jmp	.reload
 
 .found:
 	; ustaw PID nadawcy
@@ -81,17 +81,6 @@ kernel_ipc_insert:
 
 	; przywróć oryginalny rejestr
 	mov	rcx,	qword [rsp]
-
-%ifdef	DEBUG
-	; debug
-	push	rcx
-	push	rsi
-	mov	ecx,	kernel_debug_string_ipc_insert_end - kernel_debug_string_ipc_insert
-	mov	rsi,	kernel_debug_string_ipc_insert
-	call	kernel_video_string
-	pop	rsi
-	pop	rcx
-%endif
 
 	; rozmiar przestrzeni danych pusty?
 	test	rcx,	rcx
@@ -154,6 +143,10 @@ kernel_ipc_receive:
 	push	rsi
 	push	rdi
 
+	; istnieją komunikaty na liście?
+	cmp	qword [kernel_ipc_entry_count],	STATIC_EMPTY
+	je	.empty	; nie
+
 	; pobierz PID procesu wywołującego
 	call	kernel_task_active
 	mov	rax,	qword [rdi + KERNEL_STRUCTURE_TASK.pid]
@@ -186,6 +179,7 @@ kernel_ipc_receive:
 
 	; brak wiadomości dla procesu
 
+.empty:
 	; flaga, błąd
 	stc
 
@@ -197,17 +191,6 @@ kernel_ipc_receive:
 	mov	ecx,	KERNEL_IPC_STRUCTURE_LIST.SIZE
 	mov	rdi,	qword [rsp]
 	rep	movsb
-
-%ifdef	DEBUG
-	; debug
-	push	rcx
-	push	rsi
-	mov	ecx,	kernel_debug_string_ipc_remove_end - kernel_debug_string_ipc_remove
-	mov	rsi,	kernel_debug_string_ipc_remove
-	call	kernel_video_string
-	pop	rsi
-	pop	rcx
-%endif
 
 	; zwolnij wpis na liście
 	mov	qword [rsi - KERNEL_IPC_STRUCTURE_LIST.SIZE],	STATIC_EMPTY
