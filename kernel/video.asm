@@ -84,6 +84,9 @@ kernel_video_cursor_set:
 	mul	dword [kernel_video_cursor + STATIC_DWORD_SIZE_byte]	; pozycja na osi Y
 	add	eax,	dword [kernel_video_cursor]	; pozycja na osi X
 
+	; zachowaj pośrednią pozycję wskaźnika
+	push	rax
+
 	; zapamiętaj
 	mov	cx,	ax
 
@@ -104,6 +107,14 @@ kernel_video_cursor_set:
 	inc	dx
 	mov	al,	ch
 	out	dx,	al
+
+	; przywróć pośrednią pozycję wskaźnika
+	pop	rax
+
+	; przelicz na wartość bezpośrednią
+	shl	rax,	STATIC_MULTIPLE_BY_2_shift
+	add	rax,	KERNEL_VIDEO_BASE_address
+	mov	qword [kernel_video_pointer],	rax
 
 	; przywróć oryginalne rejestry
 	pop	rdx

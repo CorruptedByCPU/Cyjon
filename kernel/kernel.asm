@@ -66,6 +66,9 @@ kernel:
 	%include	"library/page_align_up.asm"
 	%include	"library/page_from_size.asm"
 	%include	"library/string_compare.asm"
+	%include	"library/string_cut.asm"
+	%include	"library/string_digits.asm"
+	%include	"library/string_to_integer.asm"
 	%include	"library/string_trim.asm"
 	%include	"library/string_word_next.asm"
 	;-----------------------------------------------------------------------

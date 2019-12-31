@@ -97,9 +97,6 @@ library_input:
 	; rozmiar dostępnego bufora
 	inc	rcx
 
-	; usuń znak z bufora
-	dec	rsi
-
 	; wyświetl klawisz backspace
 	jmp	.print
 

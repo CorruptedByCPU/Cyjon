@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by Andrzej Adamczyk at Blackend.dev
+; Copyright (C) by Blackend.dev
 ;===============================================================================
 
 service_tx_pid					dq	STATIC_EMPTY

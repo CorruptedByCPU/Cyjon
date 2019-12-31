@@ -12,3 +12,14 @@ service_shell_cache:
 	times SERVICE_SHELL_CACHE_SIZE_byte	db	STATIC_EMPTY
 
 service_shell_command_clean			db	"clean"
+service_shell_command_clean_end:
+service_shell_command_ip			db	"ip"
+service_shell_command_ip_end:
+service_shell_command_ip_set			db	"set"
+service_shell_command_ip_set_end:
+
+service_shell_command_unknown			db	"?"
+service_shell_command_unknown_end:
+
+service_shell_string_error_ipv4_format		db	STATIC_ASCII_NEW_LINE, "Wrong IPv4 address."
+service_shell_string_error_ipv4_format_end:
