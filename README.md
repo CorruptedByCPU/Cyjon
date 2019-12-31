@@ -17,6 +17,15 @@ Prosty i wielozadaniowy system operacyjny, napisany w języku asemblera dla proc
 
   - kontroler sieci Intel 82540EM (E1000)
 
+### Uwagi:
+Przy programowaniu/testowaniu sieci (TCP/IP), korzystam tylko z symulatora **Bochs** na MS/Windows.
+
+	# bochs.rc
+	plugin_ctrl: e1000=1
+	e1000: enabled=1, mac=00:22:44:66:88:aa, ethmod=win32, ethdev=\Device\NPF_{ebe79137-186a-4318-b187-0158cf04efd1}, script=none
+
+Natomiast, wszelkie inne operacje na systemie GNU/Linux. Dystrybucja jest nieważna, całe środowisko programistyczne muszę skompilować pod siebie i włączyć opcje, które domyślnie nie są dostepne w gotowych pakietach.
+
 ### Kompilacja:
 
 	nasm -f bin kernel/kernel.asm	-o build/kernel
@@ -24,4 +33,5 @@ Prosty i wielozadaniowy system operacyjny, napisany w języku asemblera dla proc
 
 ### Uruchomienie:
 
+	# bez obsługi sieci
 	qemu-system-x86_64 -drive file=build/disk.raw,media=disk,format=raw -m 2 -smp 1 -rtc base=localtime
