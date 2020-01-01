@@ -17,9 +17,9 @@ service_http:
 	call	service_network_tcp_port_assign
 
 .loop:
-	; otrzymaliśmy zapytanie?
-	call	service_network_tcp_port_receive
-	jc	.loop	; nie, sprawdź raz jeszcze
+	; ; otrzymaliśmy zapytanie?
+	; call	service_network_tcp_port_receive
+	; jc	.loop	; nie, sprawdź raz jeszcze
 
 	; zapytanie o rdzeń usługi?
 	mov	ecx,	service_http_get_root_end - service_http_get_root

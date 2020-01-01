@@ -2,8 +2,6 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
-SERVICE_NETWORK_RECEIVE_PUSH_WAIT_limit			equ	3
-
 SERVICE_NETWORK_MAC_mask				equ	0x0000FFFFFFFFFFFF
 
 SERVICE_NETWORK_PORT_SIZE_page				equ	0x01	; tablica przechowująca stan portów
@@ -324,9 +322,9 @@ service_network_ip:
 	cmp	byte [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.protocol],	SERVICE_NETWORK_FRAME_IP_PROTOCOL_ICMP
 	je	service_network_icmp	; tak
 
-	; ; protokół TCP?
-	; cmp	byte [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.protocol],	SERVICE_NETWORK_FRAME_IP_PROTOCOL_TCP
-	; je	service_network_tcp	; tak
+	; protokół TCP?
+	cmp	byte [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.protocol],	SERVICE_NETWORK_FRAME_IP_PROTOCOL_TCP
+	je	service_network_tcp	; tak
 
 .end:
 	; powrót z procedury
@@ -438,20 +436,20 @@ service_network_tcp_psh_ack:
 	mov	rsi,	qword [service_network_port_table]
 	add	rsi,	rax
 
-	; ilość czasu jaką odczekany na wykonanie poniższej operacji
-	mov	cl,	SERVICE_NETWORK_RECEIVE_PUSH_WAIT_limit
-
-.wait:
-	; czekaj na zwolnienie danych na porcie
-	bts	word [rsi + SERVICE_NETWORK_STRUCTURE_PORT.cr3_and_flags],	SERVICE_NETWORK_PORT_FLAG_BIT_empty
-	jnc	.empty	; w porcie znajdują się już dane, czekaj
-
-	; odczekaj kolejkę
-	hlt
-
-	; koniec oczekiwania?
-	dec	cl
-	jnz	.wait	; nie
+; 	; ilość czasu jaką odczekany na wykonanie poniższej operacji
+; 	mov	cl,	SERVICE_NETWORK_RECEIVE_PUSH_WAIT_limit
+;
+; .wait:
+; 	; czekaj na zwolnienie danych na porcie
+; 	bts	word [rsi + SERVICE_NETWORK_STRUCTURE_PORT.cr3_and_flags],	SERVICE_NETWORK_PORT_FLAG_BIT_empty
+; 	jnc	.empty	; w porcie znajdują się już dane, czekaj
+;
+; 	; odczekaj kolejkę
+; 	hlt
+;
+; 	; koniec oczekiwania?
+; 	dec	cl
+; 	jnz	.wait	; nie
 
 	; port w dalszym ciągu zapełniony danymi
 
@@ -1029,8 +1027,9 @@ service_network_tcp_port_assign:
 	and	ecx,	STATIC_WORD_mask
 	shl	cx,	STATIC_MULTIPLE_BY_32_shift
 
-	; pobierz PID procesu
-	mov	rax,	cr3
+	; pobierz PID procesu wywołującego
+	call	kernel_task_active
+	mov	rax,	qword [rdi + KERNEL_STRUCTURE_TASK.pid]
 
 	; załaduj do tablicy portów identyfikator właściciela (zarazem wyczyść flagi)
 	mov	rdi,	qword [service_network_port_table]
@@ -1053,73 +1052,6 @@ service_network_tcp_port_assign:
 	ret
 
 	macro_debug	"service_network_tcp_port_assign"
-
-;===============================================================================
-; wejście:
-;	ecx - numer portu do sprawdzenia
-; wyjście:
-;	Flaga CF, jeśli brak danych na porcie
-;	rbx - identyfikator połączenia
-;	ecx - rozmiar danych w przestrzeni
-;	rsi - wskaźnik do przestrzeni danych
-service_network_tcp_port_receive:
-	; zachowaj oryginalne rejestry
-	push	rax
-	push	rcx
-	push	rsi
-
-	; zamień numer portu na wskaźnik pośredni
-	and	ecx,	STATIC_WORD_mask
-	shl	cx,	STATIC_MULTIPLE_BY_32_shift
-
-	; ustaw wskaźnik wpis portu w tablicy
-	mov	rsi,	qword [service_network_port_table]
-	add	rsi,	rcx
-
-	; pobierz CR3 procesu
-	mov	rax,	cr3
-
-	; port należy do procesu?
-	mov	rcx,	qword [rsi + SERVICE_NETWORK_STRUCTURE_PORT.cr3_and_flags]
-	and	cx,	KERNEL_PAGE_mask
-	cmp	rcx,	rax
-	jne	.error	; nie
-
-	; port zawiera dane do przetworzenia?
-	test	word [rsi + SERVICE_NETWORK_STRUCTURE_PORT.cr3_and_flags],	SERVICE_NETWORK_PORT_FLAG_empty | SERVICE_NETWORK_PORT_FLAG_received
-	jz	.error	; nie
-
-	; wyłącz flagę: dane przychodzące
-	and	word [rsi + SERVICE_NETWORK_STRUCTURE_PORT.cr3_and_flags],	~SERVICE_NETWORK_PORT_FLAG_BIT_received
-
-	; zwróć identyfikator połączenia
-	mov	rbx,	qword [rsi + SERVICE_NETWORK_STRUCTURE_PORT.tcp_connection]
-
-	; zwróć rozmiar danych w przestrzeni
-	mov	rcx,	qword [rsi + SERVICE_NETWORK_STRUCTURE_PORT.size]
-	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rcx
-
-	; zwróć wskaźnik do przestrzeni danych
-	mov	rsi,	qword [rsi + SERVICE_NETWORK_STRUCTURE_PORT.address]
-	mov	qword [rsp],	rsi
-
-	; zwróć do procesu informacje
-	jmp	.end
-
-.error:
-	; flaga, błąd
-	stc
-
-.end:
-	; przywróć oryginalne rejestry
-	pop	rsi
-	pop	rcx
-	pop	rax
-
-	; powrót z procedury
-	ret
-
-	macro_debug	"service_network_tcp_port_receive"
 
 ;===============================================================================
 ; wejście:
