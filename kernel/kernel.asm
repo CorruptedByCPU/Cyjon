@@ -25,11 +25,8 @@ init:
 ; wyrównaj pozycję kodu jądra systemu do pełnej strony
 align	KERNEL_PAGE_SIZE_byte,	db	STATIC_NOTHING
 kernel:
-	; przejdź do powłoki systemu
-	; jmp	service_shell
-
-	; przejdź do usługi HTTP
-	jmp	service_http
+	; zatrzymaj dalsze wykonywanie kodu
+	jmp	$
 
 	;-----------------------------------------------------------------------
 	; procedury, makra, dane, biblioteki, usługi - wszystko co niezbędne
@@ -50,6 +47,8 @@ kernel:
 	%include	"kernel/idt.asm"
 	%include	"kernel/task.asm"
 	%include	"kernel/thread.asm"
+	;-----------------------------------------------------------------------
+	%include	"kernel/font/canele.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/ps2.asm"

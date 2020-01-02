@@ -54,11 +54,19 @@ zero:
 	; Nie została poprawnie zaimplementowana obsługa linii A20 dla sprzętu fizycznego.
 	;=======================================================================
 
+	; linia A20 jest już odblokowana?
+	call	zero_line_a20_check
+	jz	.unlocked	; tak
+
 	;-----------------------------------------------------------------------
 	; odblokuj linię A20 za pomocą fukcji BIOSu
 	;-----------------------------------------------------------------------
 	mov	ax,	0x2401
         int	0x15
+
+	; linia A20 jest już odblokowana?
+	call	zero_line_a20_check
+	jz	.unlocked	; tak
 
 	;-----------------------------------------------------------------------
 	; odblokuj linię A20 za pomocą Fast A20
@@ -67,6 +75,87 @@ zero:
         or	al,	2
         out	0x92,	al
 
+	; linia A20 jest już odblokowana?
+	call	zero_line_a20_check
+	jz	.unlocked	; tak
+
+	;-----------------------------------------------------------------------
+	; odblokuj linię A20 za pomocą portu 0xEE
+	;-----------------------------------------------------------------------
+	in	al,	0xEE
+
+	; linia A20 jest już odblokowana?
+	call	zero_line_a20_check
+	jz	.unlocked	; tak
+
+	;-----------------------------------------------------------------------
+	; odblokuj linię A20 za pomocą kontrolera klawiatury PS2
+	;-----------------------------------------------------------------------
+
+	; wyłącz przerwania
+	cli
+
+	; poczekaj, aż klawiatura będzie gotowa przyjąć polecenie
+	call	zero_ps2_keyboard_in
+
+	; wyłącz klawiaturę
+	mov	al,	0xAD
+	out	0x64,	al	; wyślij
+
+	; poczekaj, aż klawiatura będzie gotowa przyjąć polecenie
+	call	zero_ps2_keyboard_in
+
+	; poproś o możliwość odczytania danych z portu klawiatury
+	mov	al,	0xD0
+	out	0x64,	al	; wyślij
+
+	; poczekaj, aż klawiatura będzie gotowa dać odpowiedź
+	call	zero_ps2_keyboard_out
+
+	; pobierz z portu klawiatury informacje
+	in	al,	0x60
+
+	; zapamiętaj wiadomość
+	push	ax
+
+	; poczekaj, aż klawiatura będzie gotowa przyjąć polecenie
+	call	zero_ps2_keyboard_in
+
+	; poproś o możliwość zapisania danych do portu klawiatury
+	mov	al,	0xD1
+	out	0x64,	al	; wyślij
+
+	; poczekaj, aż klawiatura będzie gotowa przyjąć polecenie
+	call	zero_ps2_keyboard_in
+
+	; przywróć poprzednią wiadomość
+	pop	ax
+
+	; ustaw drugi bit rejestru AL
+	or	al,	2
+	out	0x60,	al	; wyślij do konrolera klawiatury
+
+	; poczekaj, aż klawiatura będzie gotowa przyjąć polecenie
+	call	zero_ps2_keyboard_in
+
+	; włącz klawiaturę
+	mov	al,	0xAE
+	out	0x64,	al	; wyślij
+
+	; poczekaj, aż klawiatura będzie gotowa przyjąć polecenie
+	call	zero_ps2_keyboard_in
+
+	; włącz przerwania
+	sti
+
+	; ustaw kod błędu
+	mov	si,	STATIC_ZERO_ERROR_a20
+
+	; linia A20 została odblokowana?
+	call	zero_line_a20_check
+	jnz	zero_panic	; nie
+
+.unlocked:
 	;-----------------------------------------------------------------------
 	; wyczyść ekran inicjując ponownie tryb tekstowy (80x25 znaków)
 	;-----------------------------------------------------------------------
@@ -81,7 +170,7 @@ zero:
 	int	0x13
 
 	; komunikat błędu: błąd odczytu z nośnika
-	mov	si,	STATIC_ZERO_ERROR_device
+	mov	si,	STATIC_ZERO_ERROR_disk
 
 	; opracja odczytu wykonana poprawnie?
 	jc	zero_panic	; nie
@@ -126,32 +215,72 @@ zero:
 	out	DRIVER_PIC_PORT_SLAVE_data,	al	; Slave
 	out	DRIVER_PIC_PORT_MASTER_data,	al	; Master
 
+	;-----------------------------------------------------------------------
+	; przełącz w liniowy tryb graficzny
+	;-----------------------------------------------------------------------
+
+	; pobierz dostępne tryby graficzne
+	mov	ax,	0x4F00
+	mov	si,	STATIC_ZERO_ERROR_video
+	mov	di,	STATIC_ZERO_video_vga_info_block
+	int	0x10
+
+	; funkcja wywołana prawidłowo?
+	test	ax,	0x4F00
+	jnz	zero_panic	; nie
+
+	; przeszukaj tablicę dostępnych trybów za porządanym
+	mov	esi,	dword [di + STATIC_ZERO_VIDEO_STRUCTURE_VGA_INFO_BLOCK.video_mode_ptr]
+
+.loop:
+	; koniec tablicy?
+	cmp	word [esi],	0xFFFF
+	je	.error	; tak
+
+	; pobierz właściwości danego trybu graficznego
+	mov	ax,	0x4F01
+	mov	cx,	word [esi]
+	mov	di,	STATIC_ZERO_video_mode_info_block
+	int	0x10
+
+	; oczekiwana szerokość w pikselach?
+	cmp	word [di + STATIC_ZERO_VIDEO_STRUCTURE_MODE_INFO_BLOCK.x_resolution],	STATIC_ZERO_VIDEO_WIDTH_pixel
+	jne	.next	; nie
+
+	; oczekiwana wysokość w pikselach?
+	cmp	word [di + STATIC_ZERO_VIDEO_STRUCTURE_MODE_INFO_BLOCK.y_resolution],	STATIC_ZERO_VIDEO_HEIGHT_pixel
+	jne	.next	; nie
+
+	; oczekiwana głębia kolorów?
+	cmp	byte [di + STATIC_ZERO_VIDEO_STRUCTURE_MODE_INFO_BLOCK.bits_per_pixel],	STATIC_ZERO_VIDEO_DEPTH_bit
+	je	.found	; tak
+
+.next:
+	; przesuń wskaźnik na następny wpis
+	add	esi,	STATIC_WORD_SIZE_byte
+
+	; sprawdź następny tryb
+	jmp	.loop
+
+.error:
+	; wyświetl kod błędu
+	mov	si,	STATIC_ZERO_ERROR_video
+	jmp	zero_panic
+
+.found:
+	; włącz dany tryb graficzny
+	mov	ax,	0x4F02
+	mov	bx,	word [esi]
+	or	bx,	STATIC_ZERO_VIDEO_MODE_linear | STATIC_ZERO_VIDEO_MODE_clean
+	int	0x10
+
+	; operacja wykonana pomyślnie?
+	test	ah,	ah
+	jnz	.error	; nie
+
 	; wyłącz przerwania, jeśli program rozruchowy jest w trybie 16 bitowym
 	; zostaną one przywrócone
 	cli
-
-;===============================================================================
-; jeśli program rozruchowy jest w trybie 16 bitowym
-;===============================================================================
-%if STATIC_ZERO_bit_mode = 16
-	; ustaw segmenty danych i ekstra na przestrzeń kodu/danych jądra systemu
-	mov	ax,	STATIC_ZERO_kernel_address
-	mov	ds,	ax
-	mov	es,	ax
-
-	; włącz przerwania
-	sti
-
-	; zwróć informacje o adresie tablicy mapy pamięci
-	mov	ebx,	STATIC_ZERO_memory_map
-
-	; wywołaj kod jądra systemu
-	jmp	STATIC_ZERO_kernel_address:0x0000
-%endif
-
-	;-----------------------------------------------------------------------
-	; tryb programu rozruchowego nie jest 16 bitowy
-	;-----------------------------------------------------------------------
 
 	; załaduj globalną tablicę deskryptorów dla trybu 32 bitowego
 	lgdt	[zero_header_gdt_32bit]
@@ -178,6 +307,53 @@ zero_panic:
 	; zatrzymaj dalsze wykonywanie kodu programu rozruchowego
 	jmp	$
 
+;-------------------------------------------------------------------------------
+; wyjście:
+;	Flaga ZF, jeśli linia A20 otwarta
+zero_line_a20_check:
+	; zapamiętaj adres segmentu danych
+	push	ds
+
+	; ustaw semgent danych na koniec pamięci fizycznej 0xFFFF0
+	mov	ax,	0xFFFF
+	mov	ds,	ax
+
+	; pobierz 4 Bajty spod adresu 0x107C00
+	mov	ebx,	dword [ds:STATIC_ZERO_address + 0x10]
+
+	; przywróć adres segmentu danych
+	pop	ds
+
+	; sprawdź czy pobrane 4 Bajty są identyczne jak w programie rozruchowym Zero
+	test	ebx,	dword [ds:STATIC_ZERO_address]
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+zero_ps2_keyboard_in:
+	; pobierz status bufora klawiatury do al
+	in	al,	0x64
+	test	al,	2	; sprawdź czy drugi bit jest równy zero
+
+	; jeśli nie, powtórz operacje
+	jnz	zero_ps2_keyboard_in
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+zero_ps2_keyboard_out:
+	; pobierz status bufora klawiatury do al
+	in	al,	0x64
+	test	al,	1	; sprawdź czy pierwszy bit jest równy zero
+
+	; jeśli nie, powtórz operacje
+	jz	zero_ps2_keyboard_out
+
+	; powrót z procedury
+	ret
+
 ;===============================================================================
 ; 32 bitowy kod programu rozruchowego ==========================================
 ;===============================================================================
@@ -201,12 +377,20 @@ zero_protected_mode:
 	; nagłówek utwórz za tablicą werktorów przerwań BIOSu
 	mov	edi,	STATIC_ZERO_multiboot_header
 
-	; flagi: udostępniono mapę pamięci
-	mov	dword [edi + STATIC_MULTIBOOT_header.flags],	STATIC_MULTIBOOT_HEADER_FLAG_memory_map
+	; flagi: udostępniono mapę pamięci i framebuffer
+	mov	dword [edi + STATIC_MULTIBOOT_header.flags],	STATIC_MULTIBOOT_HEADER_FLAG_memory_map | STATIC_MULTIBOOT_HEADER_FLAG_video
 
 	; rozmiar i adres mapy pamięci
 	mov	dword [edi + STATIC_MULTIBOOT_header.mmap_length],	ecx
 	mov	dword [edi + STATIC_MULTIBOOT_header.mmap_addr],	STATIC_ZERO_memory_map
+
+	; właściwości przestrzeni pamięci karty graficznej
+	mov	eax,	dword [STATIC_ZERO_video_mode_info_block + STATIC_ZERO_VIDEO_STRUCTURE_MODE_INFO_BLOCK.physical_base_address]
+	mov	dword [edi + STATIC_MULTIBOOT_header.framebuffer_addr],	eax
+	mov	dword [edi + STATIC_MULTIBOOT_header.framebuffer_width],	STATIC_ZERO_VIDEO_WIDTH_pixel
+	mov	dword [edi + STATIC_MULTIBOOT_header.framebuffer_height],	STATIC_ZERO_VIDEO_HEIGHT_pixel
+	mov	byte [edi + STATIC_MULTIBOOT_header.framebuffer_bpp],	STATIC_ZERO_VIDEO_DEPTH_bit
+	mov	byte [edi + STATIC_MULTIBOOT_header.framebuffer_type],	STATIC_EMPTY	; indeksowany zestaw kolorów
 
 	;-----------------------------------------------------------------------
 	; przesuń kod jądra systemu do przestrzeni pamięci fizycznej pod adresem 0x00100000
@@ -216,97 +400,11 @@ zero_protected_mode:
 	mov	ecx,	(file_kernel_end - file_kernel) / 0x04
 	rep	movsd
 
-;===============================================================================
-; jeśli program rozruchowy jest w trybie 16 bitowym, to
-;===============================================================================
-%if STATIC_ZERO_bit_mode = 32
 	; zwróć informacje o adresie nagłówka multiboot
 	mov	ebx,	STATIC_ZERO_multiboot_header
 
 	; wywołaj kod jądra systemu
 	jmp	STATIC_ZERO_kernel_address << STATIC_SEGMENT_to_pointer << STATIC_SEGMENT_to_pointer
-%endif
-
-	;-----------------------------------------------------------------------
-	; utwórz podstawową tablicę stronicowania dla trybu 64 bitowego
-	;-----------------------------------------------------------------------
-
-	; wyczyść wszystkie wiersze tabel
-	xor	eax,	eax
-	mov	ecx,	(STATIC_PAGE_SIZE_4KiB_byte * 0x06) / 0x04	; tablica PML4, PML3 i cztery razy PML2 (1 GiB opisanej przestrzeni na każdą tablicę PML2)
-	mov	edi,	STATIC_PML4_TABLE_address
-	rep	stosd
-
-	; uzupełnij pierwszy wiersz tablicy PML4 wskazujący adres tablicy PML3 (flagi domyślne)
-	mov	dword [STATIC_PML4_TABLE_address],	STATIC_PML4_TABLE_address + STATIC_PAGE_SIZE_4KiB_byte + STATIC_PAGE_FLAG_default
-
-	; uzupełnij 4 wiersze tablicy PML3 wskazujące na adresy tablic PML2 (flagi domyślne)
-	mov	dword [STATIC_PML4_TABLE_address + STATIC_PAGE_SIZE_4KiB_byte],	STATIC_PML4_TABLE_address + (STATIC_PAGE_SIZE_4KiB_byte * 0x02) + STATIC_PAGE_FLAG_default
-	mov	dword [STATIC_PML4_TABLE_address + STATIC_PAGE_SIZE_4KiB_byte + 0x08],	STATIC_PML4_TABLE_address + (STATIC_PAGE_SIZE_4KiB_byte * 0x03) + STATIC_PAGE_FLAG_default
-	mov	dword [STATIC_PML4_TABLE_address + STATIC_PAGE_SIZE_4KiB_byte + 0x10],	STATIC_PML4_TABLE_address + (STATIC_PAGE_SIZE_4KiB_byte * 0x04) + STATIC_PAGE_FLAG_default
-	mov	dword [STATIC_PML4_TABLE_address + STATIC_PAGE_SIZE_4KiB_byte + 0x18],	STATIC_PML4_TABLE_address + (STATIC_PAGE_SIZE_4KiB_byte * 0x05) + STATIC_PAGE_FLAG_default
-
-	; uzupełnij wszystkie wiersze tablic PML2 (flagi domyślne + każdy wpis opisuje przestrzeń fizyczną o rozmiarze 2 MiB)
-	mov	eax,	STATIC_PAGE_FLAG_default + STATIC_PAGE_FLAG_2MiB_size	; flagi: rozmiar strony 2 MiB, zapisywalna, dostępna
-	mov	ecx,	512 * 0x04	; 512 wierszy na jedną tablicę PML2
-	mov	edi,	STATIC_PML4_TABLE_address + (STATIC_PAGE_SIZE_4KiB_byte * 0x02)
-
-.next:
-	; konfiguruj wpis
-	stosd
-
-	; przesuń wskaźnik na następny wiersz tablicy
-	add	edi,	0x04	; każdy wpis ma rozmiar 8 Bajtów (tryb 64 bitowy)
-
-	; mapuj następne 2 MiB przestrzeni pamięci fizycznej
-	add	eax,	STATIC_PAGE_SIZE_2MiB_byte
-
-	; pozostały wiersze do uzupełnienia?
-	dec	ecx
-	jnz	.next	; tak
-
-	;-----------------------------------------------------------------------
-	; załaduj globalną tablicę deskryptorów dla trybu 64 bitowego
-	;-----------------------------------------------------------------------
-	lgdt	[zero_header_gdt_64bit]
-
-	; włącz bity NX/PAE, PGE oraz OSFXSR w rejestrze CR4
-	mov	eax,	1010100000b	; NX (bit 5) - blokada wykonania kodu w stronie lub obsługa pamięci fizycznej do 64 GiB
-	mov	cr4,	eax		; PGE (bit 7) - obsługa stronicowania
-					; OSFXSR (bit 9) - obsługa rejestrów XMM0-15
-
-	; załaduj do CR3 adres fizyczny tablicy PML4 jądra systemu
-	mov	eax,	STATIC_PML4_TABLE_address
-	mov	cr3,	eax
-
-	; włącz w rejestrze EFER MSR tryb LME (bit 9)
-	mov	ecx,	0xC0000080	; adres EFER MSR
-	rdmsr
-	or	eax,	100000000b
-	wrmsr
-
-	; włącz bity PE i PG w rejestrze cr0
-	mov	eax,	cr0
-	or	eax,	0x80000001	; PE (bit 0) - wyłącz tryb rzeczywisty,
-	mov	cr0,	eax		; PG (bit 31) - współdzielenie tablic stronicowania
-
-	; skocz do 64 bitowego kodu programu rozruchowego
-	jmp	0x0008:zero_long_mode
-
-;===============================================================================
-; 64 bitowy kod programu rozruchowego ==========================================
-;===============================================================================
-[BITS 64]
-
-zero_long_mode:
-	; zwróć informacje o adresie nagłówka multiboot
-	mov	ebx,	STATIC_ZERO_multiboot_header
-
-	; wywołaj kod jądra systemu
-	jmp	STATIC_ZERO_kernel_address << STATIC_SEGMENT_to_pointer << STATIC_SEGMENT_to_pointer
-
-	; powrót z procedury
-	ret
 
 ;-------------------------------------------------------------------------------
 ; format danych w postaci tablicy, wykorzystywany przez funkcję AH=0x42, przerwanie 0x13
@@ -322,7 +420,7 @@ zero_table_disk_address_packet:
 			dw	STATIC_ZERO_kernel_address	; segment
 			dq	0x0000000000000001	; adres LBA pierwszego sektora dołączonego pliku
 
-align 0x04	; wszystkie tablice trzymamy pod pełnym adresem
+align 0x10	; wszystkie tablice trzymamy pod pełnym adresem
 zero_table_gdt_32bit:
 	; deskryptor zerowy
 	dq	STATIC_EMPTY
@@ -335,20 +433,6 @@ zero_table_gdt_32bit_end:
 zero_header_gdt_32bit:
 	dw	zero_table_gdt_32bit_end - zero_table_gdt_32bit - 0x01
 	dd	zero_table_gdt_32bit
-
-align 0x08	; wszystkie tablice trzymamy pod pełnym adresem
-zero_table_gdt_64bit:
-	; deskryptor zerowy
-	dq	STATIC_EMPTY
-	; deskryptor kodu
-	dq	0000000000100000100110000000000000000000000000000000000000000000b
-	; deskryptor danych
-	dq	0000000000100000100100100000000000000000000000000000000000000000b
-zero_table_gdt_64bit_end:
-
-zero_header_gdt_64bit:
-	dw	zero_table_gdt_64bit_end - zero_table_gdt_64bit - 0x01
-	dd	zero_table_gdt_64bit
 
 ;-------------------------------------------------------------------------------
 ; znacznik sektora rozruchowego

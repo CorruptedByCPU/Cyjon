@@ -58,7 +58,7 @@ service_shell_prompt:
 
 	; zresetuj pozycję wirtualnego kursora
 	mov	dword [kernel_video_cursor.x],	STATIC_EMPTY
-	mov	dword [kernel_video_cursor.y],	KERNEL_VIDEO_HEIGHT_char - 0x01
+	mov	dword [kernel_video_cursor.y],	(KERNEL_VIDEO_HEIGHT_pixel / KERNEL_FONT_HEIGHT_pixel) - 0x01
 	call	kernel_video_cursor_set
 
 	; zresetuj pozycję
