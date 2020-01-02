@@ -47,18 +47,18 @@ STATIC_MULTIBOOT_HEADER_FLAG_memory_map	equ	1 << 6
 STATIC_MULTIBOOT_HEADER_FLAG_video	equ	1 << 12
 
 struc	STATIC_MULTIBOOT_header
-	.flags				resb	4
-	.unsupported0			resb	40
-	.mmap_length			resb	4
-	.mmap_addr			resb	4
-	.unsupported1			resb	32
-	.framebuffer_addr		resb	8
-	.framebuffer_pitch		resb	4
-	.framebuffer_width		resb	4
-	.framebuffer_height		resb	4
-	.framebuffer_bpp		resb	1
-	.framebuffer_type		resb	1
-	.color_info			resb	6
+	.flags			resb	4
+	.unsupported0		resb	40
+	.mmap_length		resb	4
+	.mmap_addr		resb	4
+	.unsupported1		resb	36
+	.framebuffer_addr	resb	8
+	.framebuffer_pitch	resb	4
+	.framebuffer_width	resb	4
+	.framebuffer_height	resb	4
+	.framebuffer_bpp	resb	1
+	.framebuffer_type	resb	1
+	.color_info		resb	6
 endstruc
 
 struc	STATIC_ZERO_VIDEO_STRUCTURE_VGA_INFO_BLOCK

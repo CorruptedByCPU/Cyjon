@@ -9,12 +9,15 @@ KERNEL_VIDEO_DEPTH_byte				equ	4
 KERNEL_VIDEO_DEPTH_bit				equ	32
 KERNEL_VIDEO_SIZE_byte				equ	(KERNEL_VIDEO_WIDTH_pixel * KERNEL_VIDEO_HEIGHT_pixel) << KERNEL_VIDEO_DEPTH_shift
 
+kernel_video_semaphore				db	STATIC_FALSE
 kernel_video_base_address			dq	STATIC_EMPTY
 kernel_video_pointer				dq	STATIC_EMPTY
 kernel_video_width_pixel			dq	STATIC_EMPTY
 kernel_video_height_pixel			dq	STATIC_EMPTY
+kernel_video_scanline_char			dq	STATIC_EMPTY
 
-kernel_video_color_background			dd	0x00141C21
+kernel_video_color				dd	STATIC_COLOR_default
+kernel_video_color_background			dd	STATIC_COLOR_black
 
 ; KERNEL_VIDEO_BASE_address			equ	0x000B8000
 ; KERNEL_VIDEO_BASE_limit				equ	KERNEL_VIDEO_BASE_address + KERNEL_VIDEO_SIZE_byte
@@ -37,8 +40,6 @@ kernel_video_color_background			dd	0x00141C21
 kernel_video_cursor:
 					.x:	dd	STATIC_EMPTY
 					.y:	dd	STATIC_EMPTY
-
-kernel_video_char_color_and_background		db	STATIC_COLOR_gray_light
 
 kernel_video_color_sequence_default		db	STATIC_COLOR_ASCII_DEFAULT
 kernel_video_color_sequence_black		db	STATIC_COLOR_ASCII_BLACK
@@ -86,53 +87,180 @@ kernel_video_drain:
 	ret
 
 ;===============================================================================
+; wejście:
+;	rax - kod ASCII znaku
+kernel_video_char:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rdi
+
+	; zablokuj dostęp do przestrzeni karty graficznej
+	macro_close	kernel_video_semaphore,	0
+
+	; pobierz właściwości wirtualnego kursora
+	mov	rdi,	qword [kernel_video_pointer]
+
+	call	kernel_video_char_clean
+
+	; wyświetl matrycę znaku na ekran
+	sub	ax,	STATIC_ASCII_SPACE	; macierz czcionki rozpoczyna się od znaku STATIC_ASCII_SPACE
+	call	kernel_video_matrix
+
+	; przesuń wskaźnik na następną pozycję w przestrzeni pamięci karty graficznej
+	add	rdi,	KERNEL_FONT_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift
+
+.end:
+	; zachowaj nowe właściwości kursora
+	mov	qword [kernel_video_pointer],	rdi
+
+	; zwolnij dostęp do procedury
+	mov	byte [kernel_video_semaphore],	STATIC_FALSE
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rax - kod ASCII znaku
+;	rdi - pozycja znaku w przestrzeni pamięci ekranu
+kernel_video_matrix:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+	push	rdi
+	push	r8
+
+	; oblicz prdesunięcie względem początku matrycy czcionki dla znaku
+	mov	ebx,	dword [kernel_font_height_pixel]
+	mul	rbx
+
+	; ustaw wskaźnik na matrycę znaku
+	mov	rsi,	kernel_font_matrix
+	add	rsi,	rax
+
+	; pobierz kolor czcionki
+	mov	r8d,	dword [kernel_video_color]
+
+.next:
+	; szerokość matrycy znaku liczona od zera
+	mov	ecx,	KERNEL_FONT_WIDTH_pixel - 0x01
+
+.loop:
+	; włączyć piksel matrycy znaku na ekranie?
+	bt	word [rsi],	cx
+	jnc	.continue	; nie
+
+	; wyświetl piksel o zdefiniowanym kolorze znaku
+	mov	dword [rdi],	r8d
+
+.continue:
+	; następny piksel matrycy znaku
+	add	rdi,	STATIC_DWORD_SIZE_byte
+
+	; wyświetlić pozostałe?
+	dec	cl
+	jns	.loop	; tak
+
+	; przesuń wskaźnik na następną linię matrycy na ekranie
+	sub	rdi,	KERNEL_FONT_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift	; cofnij o szerokość wyświetlonego znaku w Bajtach
+	add	rdi,	KERNEL_VIDEO_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift	; przesuń do przodu o rozmiar scanline ekranu
+
+	; przesuń wskaźnik na następną linię matrycy znaku
+	inc	rsi
+
+	; przetworzono całą matrycę znaku?
+	dec	bl
+	jnz	.next	; nie, kontynuuj z następną linią matrycy znaku
+
+	; przywróć oryginalne rejestry
+	pop	r8
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rdi - wskaźnik pozycji znaku
+kernel_video_char_clean:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rdi
+
+	; wysokość matrycy znaku w pikselach
+	mov	ebx,	KERNEL_FONT_HEIGHT_pixel
+
+	; kolor tła
+	mov	eax,	dword [kernel_video_color_background]
+
+.next:
+	; szerokość matrycy znaku liczona od zera
+	mov	cx,	KERNEL_FONT_WIDTH_pixel - 0x01
+
+.loop:
+	; wyświetl piksel o zdefiniowanym kolorze tła
+	stosd
+
+.continue:
+	; następny piksel z linii matrycy znaku
+	dec	cl
+	jns	.loop
+
+	; przesuń wskaźnik na następną linię matrycy na ekranie
+	sub	rdi,	KERNEL_FONT_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift	; cofnij o szerokość znaku w Bajtach
+	add	rdi,	KERNEL_VIDEO_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift	; przesuń do przodu o rozmiar scanline ekranu
+
+	; przetworzono całą matrycę znaku?
+	dec	bl
+	jnz	.next	; nie, następna linia matrycy znaku
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
 kernel_video_cursor_set:
-	; ; zachowaj oryginalne rejestry
-	; push	rax
-	; push	rcx
-	; push	rdx
-	;
-	; ; oblicz pozycję kursora w znakach
-	; mov	eax,	KERNEL_VIDEO_WIDTH_char
-	; mul	dword [kernel_video_cursor + STATIC_DWORD_SIZE_byte]	; pozycja na osi Y
-	; add	eax,	dword [kernel_video_cursor]	; pozycja na osi X
-	;
-	; ; zachowaj pośrednią pozycję wskaźnika
-	; push	rax
-	;
-	; ; zapamiętaj
-	; mov	cx,	ax
-	;
-	; ; młodszy port kursora (rejestr indeksowy VGA)
-	; mov	al,	0x0F
-	; mov	dx,	0x03D4
-	; out	dx,	al
-	;
-	; inc	dx	; 0x03D5
-	; mov	al,	cl
-	; out	dx,	al
-	;
-	; ; starszy port kursora
-	; mov	al,	0x0E
-	; dec	dx
-	; out	dx,	al
-	;
-	; inc	dx
-	; mov	al,	ch
-	; out	dx,	al
-	;
-	; ; przywróć pośrednią pozycję wskaźnika
-	; pop	rax
-	;
-	; ; przelicz na wartość bezpośrednią
-	; shl	rax,	STATIC_MULTIPLE_BY_2_shift
-	; add	rax,	KERNEL_VIDEO_BASE_address
-	; mov	qword [kernel_video_pointer],	rax
-	;
-	; ; przywróć oryginalne rejestry
-	; pop	rdx
-	; pop	rcx
-	; pop	rax
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rdx
+
+	; oblicz pozycję kursora w znakach
+	mov	eax,	dword [kernel_video_cursor.y]
+	mul	qword [kernel_video_scanline_char]
+	mov	edx,	dword [kernel_video_cursor.x]
+	shl	rdx,	KERNEL_VIDEO_DEPTH_shift
+	add	rdx,	rax
+
+	; zapisz nową pozycję wskaźnika w przestrzeni pamięci karty graficznej
+	add	rdx,	qword [kernel_video_base_address]
+	mov	qword [kernel_video_pointer],	rdx
+
+	; przywróć oryginalne rejestry
+	pop	rdx
+	pop	rcx
+	pop	rax
 
 	; powrót z procedury
 	ret
@@ -142,285 +270,285 @@ kernel_video_cursor_set:
 ;	rcx - ilość znaków w ciągu
 ;	rsi - wskaźnik do ciągu
 kernel_video_string:
-; 	; zachowaj oryginalne rejestry
-; 	push	rax
-; 	push	rbx
-; 	push	rcx
-; 	push	rdx
-; 	push	rsi
-;
-; 	; wyświetlić jakąkolwiek ilość znaków z ciągu?
-; 	test	rcx,	rcx
-; 	jz	.end	; nie
-;
-; 	; pobierz kolor i tło znaków
-; 	mov	ah,	byte [kernel_video_char_color_and_background]
-;
-; .loop:
-; 	; pobierz kod ASCII z ciągu
-; 	lodsb
-;
-; 	; wymuszony koniec ciągu?
-; 	test	al,	al
-; 	jz	.end	; tak
-;
-; 	; rozpoczęto sekwencję?
-; 	cmp	al,	STATIC_ASCII_BACKSLASH
-; 	jne	.no	; tak
-;
-; 	; rozmiar ciągu może zawierać sekwencję?
-; 	cmp	rcx,	STATIC_ASCII_SEQUENCE_length
-; 	jb	.fail	; nie
-;
-; 	; zachowaj oryginalne rejestry
-; 	push	rdi
-; 	push	rsi
-; 	push	rcx
-;
-; 	; cofnij wskaźnik na początek sekwencji
-; 	dec	rsi
-;
-; 	; rozmiar poszukiwanej sekwencji
-; 	mov	ecx,	STATIC_ASCII_SEQUENCE_length
-;
-; .default:
-; 	; zmiana kolorystyki na domyślny?
-; 	mov	rdi,	kernel_video_color_sequence_default
-; 	call	library_string_compare
-; 	jc	.black	; nie
-;
-; 	; ustaw kolorystykę na domyślny
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_default
-;
-; 	; koniec obsługi sekwencji
-; 	jmp	.done
-;
-; .black:
-; 	; zmiana kolorystyki na czarny?
-; 	mov	rdi,	kernel_video_color_sequence_black
-; 	call	library_string_compare
-; 	jc	.blue	; nie
-;
-; 	; ustaw kolorystykę na czarny
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_black
-;
-; 	; koniec obsługi sekwencji
-; 	jmp	.done
-;
-; .blue:
-; 	; zmiana kolorystyki na niebieski?
-; 	mov	rdi,	kernel_video_color_sequence_blue
-; 	call	library_string_compare
-; 	jc	.green	; nie
-;
-; 	; ustaw kolorystykę na niebieski
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_blue
-;
-; 	; koniec obsługi sekwencji
-; 	jmp	.done
-;
-; .green:
-; 	; zmiana kolorystyki na zielony?
-; 	mov	rdi,	kernel_video_color_sequence_green
-; 	call	library_string_compare
-; 	jc	.cyan	; nie
-;
-; 	; ustaw kolorystykę na zielony
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_green
-;
-; 	; koniec obsługi sekwencji
-; 	jmp	.done
-;
-; .cyan:
-; 	; zmiana kolorystyki na cyan?
-; 	mov	rdi,	kernel_video_color_sequence_cyan
-; 	call	library_string_compare
-; 	jc	.red	; nie
-;
-; 	; ustaw kolorystykę na cyan
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_cyan
-;
-; 	; koniec obsługi sekwencji
-; 	jmp	.done
-;
-; .red:
-; 	; zmiana kolorystyki na czerwony?
-; 	mov	rdi,	kernel_video_color_sequence_red
-; 	call	library_string_compare
-; 	jc	.magenta	; nie
-;
-; 	; ustaw kolorystykę na czerwony
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_red
-;
-; 	; koniec obsługi sekwencji
-; 	jmp	.done
-;
-; .magenta:
-; 	; zmiana kolorystyki na magenta?
-; 	mov	rdi,	kernel_video_color_sequence_magenta
-; 	call	library_string_compare
-; 	jc	.brown	; nie
-;
-; 	; ustaw kolorystykę na magenta
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_magenta
-;
-; 	; koniec obsługi sekwencji
-; 	jmp	.done
-;
-; .brown:
-; 	; zmiana kolorystyki na brązowy?
-; 	mov	rdi,	kernel_video_color_sequence_brown
-; 	call	library_string_compare
-; 	jc	.gray_light	; nie
-;
-; 	; ustaw kolorystykę na brązowy
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_brown
-;
-; 	; koniec obsługi sekwencji
-; 	jmp	.done
-;
-; .gray_light:
-; 	; zmiana kolorystyki na jasno-szary?
-; 	mov	rdi,	kernel_video_color_sequence_gray_light
-; 	call	library_string_compare
-; 	jc	.gray	; nie
-;
-; 	; ustaw kolorystykę na jasno-zielony
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_gray_light
-;
-; 	; koniec obsługi sekwencji
-; 	jmp	.done
-;
-; .gray:
-; 	; zmiana kolorystyki na szary?
-; 	mov	rdi,	kernel_video_color_sequence_gray
-; 	call	library_string_compare
-; 	jc	.blue_light	; nie
-;
-; 	; ustaw kolorystykę na szary
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_gray
-;
-; 	; koniec obsługi sekwencji
-; 	jmp	.done
-;
-; .blue_light:
-; 	; zmiana kolorystyki na jasno-niebieski?
-; 	mov	rdi,	kernel_video_color_sequence_blue_light
-; 	call	library_string_compare
-; 	jc	.green_light	; nie
-;
-; 	; ustaw kolorystykę na jasno-nieblieski
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_blue_light
-;
-; 	; koniec obsługi sekwencji
-; 	jmp	.done
-;
-; .green_light:
-; 	; zmiana kolorystyki na jasno-zielony?
-; 	mov	rdi,	kernel_video_color_sequence_green_light
-; 	call	library_string_compare
-; 	jc	.cyan_light	; nie
-;
-; 	; ustaw kolorystykę na jasno-zielony
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_green_light
-;
-; 	; koniec obsługi sekwencji
-; 	jmp	.done
-;
-; .cyan_light:
-; 	; zmiana kolorystyki na jasny cyan?
-; 	mov	rdi,	kernel_video_color_sequence_cyan_light
-; 	call	library_string_compare
-; 	jc	.red_light	; nie
-;
-; 	; ustaw kolorystykę na jasny cyan
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_cyan_light
-;
-; 	; koniec obsługi sekwencji
-; 	jmp	.done
-;
-; .red_light:
-; 	; zmiana kolorystyki na jasno-czerwony?
-; 	mov	rdi,	kernel_video_color_sequence_red_light
-; 	call	library_string_compare
-; 	jc	.magenta_light	; nie
-;
-; 	; ustaw kolorystykę na jasno-zielony
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_red_light
-;
-; 	; koniec obsługi sekwencji
-; 	jmp	.done
-;
-; .magenta_light:
-; 	; zmiana kolorystyki na jasna magenta?
-; 	mov	rdi,	kernel_video_color_sequence_magenta_light
-; 	call	library_string_compare
-; 	jc	.yellow	; nie
-;
-; 	; ustaw kolorystykę na jasna magenta
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_magenta_light
-;
-; 	; koniec obsługi sekwencji
-; 	jmp	.done
-;
-; .yellow:
-; 	; zmiana kolorystyki na żółty?
-; 	mov	rdi,	kernel_video_color_sequence_yellow
-; 	call	library_string_compare
-; 	jc	.white	; nie
-;
-; 	; ustaw kolorystykę na żółty
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_yellow
-;
-; 	; koniec obsługi sekwencji
-; 	jmp	.done
-;
-; .white:
-; 	; zmiana kolorystyki na jasno-szary?
-; 	mov	rdi,	kernel_video_color_sequence_white
-; 	call	library_string_compare
-; 	jc	.fail	; nie
-;
-; 	; ustaw kolorystykę na jasno-zielony
-; 	mov	byte [kernel_video_char_color_and_background],	STATIC_COLOR_white
-;
-; .done:
-; 	; zmniejsz rozmiar ciągu i przesuń wskaźnik za sekwencję
-; 	sub	qword [rsp],	STATIC_ASCII_SEQUENCE_length - 0x01
-; 	add	qword [rsp + STATIC_QWORD_SIZE_byte],	STATIC_ASCII_SEQUENCE_length - 0x01
-;
-; .fail:
-; 	; przywróć oryginalne rejestry
-; 	pop	rcx
-; 	pop	rsi
-; 	pop	rdi
-;
-; 	; kontynuuj
-; 	jnc	.continue
-;
-; .no:
-; 	; zachowaj pozostały rozmiar ciągu
-; 	push	rcx
-;
-; 	; wyświetl 1 kopię kodu ASCII
-; 	mov	ecx,	1
-; 	call	kernel_video_char
-;
-; 	; przywróć pozostały rozmiar ciągu
-; 	pop	rcx
-;
-; .continue:
-; 	; wyświetl pozostałą część ciągu
-; 	dec	rcx
-; 	jnz	.loop
-;
-; .end:
-; 	; przywróć oryginalne rejestry
-; 	pop	rsi
-; 	pop	rdx
-; 	pop	rcx
-; 	pop	rbx
-; 	pop	rax
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+
+	; wyświetlić jakąkolwiek ilość znaków z ciągu?
+	test	rcx,	rcx
+	jz	.end	; nie
+
+	; wyczyść zmienną
+	xor	eax,	eax
+
+.loop:
+	; pobierz kod ASCII z ciągu
+	lodsb
+
+	; wymuszony koniec ciągu?
+	test	al,	al
+	jz	.end	; tak
+
+	; rozpoczęto sekwencję?
+	cmp	al,	STATIC_ASCII_BACKSLASH
+	jne	.no	; tak
+
+	; rozmiar ciągu może zawierać sekwencję?
+	cmp	rcx,	STATIC_ASCII_SEQUENCE_length
+	jb	.fail	; nie
+
+	; zachowaj oryginalne rejestry
+	push	rdi
+	push	rsi
+	push	rcx
+
+	; cofnij wskaźnik na początek sekwencji
+	dec	rsi
+
+	; rozmiar poszukiwanej sekwencji
+	mov	ecx,	STATIC_ASCII_SEQUENCE_length
+
+.default:
+	; zmiana kolorystyki na domyślny?
+	mov	rdi,	kernel_video_color_sequence_default
+	call	library_string_compare
+	jc	.black	; nie
+
+	; ustaw kolorystykę na domyślny
+	mov	dword [kernel_video_color],	STATIC_COLOR_default
+
+	; koniec obsługi sekwencji
+	jmp	.done
+
+.black:
+	; zmiana kolorystyki na czarny?
+	mov	rdi,	kernel_video_color_sequence_black
+	call	library_string_compare
+	jc	.blue	; nie
+
+	; ustaw kolorystykę na czarny
+	mov	dword [kernel_video_color],	STATIC_COLOR_black
+
+	; koniec obsługi sekwencji
+	jmp	.done
+
+.blue:
+	; zmiana kolorystyki na niebieski?
+	mov	rdi,	kernel_video_color_sequence_blue
+	call	library_string_compare
+	jc	.green	; nie
+
+	; ustaw kolorystykę na niebieski
+	mov	dword [kernel_video_color],	STATIC_COLOR_blue
+
+	; koniec obsługi sekwencji
+	jmp	.done
+
+.green:
+	; zmiana kolorystyki na zielony?
+	mov	rdi,	kernel_video_color_sequence_green
+	call	library_string_compare
+	jc	.cyan	; nie
+
+	; ustaw kolorystykę na zielony
+	mov	dword [kernel_video_color],	STATIC_COLOR_green
+
+	; koniec obsługi sekwencji
+	jmp	.done
+
+.cyan:
+	; zmiana kolorystyki na cyan?
+	mov	rdi,	kernel_video_color_sequence_cyan
+	call	library_string_compare
+	jc	.red	; nie
+
+	; ustaw kolorystykę na cyan
+	mov	dword [kernel_video_color],	STATIC_COLOR_cyan
+
+	; koniec obsługi sekwencji
+	jmp	.done
+
+.red:
+	; zmiana kolorystyki na czerwony?
+	mov	rdi,	kernel_video_color_sequence_red
+	call	library_string_compare
+	jc	.magenta	; nie
+
+	; ustaw kolorystykę na czerwony
+	mov	dword [kernel_video_color],	STATIC_COLOR_red
+
+	; koniec obsługi sekwencji
+	jmp	.done
+
+.magenta:
+	; zmiana kolorystyki na magenta?
+	mov	rdi,	kernel_video_color_sequence_magenta
+	call	library_string_compare
+	jc	.brown	; nie
+
+	; ustaw kolorystykę na magenta
+	mov	dword [kernel_video_color],	STATIC_COLOR_magenta
+
+	; koniec obsługi sekwencji
+	jmp	.done
+
+.brown:
+	; zmiana kolorystyki na brązowy?
+	mov	rdi,	kernel_video_color_sequence_brown
+	call	library_string_compare
+	jc	.gray_light	; nie
+
+	; ustaw kolorystykę na brązowy
+	mov	dword [kernel_video_color],	STATIC_COLOR_brown
+
+	; koniec obsługi sekwencji
+	jmp	.done
+
+.gray_light:
+	; zmiana kolorystyki na jasno-szary?
+	mov	rdi,	kernel_video_color_sequence_gray_light
+	call	library_string_compare
+	jc	.gray	; nie
+
+	; ustaw kolorystykę na jasno-zielony
+	mov	dword [kernel_video_color],	STATIC_COLOR_gray_light
+
+	; koniec obsługi sekwencji
+	jmp	.done
+
+.gray:
+	; zmiana kolorystyki na szary?
+	mov	rdi,	kernel_video_color_sequence_gray
+	call	library_string_compare
+	jc	.blue_light	; nie
+
+	; ustaw kolorystykę na szary
+	mov	dword [kernel_video_color],	STATIC_COLOR_gray
+
+	; koniec obsługi sekwencji
+	jmp	.done
+
+.blue_light:
+	; zmiana kolorystyki na jasno-niebieski?
+	mov	rdi,	kernel_video_color_sequence_blue_light
+	call	library_string_compare
+	jc	.green_light	; nie
+
+	; ustaw kolorystykę na jasno-nieblieski
+	mov	dword [kernel_video_color],	STATIC_COLOR_blue_light
+
+	; koniec obsługi sekwencji
+	jmp	.done
+
+.green_light:
+	; zmiana kolorystyki na jasno-zielony?
+	mov	rdi,	kernel_video_color_sequence_green_light
+	call	library_string_compare
+	jc	.cyan_light	; nie
+
+	; ustaw kolorystykę na jasno-zielony
+	mov	dword [kernel_video_color],	STATIC_COLOR_green_light
+
+	; koniec obsługi sekwencji
+	jmp	.done
+
+.cyan_light:
+	; zmiana kolorystyki na jasny cyan?
+	mov	rdi,	kernel_video_color_sequence_cyan_light
+	call	library_string_compare
+	jc	.red_light	; nie
+
+	; ustaw kolorystykę na jasny cyan
+	mov	dword [kernel_video_color],	STATIC_COLOR_cyan_light
+
+	; koniec obsługi sekwencji
+	jmp	.done
+
+.red_light:
+	; zmiana kolorystyki na jasno-czerwony?
+	mov	rdi,	kernel_video_color_sequence_red_light
+	call	library_string_compare
+	jc	.magenta_light	; nie
+
+	; ustaw kolorystykę na jasno-zielony
+	mov	dword [kernel_video_color],	STATIC_COLOR_red_light
+
+	; koniec obsługi sekwencji
+	jmp	.done
+
+.magenta_light:
+	; zmiana kolorystyki na jasna magenta?
+	mov	rdi,	kernel_video_color_sequence_magenta_light
+	call	library_string_compare
+	jc	.yellow	; nie
+
+	; ustaw kolorystykę na jasna magenta
+	mov	dword [kernel_video_color],	STATIC_COLOR_magenta_light
+
+	; koniec obsługi sekwencji
+	jmp	.done
+
+.yellow:
+	; zmiana kolorystyki na żółty?
+	mov	rdi,	kernel_video_color_sequence_yellow
+	call	library_string_compare
+	jc	.white	; nie
+
+	; ustaw kolorystykę na żółty
+	mov	dword [kernel_video_color],	STATIC_COLOR_yellow
+
+	; koniec obsługi sekwencji
+	jmp	.done
+
+.white:
+	; zmiana kolorystyki na jasno-szary?
+	mov	rdi,	kernel_video_color_sequence_white
+	call	library_string_compare
+	jc	.fail	; nie
+
+	; ustaw kolorystykę na jasno-zielony
+	mov	dword [kernel_video_color],	STATIC_COLOR_white
+
+.done:
+	; zmniejsz rozmiar ciągu i przesuń wskaźnik za sekwencję
+	sub	qword [rsp],	STATIC_ASCII_SEQUENCE_length - 0x01
+	add	qword [rsp + STATIC_QWORD_SIZE_byte],	STATIC_ASCII_SEQUENCE_length - 0x01
+
+.fail:
+	; przywróć oryginalne rejestry
+	pop	rcx
+	pop	rsi
+	pop	rdi
+
+	; kontynuuj
+	jnc	.continue
+
+.no:
+	; zachowaj pozostały rozmiar ciągu
+	push	rcx
+
+	; wyświetl 1 kopię kodu ASCII
+	mov	ecx,	1
+	call	kernel_video_char
+
+	; przywróć pozostały rozmiar ciągu
+	pop	rcx
+
+.continue:
+	; wyświetl pozostałą część ciągu
+	dec	rcx
+	jnz	.loop
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+	pop	rax
 
 	; powrót z procedury
 	ret
@@ -429,7 +557,7 @@ kernel_video_string:
 ; wejście:
 ;	al - kod ASCII znaku
 ;	rcx - ilość kopii do wyświetlenia
-kernel_video_char:
+; kernel_video_char:
 ; 	; zachowaj oryginalne rejestry
 ; 	push	rax
 ; 	push	rbx
@@ -438,7 +566,7 @@ kernel_video_char:
 ; 	push	rdi
 ;
 ; 	; pobierz kolor znaku/tła
-; 	mov	ah,	byte [kernel_video_char_color_and_background]
+; 	mov	ah,	dword [kernel_video_color]
 ;
 ; 	; pozycja kursora na osi X,Y
 ; 	mov	ebx,	dword [kernel_video_cursor]
@@ -570,95 +698,95 @@ kernel_video_char:
 ;	rcx - rozmiar wypełnienia przed liczbą
 ;	rdx  - kod ASCII wypełnienia
 kernel_video_number:
-; 	; zachowaj oryginalne rejestry
-; 	push	rax
-; 	push	rdx
-; 	push	rbp
-; 	push	r8
-; 	push	r9
-;
-; 	; podstawa liczby w odpowiednim zakresie?
-; 	cmp	bl,	2
-; 	jb	.error	; nie
-; 	cmp	bl,	36
-; 	ja	.error	; nie
-;
-; 	; zachowaj wartość prefiksa
-; 	mov	r8,	rdx
-; 	sub	r8,	0x30
-;
-; 	; wyczyść starszą część / resztę z dzielenia
-; 	xor	rdx,	rdx
-;
-; 	; utwórz stos zmiennych lokalnych
-; 	mov	rbp,	rsp
-;
-; .loop:
-; 	; oblicz resztę z dzielenia
-; 	div	rbx
-;
-; 	; zapisz resztę z dzielenia do zmiennych lokalnych
-; 	push	rdx
-; 	dec	rcx	; zmniejsz rozmiar prefiksu
-;
-; 	; wyczyść resztę z dzielenia
-; 	xor	rdx,	rdx
-;
-; 	; przeliczać dalej?
-; 	test	rax,	rax
-; 	jnz	.loop	; tak
-;
-; 	; uzupełnić prefiks?
-; 	cmp	rcx,	STATIC_EMPTY
-; 	jle	.print	; nie
-;
-; .prefix:
-; 	; uzupełnij wartość o prefiks
-; 	push	r8
-;
-; 	; uzupełniać dalej?
-; 	dec	rcx
-; 	jnz	.prefix	; tak
-;
-; .print:
-; 	; wyświetl każdą cyfrę
-; 	mov	ecx,	0x01	; 1 raz
-;
-; 	; pozostały cyfry do wyświetlenia?
-; 	cmp	rsp,	rbp
-; 	je	.end	; nie
-;
-; 	; pobierz cyfrę
-; 	pop	rax
-;
-; 	; przemianuj cyfrę na kod ASCII
-; 	add	rax,	0x30
-;
-; 	; system liczbowy powyżej podstawy 10?
-; 	cmp	al,	0x3A
-; 	jb	.no	; nie
-;
-; 	; koryguj kod ASCII do podstawy liczbowej
-; 	add	al,	0x07
-;
-; .no:
-; 	; wyświetl cyfrę
-; 	call	kernel_video_char
-;
-; 	; kontynuuj
-; 	jmp	.print
-;
-; .error:
-; 	; flaga, błąd
-; 	stc
-;
-; .end:
-; 	; przywróć oryginalne rejestry
-; 	pop	r9
-; 	pop	r8
-; 	pop	rbp
-; 	pop	rdx
-; 	pop	rax
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rdx
+	push	rbp
+	push	r8
+	push	r9
+
+	; podstawa liczby w odpowiednim zakresie?
+	cmp	bl,	2
+	jb	.error	; nie
+	cmp	bl,	36
+	ja	.error	; nie
+
+	; zachowaj wartość prefiksa
+	mov	r8,	rdx
+	sub	r8,	0x30
+
+	; wyczyść starszą część / resztę z dzielenia
+	xor	rdx,	rdx
+
+	; utwórz stos zmiennych lokalnych
+	mov	rbp,	rsp
+
+.loop:
+	; oblicz resztę z dzielenia
+	div	rbx
+
+	; zapisz resztę z dzielenia do zmiennych lokalnych
+	push	rdx
+	dec	rcx	; zmniejsz rozmiar prefiksu
+
+	; wyczyść resztę z dzielenia
+	xor	rdx,	rdx
+
+	; przeliczać dalej?
+	test	rax,	rax
+	jnz	.loop	; tak
+
+	; uzupełnić prefiks?
+	cmp	rcx,	STATIC_EMPTY
+	jle	.print	; nie
+
+.prefix:
+	; uzupełnij wartość o prefiks
+	push	r8
+
+	; uzupełniać dalej?
+	dec	rcx
+	jnz	.prefix	; tak
+
+.print:
+	; wyświetl każdą cyfrę
+	mov	ecx,	0x01	; 1 raz
+
+	; pozostały cyfry do wyświetlenia?
+	cmp	rsp,	rbp
+	je	.end	; nie
+
+	; pobierz cyfrę
+	pop	rax
+
+	; przemianuj cyfrę na kod ASCII
+	add	rax,	0x30
+
+	; system liczbowy powyżej podstawy 10?
+	cmp	al,	0x3A
+	jb	.no	; nie
+
+	; koryguj kod ASCII do podstawy liczbowej
+	add	al,	0x07
+
+.no:
+	; wyświetl cyfrę
+	call	kernel_video_char
+
+	; kontynuuj
+	jmp	.print
+
+.error:
+	; flaga, błąd
+	stc
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	r9
+	pop	r8
+	pop	rbp
+	pop	rdx
+	pop	rax
 
 	; powrót z procedury
 	ret

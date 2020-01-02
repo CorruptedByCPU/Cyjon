@@ -112,22 +112,22 @@ STATIC_ASCII_SEQUENCE_length				equ	0x06
 %define	STATIC_COLOR_ASCII_WHITE				"\e[39m"
 
 STATIC_COLOR_default					equ	STATIC_COLOR_red_light
-STATIC_COLOR_black					equ	0
-STATIC_COLOR_blue					equ	1
-STATIC_COLOR_green					equ	2
-STATIC_COLOR_cyan					equ	3
-STATIC_COLOR_red					equ	4
-STATIC_COLOR_magenta					equ	5
-STATIC_COLOR_brown					equ	6
-STATIC_COLOR_gray_light					equ	7
-STATIC_COLOR_gray					equ	8
-STATIC_COLOR_blue_light					equ	9
-STATIC_COLOR_green_light				equ	10
-STATIC_COLOR_cyan_light					equ	11
-STATIC_COLOR_red_light					equ	12
-STATIC_COLOR_magenta_light				equ	13
-STATIC_COLOR_yellow					equ	14
-STATIC_COLOR_white					equ	15
+STATIC_COLOR_black					equ	0x00000000
+STATIC_COLOR_blue					equ	0x000000AA
+STATIC_COLOR_green					equ	0x0000AA00
+STATIC_COLOR_cyan					equ	0x0000AAAA
+STATIC_COLOR_red					equ	0x00AA0000
+STATIC_COLOR_magenta					equ	0x00AA00AA
+STATIC_COLOR_brown					equ	0x00AA5500
+STATIC_COLOR_gray_light					equ	0x00AAAAAA
+STATIC_COLOR_gray					equ	0x00555555
+STATIC_COLOR_blue_light					equ	0x005555FF
+STATIC_COLOR_green_light				equ	0x0055FF55
+STATIC_COLOR_cyan_light					equ	0x0055FFFF
+STATIC_COLOR_red_light					equ	0x00FF5555
+STATIC_COLOR_magenta_light				equ	0x00FF55FF
+STATIC_COLOR_yellow					equ	0x00FFFF55
+STATIC_COLOR_white					equ	0x00FFFFFF
 
 struc	STATIC_STRUCTURE_BLOCK
 	.data						resb	KERNEL_PAGE_SIZE_byte - STATIC_QWORD_SIZE_byte
