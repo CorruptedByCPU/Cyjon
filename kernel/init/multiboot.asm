@@ -17,7 +17,7 @@ struc	HEADER_multiboot
 	.unsupported0		resb	40
 	.mmap_length		resb	4
 	.mmap_addr		resb	4
-	.unsupported1		resb	32
+	.unsupported1		resb	36
 	.framebuffer_addr	resb	8
 	.framebuffer_pitch	resb	4
 	.framebuffer_width	resb	4
