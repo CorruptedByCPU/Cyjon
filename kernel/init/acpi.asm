@@ -102,22 +102,17 @@ endstruc
 
 ;===============================================================================
 kernel_init_acpi:
-	; zachowaj oryginalne rejestry
-	push	rax
-	push	rbx
-	push	rcx
-	push	rdx
-	push	rsi
-	push	rdi
-	push	r8
-
 	; odszukaj nagłówek Root System Description Pointer w tabelach ACPI
 	mov	rbx,	"RSD PTR "
 
 	; pobierz wskaźnik segmentu EBDA
 	movzx	esi,	word [0x040E]
+
 	; zamień wskaźnik segmentu na adres bezwzględny
 	shl	esi,	STATIC_MULTIPLE_BY_16_shift
+
+	;  domyślnie spodziewamy się ACPI w wersji 1.0
+	mov	r8b,	STATIC_TRUE
 
 .rsdp_search:
 	; pobierz 8 Bajtów
@@ -175,20 +170,38 @@ kernel_init_acpi:
 
 	; sprawdź wersje tablicy ACPI w którym znajduje się nagłówek RSDP
 	cmp	byte [rsi + ACPI_STRUCTURE_RSDP.revision],	0x00
-	jne	.extended	; ACPI v2.0+
+	je	.standard	; wersja 1.0
 
+	; pobierz adres tablicy RSDT na podstawie wskaźnika w nagłówku
+	mov	rdi,	qword [rsi + ACPI_STRUCTURE_RSDP_20.xsdt_address]
+
+	; ACPI 2.0+
+	mov	r8b,	STATIC_FALSE
+
+	; kontynuuj
+	jmp	.xsdt
+
+.standard:
 	; pobierz adres tablicy RSDT na podstawie wskaźnika w nagłówku
 	mov	edi,	dword [rsi + ACPI_STRUCTURE_RSDP.rsdt_address]
 
+.xsdt:
 	; ustaw komunikat błędu: uszkodzona tablica ACPI
 	mov	ecx,	kernel_init_string_error_acpi_corrupted_end - kernel_init_string_error_acpi_corrupted
 	mov	rsi,	kernel_init_string_error_acpi_corrupted
 
 	; sprawdź sygnaturę tablicy RSDT
 	cmp	dword [rdi + ACPI_STRUCTURE_RSDT.signature],	"RSDT"
-	jne	.error	; błąd
+	je	.found	; rozpoznano
+
+	; sprawdź sygnaturę tablicy XSDT
+	cmp	dword [rdi + ACPI_STRUCTURE_RSDT.signature],	"XSDT"
+	jne	.error	; nie rozpoznano
 
 	;=======================================================================
+
+.found:
+	xchg	bx,bx
 
 	; pobierz ilość wpisów w tablicy RSDT (koryguj o rozmiar nagłówka)
 	mov	ecx,	dword [rdi + ACPI_STRUCTURE_RSDT.length]
@@ -199,9 +212,21 @@ kernel_init_acpi:
 	add	rdi,	ACPI_STRUCTURE_RSDT.SIZE
 
 .rsdt:
+	; wersja ACPI 1.0 ?
+	cmp	r8b,	STATIC_TRUE
+	je	.rsdt_pointer	; tak
+
+	; pobierz adres nagłówka wpisu
+	mov	rsi,	qword [rdi]
+
+	; kontynuuj
+	jmp	.xsdt_pointer
+
+.rsdt_pointer:
 	; pobierz adres nagłówka z wpisu
 	mov	esi,	dword [rdi]
 
+.xsdt_pointer:
 	; nagłówek tablicy MADT (Multiple APIC Description Table)?
 	cmp	dword [rsi + ACPI_STRUCTURE_MADT.signature],	"APIC"
 	je	.madt	; tak, przetwórz

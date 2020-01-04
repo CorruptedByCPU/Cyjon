@@ -39,5 +39,5 @@ kernel_string_space					db	STATIC_ASCII_SPACE
 kernel_string_new_line					db	STATIC_ASCII_NEW_LINE
 kernel_string_dot					db	STATIC_ASCII_DOT
 
-kernel_string_welcome					db	"Welcome!", STATIC_ASCII_NEW_LINE
+kernel_string_welcome					db	STATIC_COLOR_ASCII_BLUE_LIGHT, "Welcome!", STATIC_ASCII_NEW_LINE
 kernel_string_welcome_end:

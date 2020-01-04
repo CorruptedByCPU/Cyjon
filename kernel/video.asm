@@ -18,28 +18,10 @@ kernel_video_base_address			dq	STATIC_EMPTY
 kernel_video_pointer				dq	STATIC_EMPTY
 kernel_video_width_pixel			dq	STATIC_EMPTY
 kernel_video_height_pixel			dq	STATIC_EMPTY
-kernel_video_scanline_char			dq	STATIC_EMPTY
+kernel_video_scanline_char			dq	KERNEL_VIDEO_SCANLINE_CHAR_byte
 
 kernel_video_color				dd	STATIC_COLOR_default
 kernel_video_color_background			dd	STATIC_COLOR_BACKGROUND_default
-
-; KERNEL_VIDEO_BASE_address			equ	0x000B8000
-; KERNEL_VIDEO_BASE_limit				equ	KERNEL_VIDEO_BASE_address + KERNEL_VIDEO_SIZE_byte
-; KERNEL_VIDEO_WIDTH_char				equ	80
-; KERNEL_VIDEO_HEIGHT_char			equ	25
-; KERNEL_VIDEO_CHAR_SIZE_byte			equ	0x02
-; KERNEL_VIDEO_LINE_SIZE_byte			equ	KERNEL_VIDEO_WIDTH_char * KERNEL_VIDEO_CHAR_SIZE_byte
-; KERNEL_VIDEO_SIZE_byte				equ	KERNEL_VIDEO_LINE_SIZE_byte * KERNEL_VIDEO_HEIGHT_char
-;
-; KERNEL_VIDEO_COLOR_BACKGROUND			equ	0x00141C21
-;
-; ; kernel_video_base_address			dq	KERNEL_VIDEO_BASE_address
-; kernel_video_width				dq	KERNEL_VIDEO_WIDTH_char
-; kernel_video_height				dq	KERNEL_VIDEO_HEIGHT_char
-; kernel_video_char_size_byte			dq	KERNEL_VIDEO_CHAR_SIZE_byte
-; kernel_video_line_size_byte			dq	KERNEL_VIDEO_LINE_SIZE_byte
-; kernel_video_size_byte				dq	KERNEL_VIDEO_LINE_SIZE_byte * KERNEL_VIDEO_HEIGHT_char
-;
 
 ; domyślnie kursor jest wyłączony
 kernel_video_cursor_lock			dq	STATIC_EMPTY
