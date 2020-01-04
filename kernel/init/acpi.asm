@@ -201,13 +201,25 @@ kernel_init_acpi:
 	;=======================================================================
 
 .found:
-	xchg	bx,bx
-
 	; pobierz ilość wpisów w tablicy RSDT (koryguj o rozmiar nagłówka)
 	mov	ecx,	dword [rdi + ACPI_STRUCTURE_RSDT.length]
 	sub	ecx,	ACPI_STRUCTURE_RSDT.SIZE
+
+	; wersja ACPI 1.0 ?
+	cmp	r8b,	STATIC_TRUE
+	je	.rsdt_entry_size	; tak
+
+	; zamień na ilość wpisów
+	shr	ecx,	STATIC_DIVIDE_BY_QWORD_shift
+
+	; kontynuuj
+	jmp	.prepared
+
+.rsdt_entry_size:
+	; zamień na ilość wpisów
 	shr	ecx,	STATIC_DIVIDE_BY_DWORD_shift
 
+.prepared:
 	; przesuń wskaźnik na wpisy tablicy RSDT
 	add	rdi,	ACPI_STRUCTURE_RSDT.SIZE
 
@@ -232,6 +244,14 @@ kernel_init_acpi:
 	je	.madt	; tak, przetwórz
 
 .rsdt_continue:
+	; wersja ACPI 1.0?
+	cmp	r8b,	STATIC_TRUE
+	je	.dword_address	; tak
+
+	; przesuń wskaźnik na następny wpis w tablicy XSDT
+	add	rdi,	STATIC_DWORD_SIZE_byte
+
+.dword_address:
 	; przesuń wskaźnik na następny wpis w tablicy RSDT
 	add	rdi,	STATIC_DWORD_SIZE_byte
 
@@ -352,17 +372,5 @@ kernel_init_acpi:
 
 	; kontynuuj
 	jmp	.madt_next_entry
-
-.extended:
-	; pobierz adres tablicy XSDT na podstawie wskaźnika w nagłówku
-	mov	rax,	qword [rsi + ACPI_STRUCTURE_RSDP_20.xsdt_address]
-
-	; wyświetl informację o wersji
-	mov	ecx,	kernel_init_string_acpi_version_2_end - kernel_init_string_acpi_version_2
-	mov	rsi,	kernel_init_string_acpi_version_2
-	call	kernel_video_string
-
-	; zatrzymaj dalsze wykonywanie kodu
-	jmp	$
 
 .end:
