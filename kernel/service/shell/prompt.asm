@@ -44,24 +44,12 @@ service_shell_prompt:
 	call	library_string_compare
 	jc	.clean_omit	; nie
 
-	; przewiń zawartość ekranu o N linii w górę
-	mov	ecx,	dword [kernel_video_cursor.y]
-	inc	ecx
-
-.clean:
-	; wykonaj
-	call	kernel_video_scroll
-
-	; koniec przewijania?
-	dec	ecx
-	jnz	.clean	; nie
+	; wyczyść zawartość ekranu
+	call	kernel_video_drain
 
 	; zresetuj pozycję wirtualnego kursora
-	mov	dword [kernel_video_cursor.x],	STATIC_EMPTY
-	mov	dword [kernel_video_cursor.y],	(KERNEL_VIDEO_HEIGHT_pixel / KERNEL_FONT_HEIGHT_pixel) - 0x01
+	mov	qword [kernel_video_cursor],	STATIC_EMPTY
 	call	kernel_video_cursor_set
-
-	; zresetuj pozycję
 
 	; koniec obsługi polecenia
 	jmp	.end

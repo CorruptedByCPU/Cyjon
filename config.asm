@@ -111,6 +111,7 @@ STATIC_ASCII_SEQUENCE_length				equ	0x06
 %define	STATIC_COLOR_ASCII_YELLOW				"\e[93m"
 %define	STATIC_COLOR_ASCII_WHITE				"\e[39m"
 
+STATIC_COLOR_BACKGROUND_default				equ	STATIC_COLOR_black
 STATIC_COLOR_default					equ	STATIC_COLOR_red_light
 STATIC_COLOR_black					equ	0x00000000
 STATIC_COLOR_blue					equ	0x000000AA

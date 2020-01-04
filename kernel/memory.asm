@@ -457,3 +457,37 @@ kernel_memory_release_foreign:
 	ret
 
 	macro_debug	"kernel_memory_release_foreign"
+
+;===============================================================================
+; wejście:
+;	rcx % 256 = 0 - rozmiar przestrzeni do skopiowania w Bajtach
+;	rsi - miejsce źródłowe
+;	rdi - miejsce docelowe
+kernel_memory_copy:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; przestrzeń kopiujemy w pakietach po 256 Bajtów
+	shr	rcx,	STATIC_DIVIDE_BY_256_shift
+
+.loop:
+	; kopiuj
+	macro_copy
+
+	; przesuń wskaźniki na następny pakiet danych
+	add	rsi,	256
+	add	rdi,	256
+
+	; koniec przestrzeni?
+	dec	rcx
+	jnz	.loop	; nie
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rcx
+
+	; powrót z procedury
+	ret
