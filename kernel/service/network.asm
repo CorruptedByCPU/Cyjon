@@ -155,9 +155,6 @@ endstruc
 
 struc	SERVICE_NETWORK_STRUCTURE_PORT
 	.cr3_and_flags					resb	8
-	.tcp_connection					resb	8
-	.size						resb	8
-	.address					resb	8
 	.SIZE:
 endstruc
 
@@ -166,6 +163,7 @@ service_network_pid					dq	STATIC_EMPTY
 service_network_rx_count				dq	STATIC_EMPTY
 service_network_tx_count				dq	STATIC_EMPTY
 
+service_network_port_semaphore				db	STATIC_FALSE
 service_network_port_table				dq	STATIC_EMPTY
 
 service_network_stack_address				dq	STATIC_EMPTY
@@ -398,44 +396,46 @@ service_network_tcp_psh_ack:
 	push	rdi
 	push	rsi
 
-	; pobierz rozmiar danych w ramce TCP
-	movzx	ecx,	word [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.total_length]
-	rol	cx,	STATIC_REPLACE_AL_WITH_HIGH_shift	; Little-Endian
-	sub	cx,	bx	; koryguj rozmiar o nagłówek IP
+	xchg	bx,bx
 
-	; zachowaj rozmiar danych ramki TCP w zmiennej lokalnej
-	push	rcx
-
-	; pobierz numer portu docelowego
-	movzx	eax,	word [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + rbx + SERVICE_NETWORK_STRUCTURE_FRAME_TCP.port_target]
-	rol	ax,	STATIC_REPLACE_AL_WITH_HIGH_shift	; Little-Endian
-	shl	rax,	STATIC_MULTIPLE_BY_32_shift	; zamień na przesunięcie wew. tablicy portów
-
-	; oblicz rozmiar nagłówka TCP
-	movzx	edx,	byte [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + rbx + SERVICE_NETWORK_STRUCTURE_FRAME_TCP.header_length]
-	shr	dl,	STATIC_MOVE_AL_HALF_TO_HIGH_shift	; przesuń ilość podwójnych słów na młodszą pozycję
-	shl	dx,	STATIC_MULTIPLE_BY_4_shift	; zamień ilość podwójnych słów na Bajty
-
-	; przesuń na początek przestrzeni pakietu
-	mov	rdi,	rsi
-
-	; zawartość danych ramki TCP
-	add	rsi,	SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE
-	add	rsi,	rbx
-	add	rsi,	rdx
-
-	; wykonaj
-	rep	movsb
-
-	; wyczyść pozostałą przestrzeń ramki
-	mov	rcx,	KERNEL_PAGE_SIZE_byte
-	sub	rcx,	qword [rsp]
-	rep	stosb
-
-	; ustaw wskaźnik na wpis dla portu w tablicy
-	mov	rsi,	qword [service_network_port_table]
-	add	rsi,	rax
-
+; 	; pobierz rozmiar danych w ramce TCP
+; 	movzx	ecx,	word [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + SERVICE_NETWORK_STRUCTURE_FRAME_IP.total_length]
+; 	rol	cx,	STATIC_REPLACE_AL_WITH_HIGH_shift	; Little-Endian
+; 	sub	cx,	bx	; koryguj rozmiar o nagłówek IP
+;
+; 	; zachowaj rozmiar danych ramki TCP w zmiennej lokalnej
+; 	push	rcx
+;
+; 	; pobierz numer portu docelowego
+; 	movzx	eax,	word [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + rbx + SERVICE_NETWORK_STRUCTURE_FRAME_TCP.port_target]
+; 	rol	ax,	STATIC_REPLACE_AL_WITH_HIGH_shift	; Little-Endian
+; 	shl	rax,	STATIC_MULTIPLE_BY_32_shift	; zamień na przesunięcie wew. tablicy portów
+;
+; 	; oblicz rozmiar nagłówka TCP
+; 	movzx	edx,	byte [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE + rbx + SERVICE_NETWORK_STRUCTURE_FRAME_TCP.header_length]
+; 	shr	dl,	STATIC_MOVE_AL_HALF_TO_HIGH_shift	; przesuń ilość podwójnych słów na młodszą pozycję
+; 	shl	dx,	STATIC_MULTIPLE_BY_4_shift	; zamień ilość podwójnych słów na Bajty
+;
+; 	; przesuń na początek przestrzeni pakietu
+; 	mov	rdi,	rsi
+;
+; 	; zawartość danych ramki TCP
+; 	add	rsi,	SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.SIZE
+; 	add	rsi,	rbx
+; 	add	rsi,	rdx
+;
+; 	; wykonaj
+; 	rep	movsb
+;
+; 	; wyczyść pozostałą przestrzeń ramki
+; 	mov	rcx,	KERNEL_PAGE_SIZE_byte
+; 	sub	rcx,	qword [rsp]
+; 	rep	stosb
+;
+; 	; ustaw wskaźnik na wpis dla portu w tablicy
+; 	mov	rsi,	qword [service_network_port_table]
+; 	add	rsi,	rax
+;
 ; 	; ilość czasu jaką odczekany na wykonanie poniższej operacji
 ; 	mov	cl,	SERVICE_NETWORK_RECEIVE_PUSH_WAIT_limit
 ;
@@ -450,34 +450,18 @@ service_network_tcp_psh_ack:
 ; 	; koniec oczekiwania?
 ; 	dec	cl
 ; 	jnz	.wait	; nie
-
-	; port w dalszym ciągu zapełniony danymi
-
-	; zwolnij zmienną lokalną
-	add	rsp,	STATIC_QWORD_SIZE_byte
-
-	; koniec obsługi
-	jmp	.end
-
-.empty:
-	; uzupełnij wpis o
-
-	; identyfikator połączenia
-	mov	rax,	qword [rsp + STATIC_QWORD_SIZE_byte * 0x02]
-	mov	qword [rsi + SERVICE_NETWORK_STRUCTURE_PORT.tcp_connection],	rax
-
-	; rozmair danych przestrzeni
-	pop	qword [rsi + SERVICE_NETWORK_STRUCTURE_PORT.size]
-
-	; wskaźnik do danych przestrzeni
-	mov	rax,	qword [rsp]
-	mov	qword [rsi + SERVICE_NETWORK_STRUCTURE_PORT.address],	rax
-
-	; oznacz port flagą: dane otrzymane
-	or	byte [rsi + SERVICE_NETWORK_STRUCTURE_PORT.cr3_and_flags],	SERVICE_NETWORK_PORT_FLAG_received
-
-	; przestrzeń przekazana do procesu
-	mov	qword [rsp],	STATIC_EMPTY
+;
+; 	; port w dalszym ciągu zapełniony danymi
+;
+; 	; zwolnij zmienną lokalną
+; 	add	rsp,	STATIC_QWORD_SIZE_byte
+;
+; 	; koniec obsługi
+; 	jmp	.end
+;
+; .empty:
+; 	; przestrzeń przekazana do procesu
+; 	mov	qword [rsp],	STATIC_EMPTY
 
 .end:
 	; przywróć oryginalne rejestry
@@ -1017,23 +1001,34 @@ service_network_tcp_port_assign:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rcx
+	push	rdx
 	push	rdi
+
+	; zablokuj dostęp do tablicy portów
+	macro_close	service_network_port_semaphore,	0
 
 	; numer portu obsługiwany?
 	cmp	cx,	512
 	jnb	.error	; nie
 
 	; zamień numer portu na wskaźnik pośredni
+	mov	eax,	SERVICE_NETWORK_STRUCTURE_PORT.SIZE
 	and	ecx,	STATIC_WORD_mask
-	shl	cx,	STATIC_MULTIPLE_BY_32_shift
+	mul	ecx
 
 	; pobierz PID procesu wywołującego
 	call	kernel_task_active
-	mov	rax,	qword [rdi + KERNEL_STRUCTURE_TASK.pid]
+	mov	rcx,	qword [rdi + KERNEL_STRUCTURE_TASK.pid]
 
 	; załaduj do tablicy portów identyfikator właściciela (zarazem wyczyść flagi)
 	mov	rdi,	qword [service_network_port_table]
-	mov	qword [rdi + rcx],	rax
+
+	; port zajęty?
+	cmp	qword [rdi + rcx],	STATIC_EMPTY
+	jne	.error	; tak
+
+	; zarezerwuj port przez proces o danym PID
+	mov	qword [rdi + rax],	rcx
 
 	; zarejestrowano
 	jmp	.end
@@ -1043,8 +1038,12 @@ service_network_tcp_port_assign:
 	stc
 
 .end:
+	; zwolnij dostęp do tablicy portów
+	mov	byte [service_network_port_semaphore],	STATIC_FALSE
+
 	; przywróć oryginalne rejestry
 	pop	rdi
+	pop	rdx
 	pop	rcx
 	pop	rax
 

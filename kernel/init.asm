@@ -138,18 +138,12 @@ kernel_init:
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/smp.asm"
 
-; kernel_init_clean:
-;	;-----------------------------------------------------------------------
-;	; usuń wszystkie procedury inicjalizacyjne - odzyskujemy miejsce
-;	;-----------------------------------------------------------------------
-;
-;	; rozmiar przestrzeni inicjalizacyjnej
-;	mov	ecx,	kernel_init_clean - $$
-;	call	library_page_from_size	; w stronach
-;
-;	; zwolnij
-;	mov	rdi,	KERNEL_BASE_address
-;	call	kernel_memory_release
+.wait:
+	; wszystkie procesory logiczne zostały zainicjowane?
+	mov	al,	byte [kernel_init_ap_count]
+	inc	al	; procesor BSP nie jest liczony jako logiczny
+	cmp	al,	byte [kernel_apic_count]
+	jne	.wait	; nie, czekaj
 
-	; skocz do głównej pętli jądra systemu
-	jmp	kernel
+	; usuń środowisko inicjalizacyjne
+	jmp	clean

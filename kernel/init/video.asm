@@ -13,6 +13,7 @@ kernel_init_video:
 	; pobierz i zachowaj adres przestrzeni pamięci karty graficznej
 	mov	edi,	dword [ebx + HEADER_multiboot.framebuffer_addr]
 	mov	qword [kernel_video_base_address],	rdi
+	mov	qword [kernel_video_framebuffer],	rdi
 	mov	qword [kernel_video_pointer],	rdi
 
 	; wyczyść przestrzeń pamięci karty graficznej

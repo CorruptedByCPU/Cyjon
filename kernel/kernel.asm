@@ -24,8 +24,18 @@ init:
 	;-----------------------------------------------------------------------
 	%include	"kernel/init.asm"
 
-; wyrównaj pozycję kodu jądra systemu do pełnej strony
+; wyrównaj pozycję kodu do pełnej strony
 align	KERNEL_PAGE_SIZE_byte,	db	STATIC_NOTHING
+
+clean:
+	; rozmiar przestrzeni inicjalizacyjnej
+	mov	ecx,	clean - $$
+	call	library_page_from_size	; w stronach
+
+	; zwolnij
+	mov	rdi,	KERNEL_BASE_address
+	call	kernel_memory_release
+
 kernel:
 	; zatrzymaj dalsze wykonywanie kodu
 	jmp	$

@@ -28,10 +28,11 @@ Natomiast, wszelkie inne operacje na systemie GNU/Linux. Dystrybucja jest niewa�
 
 ### Kompilacja:
 
-	nasm -f bin kernel/kernel.asm	-o build/kernel
-	nasm -f bin zero/zero.asm	-o build/disk.raw
+	nasm -f bin kernel/init/boot.asm	-o build/boot
+	nasm -f bin kernel/kernel.asm		-o build/kernel
+	nasm -f bin zero/zero.asm		-o build/disk.raw
 
 ### Uruchomienie:
 
-	# bez obsługi sieci
-	qemu-system-x86_64 -drive file=build/disk.raw,media=disk,format=raw -m 2 -smp 1 -rtc base=localtime
+	# 2 MiB RAM, 2 procesory logiczne, bez obsługi sieci
+	qemu-system-x86_64 -drive file=build/disk.raw,media=disk,format=raw -m 2 -smp 2 -rtc base=localtime

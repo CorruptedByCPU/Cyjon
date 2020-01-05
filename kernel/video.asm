@@ -16,6 +16,7 @@ KERNEL_VIDEO_SCANLINE_CHAR_byte			equ	(KERNEL_VIDEO_WIDTH_pixel * KERNEL_FONT_HE
 kernel_video_semaphore				db	STATIC_FALSE
 kernel_video_base_address			dq	STATIC_EMPTY
 kernel_video_pointer				dq	STATIC_EMPTY
+kernel_video_framebuffer			dq	STATIC_EMPTY
 kernel_video_width_pixel			dq	STATIC_EMPTY
 kernel_video_height_pixel			dq	STATIC_EMPTY
 kernel_video_scanline_char			dq	KERNEL_VIDEO_SCANLINE_CHAR_byte
@@ -57,7 +58,7 @@ kernel_video_drain:
 	; wyczyść przestrzeń pamięci trybu tekstowego "jasno-szarymi znakami spacji"
 	mov	eax,	dword [kernel_video_color_background]
 	mov	ecx,	KERNEL_VIDEO_WIDTH_pixel * KERNEL_VIDEO_HEIGHT_pixel
-	mov	rdi,	qword [kernel_video_base_address]
+	mov	rdi,	qword [kernel_video_framebuffer]
 	rep	stosd
 
 	; ustaw wirtualny kursor na na początek przestrzeni ekranu
@@ -205,7 +206,7 @@ kernel_video_cursor_set:
 	add	rdx,	rax
 
 	; zapisz nową pozycję wskaźnika w przestrzeni pamięci karty graficznej
-	add	rdx,	qword [kernel_video_base_address]
+	add	rdx,	qword [kernel_video_framebuffer]
 	mov	qword [kernel_video_pointer],	rdx
 
 	; przywróć oryginalne rejestry
@@ -788,7 +789,7 @@ kernel_video_scroll:
 	mov	rcx,	KERNEL_VIDEO_SCANLINE_CHAR_byte * (KERNEL_VIDEO_HEIGHT_char - 0x01)
 
 	; rozpocznij przewijanie z linii 1 do 0
-	mov	rdi,	qword [kernel_video_base_address]
+	mov	rdi,	qword [kernel_video_framebuffer]
 	mov	rsi,	rdi
 	add	rsi,	KERNEL_VIDEO_SCANLINE_CHAR_byte
 	call	kernel_memory_copy
@@ -828,7 +829,7 @@ kernel_video_line_drain:
 	; ustaw wskaźnik na początek danej linii ekranu0
 	mov	rcx,	KERNEL_VIDEO_SCANLINE_CHAR_byte
 	mul	rcx
-	add	rax,	qword [kernel_video_base_address]
+	add	rax,	qword [kernel_video_framebuffer]
 	mov	rdi,	rax
 
 	; wyczyść linię domyślnym kolorem tła

@@ -11,15 +11,20 @@
 	db	"<style>* { font: 12px/150% 'Courier New', 'DejaVu Sans Mono', Monospace, Verdana; color: #F5F5F5; } body { background-color: #282922; }</style>", STATIC_ASCII_NEW_LINE
 %ENDMACRO
 
+service_http_ipc_message:
+	times	KERNEL_IPC_STRUCTURE_LIST.SIZE	db	STATIC_EMPTY
+
 service_http:
 	; zarejestruj port 80
 	mov	cx,	80
 	call	service_network_tcp_port_assign
+	jc	service_http	; spróbuj raz jeszcze
 
 .loop:
-	; ; otrzymaliśmy zapytanie?
-	; call	service_network_tcp_port_receive
-	; jc	.loop	; nie, sprawdź raz jeszcze
+	; odbierz komunikat dla nas
+	mov	rdi,	service_http_ipc_message
+	call	kernel_ipc_receive
+	jc	.loop	; brak, sprawdź raz jeszcze
 
 	; zapytanie o rdzeń usługi?
 	mov	ecx,	service_http_get_root_end - service_http_get_root
