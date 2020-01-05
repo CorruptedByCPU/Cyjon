@@ -40,3 +40,4 @@ kernel_apic_id_get:
 
 	; powrót z procedury
 	ret
+ 

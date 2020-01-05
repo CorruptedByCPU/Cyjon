@@ -12,6 +12,11 @@ KERNEL_INIT_LONG_MODE_PAGE_FLAG_writeable	equ	00000010b
 KERNEL_INIT_LONG_MODE_PAGE_FLAG_2MiB_size	equ	10000000b
 KERNEL_INIT_LONG_MODE_PAGE_FLAG_default		equ	KERNEL_INIT_LONG_MODE_PAGE_FLAG_available | KERNEL_INIT_LONG_MODE_PAGE_FLAG_writeable
 
+;===============================================================================
+; 32 bitowy kod inicjalizujący =================================================
+;===============================================================================
+[BITS 32]
+
 	;-----------------------------------------------------------------------
 	; utwórz podstawową tablicę stronicowania dla trybu 64 bitowego
 	;-----------------------------------------------------------------------

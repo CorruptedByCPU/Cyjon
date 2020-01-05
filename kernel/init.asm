@@ -118,11 +118,6 @@ kernel_init:
 	%include	"kernel/init/services.asm"
 
 	;-----------------------------------------------------------------------
-	; SMP - uruchom pozostałe procesory logiczne
-	;-----------------------------------------------------------------------
-	%include	"kernel/init/smp.asm"
-
-	;-----------------------------------------------------------------------
 	; konfiguruj wew. przerwanie lokalnego kontrolera APIC (przełączanie zadań w kolejce)
 	;-----------------------------------------------------------------------
 	call	kernel_init_apic
@@ -133,20 +128,28 @@ kernel_init:
 	; poinformuj APIC o obsłużeniu aktualnego przerwania sprzętowego lokalnego
 	mov	dword [rsi + KERNEL_APIC_EOI_register],	STATIC_EMPTY
 
+	; włącz obsługę przerwań
+	sti
+
 	; za chwilę wywołana zostanie procedura kolejki zadań!
 
-kernel_init_clean:
 	;-----------------------------------------------------------------------
-	; usuń wszystkie procedury inicjalizacyjne - odzyskujemy miejsce
+	; SMP - uruchom pozostałe procesory logiczne
 	;-----------------------------------------------------------------------
+	%include	"kernel/init/smp.asm"
 
-	; rozmiar przestrzeni inicjalizacyjnej
-	mov	ecx,	kernel_init_clean - $$
-	call	library_page_from_size	; w stronach
-
-	; zwolnij
-	mov	rdi,	KERNEL_BASE_address
-	call	kernel_memory_release
+; kernel_init_clean:
+;	;-----------------------------------------------------------------------
+;	; usuń wszystkie procedury inicjalizacyjne - odzyskujemy miejsce
+;	;-----------------------------------------------------------------------
+;
+;	; rozmiar przestrzeni inicjalizacyjnej
+;	mov	ecx,	kernel_init_clean - $$
+;	call	library_page_from_size	; w stronach
+;
+;	; zwolnij
+;	mov	rdi,	KERNEL_BASE_address
+;	call	kernel_memory_release
 
 	; skocz do głównej pętli jądra systemu
 	jmp	kernel

@@ -22,6 +22,7 @@ kernel_init_string_error_ioapic_end:
 kernel_init_apic_semaphore		db	STATIC_FALSE
 kernel_init_ioapic_semaphore		db	STATIC_FALSE
 kernel_init_smp_semaphore		db	STATIC_FALSE
+kernel_init_ap_semaphore		db	STATIC_FALSE
 kernel_init_ap_count			db	STATIC_EMPTY
 
 kernel_init_apic_id_highest		db	STATIC_EMPTY
