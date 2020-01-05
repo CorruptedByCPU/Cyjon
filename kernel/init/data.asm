@@ -35,3 +35,7 @@ kernel_init_services_list:
 
 	; koniec usług
 	dq	STATIC_EMPTY
+
+kernel_init_boot_file:
+	incbin	"build/boot"
+kernel_init_boot_file_end:

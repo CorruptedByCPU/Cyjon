@@ -75,8 +75,8 @@ KERNEL_INIT_LONG_MODE_PAGE_FLAG_default		equ	KERNEL_INIT_LONG_MODE_PAGE_FLAG_ava
 	or	eax,	0x80000001	; PE (bit 0) - wyłącz tryb rzeczywisty,
 	mov	cr0,	eax		; PG (bit 31) - współdzielenie tablic stronicowania
 
-	; skocz do 64 bitowego kodu programu rozruchowego
-	jmp	0x0008:kernel_init_long_mode
+	; skocz do 64 bitowego kodu inicjalizującego
+	jmp	0x0008:kernel_init
 
 align 0x08	; wszystkie tablice trzymamy pod pełnym adresem
 kernel_init_table_gdt_64bit:

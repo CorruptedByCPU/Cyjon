@@ -15,6 +15,16 @@
 	; z programu rozruchowego "Zero" (bez modyfikacji)
 	;-----------------------------------------------------------------------
 
+	; procesor logiczny?
+	cmp	byte [kernel_init_smp_semaphore],	STATIC_FALSE
+	je	.entry	; nie
+
+	;-----------------------------------------------------------------------
+	; AP - inicjalizacja procesora logicznego
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/ap.asm"
+
+.entry:
 	;-----------------------------------------------------------------------
 	; przełącz procesor w tryb 64 bitowy
 	;-----------------------------------------------------------------------
@@ -46,7 +56,7 @@
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/apic.asm"
 
-kernel_init_long_mode:
+kernel_init:
 	;-----------------------------------------------------------------------
 	; inicjalizacja przestrzeni trybu tekstowego
 	;-----------------------------------------------------------------------
@@ -106,6 +116,11 @@ kernel_init_long_mode:
 	; dodaj do kolejki zadań zestaw usług zarządzających środowiskiem jądra systemu
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/services.asm"
+
+	;-----------------------------------------------------------------------
+	; SMP - uruchom pozostałe procesory logiczne
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/smp.asm"
 
 	;-----------------------------------------------------------------------
 	; konfiguruj wew. przerwanie lokalnego kontrolera APIC (przełączanie zadań w kolejce)
