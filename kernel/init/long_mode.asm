@@ -12,6 +12,11 @@ KERNEL_INIT_LONG_MODE_PAGE_FLAG_writeable	equ	00000010b
 KERNEL_INIT_LONG_MODE_PAGE_FLAG_2MiB_size	equ	10000000b
 KERNEL_INIT_LONG_MODE_PAGE_FLAG_default		equ	KERNEL_INIT_LONG_MODE_PAGE_FLAG_available | KERNEL_INIT_LONG_MODE_PAGE_FLAG_writeable
 
+;===============================================================================
+; 32 bitowy kod inicjalizujący =================================================
+;===============================================================================
+[BITS 32]
+
 	;-----------------------------------------------------------------------
 	; utwórz podstawową tablicę stronicowania dla trybu 64 bitowego
 	;-----------------------------------------------------------------------
@@ -75,8 +80,8 @@ KERNEL_INIT_LONG_MODE_PAGE_FLAG_default		equ	KERNEL_INIT_LONG_MODE_PAGE_FLAG_ava
 	or	eax,	0x80000001	; PE (bit 0) - wyłącz tryb rzeczywisty,
 	mov	cr0,	eax		; PG (bit 31) - współdzielenie tablic stronicowania
 
-	; skocz do 64 bitowego kodu programu rozruchowego
-	jmp	0x0008:kernel_init_long_mode
+	; skocz do 64 bitowego kodu inicjalizującego
+	jmp	0x0008:kernel_init
 
 align 0x08	; wszystkie tablice trzymamy pod pełnym adresem
 kernel_init_table_gdt_64bit:

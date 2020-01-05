@@ -37,7 +37,6 @@ service_shell:
 
 	; pobierz polecenie
 	call	library_input
-	xchg	bx,bx
 	jc	service_shell	; bufor pusty lub przerwano wprowadzanie
 
 	; usuń białe znaki z początku i końca bufora

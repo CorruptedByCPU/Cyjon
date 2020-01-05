@@ -15,6 +15,16 @@
 	; z programu rozruchowego "Zero" (bez modyfikacji)
 	;-----------------------------------------------------------------------
 
+	; procesor logiczny?
+	cmp	byte [kernel_init_smp_semaphore],	STATIC_FALSE
+	je	.entry	; nie
+
+	;-----------------------------------------------------------------------
+	; AP - inicjalizacja procesora logicznego
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/ap.asm"
+
+.entry:
 	;-----------------------------------------------------------------------
 	; przełącz procesor w tryb 64 bitowy
 	;-----------------------------------------------------------------------
@@ -46,7 +56,7 @@
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/apic.asm"
 
-kernel_init_long_mode:
+kernel_init:
 	;-----------------------------------------------------------------------
 	; inicjalizacja przestrzeni trybu tekstowego
 	;-----------------------------------------------------------------------
@@ -118,20 +128,28 @@ kernel_init_long_mode:
 	; poinformuj APIC o obsłużeniu aktualnego przerwania sprzętowego lokalnego
 	mov	dword [rsi + KERNEL_APIC_EOI_register],	STATIC_EMPTY
 
+	; włącz obsługę przerwań
+	sti
+
 	; za chwilę wywołana zostanie procedura kolejki zadań!
 
-kernel_init_clean:
 	;-----------------------------------------------------------------------
-	; usuń wszystkie procedury inicjalizacyjne - odzyskujemy miejsce
+	; SMP - uruchom pozostałe procesory logiczne
 	;-----------------------------------------------------------------------
+	%include	"kernel/init/smp.asm"
 
-	; rozmiar przestrzeni inicjalizacyjnej
-	mov	ecx,	kernel_init_clean - $$
-	call	library_page_from_size	; w stronach
-
-	; zwolnij
-	mov	rdi,	KERNEL_BASE_address
-	call	kernel_memory_release
+; kernel_init_clean:
+;	;-----------------------------------------------------------------------
+;	; usuń wszystkie procedury inicjalizacyjne - odzyskujemy miejsce
+;	;-----------------------------------------------------------------------
+;
+;	; rozmiar przestrzeni inicjalizacyjnej
+;	mov	ecx,	kernel_init_clean - $$
+;	call	library_page_from_size	; w stronach
+;
+;	; zwolnij
+;	mov	rdi,	KERNEL_BASE_address
+;	call	kernel_memory_release
 
 	; skocz do głównej pętli jądra systemu
 	jmp	kernel

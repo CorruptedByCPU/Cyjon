@@ -9,6 +9,8 @@
 	;-----------------------------------------------------------------------
 	%include	"kernel/config.asm"	; lokalne
 	;-----------------------------------------------------------------------
+	%include	"kernel/macro/apic.asm"
+	;-----------------------------------------------------------------------
 
 ; 32 bitowy kod inicjalizacyjny jądra systemu
 [BITS 32]
@@ -33,7 +35,6 @@ kernel:
 	; do prawidłowej pracy jądra systemu
 	;-----------------------------------------------------------------------
 	%include	"kernel/macro/close.asm"
-	%include	"kernel/macro/apic.asm"
 	%include	"kernel/macro/debug.asm"
 	%include	"kernel/macro/copy.asm"
 	;-----------------------------------------------------------------------
