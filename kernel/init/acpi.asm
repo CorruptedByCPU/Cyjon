@@ -18,7 +18,7 @@ struc	ACPI_STRUCTURE_RSDP
 	.SIZE:
 endstruc
 
-struc	ACPI_STRUCTURE_RSDP_20
+struc	ACPI_STRUCTURE_XSDP
 	.rsdp				resb	ACPI_STRUCTURE_RSDP.SIZE
 	.length				resb	4
 	.xsdt_address			resb	8
@@ -27,7 +27,7 @@ struc	ACPI_STRUCTURE_RSDP_20
 	.SIZE:
 endstruc
 
-struc	ACPI_STRUCTURE_RSDT
+struc	ACPI_STRUCTURE_RSDT_or_XSDT
 	.signature			resb	4
 	.length				resb	4
 	.revision			resb	1
@@ -102,7 +102,7 @@ endstruc
 
 ;===============================================================================
 kernel_init_acpi:
-	; odszukaj nagłówek Root System Description Pointer w tabelach ACPI
+	; odszukaj nagłówek Root/Extended System Description Pointer
 	mov	rbx,	"RSD PTR "
 
 	; pobierz wskaźnik segmentu EBDA
@@ -118,7 +118,7 @@ kernel_init_acpi:
 	; pobierz 8 Bajtów
 	lodsq
 
-	; znaleziono nagłówek RSDP?
+	; znaleziono nagłówek RSDP/XSDP?
 	cmp	rax,	rbx
 	je	.rsdp_found	; tak
 
@@ -126,7 +126,7 @@ kernel_init_acpi:
 	cmp	esi,	0x000FFFFF
 	jb	.rsdp_search	; nie
 
-	; nie znaleziono nagłówka RSDP
+	; nie znaleziono nagłówka RSDP/XSDP
 	mov	ecx,	kernel_init_string_error_acpi_end - kernel_init_string_error_acpi
 	mov	rsi,	kernel_init_string_error_acpi
 
@@ -135,7 +135,7 @@ kernel_init_acpi:
 	jmp	kernel_panic
 
 .rsdp_found:
-	; zachowaj wskaźnik do nagłówka RSDP
+	; zachowaj wskaźnik do nagłówka RSDP lub XSDP
 	push	rsi
 
 	;-----------------------------------------------------------------------
@@ -164,101 +164,96 @@ kernel_init_acpi:
 	test	al,	al
 	jnz	.rsdp_search	; nie, to nie jest poprawny nagłówek RSDP, szukaj dalej
 
-.rsdp:
+.rsdp_or_xsdp:
 	; ustaw wskaźnik na początek nagłówka
 	sub	rsi,	ACPI_STRUCTURE_RSDP.checksum
 
 	; sprawdź wersje tablicy ACPI w którym znajduje się nagłówek RSDP
 	cmp	byte [rsi + ACPI_STRUCTURE_RSDP.revision],	0x00
-	je	.standard	; wersja 1.0
+	jne	.extended	; wersja 1.0
 
 	; pobierz adres tablicy RSDT na podstawie wskaźnika w nagłówku
-	mov	rdi,	qword [rsi + ACPI_STRUCTURE_RSDP_20.xsdt_address]
+	mov	edi,	dword [rsi + ACPI_STRUCTURE_RSDP.rsdt_address]
+
+	; kontynuuj
+	jmp	.standard
+
+.extended:
+	; pobierz adres tablicy XSDT na podstawie wskaźnika w nagłówku
+	mov	rdi,	qword [rsi + ACPI_STRUCTURE_XSDP.xsdt_address]
 
 	; ACPI 2.0+
 	mov	r8b,	STATIC_FALSE
 
-	; kontynuuj
-	jmp	.xsdt
-
 .standard:
-	; pobierz adres tablicy RSDT na podstawie wskaźnika w nagłówku
-	mov	edi,	dword [rsi + ACPI_STRUCTURE_RSDP.rsdt_address]
-
-.xsdt:
 	; ustaw komunikat błędu: uszkodzona tablica ACPI
 	mov	ecx,	kernel_init_string_error_acpi_corrupted_end - kernel_init_string_error_acpi_corrupted
 	mov	rsi,	kernel_init_string_error_acpi_corrupted
 
 	; sprawdź sygnaturę tablicy RSDT
-	cmp	dword [rdi + ACPI_STRUCTURE_RSDT.signature],	"RSDT"
+	cmp	dword [rdi + ACPI_STRUCTURE_RSDT_or_XSDT.signature],	"RSDT"
 	je	.found	; rozpoznano
 
 	; sprawdź sygnaturę tablicy XSDT
-	cmp	dword [rdi + ACPI_STRUCTURE_RSDT.signature],	"XSDT"
+	cmp	dword [rdi + ACPI_STRUCTURE_RSDT_or_XSDT.signature],	"XSDT"
 	jne	.error	; nie rozpoznano
 
 	;=======================================================================
 
 .found:
-	; pobierz ilość wpisów w tablicy RSDT (koryguj o rozmiar nagłówka)
-	mov	ecx,	dword [rdi + ACPI_STRUCTURE_RSDT.length]
-	sub	ecx,	ACPI_STRUCTURE_RSDT.SIZE
+	; pobierz rozmiar tablicy wskaźników RSDT/XSDT
+	mov	ecx,	dword [rdi + ACPI_STRUCTURE_RSDT_or_XSDT.length]
+	sub	ecx,	ACPI_STRUCTURE_RSDT_or_XSDT.SIZE
 
-	; wersja ACPI 1.0 ?
+	; przesuń wskaźnik na pierwszy wpis tablicy
+	add	rdi,	ACPI_STRUCTURE_RSDT_or_XSDT.SIZE
+
+	; wersja standardowa?
 	cmp	r8b,	STATIC_TRUE
-	je	.rsdt_entry_size	; tak
+	je	.rsdt_pointers	; tak
 
+.xsdt_pointers:
 	; zamień na ilość wpisów
 	shr	ecx,	STATIC_DIVIDE_BY_QWORD_shift
 
-	; kontynuuj
-	jmp	.prepared
-
-.rsdt_entry_size:
-	; zamień na ilość wpisów
-	shr	ecx,	STATIC_DIVIDE_BY_DWORD_shift
-
-.prepared:
-	; przesuń wskaźnik na wpisy tablicy RSDT
-	add	rdi,	ACPI_STRUCTURE_RSDT.SIZE
-
-.rsdt:
-	; wersja ACPI 1.0 ?
-	cmp	r8b,	STATIC_TRUE
-	je	.rsdt_pointer	; tak
-
+.xsdt_pointers_loop:
 	; pobierz adres nagłówka wpisu
 	mov	rsi,	qword [rdi]
 
-	; kontynuuj
-	jmp	.xsdt_pointer
-
-.rsdt_pointer:
-	; pobierz adres nagłówka z wpisu
-	mov	esi,	dword [rdi]
-
-.xsdt_pointer:
-	; nagłówek tablicy MADT (Multiple APIC Description Table)?
-	cmp	dword [rsi + ACPI_STRUCTURE_MADT.signature],	"APIC"
-	je	.madt	; tak, przetwórz
-
-.rsdt_continue:
-	; wersja ACPI 1.0?
-	cmp	r8b,	STATIC_TRUE
-	je	.dword_address	; tak
+	; sprawdź typ nagłówka
+	call	.header
 
 	; przesuń wskaźnik na następny wpis w tablicy XSDT
-	add	rdi,	STATIC_DWORD_SIZE_byte
+	add	rdi,	STATIC_QWORD_SIZE_byte
 
-.dword_address:
+	; koniec wskaźników?
+	dec	ecx
+	jnz	.xsdt_pointers_loop	; nie
+
+	; koniec przetwarzania tablic
+	jmp	.summary
+
+.rsdt_pointers:
+	; zamień na ilość wpisów
+	shr	ecx,	STATIC_DIVIDE_BY_DWORD_shift
+
+.rsdt_pointers_loop:
+	; pobierz adres nagłówka wpisu
+	mov	esi,	dword [rdi]
+
+	; sprawdź typ nagłówka
+	call	.header
+
 	; przesuń wskaźnik na następny wpis w tablicy RSDT
 	add	rdi,	STATIC_DWORD_SIZE_byte
 
-	; koniec wpisów w tablicy RSDT?
+	; koniec wskaźników?
 	dec	ecx
-	jnz	.rsdt	; nie, kontynuuj z pozostałymi
+	jnz	.rsdt_pointers_loop	; nie
 
+	; koniec przetwarzania tablic
+
+.summary:
 	; ustaw komunikat błędu: nie znaleziono tablicy APIC
 	mov	ecx,	kernel_init_string_error_apic_end - kernel_init_string_error_apic
 	mov	rsi,	kernel_init_string_error_apic
@@ -278,7 +273,14 @@ kernel_init_acpi:
 	; kontynuuj inicjalizacje środowiska jądra systemu
 	jmp	.end
 
-	;=======================================================================
+;-------------------------------------------------------------------------------
+.header:
+	; nagłówek tablicy MADT (Multiple APIC Description Table)?
+	cmp	dword [rsi + ACPI_STRUCTURE_MADT.signature],	"APIC"
+	je	.madt	; tak, przetwórz
+
+	; nie rozpoznano nagłówka, zignoruj
+	ret
 
 .madt:
 	; zachowaj oryginalne rejestry
@@ -326,9 +328,10 @@ kernel_init_acpi:
 	pop	rsi
 	pop	rcx
 
-	; kontynuuj przetwarzanie tablicy RSDT
-	jmp	.rsdt_continue
+	; koniec podprocedury
+	ret
 
+;-------------------------------------------------------------------------------
 .madt_apic:
 	; procesor logiczny aktywny?
 	bt	word [rsi + ACPI_STRUCTURE_MADT_APIC.flags],	ACPI_MADT_APIC_FLAG_ENABLED_bit
@@ -351,6 +354,7 @@ kernel_init_acpi:
 	; kontynuuj
 	jmp	.madt_next_entry
 
+;-------------------------------------------------------------------------------
 .madt_ioapic:
 	; przetworzono już IO APIC?
 	cmp	byte [kernel_init_ioapic_semaphore],	STATIC_TRUE
