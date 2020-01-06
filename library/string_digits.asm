@@ -44,3 +44,5 @@ library_string_digits:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_string_digits"

@@ -26,6 +26,9 @@ service_http:
 	call	kernel_ipc_receive
 	jc	.loop	; brak, sprawdź raz jeszcze
 
+	; pobierz identyfikator połączenia
+	mov	rbx,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.other]
+
 	; zapytanie o rdzeń usługi?
 	mov	ecx,	service_http_get_root_end - service_http_get_root
 	mov	rdi,	service_http_get_root
@@ -45,6 +48,8 @@ service_http:
 	mov	rsi,	service_http_404
 
 .answer:
+	xchg	bx,bx
+
 	; wyślij odpowiedź
 	call	service_network_tcp_port_send
 

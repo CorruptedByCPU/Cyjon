@@ -29,22 +29,6 @@ service_tx:
 	test	rcx,	rcx
 	jz	.loop	; tak, zignoruj
 
-	jmp	.send
-
-	; wiadomość od usługi sieciowej?
-	mov	rbx,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pid_source]
-	cmp	rbx,	qword [service_network_pid]
-	je	.send	; tak, przetwórz
-
-	; pobierz adres przestrzeni
-	call	library_page_from_size
-	mov	rdi,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pointer]
-	call	kernel_memory_release
-
-	; powrót do pętli głównej
-	jmp	.loop
-
-.send:
  	; wyślij
  	mov	rax,	rcx
  	mov	rdi,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pointer]

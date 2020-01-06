@@ -107,3 +107,5 @@ library_string_word_next:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_string_word_next"

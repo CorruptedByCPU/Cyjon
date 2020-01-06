@@ -3,7 +3,7 @@
 ;===============================================================================
 
 KERNEL_VIDEO_WIDTH_pixel			equ	640
-KERNEL_VIDEO_HEIGHT_pixel			equ	400
+KERNEL_VIDEO_HEIGHT_pixel			equ	480
 KERNEL_VIDEO_DEPTH_shift			equ	2
 KERNEL_VIDEO_DEPTH_byte				equ	4
 KERNEL_VIDEO_DEPTH_bit				equ	32

@@ -27,3 +27,5 @@ library_page_align_up:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_page_align_up"

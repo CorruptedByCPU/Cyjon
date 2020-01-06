@@ -127,3 +127,5 @@ library_input:
 
 	; powrót z liblioteki
 	ret
+
+	macro_debug	"library_input"
