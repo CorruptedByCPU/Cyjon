@@ -300,6 +300,8 @@ driver_nic_i82540em_rx_release:
 	; powrót z procedury
 	ret
 
+	macro_debug	"driver_nic_i82540em_rx_release"
+
 ;===============================================================================
 ; wejście:
 ;	ax - rozmiar pakietu do wysłania
@@ -347,6 +349,8 @@ driver_nic_i82540em_transfer:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"driver_nic_i82540em_transfer"
 
 ;===============================================================================
 	; wejście:
@@ -448,6 +452,8 @@ driver_nic_i82540em:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"driver_nic_i82540em"
 
 ;===============================================================================
 ; wejście:
@@ -579,3 +585,5 @@ driver_nic_i82540em_setup:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"driver_nic_i82540em_setup"

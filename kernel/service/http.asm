@@ -31,6 +31,7 @@ service_http:
 
 	; zapytanie o rdzeń usługi?
 	mov	ecx,	service_http_get_root_end - service_http_get_root
+	mov	rsi,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pointer]
 	mov	rdi,	service_http_get_root
 	call	library_string_compare
 	jc	.no	; nie
@@ -48,8 +49,6 @@ service_http:
 	mov	rsi,	service_http_404
 
 .answer:
-	xchg	bx,bx
-
 	; wyślij odpowiedź
 	call	service_network_tcp_port_send
 
