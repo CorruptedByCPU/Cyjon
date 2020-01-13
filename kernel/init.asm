@@ -148,11 +148,11 @@ kernel_init:
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/smp.asm"
 
+.wait:
 	; pobierz ilość działających procesorów logicznych
 	mov	al,	byte [kernel_init_ap_count]
 	inc	al	; procesor BSP nie jest liczony jako logiczny
 
-.wait:
 	; wszystkie procesory logiczne zostały zainicjowane?
 	cmp	al,	byte [kernel_apic_count]
 	jne	.wait	; nie, czekaj

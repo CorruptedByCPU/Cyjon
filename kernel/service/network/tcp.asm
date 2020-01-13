@@ -549,6 +549,8 @@ service_network_tcp_port_assign:
 
 	; załaduj do tablicy portów identyfikator właściciela (zarazem wyczyść flagi)
 	mov	rdi,	qword [service_network_port_table]
+	test	rdi,	rdi
+	jz	.error	; usługa sieciowa niezainicjowana
 
 	; port zajęty?
 	cmp	qword [rdi + rcx + SERVICE_NETWORK_STRUCTURE_PORT.pid],	STATIC_EMPTY

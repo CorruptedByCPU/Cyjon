@@ -135,5 +135,8 @@
 	; ustaw wskaźnik na początek kolejki zadań
 	mov	rdi,	qword [kernel_task_address]
 
+	; procesor logiczny zainicjowany
+	inc	byte [kernel_init_ap_count]
+
 	; przydziel pierwsze zadanie dla procesora logicznego
 	jmp	kernel_task.ap_entry
