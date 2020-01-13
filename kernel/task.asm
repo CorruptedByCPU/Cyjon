@@ -31,17 +31,18 @@ struc	KERNEL_STRUCTURE_TASK
 	.cpu				resb	8	; identyfikator procesora logicznego, obsługującego w danym czasie proces
 	.pid				resb	8	; identyfikator procesu
 	.time				resb	8	; czas uruchomienia procesu względem czasu życia jądra systemu
+	.knot				resb	8	; wskaźnik do supła katalogu roboczego procesu
 	.flags				resb	2	; flagi stanu procesu
 	.stack				resb	2	; rozmiar przestrzeni stosu w stronach
 	.SIZE:
 endstruc
 
 struc	KERNEL_STRUCTURE_TASK_IRETQ
-	.rip						resb	8
-	.cs						resb	8
-	.eflags						resb	8
-	.rsp						resb	8
-	.ds						resb	8
+	.rip				resb	8
+	.cs				resb	8
+	.eflags				resb	8
+	.rsp				resb	8
+	.ds				resb	8
 endstruc
 
 kernel_task_address			dq	STATIC_EMPTY

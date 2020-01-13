@@ -103,6 +103,11 @@ kernel_init:
 	%include	"kernel/init/ipc.asm"
 
 	;-----------------------------------------------------------------------
+	; utwórz wirtualny system plików
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/vfs.asm"
+
+	;-----------------------------------------------------------------------
 	; inicjalizuj jeden z dostępnych interfejsów sieciowych
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/network.asm"

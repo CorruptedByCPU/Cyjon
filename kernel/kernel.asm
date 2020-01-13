@@ -59,6 +59,7 @@ kernel:
 	%include	"kernel/idt.asm"
 	%include	"kernel/task.asm"
 	%include	"kernel/thread.asm"
+	%include	"kernel/vfs.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/font/canele.asm"
 	;-----------------------------------------------------------------------
