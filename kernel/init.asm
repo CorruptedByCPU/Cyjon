@@ -63,6 +63,11 @@ kernel_init:
 	%include	"kernel/init/video.asm"
 
 	;-----------------------------------------------------------------------
+	; wyświetl informacje o czcionce
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/font.asm"
+
+	;-----------------------------------------------------------------------
 	; utworzenie binarnej mapy pamięci i oznaczenie w niej jądra systemu
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/memory.asm"
@@ -143,12 +148,26 @@ kernel_init:
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/smp.asm"
 
-.wait:
-	; wszystkie procesory logiczne zostały zainicjowane?
+	; pobierz ilość działających procesorów logicznych
 	mov	al,	byte [kernel_init_ap_count]
 	inc	al	; procesor BSP nie jest liczony jako logiczny
+
+.wait:
+	; wszystkie procesory logiczne zostały zainicjowane?
 	cmp	al,	byte [kernel_apic_count]
 	jne	.wait	; nie, czekaj
+
+	;-----------------------------------------------------------------------
+	; INICJALIZACJA ZAKOŃCZONA
+	;-----------------------------------------------------------------------
+
+	; wyświetl logo
+	mov	ecx,	kernel_init_string_end - kernel_init_string
+	mov	rsi,	kernel_init_string
+	call	kernel_video_string
+
+	; poinformuj o zakończeniu inicjalizacji
+	mov	byte [kernel_init_semaphore],	STATIC_FALSE
 
 	; usuń środowisko inicjalizacyjne
 	jmp	clean

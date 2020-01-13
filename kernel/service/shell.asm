@@ -9,6 +9,11 @@
 	;-----------------------------------------------------------------------
 
 service_shell:
+	; poczekaj na koniec inicjalizacji systemu
+	cmp	byte [kernel_init_semaphore],	STATIC_FALSE
+	jne	service_shell	; czekaj
+
+.main:
 	; domyślnie, znak zachęty od nowej linii
 	mov	ecx,	service_shell_string_prompt_end - service_shell_string_prompt_with_new_line
 	mov	rsi,	service_shell_string_prompt_with_new_line
@@ -37,11 +42,11 @@ service_shell:
 
 	; pobierz polecenie
 	call	library_input
-	jc	service_shell	; bufor pusty lub przerwano wprowadzanie
+	jc	service_shell.main	; bufor pusty lub przerwano wprowadzanie
 
 	; usuń białe znaki z początku i końca bufora
 	call	library_string_trim
-	jc	service_shell	; bufor pusty lub przerwano wprowadzanie
+	jc	service_shell.main	; bufor pusty lub przerwano wprowadzanie
 
 	; znajdź nazwę polecenia
 	call	library_string_word_next

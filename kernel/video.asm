@@ -17,8 +17,8 @@ kernel_video_semaphore				db	STATIC_FALSE
 kernel_video_base_address			dq	STATIC_EMPTY
 kernel_video_pointer				dq	STATIC_EMPTY
 kernel_video_framebuffer			dq	STATIC_EMPTY
-kernel_video_width_pixel			dq	STATIC_EMPTY
-kernel_video_height_pixel			dq	STATIC_EMPTY
+kernel_video_width_pixel			dq	KERNEL_VIDEO_WIDTH_pixel
+kernel_video_height_pixel			dq	KERNEL_VIDEO_HEIGHT_pixel
 kernel_video_scanline_char			dq	KERNEL_VIDEO_SCANLINE_CHAR_byte
 
 kernel_video_color				dd	STATIC_COLOR_default
@@ -111,6 +111,9 @@ kernel_video_matrix:
 
 	; wyświetl piksel o zdefiniowanym kolorze znaku
 	mov	dword [rdi],	r8d
+
+	; wyświetl cień za pikselem
+	mov	dword [rdi + STATIC_DWORD_SIZE_byte],	STATIC_EMPTY
 
 .continue:
 	; następny piksel matrycy znaku

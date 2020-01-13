@@ -95,3 +95,20 @@ kernel_init_memory:
 	; zarezerwuj przestrzeń o danym rozmiarze w binarnej mapie pamięci jądra systemu
 	mov	rcx,	rdi
 	call	kernel_memory_alloc
+
+	; wyświetl komunikat
+	mov	ecx,	kernel_init_string_memory_size_end - kernel_init_string_memory_size
+	mov	rsi,	kernel_init_string_memory_size
+	call	kernel_video_string
+
+	; wyświetl rozmiar
+	mov	rax,	qword [kernel_page_free_count]
+	shl	rax,	STATIC_MULTIPLE_BY_4_shift	; 1 strona to 4 KiB
+	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
+	xor	ecx,	ecx
+	call	kernel_video_number
+
+	; wyświetl format
+	mov	ecx,	kernel_init_string_memory_format_end - kernel_init_string_memory_format
+	mov	rsi,	kernel_init_string_memory_format
+	call	kernel_video_string
