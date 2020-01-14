@@ -14,7 +14,7 @@
 [BITS 16]
 
 ; pozycja kodu w przestrzeni segmentu CS
-[ORG STATIC_ZERO_address]
+[ORG STATIC_ZERO_base_address]
 
 zero:
 	;-----------------------------------------------------------------------
@@ -244,11 +244,11 @@ zero:
 	int	0x10
 
 	; oczekiwana szerokość w pikselach?
-	cmp	word [di + STATIC_ZERO_VIDEO_STRUCTURE_MODE_INFO_BLOCK.x_resolution],	STATIC_ZERO_VIDEO_WIDTH_pixel
+	cmp	word [di + STATIC_ZERO_VIDEO_STRUCTURE_MODE_INFO_BLOCK.x_resolution],	MULTIBOOT_VIDEO_WIDTH_pixel
 	jne	.next	; nie
 
 	; oczekiwana wysokość w pikselach?
-	cmp	word [di + STATIC_ZERO_VIDEO_STRUCTURE_MODE_INFO_BLOCK.y_resolution],	STATIC_ZERO_VIDEO_HEIGHT_pixel
+	cmp	word [di + STATIC_ZERO_VIDEO_STRUCTURE_MODE_INFO_BLOCK.y_resolution],	MULTIBOOT_VIDEO_HEIGHT_pixel
 	jne	.next	; nie
 
 	; oczekiwana głębia kolorów?
@@ -319,13 +319,13 @@ zero_line_a20_check:
 	mov	ds,	ax
 
 	; pobierz 4 Bajty spod adresu 0x107C00
-	mov	ebx,	dword [ds:STATIC_ZERO_address + 0x10]
+	mov	ebx,	dword [ds:STATIC_ZERO_base_address + 0x10]
 
 	; przywróć adres segmentu danych
 	pop	ds
 
 	; sprawdź czy pobrane 4 Bajty są identyczne jak w programie rozruchowym Zero
-	test	ebx,	dword [ds:STATIC_ZERO_address]
+	test	ebx,	dword [ds:STATIC_ZERO_base_address]
 
 	; powrót z procedury
 	ret
@@ -387,8 +387,8 @@ zero_protected_mode:
 	; właściwości przestrzeni pamięci karty graficznej
 	mov	eax,	dword [STATIC_ZERO_video_mode_info_block + STATIC_ZERO_VIDEO_STRUCTURE_MODE_INFO_BLOCK.physical_base_address]
 	mov	dword [edi + STATIC_MULTIBOOT_header.framebuffer_addr],	eax
-	mov	dword [edi + STATIC_MULTIBOOT_header.framebuffer_width],	STATIC_ZERO_VIDEO_WIDTH_pixel
-	mov	dword [edi + STATIC_MULTIBOOT_header.framebuffer_height],	STATIC_ZERO_VIDEO_HEIGHT_pixel
+	mov	dword [edi + STATIC_MULTIBOOT_header.framebuffer_width],	MULTIBOOT_VIDEO_WIDTH_pixel
+	mov	dword [edi + STATIC_MULTIBOOT_header.framebuffer_height],	MULTIBOOT_VIDEO_HEIGHT_pixel
 	mov	byte [edi + STATIC_MULTIBOOT_header.framebuffer_bpp],	STATIC_ZERO_VIDEO_DEPTH_bit
 	mov	byte [edi + STATIC_MULTIBOOT_header.framebuffer_type],	STATIC_EMPTY	; indeksowany zestaw kolorów
 

@@ -3,16 +3,11 @@
 ;================================================================================
 
 ;-------------------------------------------------------------------------------
-; tryb programu rozruchowego
-;-------------------------------------------------------------------------------
-STATIC_ZERO_bit_mode			equ	32	; dostępne wartości: 16, 32
-
-;-------------------------------------------------------------------------------
 ; "zmienne" globalne
 ;-------------------------------------------------------------------------------
 
-STATIC_ZERO_address			equ	0x7C00	; 0x0000:0x7C00
-STATIC_ZERO_stack			equ	STATIC_ZERO_address
+STATIC_ZERO_base_address		equ	0x7C00	; 0x0000:0x7C00
+STATIC_ZERO_stack			equ	STATIC_ZERO_base_address
 STATIC_ZERO_magic			equ	0xAA55
 STATIC_ZERO_kernel_address		equ	0x1000	; 0x1000:0x0000
 STATIC_ZERO_memory_map			equ	0x1000	; 0x0000:0x1000
@@ -20,8 +15,6 @@ STATIC_ZERO_multiboot_header		equ	0x0500	; 0x0000:0x0500
 STATIC_ZERO_video_vga_info_block	equ	0x2000	; 0x0000:0x2000
 STATIC_ZERO_video_mode_info_block	equ	0x3000	; 0x0000:0x3000
 
-STATIC_ZERO_VIDEO_WIDTH_pixel		equ	640
-STATIC_ZERO_VIDEO_HEIGHT_pixel		equ	480
 STATIC_ZERO_VIDEO_DEPTH_bit		equ	32
 STATIC_ZERO_VIDEO_MODE_clean		equ	0x8000
 STATIC_ZERO_VIDEO_MODE_linear		equ	0x4000

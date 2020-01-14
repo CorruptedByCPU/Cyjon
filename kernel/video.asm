@@ -2,24 +2,22 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
-KERNEL_VIDEO_WIDTH_pixel			equ	640
-KERNEL_VIDEO_HEIGHT_pixel			equ	480
 KERNEL_VIDEO_DEPTH_shift			equ	2
 KERNEL_VIDEO_DEPTH_byte				equ	4
 KERNEL_VIDEO_DEPTH_bit				equ	32
-KERNEL_VIDEO_SIZE_byte				equ	(KERNEL_VIDEO_WIDTH_pixel * KERNEL_VIDEO_HEIGHT_pixel) << KERNEL_VIDEO_DEPTH_shift
-
-KERNEL_VIDEO_WIDTH_char				equ	KERNEL_VIDEO_WIDTH_pixel / KERNEL_FONT_WIDTH_pixel
-KERNEL_VIDEO_HEIGHT_char			equ	KERNEL_VIDEO_HEIGHT_pixel / KERNEL_FONT_HEIGHT_pixel
-KERNEL_VIDEO_SCANLINE_CHAR_byte			equ	(KERNEL_VIDEO_WIDTH_pixel * KERNEL_FONT_HEIGHT_pixel) << KERNEL_VIDEO_DEPTH_shift
 
 kernel_video_semaphore				db	STATIC_FALSE
 kernel_video_base_address			dq	STATIC_EMPTY
 kernel_video_pointer				dq	STATIC_EMPTY
 kernel_video_framebuffer			dq	STATIC_EMPTY
-kernel_video_width_pixel			dq	KERNEL_VIDEO_WIDTH_pixel
-kernel_video_height_pixel			dq	KERNEL_VIDEO_HEIGHT_pixel
-kernel_video_scanline_char			dq	KERNEL_VIDEO_SCANLINE_CHAR_byte
+kernel_video_size_byte				dq	STATIC_EMPTY
+kernel_video_size_pixel				dq	STATIC_EMPTY
+kernel_video_width_pixel			dq	STATIC_EMPTY
+kernel_video_height_pixel			dq	STATIC_EMPTY
+kernel_video_width_char				dd	STATIC_EMPTY
+kernel_video_height_char			dd	STATIC_EMPTY
+kernel_video_scanline_byte			dq	STATIC_EMPTY
+kernel_video_scanline_char			dq	STATIC_EMPTY
 
 kernel_video_color				dd	STATIC_COLOR_default
 kernel_video_color_background			dd	STATIC_COLOR_BACKGROUND_default
@@ -57,7 +55,7 @@ kernel_video_drain:
 
 	; wyczyść przestrzeń pamięci trybu tekstowego "jasno-szarymi znakami spacji"
 	mov	eax,	dword [kernel_video_color_background]
-	mov	ecx,	KERNEL_VIDEO_WIDTH_pixel * KERNEL_VIDEO_HEIGHT_pixel
+	mov	rcx,	qword [kernel_video_size_pixel]
 	mov	rdi,	qword [kernel_video_framebuffer]
 	rep	stosd
 
@@ -125,7 +123,7 @@ kernel_video_matrix:
 
 	; przesuń wskaźnik na następną linię matrycy na ekranie
 	sub	rdi,	KERNEL_FONT_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift	; cofnij o szerokość wyświetlonego znaku w Bajtach
-	add	rdi,	KERNEL_VIDEO_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift	; przesuń do przodu o rozmiar scanline ekranu
+	add	rdi,	qword [kernel_video_scanline_byte]	; przesuń do przodu o rozmiar scanline ekranu
 
 	; przesuń wskaźnik na następną linię matrycy znaku
 	inc	rsi
@@ -178,7 +176,7 @@ kernel_video_char_clean:
 
 	; przesuń wskaźnik na następną linię matrycy na ekranie
 	sub	rdi,	KERNEL_FONT_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift	; cofnij o szerokość znaku w Bajtach
-	add	rdi,	KERNEL_VIDEO_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift	; przesuń do przodu o rozmiar scanline ekranu
+	add	rdi,	qword [kernel_video_scanline_byte]	; przesuń do przodu o rozmiar scanline ekranu
 
 	; przetworzono całą matrycę znaku?
 	dec	bl
@@ -559,26 +557,26 @@ kernel_video_char:
 	inc	ebx
 
 	; przesuń wskaźnik na następną pozycję w przestrzeni pamięci karty graficznej
-	add	rdi,	KERNEL_FONT_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift
+	add	rdi,	qword [kernel_font_width_byte]
 
 	; pozycja kursora poza przestrzenią pamięci trybu tekstowego?
-	cmp	ebx,	KERNEL_VIDEO_WIDTH_pixel / KERNEL_FONT_WIDTH_pixel
+	cmp	ebx,	dword [kernel_video_width_char]
 	jb	.continue	; nie
 
 	; przesuń kursor na początek nowej linii
-	sub	ebx,	KERNEL_VIDEO_WIDTH_pixel / KERNEL_FONT_WIDTH_pixel
+	sub	ebx,	dword [kernel_video_width_char]
 	inc	edx
 
 .row:
 	; pozycja kursora poza przestrzenią pamięci trybu tekstowego?
-	cmp	edx,	KERNEL_VIDEO_HEIGHT_pixel / KERNEL_FONT_HEIGHT_pixel
+	cmp	edx,	dword [kernel_video_height_char]
 	jb	.continue	; nie
 
 	; koryguj pozycję kursora na osi Y
 	dec	edx
 
 	; koryguj wskaźnik
-	sub	rdi,	(KERNEL_VIDEO_WIDTH_pixel * KERNEL_FONT_HEIGHT_pixel) << KERNEL_VIDEO_DEPTH_shift
+	sub	rdi,	qword [kernel_video_scanline_char]
 
 	; przewiń zawartość przestrzeni pamięci trybu tekstowego o jedną linię tekstu w górę
 	call	kernel_video_scroll
@@ -627,7 +625,7 @@ kernel_video_char:
 	xor	ebx,	ebx
 
 	; przesuń kursor i wskaźnik do następnej linii
-	add	rdi,	(KERNEL_VIDEO_WIDTH_pixel * KERNEL_FONT_HEIGHT_pixel) << KERNEL_VIDEO_DEPTH_shift
+	add	rdi,	qword [kernel_video_scanline_char]
 
 	; przywróć pozycję kursora na osi Y
 	pop	rdx
@@ -660,7 +658,8 @@ kernel_video_char:
 	dec	edx
 
 	; ustaw pozycję kursora na koniec aktualnej linii
-	mov	ebx,	(KERNEL_VIDEO_WIDTH_pixel / KERNEL_FONT_WIDTH_pixel) - 0x01
+	mov	ebx,	dword [kernel_video_width_char]
+	dec	ebx
 
 .clear:
 	; przesuń wskaźnik o jeden znak wstecz
@@ -789,16 +788,18 @@ kernel_video_scroll:
 	call	kernel_video_cursor_disable
 
 	; rozmiar przemieszczanej przestrzeni
-	mov	rcx,	KERNEL_VIDEO_SCANLINE_CHAR_byte * (KERNEL_VIDEO_HEIGHT_char - 0x01)
+	mov	rcx,	qword [kernel_video_size_byte]
+	sub	rcx,	qword [kernel_video_scanline_char]
 
 	; rozpocznij przewijanie z linii 1 do 0
 	mov	rdi,	qword [kernel_video_framebuffer]
 	mov	rsi,	rdi
-	add	rsi,	KERNEL_VIDEO_SCANLINE_CHAR_byte
+	add	rsi,	qword [kernel_video_scanline_char]
 	call	kernel_memory_copy
 
 	; wyczyść ostatnią linię znaków na ekranie
-	mov	ecx,	KERNEL_VIDEO_HEIGHT_char - 0x01
+	mov	ecx,	dword [kernel_video_height_char]
+	dec	ecx
 	call	kernel_video_line_drain
 
 	; włącz wirtualny kursor
@@ -830,7 +831,7 @@ kernel_video_line_drain:
 	mov	rax,	rcx
 
 	; ustaw wskaźnik na początek danej linii ekranu0
-	mov	rcx,	KERNEL_VIDEO_SCANLINE_CHAR_byte
+	mov	rcx,	qword [kernel_video_scanline_char]
 	mul	rcx
 	add	rax,	qword [kernel_video_framebuffer]
 	mov	rdi,	rax
@@ -897,7 +898,7 @@ kernel_video_cursor_switch:
 	push	rdi
 
 	; scanline ekranu
-	mov	rax,	KERNEL_VIDEO_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift
+	mov	rax,	qword [kernel_video_scanline_byte]
 
 	; wysokość kursora
 	mov	rcx,	KERNEL_FONT_HEIGHT_pixel

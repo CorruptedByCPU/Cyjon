@@ -6,14 +6,15 @@ Prosty i wielozadaniowy system operacyjny, napisany w języku asemblera dla proc
 
 ### Wymagania:
 
-  - 2 MiB pamięci RAM
-  - klawiatura na porcie PS2
+  - 2 MiB pamięci RAM (1 MiB za adresem 0x00100000)
+  - klawiatura na porcie PS2 (część BIOSów emuluje klawiatury USB)
 
 ### Opcjonalne:
 
   - kontroler sieci Intel 82540EM (E1000)
 
 ### Uwagi:
+
 Przy programowaniu/testowaniu sieci (TCP/IP), korzystam tylko z symulatora **Bochs** na MS/Windows.
 
 	# bochs.rc
@@ -22,11 +23,19 @@ Przy programowaniu/testowaniu sieci (TCP/IP), korzystam tylko z symulatora **Boc
 
 Natomiast, wszelkie inne operacje na systemie GNU/Linux. Dystrybucja jest nieważna, całe środowisko programistyczne muszę skompilować pod siebie i włączyć opcje, które domyślnie nie są dostepne w gotowych pakietach.
 
-### Kompilacja:
+### Kompilacja (GNU/Linux):
+
+	# select a resolution supported by the BIOS
+	WIDTH=640
+	HEIGHT=480
 
 	nasm -f bin kernel/init/boot.asm	-o build/boot
-	nasm -f bin kernel/kernel.asm		-o build/kernel
-	nasm -f bin zero/zero.asm		-o build/disk.raw
+	nasm -f bin kernel/kernel.asm		-o build/kernel \
+		-dMULTIBOOT_VIDEO_WIDTH_pixel=${WIDTH} -dMULTIBOOT_VIDEO_HEIGHT_pixel=${HEIGHT} \
+		-dMULTIBOOT_VIDEO_WIDTH_pixel=${WIDTH} -dMULTIBOOT_VIDEO_HEIGHT_pixel=${HEIGHT}
+	nasm -f bin zero/zero.asm		-o build/disk.raw \
+		-dMULTIBOOT_VIDEO_WIDTH_pixel=${WIDTH} -dMULTIBOOT_VIDEO_HEIGHT_pixel=${HEIGHT} \
+		-dMULTIBOOT_VIDEO_WIDTH_pixel=${WIDTH} -dMULTIBOOT_VIDEO_HEIGHT_pixel=${HEIGHT}
 
 ### Uruchomienie:
 

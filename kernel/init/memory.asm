@@ -21,12 +21,12 @@ kernel_init_memory:
 	mov	rsi,	kernel_init_string_error_memory
 
 	; nagłówek udostępnia mapę pamięci BIOSu?
-	bt	dword [ebx + HEADER_multiboot.flags],	KERNEL_INIT_MEMORY_MULTIBOOT_FLAG_memory_map
+	bt	dword [ebx + MULTIBOOT_HEADER.flags],	KERNEL_INIT_MEMORY_MULTIBOOT_FLAG_memory_map
 	jnc	kernel_panic	; błąd krytyczny
 
 	; pobierz rozmiar i adres tablicy mapy pamięci z nagłówka Multiboot
-	mov	ecx,	dword [ebx + HEADER_multiboot.mmap_length]
-	mov	ebx,	dword [ebx + HEADER_multiboot.mmap_addr]
+	mov	ecx,	dword [ebx + MULTIBOOT_HEADER.mmap_length]
+	mov	ebx,	dword [ebx + MULTIBOOT_HEADER.mmap_addr]
 
 .search:
 	; odszukaj przestrzeń pamięci rozpoczynającą się od adresu KERNEL_BASE_address

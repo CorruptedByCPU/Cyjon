@@ -40,7 +40,7 @@ kernel_init_page:
 	; mapuj przestrzeń pamięci fizycznej karty graficznej
 	mov	rax,	qword [kernel_video_base_address]
 	or	bx,	KERNEL_PAGE_FLAG_write_through | KERNEL_PAGE_FLAG_cache_disable
-	mov	ecx,	KERNEL_VIDEO_SIZE_byte
+	mov	rcx,	qword [kernel_video_size_byte]
 	call	library_page_from_size
 	call	kernel_page_map_physical
 	jc	kernel_init_panic_low_memory
