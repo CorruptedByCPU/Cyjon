@@ -113,6 +113,11 @@ kernel_init:
 	%include	"kernel/init/vfs.asm"
 
 	;-----------------------------------------------------------------------
+	; inicjuj dostępne nośniki danych
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/storage.asm"
+
+	;-----------------------------------------------------------------------
 	; inicjalizuj jeden z dostępnych interfejsów sieciowych
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/network.asm"

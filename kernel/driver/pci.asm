@@ -10,9 +10,15 @@ DRIVER_PCI_REGISTER_status_and_command	equ	0x04
 DRIVER_PCI_REGISTER_class_and_subclass	equ	0x08
 DRIVER_PCI_REGISTER_bar0		equ	0x10
 DRIVER_PCI_REGISTER_bar1		equ	0x14
+DRIVER_PCI_REGISTER_bar2		equ	0x18
+DRIVER_PCI_REGISTER_bar3		equ	0x1C
+DRIVER_PCI_REGISTER_bar4		equ	0x20
+DRIVER_PCI_REGISTER_bar5		equ	0x24
 DRIVER_PCI_REGISTER_irq			equ	0x3C
 DRIVER_PCI_REGISTER_FLAG_64_bit		equ	00000010b
 
+DRIVER_PCI_CLASS_SUBCLASS_ahci		equ	0x0106
+DRIVER_PCI_CLASS_SUBCLASS_scsi		equ	0x0107
 DRIVER_PCI_CLASS_SUBCLASS_network	equ	0x0200
 
 ;============================================================================
@@ -22,6 +28,9 @@ DRIVER_PCI_CLASS_SUBCLASS_network	equ	0x0200
 ;		low - vendor
 ; wyjście:
 ;	Flaga CF, jeśli nie znaleziono
+;	ebx - szyna
+;	ecx - urządzenie
+;	edx - funkcja
 driver_pci_find_vendor_and_device:
 	; zachowaj oryginalne rejestry
 	push	rbx
@@ -107,6 +116,9 @@ driver_pci_find_vendor_and_device:
 ;	ax - poszukiwana wartość Class & Subclass
 ; wyjście:
 ;	Flaga CF, jeśli nie znaleziono
+;	ebx - szyna
+;	ecx - urządzenie
+;	edx - funkcja
 driver_pci_find_class_and_subclass:
 	; zachowaj oryginalne rejestry
 	push	rbx

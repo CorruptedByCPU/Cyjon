@@ -49,113 +49,6 @@ zero:
 	; włącz "pozostałe" przerwania
 	sti
 
-	;=======================================================================
-	; Program rozruchowy Zero przeznaczony jest tylko dla środowisk zwirtualizowanych!
-	; Nie została poprawnie zaimplementowana obsługa linii A20 dla sprzętu fizycznego.
-	;=======================================================================
-
-	; linia A20 jest już odblokowana?
-	call	zero_line_a20_check
-	jz	.unlocked	; tak
-
-	;-----------------------------------------------------------------------
-	; odblokuj linię A20 za pomocą fukcji BIOSu
-	;-----------------------------------------------------------------------
-	mov	ax,	0x2401
-        int	0x15
-
-	; linia A20 jest już odblokowana?
-	call	zero_line_a20_check
-	jz	.unlocked	; tak
-
-	;-----------------------------------------------------------------------
-	; odblokuj linię A20 za pomocą Fast A20
-	;-----------------------------------------------------------------------
-	in	al,	0x92
-        or	al,	2
-        out	0x92,	al
-
-	; linia A20 jest już odblokowana?
-	call	zero_line_a20_check
-	jz	.unlocked	; tak
-
-	;-----------------------------------------------------------------------
-	; odblokuj linię A20 za pomocą portu 0xEE
-	;-----------------------------------------------------------------------
-	in	al,	0xEE
-
-	; linia A20 jest już odblokowana?
-	call	zero_line_a20_check
-	jz	.unlocked	; tak
-
-	;-----------------------------------------------------------------------
-	; odblokuj linię A20 za pomocą kontrolera klawiatury PS2
-	;-----------------------------------------------------------------------
-
-	; wyłącz przerwania
-	cli
-
-	; poczekaj, aż klawiatura będzie gotowa przyjąć polecenie
-	call	zero_ps2_keyboard_in
-
-	; wyłącz klawiaturę
-	mov	al,	0xAD
-	out	0x64,	al	; wyślij
-
-	; poczekaj, aż klawiatura będzie gotowa przyjąć polecenie
-	call	zero_ps2_keyboard_in
-
-	; poproś o możliwość odczytania danych z portu klawiatury
-	mov	al,	0xD0
-	out	0x64,	al	; wyślij
-
-	; poczekaj, aż klawiatura będzie gotowa dać odpowiedź
-	call	zero_ps2_keyboard_out
-
-	; pobierz z portu klawiatury informacje
-	in	al,	0x60
-
-	; zapamiętaj wiadomość
-	push	ax
-
-	; poczekaj, aż klawiatura będzie gotowa przyjąć polecenie
-	call	zero_ps2_keyboard_in
-
-	; poproś o możliwość zapisania danych do portu klawiatury
-	mov	al,	0xD1
-	out	0x64,	al	; wyślij
-
-	; poczekaj, aż klawiatura będzie gotowa przyjąć polecenie
-	call	zero_ps2_keyboard_in
-
-	; przywróć poprzednią wiadomość
-	pop	ax
-
-	; ustaw drugi bit rejestru AL
-	or	al,	2
-	out	0x60,	al	; wyślij do konrolera klawiatury
-
-	; poczekaj, aż klawiatura będzie gotowa przyjąć polecenie
-	call	zero_ps2_keyboard_in
-
-	; włącz klawiaturę
-	mov	al,	0xAE
-	out	0x64,	al	; wyślij
-
-	; poczekaj, aż klawiatura będzie gotowa przyjąć polecenie
-	call	zero_ps2_keyboard_in
-
-	; włącz przerwania
-	sti
-
-	; ustaw kod błędu
-	mov	si,	STATIC_ZERO_ERROR_a20
-
-	; linia A20 została odblokowana?
-	call	zero_line_a20_check
-	jnz	zero_panic	; nie
-
-.unlocked:
 	;-----------------------------------------------------------------------
 	; wyczyść ekran inicjując ponownie tryb tekstowy (80x25 znaków)
 	;-----------------------------------------------------------------------
@@ -435,11 +328,29 @@ zero_header_gdt_32bit:
 	dd	zero_table_gdt_32bit
 
 ;-------------------------------------------------------------------------------
-; znacznik sektora rozruchowego
-times	510 - ($ - $$)	db	STATIC_EMPTY
-			dw	STATIC_ZERO_magic	; czysta magija ;>
+; uzupełniamy niewykorzystaną przestrzeń po samą tablicę partycji
+times	436 - ( $ - $$ )		db	0x00
 
 ;-------------------------------------------------------------------------------
+; identyfikator nośnika
+;-------------------------------------------------------------------------------
+		db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+
+;-------------------------------------------------------------------------------
+; partycja podstawowa 0
+;-------------------------------------------------------------------------------
+		db	0x00	; brak sektora rozruchowego na partycji
+		db	0x00, 0x00, 0x00	; CHS
+		db	0xEB	; id partycji, nie ma znaczenia
+		db	0x00, 0x00, 0x00	; CHS
+		dd	(file_kernel_end - $$) / 512	; LBA partycji
+		dd	(1048576 - (file_kernel_end - $$)) / 512	; rozmiar partycji w sektorach
+
+;-------------------------------------------------------------------------------
+; znacznik sektora rozruchowego
+times	510 - ($ - $$)		db	STATIC_EMPTY
+				dw	STATIC_ZERO_magic	; czysta magija ;>
+
 file_kernel:
 	;-----------------------------------------------------------------------
 	; dołącz plik jądra systemu
@@ -447,3 +358,7 @@ file_kernel:
 	incbin	"build/kernel"
 	align	STATIC_SECTOR_SIZE_byte	; wyrównaj kod do pełnego sektora o rozmiarze 512 Bajtów
 file_kernel_end:
+
+;-------------------------------------------------------------------------------
+; wyrównaj obraz dysku do pełnego 1 MiB
+times	1048576 - ($ - $$)	db	STATIC_EMPTY
