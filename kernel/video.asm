@@ -14,8 +14,8 @@ kernel_video_size_byte				dq	STATIC_EMPTY
 kernel_video_size_pixel				dq	STATIC_EMPTY
 kernel_video_width_pixel			dq	STATIC_EMPTY
 kernel_video_height_pixel			dq	STATIC_EMPTY
-kernel_video_width_char				dd	STATIC_EMPTY
-kernel_video_height_char			dd	STATIC_EMPTY
+kernel_video_width_char				dq	STATIC_EMPTY
+kernel_video_height_char			dq	STATIC_EMPTY
 kernel_video_scanline_byte			dq	STATIC_EMPTY
 kernel_video_scanline_char			dq	STATIC_EMPTY
 
@@ -563,8 +563,22 @@ kernel_video_char:
 	cmp	ebx,	dword [kernel_video_width_char]
 	jb	.continue	; nie
 
-	; przesuń kursor na początek nowej linii
-	sub	ebx,	dword [kernel_video_width_char]
+	; zachowaj oryginalne rejestr
+	push	rax
+	push	rdx
+
+	; przesuń wskaźnik kursora na początek nowej linii
+	mov	rax,	qword [kernel_font_width_byte]
+	mul	rbx
+	sub	rdi,	rax
+	add	rdi,	qword [kernel_video_scanline_char]
+
+	; przywróć oryginalne rejestry
+	pop	rdx
+	pop	rax
+
+	; przesuń kursor do następnego wiersza
+	xor	ebx,	ebx
 	inc	edx
 
 .row:
@@ -652,14 +666,28 @@ kernel_video_char:
 .begin:
 	; kursor znajduje się w pierwszej linii?
 	test	edx,	edx
-	jz	.clear
-
-	; cofnij pozycję kursora o jedną linię
-	dec	edx
+	jz	.continue	; tak
 
 	; ustaw pozycję kursora na koniec aktualnej linii
 	mov	ebx,	dword [kernel_video_width_char]
 	dec	ebx
+
+	; cofnij pozycję kursora o jedną linię
+	dec	edx
+
+	; zachowaj oryginalny rejestr
+	push	rax
+	push	rdx
+
+	; przesuń wskaźnik kursora na początek poprzedniej linii
+	sub	rdi,	qword [kernel_video_scanline_char]
+	mov	rax,	qword [kernel_font_width_byte]
+	mul	dword [kernel_video_width_char]
+	add	rdi,	rax
+
+	; przywróć oryginalny rejestr
+	pop	rdx
+	pop	rax
 
 .clear:
 	; przesuń wskaźnik o jeden znak wstecz
