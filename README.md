@@ -31,11 +31,11 @@ Natomiast, wszelkie inne operacje na systemie GNU/Linux. Dystrybucja jest niewa≈
 
 	nasm -f bin kernel/init/boot.asm	-o build/boot
 	nasm -f bin kernel/kernel.asm		-o build/kernel \
-		-dMULTIBOOT_VIDEO_WIDTH_pixel=${WIDTH} -dMULTIBOOT_VIDEO_HEIGHT_pixel=${HEIGHT} \
-		-dMULTIBOOT_VIDEO_WIDTH_pixel=${WIDTH} -dMULTIBOOT_VIDEO_HEIGHT_pixel=${HEIGHT}
+		-dMULTIBOOT_VIDEO_WIDTH_pixel=${WIDTH} \
+		-dMULTIBOOT_VIDEO_HEIGHT_pixel=${HEIGHT}
 	nasm -f bin zero/zero.asm		-o build/disk.raw \
-		-dMULTIBOOT_VIDEO_WIDTH_pixel=${WIDTH} -dMULTIBOOT_VIDEO_HEIGHT_pixel=${HEIGHT} \
-		-dMULTIBOOT_VIDEO_WIDTH_pixel=${WIDTH} -dMULTIBOOT_VIDEO_HEIGHT_pixel=${HEIGHT}
+		-dMULTIBOOT_VIDEO_WIDTH_pixel=${WIDTH} \
+		-dMULTIBOOT_VIDEO_HEIGHT_pixel=${HEIGHT}
 
 ### Uruchomienie:
 
