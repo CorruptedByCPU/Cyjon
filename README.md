@@ -40,4 +40,4 @@ Natomiast, wszelkie inne operacje na systemie GNU/Linux. Dystrybucja jest niewa�
 ### Uruchomienie:
 
 	# 2 MiB RAM, 2 procesory logiczne, bez obsługi sieci, dysk podłączony do kontrolera AHCI na porcie 0
-	qemu-system-x86_64  -m 2 -smp 2 -rtc base=localtime -drive file=build/disk.raw,if=none,id=sata0,format=raw -device ich9-ahci,id=ahci -device ide-drive,drive=sata0,bus=ahci.0
+	qemu-system-x86_64 -hda file=build/disk.raw -m 2 -smp 2 -rtc base=localtime
