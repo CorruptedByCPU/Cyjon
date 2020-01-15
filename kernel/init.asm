@@ -143,9 +143,6 @@ kernel_init:
 	; poinformuj APIC o obsłużeniu aktualnego przerwania sprzętowego lokalnego
 	mov	dword [rsi + KERNEL_APIC_EOI_register],	STATIC_EMPTY
 
-	; włącz obsługę przerwań
-	sti
-
 	; za chwilę wywołana zostanie procedura kolejki zadań!
 
 	;-----------------------------------------------------------------------

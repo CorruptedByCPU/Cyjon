@@ -42,3 +42,6 @@ kernel_init_rtc:
 	mov	eax,	KERNEL_IDT_IRQ_offset + DRIVER_RTC_IRQ_number
 	mov	ebx,	DRIVER_RTC_IO_APIC_register
 	call	kernel_io_apic_connect
+
+	; włącz obsługę przerwań
+	sti

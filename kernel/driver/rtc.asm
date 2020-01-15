@@ -30,7 +30,7 @@ DRIVER_RTC_PORT_STATUS_REGISTER_C			equ	0x0C
 
 DRIVER_RTC_Hz						equ	1024
 
-struc	DRIVER_RTC_STRUCTURE_TIME
+struc	DRIVER_RTC_STRUCTURE
 	.second						resb	1
 	.minute						resb	1
 	.hour						resb	1
@@ -44,7 +44,7 @@ driver_rtc_semaphore					db	STATIC_FALSE
 
 driver_rtc_microtime					dq	STATIC_EMPTY
 
-driver_rtc_time						dq	STATIC_EMPTY
+driver_rtc_date_and_time				dq	STATIC_EMPTY
 
 ;===============================================================================
 ; domyślna procedura obsługi przerwania zegara czasu rzeczywistego
@@ -82,7 +82,7 @@ driver_rtc_get_date_and_time:
 	in	al,	DRIVER_RTC_PORT_data
 
 	; zachowaj
-	mov	byte [driver_rtc_time + DRIVER_RTC_STRUCTURE_TIME.second],	al
+	mov	byte [driver_rtc_date_and_time + DRIVER_RTC_STRUCTURE.second],	al
 
 	; pobierz ilość minut
 	mov	al,	DRIVER_RTC_PORT_minute
@@ -90,7 +90,7 @@ driver_rtc_get_date_and_time:
 	in	al,	DRIVER_RTC_PORT_data
 
 	; zachowaj
-	mov	byte [driver_rtc_time + DRIVER_RTC_STRUCTURE_TIME.minute],	al
+	mov	byte [driver_rtc_date_and_time + DRIVER_RTC_STRUCTURE.minute],	al
 
 	; pobierz ilość godzin
 	mov	al,	DRIVER_RTC_PORT_hour
@@ -98,7 +98,7 @@ driver_rtc_get_date_and_time:
 	in	al,	DRIVER_RTC_PORT_data
 
 	; zachowaj
-	mov	byte [driver_rtc_time + DRIVER_RTC_STRUCTURE_TIME.hour],	al
+	mov	byte [driver_rtc_date_and_time + DRIVER_RTC_STRUCTURE.hour],	al
 
 	; przywróć oryginalny rejestr
 	pop	rax

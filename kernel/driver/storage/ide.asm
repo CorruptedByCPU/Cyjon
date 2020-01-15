@@ -2,8 +2,8 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
-DRIVER_IDE_PORT_PRIMARY					equ	0x01F0
-DRIVER_IDE_PORT_SECONDARY				equ	0x0170
+DRIVER_IDE_CHANNEL_PRIMARY				equ	0x01F0
+DRIVER_IDE_CHANNEL_SECONDARY				equ	0x0170
 
 DRIVER_IDE_REGISTER_data				equ	0x0000
 DRIVER_IDE_REGISTER_error				equ	0x0001
@@ -19,7 +19,13 @@ DRIVER_IDE_REGISTER_lba4				equ	0x000A
 DRIVER_IDE_REGISTER_lba5				equ	0x000B
 DRIVER_IDE_REGISTER_control_OR_altstatus		equ	0x000C
 DRIVER_IDE_REGISTER_device_address			equ	0x000D
-DRIVER_IDE_REGISTER_device_control_OR_altstatus		equ	0x0206
+DRIVER_IDE_REGISTER_channel_control_OR_altstatus	equ	0x0206
+
+DRIVER_IDE_DRIVE_master					equ	10100000b
+DRIVER_IDE_DRIVE_slave					equ	10110000b
+
+DRIVER_IDE_CONTROL_nIEN					equ	00000010b
+DRIVER_IDE_CONTROL_SRST					equ	00000100b
 
 DRIVER_IDE_COMMAND_ATAPI_eject				equ	0x1B
 DRIVER_IDE_COMMAND_read_pio				equ	0x20
@@ -36,6 +42,20 @@ DRIVER_IDE_COMMAND_write_dma				equ	0xCA
 DRIVER_IDE_COMMAND_cache_flush				equ	0xE7
 DRIVER_IDE_COMMAND_cache_flush_extended			equ	0xEA
 DRIVER_IDE_COMMAND_identify				equ	0xEC
+
+DRIVER_IDE_IDENTIFY_device_type				equ	0x00
+DRIVER_IDE_IDENTIFY_cylinders				equ	0x02
+DRIVER_IDE_IDENTIFY_heads				equ	0x06
+DRIVER_IDE_IDENTIFY_sectors				equ	0x0C
+DRIVER_IDE_IDENTIFY_serial				equ	0x14
+DRIVER_IDE_IDENTIFY_model				equ	0x36
+DRIVER_IDE_IDENTIFY_capabilities			equ	0x62
+DRIVER_IDE_IDENTIFY_field_valid				equ	0x6A
+DRIVER_IDE_IDENTIFY_max_lba				equ	0x78
+DRIVER_IDE_IDENTIFY_command_sets			equ	0xA4
+DRIVER_IDE_IDENTIFY_max_lba_extended			equ	0xC8
+
+DRIVER_IDE_IDENTIFY_COMMAND_SETS_lba_extended		equ	1 << 26
 
 DRIVER_IDE_STATUS_error					equ	00000001b	; ERR
 DRIVER_IDE_STATUS_index					equ	00000010b
@@ -55,36 +75,218 @@ DRIVER_IDE_ERROR_media_changed				equ	00100000b
 DRIVER_IDE_ERROR_uncorrectble_data			equ	01000000b
 DRIVER_IDE_ERROR_bad_block				equ	10000000b
 
-DRIVER_IDE_REGISTER_device_control_OR_altstatus_nIEN	equ	00000010b
+struc	DRIVER_IDE_STRUCTURE_DEVICE
+	.channel					resb	2
+	.drive						resb	1
+	.size						resb	8
+	.SIZE:
+endstruc
+
+; wyrównaj pozycję tablicy do pełnego adresu
+align	STATIC_QWORD_SIZE_byte,				db	STATIC_NOTHING
+driver_ide_devices:
+	times	DRIVER_IDE_STRUCTURE_DEVICE.SIZE * 0x04	db	STATIC_EMPTY
+
+;===============================================================================
+; wejście:
+;	al - urządzenie MASTER lub SLAVE
+;	dx - kanał PRIMARY lub SECONDARY
+driver_ide_init_drive:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rax
+	push	rdi
+	push	rdx
+
+	; wybierz urządzenie X na kanale Y
+	add	dx,	DRIVER_IDE_REGISTER_drive_OR_head
+	out	dx,	al
+
+	; odczekaj na wykonanie polecenia
+	call	driver_ide_wait
+
+	; wyślij polecenie IDENTIFY	; kanał
+	mov	al,	DRIVER_IDE_COMMAND_identify
+	mov	dx,	word [rsp]
+	add	dx,	DRIVER_IDE_REGISTER_command_OR_status
+	out	dx,	al
+
+	; odczekaj na wykonanie polecenia
+	call	driver_ide_wait
+
+	; pobierz status urządzenia X na kanale Y
+	in	al,	dx
+
+	; brak urządzenia?
+	test	al,	al
+	jz	.end	; tak
+
+	; brak urządzenia?
+	cmp	al,	STATIC_MAX_unsigned
+	je	.end	; tak
+
+	; wystąpił błąd na urządzeniu?
+	test	al,	DRIVER_IDE_STATUS_error
+	jnz	.end	; tak
+
+	; odbierz oczekujące dane z polecenia IDENTIFY
+	mov	ecx,	256	; 512 Bajtów
+	mov	dx,	word [rsp]
+	add	dx,	DRIVER_IDE_REGISTER_data
+	rep	insw
+
+	; przywróć wskaźnik do początku przestrzeni roboczej
+	mov	rdi,	qword [rsp + STATIC_QWORD_SIZE_byte]
+
+	; urządzenie wspiera tryb LBA Extended?
+	mov	eax,	dword [rdi + DRIVER_IDE_IDENTIFY_command_sets]
+	test	eax,	DRIVER_IDE_IDENTIFY_COMMAND_SETS_lba_extended
+	jz	.end	; nie
+
+	; nośnik zainicjowany, zarejestruj
+	mov	rcx,	driver_ide_devices
+
+	; kanał PRIMARY?
+	mov	dx,	word [rsp]
+	cmp	dx,	DRIVER_IDE_CHANNEL_PRIMARY
+	je	.primary	; tak
+
+	; nie, przesuń na wpis SECONDARY
+	add	rcx,	DRIVER_IDE_STRUCTURE_DEVICE.SIZE << STATIC_MULTIPLE_BY_2_shift
+
+.primary:
+	; nośnik MASTER?
+	mov	al,	byte [rsp + STATIC_QWORD_SIZE_byte * 0x02]
+	cmp	al,	DRIVER_IDE_DRIVE_master
+	je	.master	; tak
+
+	; nie, przesuń na wpis SLAVE
+	add	rcx,	DRIVER_IDE_STRUCTURE_DEVICE.SIZE
+
+.master:
+	; zachowaj kanał nośnika
+	mov	word [rcx + DRIVER_IDE_STRUCTURE_DEVICE.channel],	dx
+
+	; zachowaj urządzenie nośnika
+	mov	byte [rcx + DRIVER_IDE_STRUCTURE_DEVICE.drive],	al
+
+	; zachowaj rozmiar nośnika w sektorach
+	mov	eax,	dword [rdi + DRIVER_IDE_IDENTIFY_max_lba_extended]
+	mov	qword [rcx + DRIVER_IDE_STRUCTURE_DEVICE.size],	rax
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rdx
+	pop	rdi
+	pop	rax
+	pop	rcx
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+driver_ide_wait:
+	; zachowaj oryginalne rejestry
+	push	rax
+
+	; pobierz znakcznik czasu systemu w mikrosekundach
+	mov	rax,	qword [driver_rtc_microtime]
+	inc	rax	; odczekaj ~1ms
+
+.wait:
+	; odczekano?
+	cmp	rax,	qword [driver_rtc_microtime]
+	jnb	.wait	; nie
+
+	; przywróć oryginalne rejestry
+	pop	rax
+
+	; powrót z procedury
+	ret
 
 ;===============================================================================
 driver_ide_init:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rdx
+	push	rdi
 
-	; wyłącz przerwania
-	mov	eax,	DRIVER_IDE_REGISTER_device_control_OR_altstatus_nIEN
+	; przygotuj przestrzeń roboczą
+	call	kernel_memory_alloc_page
 
-	xchg	bx,bx
-
-	; na kontrolerze Primary
-	mov	dx,	DRIVER_IDE_PORT_PRIMARY + DRIVER_IDE_REGISTER_device_control_OR_altstatus
+	;-----------------------------------------------------------------------
+	; wyłącz przerwania na kanale PRIMARY
+	mov	al,	DRIVER_IDE_CONTROL_nIEN
+	mov	dx,	DRIVER_IDE_CHANNEL_PRIMARY + DRIVER_IDE_REGISTER_channel_control_OR_altstatus
 	out	dx,	al
 
-	; czekaj na gotowość
-	mov	dx,	DRIVER_IDE_PORT_PRIMARY
+	; czekaj wykonanie polecenia
+	mov	dx,	DRIVER_IDE_CHANNEL_PRIMARY
 	call	driver_ide_pool
+	jc	.next	; brak urządzeń na kanale
 
-	; oraz Secondary
-	mov	dx,	DRIVER_IDE_PORT_SECONDARY + DRIVER_IDE_REGISTER_device_control_OR_altstatus
+	; przełącz urządzenia na kanale w tryb RESET
+	mov	al,	DRIVER_IDE_CONTROL_SRST
+	mov	dx,	DRIVER_IDE_CHANNEL_PRIMARY + DRIVER_IDE_REGISTER_channel_control_OR_altstatus
+	out	dx,	al
+	; wyłącz tryb RESET
+	xor	al,	al
 	out	dx,	al
 
-	; czekaj na gotowość
-	mov	dx,	DRIVER_IDE_PORT_SECONDARY
+	; czekaj wykonanie polecenia
+	mov	dx,	DRIVER_IDE_CHANNEL_PRIMARY
 	call	driver_ide_pool
+
+	; inicjalizuj urządzenie MASTER na kanale PRIMARY
+	mov	al,	DRIVER_IDE_DRIVE_master
+	mov	dx,	DRIVER_IDE_CHANNEL_PRIMARY
+	call	driver_ide_init_drive
+
+	; inicjalizuj urządzenie SLAVE na kanale PRIMARY
+	mov	al,	DRIVER_IDE_DRIVE_slave
+	mov	dx,	DRIVER_IDE_CHANNEL_PRIMARY
+	call	driver_ide_init_drive
+
+.next:
+	;-----------------------------------------------------------------------
+	; wyłącz przerwania na kanale SECONDARY
+	mov	al,	DRIVER_IDE_CONTROL_nIEN
+	mov	dx,	DRIVER_IDE_CHANNEL_SECONDARY + DRIVER_IDE_REGISTER_channel_control_OR_altstatus
+	out	dx,	al
+
+	; czekaj wykonanie polecenia
+	mov	dx,	DRIVER_IDE_CHANNEL_SECONDARY
+	call	driver_ide_pool
+	jc	.end	; brak urządzeń na kanale
+
+	; przełącz urządzenia na kanale w tryb RESET
+	mov	al,	DRIVER_IDE_CONTROL_SRST
+	mov	dx,	DRIVER_IDE_CHANNEL_SECONDARY + DRIVER_IDE_REGISTER_channel_control_OR_altstatus
+	out	dx,	al
+	; wyłącz tryb RESET
+	xor	al,	al
+	out	dx,	al
+
+	; czekaj wykonanie polecenia
+	mov	dx,	DRIVER_IDE_CHANNEL_SECONDARY
+	call	driver_ide_pool
+
+	; inicjalizuj urządzenie MASTER na kanale SECONDARY
+	mov	al,	DRIVER_IDE_DRIVE_master
+	mov	dx,	DRIVER_IDE_CHANNEL_SECONDARY
+	call	driver_ide_init_drive
+
+	; inicjalizuj urządzenie SLAVE na kanale SECONDARY
+	mov	al,	DRIVER_IDE_DRIVE_slave
+	mov	dx,	DRIVER_IDE_CHANNEL_SECONDARY
+	call	driver_ide_init_drive
+
+.end:
+	; zwolnij przestrzeń roboczą
+	call	kernel_memory_release_page
 
 	; przywróć oryginalne rejestry
+	pop	rdi
 	pop	rdx
 	pop	rax
 
@@ -97,26 +299,44 @@ driver_ide_init:
 driver_ide_pool:
 	; zachowaj oryginalne rejestry
 	push	rax
-	push	rcx
 	push	rdx
 
-	; odczekaj "400ms"
-	mov	cl,	0x04
-
-	; oczytaj status kontrolera
-	add	dx,	DRIVER_IDE_REGISTER_device_control_OR_altstatus
-
-.busy:
-	; pobierz
+	;-----------------------------------------------------------------------
+	; odłóż w czasie sprawdzenie stanu kanału
+	add	dx,	DRIVER_IDE_REGISTER_channel_control_OR_altstatus
 	in	al,	dx
-	loop	.busy	; wykonaj ponownie
+	in	al,	dx
+	in	al,	dx
+	in	al,	dx
+
+	; brak urządzeń?
+	test	al,	al
+	jz	.error	; tak
+
+	; brak urządzeń?
+	cmp	al,	STATIC_MAX_unsigned
+	jne	.wait	; tak
+
+.error:
+	; flaga, błąd
+	stc
+
+	; koniec obsługi procedury
+	jmp	.end
 
 .wait:
-	; pobierz status urządzenia
+	; pobierz stan urządzeń na kanale
+	in	al,	dx
+	and	al,	DRIVER_IDE_STATUS_busy | DRIVER_IDE_STATUS_ready
+	cmp	al,	DRIVER_IDE_STATUS_ready
+	jne	.wait	; urządzenia nadal niegotowe, czekaj
 
+	; flaga, sukces
+	clc
+
+.end:
 	; przywróć oryginalne rejestry
 	pop	rdx
-	pop	rcx
 	pop	rax
 
 	; powrót z procedury

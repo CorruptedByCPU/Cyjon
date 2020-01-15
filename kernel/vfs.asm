@@ -155,7 +155,7 @@ kernel_vfs_dir_symlinks:
 ;===============================================================================
 ; wejście:
 ;	rcx - rozmiar ścieżki w znakach
-;	rdi - wskaźnik do ścieżki
+;	rsi - wskaźnik do ścieżki
 ; wyjście:
 ;	Flaga CF - jeśli błąd
 ;	rax - kod błędu
@@ -347,8 +347,6 @@ kernel_vfs_path_resolve:
 
 ;===============================================================================
 ; wejście:
-;	eax - właściciel/grupa
-;	bx - uprawnienia
 ;	rcx - ilość znaków w nazwie pliku
 ;	dl - typ pliku
 ;	rsi - wskaźnik do nazwy pliku
@@ -409,10 +407,8 @@ kernel_vfs_file_touch:
 	mov	qword [rax + KERNEL_STRUCTURE_VFS_KNOT.size],	1	; rozmiar 1 blok
 
 .regular_file:
-	; uprawnienia i typ
-	mov	word [rax + KERNEL_STRUCTURE_VFS_KNOT.mode],	bx
-	mov	byte [rax + KERNEL_STRUCTURE_VFS_KNOT.type],	dl
-	mov	byte [rax + KERNEL_STRUCTURE_VFS_KNOT.length],	cl	; ilość znaków w nazwie pliku
+	; ilość znaków w nazwie pliku
+	mov	byte [rax + KERNEL_STRUCTURE_VFS_KNOT.length],	cl
 
 	; zachowaj wskaźnik supła
 	push	rax
