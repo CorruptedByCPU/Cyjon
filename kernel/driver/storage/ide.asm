@@ -78,9 +78,11 @@ DRIVER_IDE_ERROR_bad_block				equ	10000000b
 struc	DRIVER_IDE_STRUCTURE_DEVICE
 	.channel					resb	2
 	.drive						resb	1
-	.size						resb	8
+	.size_sectors					resb	8
 	.SIZE:
 endstruc
+
+driver_ide_devices_count				db	STATIC_EMPTY
 
 ; wyrównaj pozycję tablicy do pełnego adresu
 align	STATIC_QWORD_SIZE_byte,				db	STATIC_NOTHING
@@ -172,7 +174,10 @@ driver_ide_init_drive:
 
 	; zachowaj rozmiar nośnika w sektorach
 	mov	eax,	dword [rdi + DRIVER_IDE_IDENTIFY_max_lba_extended]
-	mov	qword [rcx + DRIVER_IDE_STRUCTURE_DEVICE.size],	rax
+	mov	qword [rcx + DRIVER_IDE_STRUCTURE_DEVICE.size_sectors],	rax
+
+	; zarejestrtowano nośnik danych
+	inc	byte [driver_ide_devices_count]
 
 .end:
 	; przywróć oryginalne rejestry
@@ -189,7 +194,7 @@ driver_ide_wait:
 	; zachowaj oryginalne rejestry
 	push	rax
 
-	; pobierz znakcznik czasu systemu w mikrosekundach
+	; pobierz znacznik czasu systemu w mikrosekundach
 	mov	rax,	qword [driver_rtc_microtime]
 	inc	rax	; odczekaj ~1ms
 
@@ -220,7 +225,7 @@ driver_ide_init:
 	mov	dx,	DRIVER_IDE_CHANNEL_PRIMARY + DRIVER_IDE_REGISTER_channel_control_OR_altstatus
 	out	dx,	al
 
-	; czekaj wykonanie polecenia
+	; czekaj na wykonanie polecenia
 	mov	dx,	DRIVER_IDE_CHANNEL_PRIMARY
 	call	driver_ide_pool
 	jc	.next	; brak urządzeń na kanale
@@ -233,7 +238,7 @@ driver_ide_init:
 	xor	al,	al
 	out	dx,	al
 
-	; czekaj wykonanie polecenia
+	; czekaj na wykonanie polecenia
 	mov	dx,	DRIVER_IDE_CHANNEL_PRIMARY
 	call	driver_ide_pool
 
@@ -254,7 +259,7 @@ driver_ide_init:
 	mov	dx,	DRIVER_IDE_CHANNEL_SECONDARY + DRIVER_IDE_REGISTER_channel_control_OR_altstatus
 	out	dx,	al
 
-	; czekaj wykonanie polecenia
+	; czekaj na wykonanie polecenia
 	mov	dx,	DRIVER_IDE_CHANNEL_SECONDARY
 	call	driver_ide_pool
 	jc	.end	; brak urządzeń na kanale
@@ -267,7 +272,7 @@ driver_ide_init:
 	xor	al,	al
 	out	dx,	al
 
-	; czekaj wykonanie polecenia
+	; czekaj na wykonanie polecenia
 	mov	dx,	DRIVER_IDE_CHANNEL_SECONDARY
 	call	driver_ide_pool
 
