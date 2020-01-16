@@ -33,7 +33,9 @@ kernel_init_string_memory_format		db	STATIC_COLOR_ASCII_DEFAULT, " KiB of RAM me
 kernel_init_string_memory_format_end:
 kernel_init_string_storage_ide			db	STATIC_COLOR_ASCII_GREEN_LIGHT, "::", STATIC_COLOR_ASCII_DEFAULT, " IDE storage devices:", STATIC_ASCII_NEW_LINE
 kernel_init_string_storage_ide_end:
-kernel_init_string_storage_ide_hd		db	"   /dev/hd"
+kernel_init_string_storage_ide_hd		db	"   "
+kernel_init_string_storage_ide_hd_path		db	"/dev/hd"
+kernel_init_string_storage_ide_hd_letter	db	"a"
 kernel_init_string_storage_ide_hd_end:
 kernel_init_string_storage_ide_size		db	" of size ", STATIC_COLOR_ASCII_WHITE
 kernel_init_string_storage_ide_size_end:

@@ -21,9 +21,6 @@ kernel_init_storage:
 	mov	rsi,	kernel_init_string_storage_ide
 	call	kernel_video_string
 
-	; domyślna litera urządzenia
-	mov	eax,	"a"
-
 	; maksymalna ilość urządzeń IDE
 	mov	cl,	0x04
 
@@ -42,14 +39,26 @@ kernel_init_storage:
 	push	rax
 	push	rcx
 	push	rsi
+	push	rdi
+
+	; pobierz rozmiar nośnika w Bajtach
+	mov	rax,	qword [rdi + DRIVER_IDE_STRUCTURE_DEVICE.size_sectors]
+	shl	rax,	STATIC_MULTIPLE_BY_512_shift	; zamień na Bajty
+
+	; utwórz urządzenie blokowe w wirtualnym systemie plików
+	mov	ecx,	kernel_init_string_storage_ide_hd_end - kernel_init_string_storage_ide_hd_path
+	mov	rsi,	kernel_init_string_storage_ide_hd_path
+	call	kernel_vfs_path_resolve
+	mov	rbx,	qword [rsp]
+	mov	dl,	KERNEL_VFS_FILE_TYPE_block_device
+	call	kernel_vfs_file_touch
+
+	; aktualizuj rozmiar urządzenia blokowego
+	mov	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.size],	rax
 
 	; wyświetl ścieżkę do urządzenia
 	mov	ecx,	kernel_init_string_storage_ide_hd_end - kernel_init_string_storage_ide_hd
 	call	kernel_video_string
-
-	; wyświetl literę urządzenia
-	mov	cl,	0x01
-	call	kernel_video_char
 
 	; wyświetl infomację o rozmiarze
 	mov	ecx,	kernel_init_string_storage_ide_size_end - kernel_init_string_storage_ide_size
@@ -57,8 +66,6 @@ kernel_init_storage:
 	call	kernel_video_string
 
 	; wyświetl rozmiar
-	mov	rax,	qword [rdi + DRIVER_IDE_STRUCTURE_DEVICE.size_sectors]
-	shl	rax,	STATIC_MULTIPLE_BY_512_shift	; zamień na Bajty
 	shr	rax,	STATIC_DIVIDE_BY_1024_shift	; zamień na KiB
 	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
 	xor	ecx,	ecx
@@ -70,13 +77,14 @@ kernel_init_storage:
 	call	kernel_video_string
 
 	; przywróć oryginalne rejestry
+	pop	rdi
 	pop	rsi
 	pop	rcx
 	pop	rax
 
 .ide_next:
 	; następna litera nośnika
-	inc	al
+	inc	byte [kernel_init_string_storage_ide_hd_letter]
 
 	; przesuń wskaźnik na następny wpis
 	add	rdi,	DRIVER_IDE_STRUCTURE_DEVICE.SIZE
@@ -86,3 +94,4 @@ kernel_init_storage:
 	jnz	.ide_loop	; nie
 
 .ide_end:
+	xchg	bx,bx
