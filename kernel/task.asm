@@ -499,7 +499,7 @@ kernel_task_active:
 	macro_debug	"kernel_task_active"
 
 ;===============================================================================
-kernel_task_kill_me:
+kernel_task_kill:
 	; pobierz wskaźnik do wątku w kolejce zadań
 	call	kernel_task_active
 

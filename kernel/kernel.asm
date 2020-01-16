@@ -58,8 +58,10 @@ kernel:
 	%include	"kernel/data.asm"
 	%include	"kernel/idt.asm"
 	%include	"kernel/task.asm"
-	%include	"kernel/thread.asm"
+;	%include	"kernel/thread.asm"
 	%include	"kernel/vfs.asm"
+	%include	"kernel/exec.asm"
+	%include	"kernel/service.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/font/canele.asm"
 	;-----------------------------------------------------------------------

@@ -17,6 +17,8 @@ service_shell_command_ip			db	"ip"
 service_shell_command_ip_end:
 service_shell_command_ip_set			db	"set"
 service_shell_command_ip_set_end:
+service_shell_command_ls			db	"ls"
+service_shell_command_ls_end:
 
 service_shell_command_unknown			db	"?"
 service_shell_command_unknown_end:

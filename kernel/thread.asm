@@ -6,7 +6,7 @@
 ; wejście:
 ;	rsi - wskaźnik do danych dla wątku
 ;	rdi - wskaźnik początku kodu wątku
-kernel_thread_exec:
+kernel_thread:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rbx

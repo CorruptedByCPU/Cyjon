@@ -38,7 +38,7 @@ kernel_init_idt:
 	call	kernel_idt_update
 
 	;-----------------------------------------------------------------------
-	; podłącz procedurę obsługi "Page Fault"
+	; podłącz procedurę obsługi "General Protection Fault"
 	mov	eax,	0x0D
 	mov	bx,	KERNEL_IDT_TYPE_exception
 	mov	rdi,	kernel_idt_exception_general_protection_fault
@@ -48,6 +48,13 @@ kernel_init_idt:
 	mov	eax,	0x0E
 	mov	bx,	KERNEL_IDT_TYPE_exception
 	mov	rdi,	kernel_idt_exception_page_fault
+
+	;-----------------------------------------------------------------------
+	; podłącz procedurę obsługi przerwania programowego
+	mov	eax,	0x40
+	mov	bx,	KERNEL_IDT_TYPE_isr
+	mov	rdi,	kernel_service
+	call	kernel_idt_mount
 
 	;-----------------------------------------------------------------------
 	; podłącz procedurę obsługi "spurious interrupt"

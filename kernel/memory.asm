@@ -2,10 +2,6 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
-KERNEL_MEMORY_HIGH_mask			equ	0xFFFF000000000000
-KERNEL_MEMORY_HIGH_REAL_address		equ	0xFFFF800000000000
-KERNEL_MEMORY_HIGH_VIRTUAL_address	equ	KERNEL_MEMORY_HIGH_REAL_address - KERNEL_MEMORY_HIGH_mask
-
 KERNEL_MEMORY_MAP_SIZE_page		equ	0x01	; domyślny rozmiar 4088 Bajtów (~128 MiB możliwej przestrzeni do opisania)
 
 kernel_memory_map_address		dq	STATIC_EMPTY
