@@ -58,6 +58,7 @@ kernel_init_storage:
 
 	; wyświetl ścieżkę do urządzenia
 	mov	ecx,	kernel_init_string_storage_ide_hd_end - kernel_init_string_storage_ide_hd
+	mov	rsi,	kernel_init_string_storage_ide_hd
 	call	kernel_video_string
 
 	; wyświetl infomację o rozmiarze
