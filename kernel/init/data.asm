@@ -56,22 +56,36 @@ kernel_init_ap_count				db	STATIC_EMPTY
 kernel_init_apic_id_highest			db	STATIC_EMPTY
 
 kernel_init_services_list:
-	dq	service_tresher
-	dq	service_tx
-	dq	service_network
-	dq	service_http
-	dq	service_shell
+				dq	service_tresher
+				dq	service_tx
+				dq	service_network
+				dq	service_http
+				dq	service_shell
 
-	; koniec usług
-	dq	STATIC_EMPTY
+				; koniec usług
+				dq	STATIC_EMPTY
 
 kernel_init_vfs_directory_structure:
-	db	0x04
-	db	"/dev"
+				db	0x04
+				db	"/bin"
+				db	0x04
+				db	"/dev"
 
-	; koniec struktury katalogów
-	db	STATIC_EMPTY
+				; koniec struktury katalogów
+				db	STATIC_EMPTY
+
+kernel_init_vfs_files:
+				dq	kernel_init_vfs_file_hello
+				dq	kernel_init_vfs_file_hello_end - kernel_init_vfs_file_hello
+				db	10
+				db	"/bin/hello"
+
+				; koniec listy plików
+				dq	STATIC_EMPTY
+
+kernel_init_vfs_file_hello	incbin	"build/hello"
+kernel_init_vfs_file_hello_end:
 
 kernel_init_boot_file:
-	incbin	"build/boot"
+				incbin	"build/boot"
 kernel_init_boot_file_end:
