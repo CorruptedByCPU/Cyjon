@@ -42,11 +42,6 @@ kernel_init_string_storage_ide_size_end:
 kernel_init_string_storage_ide_format		db	" KiB", STATIC_ASCII_NEW_LINE
 kernel_init_string_storage_ide_format_end:
 
-kernel_init_string				db	STATIC_ASCII_NEW_LINE, STATIC_COLOR_ASCII_BLUE_LIGHT, "    B l a c k e n d . d e v", STATIC_ASCII_NEW_LINE
-						db	STATIC_COLOR_ASCII_GRAY, "  ---------------------------", STATIC_ASCII_NEW_LINE, STATIC_ASCII_NEW_LINE
-kernel_init_string_end:
-
-
 kernel_init_apic_semaphore			db	STATIC_FALSE
 kernel_init_ioapic_semaphore			db	STATIC_FALSE
 kernel_init_smp_semaphore			db	STATIC_FALSE
@@ -60,7 +55,6 @@ kernel_init_services_list:
 				dq	service_tx
 				dq	service_network
 				dq	service_http
-				dq	service_shell
 
 				; koniec usług
 				dq	STATIC_EMPTY
@@ -75,6 +69,16 @@ kernel_init_vfs_directory_structure:
 				db	STATIC_EMPTY
 
 kernel_init_vfs_files:
+				dq	kernel_init_vfs_file_init
+				dq	kernel_init_vfs_file_init_end - kernel_init_vfs_file_init
+				db	9
+				db	"/bin/init"
+
+				dq	kernel_init_vfs_file_shell
+				dq	kernel_init_vfs_file_shell_end - kernel_init_vfs_file_shell
+				db	10
+				db	"/bin/shell"
+
 				dq	kernel_init_vfs_file_hello
 				dq	kernel_init_vfs_file_hello_end - kernel_init_vfs_file_hello
 				db	10
@@ -83,6 +87,10 @@ kernel_init_vfs_files:
 				; koniec listy plików
 				dq	STATIC_EMPTY
 
+kernel_init_vfs_file_init	incbin	"build/init"
+kernel_init_vfs_file_init_end:
+kernel_init_vfs_file_shell	incbin	"build/shell"
+kernel_init_vfs_file_shell_end:
 kernel_init_vfs_file_hello	incbin	"build/hello"
 kernel_init_vfs_file_hello_end:
 

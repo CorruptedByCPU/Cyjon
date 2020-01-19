@@ -22,8 +22,9 @@ library_input:
 	je	.loop	; nie
 
 	; wyświetl zawartość bufora
+	mov	ax,	KERNEL_SERVICE_VIDEO_string
 	mov	rcx,	rbx
-	call	kernel_video_string
+	int	KERNEL_SERVICE
 
 	; przywróć maksymalny rozmiar bufora
 	mov	rcx,	qword [rsp]
@@ -36,7 +37,8 @@ library_input:
 
 .loop:
 	; pobierz znak z bufora klawiatury
-	call	driver_ps2_keyboard_read
+	mov	ax,	KERNEL_SERVICE_KEYBOARD_key
+	int	KERNEL_SERVICE
 	jz	.loop
 
 	; klawisz typu Backspace?
@@ -54,9 +56,9 @@ library_input:
 	; znak dozwolony?
 
 	; sprawdź czy pobrany znak jest możliwy do wyświetlenia
-	cmp	rax,	STATIC_ASCII_SPACE
+	cmp	ax,	STATIC_ASCII_SPACE
 	jb	.loop	; nie, zignoruj
-	cmp	rax,	STATIC_ASCII_TILDE
+	cmp	ax,	STATIC_ASCII_TILDE
 	ja	.loop	; nie, zignoruj
 
 	; bufor pełny?
@@ -77,8 +79,10 @@ library_input:
 	push	rcx
 
 	; wyświetl znak z bufora na ekran
-	mov	ecx,	0x01	; jedna kopia
-	call	kernel_video_char
+	mov	edx,	KERNEL_SERVICE_VIDEO_char
+	xchg	dx,	ax
+	mov	ecx,	1	; jedna kopia
+	int	KERNEL_SERVICE
 
 	; przywróć rozmiar bufora
 	pop	rcx
@@ -128,4 +132,4 @@ library_input:
 	; powrót z liblioteki
 	ret
 
-	macro_debug	"library_input"
+	; macro_debug	"library_input"

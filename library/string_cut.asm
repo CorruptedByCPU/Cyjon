@@ -41,4 +41,4 @@ library_string_cut:
 	; powrót z procedury
 	ret
 
-	macro_debug	"library_string_cut"
+	; macro_debug	"library_string_cut"

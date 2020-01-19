@@ -37,7 +37,14 @@ clean:
 	call	kernel_memory_release
 
 kernel:
-	; zatrzymaj dalsze wykonywanie kodu
+	; uruchom program inicjalizujący środowisko użytkownika
+	mov	ecx,	kernel_init_exec_end - kernel_init_exec
+	mov	rsi,	kernel_init_exec
+	call	kernel_vfs_path_resolve
+	call	kernel_vfs_file_find
+	call	kernel_exec
+
+	; zatrzymaj dalsze wykonywanie kodu jądra systemu
 	jmp	$
 
 	;-----------------------------------------------------------------------
@@ -72,7 +79,6 @@ kernel:
 	%include	"kernel/driver/storage/ide.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/service/tresher.asm"
-	%include	"kernel/service/shell.asm"
 	%include	"kernel/service/http.asm"
 	%include	"kernel/service/tx.asm"
 	%include	"kernel/service/network.asm"

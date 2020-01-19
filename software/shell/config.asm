@@ -2,4 +2,4 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
-SERVICE_SHELL_CACHE_SIZE_byte	equ	128
+SHELL_CACHE_SIZE_byte	equ	128

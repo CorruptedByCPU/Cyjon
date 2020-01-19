@@ -29,6 +29,10 @@ Natomiast, wszelkie inne operacje na systemie GNU/Linux. Dystrybucja jest niewa≈
 	WIDTH=640
 	HEIGHT=480
 
+	nasm -f bin software/init.asm		-o build/init
+	nasm -f bin software/shell.asm		-o build/shell
+	nasm -f bin software/hello.asm		-o build/hello
+
 	nasm -f bin kernel/init/boot.asm	-o build/boot
 	nasm -f bin kernel/kernel.asm		-o build/kernel \
 		-dMULTIBOOT_VIDEO_WIDTH_pixel=${WIDTH} \

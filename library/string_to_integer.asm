@@ -55,4 +55,4 @@ library_string_to_integer:
 	; powrót z procedury
 	ret
 
-	macro_debug	"library_string_to_integer"
+	; macro_debug	"library_string_to_integer"

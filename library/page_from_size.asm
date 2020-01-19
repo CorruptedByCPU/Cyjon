@@ -31,4 +31,4 @@ library_page_from_size:
 	; powrót z procedury
 	ret
 
-	macro_debug	"library_page_from_size"
+	; macro_debug	"library_page_from_size"

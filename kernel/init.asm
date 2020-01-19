@@ -163,11 +163,6 @@ kernel_init:
 	; INICJALIZACJA ZAKOŃCZONA
 	;-----------------------------------------------------------------------
 
-	; wyświetl logo
-	mov	ecx,	kernel_init_string_end - kernel_init_string
-	mov	rsi,	kernel_init_string
-	call	kernel_video_string
-
 	; poinformuj o zakończeniu inicjalizacji
 	mov	byte [kernel_init_semaphore],	STATIC_FALSE
 

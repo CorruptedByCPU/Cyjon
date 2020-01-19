@@ -52,6 +52,9 @@ kernel_init_task:
 	mov	r11,	qword [kernel_page_pml4_address]
 	call	kernel_task_add
 
+	; ustaw katalog roboczy jądra systemu na /
+	mov	qword [rdi + KERNEL_STRUCTURE_TASK.knot],	kernel_vfs_magicknot
+
 	;-----------------------------------------------------------------------
 	; podłącz procedurę obsługi przełączacznia aktywnego zadania
 	; pod przerwanie czasu kontrolera, APIC procesora BSP/logicznego
