@@ -28,22 +28,32 @@ init:
 align	KERNEL_PAGE_SIZE_byte,	db	STATIC_NOTHING
 
 clean:
-	; rozmiar przestrzeni inicjalizacyjnej
-	mov	ecx,	clean - $$
-	call	library_page_from_size	; w stronach
-
-	; zwolnij
-	mov	rdi,	KERNEL_BASE_address
-	call	kernel_memory_release
+	; ; rozmiar przestrzeni inicjalizacyjnej
+	; mov	ecx,	clean - $$
+	; call	library_page_from_size	; w stronach
+	;
+	; ; zwolnij
+	; mov	rdi,	KERNEL_BASE_address
+	; call	kernel_memory_release
 
 kernel:
 	; uruchom program inicjalizujący środowisko użytkownika
 	mov	ecx,	kernel_init_exec_end - kernel_init_exec
 	mov	rsi,	kernel_init_exec
 	call	kernel_vfs_path_resolve
+	jc	.error	; błędna ścieżka
 	call	kernel_vfs_file_find
+	jc	.error	; nie znaleziono pliku
 	call	kernel_exec
+	jnc	.end	; nie udało się uruchomić procesu
 
+.error:
+	; wyświetl kod błędu
+	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
+	xor	ecx,	ecx	; brak wypełnienia
+	call	kernel_video_number
+
+.end:
 	; zatrzymaj dalsze wykonywanie kodu jądra systemu
 	jmp	$
 

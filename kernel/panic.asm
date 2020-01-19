@@ -26,3 +26,5 @@ kernel_panic:
 
 	; zatrzymaj dalsze wykonywanie kodu
 	jmp	$
+
+	macro_debug	"kernel_panic"

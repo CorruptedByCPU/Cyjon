@@ -14,6 +14,7 @@ kernel_memory_lock_semaphore		db	STATIC_FALSE
 ;	rbp - ilość stron zarezerowanych do wykorzystania
 ; wyjście:
 ;	Flaga CF, jeśli brak dostępnej
+;	rax - kod błędu, jeśli Flaga CF jest podniesiona
 ;	rdi - wskaźnik do przydzielonej przestrzeni
 ;	rbp - ilość pozostałych stron zarezerwowanych
 kernel_memory_alloc_page:
@@ -38,15 +39,16 @@ kernel_memory_alloc_page:
 ;	rbp - ilość stron zarezerowanych do wykorzystania
 ; wyjście:
 ;	Flaga CF, jeśli brak dostępnej
+;	rax - kod błędu, jeśli Flaga CF jest podniesiona
 ;	rdi - wskaźnik do przydzielonej przestrzeni
 ;	rbp - ilość pozostałych stron zarezerwowanych
 kernel_memory_alloc:
 	; zachowaj oryginalne rejestry
-	push	rax
 	push	rbx
 	push	rdx
 	push	rsi
 	push	rbp
+	push	rax
 	push	rcx
 
 	; zresetuj numer pierwszego bitu poszukiwanej przestrzeni
@@ -100,6 +102,9 @@ kernel_memory_alloc:
 	jmp	.reload
 
 .error:
+	; zwróć kod błędu
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	KERNEL_ERROR_PAGE_memory_low
+
 	; flaga, błąd
 	stc
 
@@ -150,11 +155,11 @@ kernel_memory_alloc:
 
 	; przywróć oryginalne rejestry
 	pop	rcx
+	pop	rax
 	pop	rbp
 	pop	rsi
 	pop	rdx
 	pop	rbx
-	pop	rax
 
 	; powrót z procedury
 	ret
@@ -487,3 +492,5 @@ kernel_memory_copy:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_memory_copy"

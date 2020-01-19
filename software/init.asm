@@ -32,20 +32,42 @@ init:
 	xor	edx,	edx	; bez argumentów
 	mov	rsi,	init_program_shell
 	int	KERNEL_SERVICE
-
-	; debug
-	jmp	$
+	jc	.error	; błąd podczas uruchamiania procesu
 
 	; czekaj na zakończenie procesu
-	mov	ax,	KERNEL_SERVICE_PROCESS_pid
+	mov	ax,	KERNEL_SERVICE_PROCESS_check
 
 .wait_for_shell:
 	; proces zakończył swoją pracę
 	int	KERNEL_SERVICE
 	jnc	.wait_for_shell	; nie
 
+	; wyczyść przestrzeń konsoli
+	mov	ax,	KERNEL_SERVICE_VIDEO_clean
+	int	KERNEL_SERVICE
+
 	; wyświetl znak zachęty od nowej linii
 	jmp	init
+
+.error:
+	; zachowaj kod błędu
+	push	rax
+
+	; wyświetl komunikat
+	mov	ax,	KERNEL_SERVICE_VIDEO_string
+	mov	ecx,	init_string_error_end - init_string_error
+	mov	rsi,	init_string_error
+	int	KERNEL_SERVICE
+
+	; wyświetl kod błędu
+	mov	ax,	KERNEL_SERVICE_VIDEO_number
+	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
+	xor	ecx,	ecx	; brak wypełnienia
+	pop	r8	; kod błędu
+	int	KERNEL_SERVICE
+
+	; zatrzymaj dalsze wykonywanie kodu programu
+	jmp	$
 
 	;=======================================================================
 	%include	"software/init/data.asm"

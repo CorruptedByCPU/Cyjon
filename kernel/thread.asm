@@ -79,3 +79,5 @@ kernel_thread:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_thread"

@@ -52,6 +52,10 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_PROCESS_run
 	je	.process_run	; tak
 
+	; czy proces istnieje?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_check
+	je	.process_check	; tak
+
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
 
@@ -59,14 +63,27 @@ kernel_service:
 .process_run:
 	; rozwiąż ścieżkę do programu
 	call	kernel_vfs_path_resolve
-	jc	kernel_service.end	; błąd, niepoprawna ścieżka
+	jc	.process_run_error	; błąd, niepoprawna ścieżka
 
 	; odszukaj program w danym katalogu
 	call	kernel_vfs_file_find
-	jc	kernel_service.end	; błąd, pliku nie znaleziono
+	jc	.process_run_error	; błąd, pliku nie znaleziono
 
 	; uruchom program
 	call	kernel_exec
+	jnc	kernel_service.end	; uruchomiono
+
+.process_run_error:
+	; zwróć kod błędu
+	mov	qword [rsp],	rax
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;-------------------------------------------------------------------------------
+.process_check:
+	; odszukaj proces w kolejce zadań
+	call	kernel_task_pid_check
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
@@ -83,11 +100,15 @@ kernel_service:
 
 	; wyświetlić znak N razy?
 	cmp	ax,	KERNEL_SERVICE_VIDEO_char
-	je	.video_char	; nie
+	je	.video_char	; tak
 
 	; wyczyścić przestrzeń konsoli?
 	cmp	ax,	KERNEL_SERVICE_VIDEO_clean
-	je	.video_clean	; nie
+	je	.video_clean	; tak
+
+	; wyświetlić liczbę?
+	cmp	ax,	KERNEL_SERVICE_VIDEO_number
+	je	.video_number	; tak
 
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
@@ -125,6 +146,15 @@ kernel_service:
 	; koniec obsługi podprocedury
 	jmp	kernel_service.end
 
+;-------------------------------------------------------------------------------
+.video_number:
+	; wstaw wartość do odpowiedniego rejestru dla procedury
+	mov	rax,	r8
+	call	kernel_video_number
+
+	; koniec obsługi podprocedury
+	jmp	kernel_service.end
+
 ;===============================================================================
 .keyboard:
 	; pobrać kod klawisza z bufora?
@@ -139,3 +169,5 @@ kernel_service:
 
 	; koniec obsługi podprocedury
 	jmp	kernel_service.end
+
+	macro_debug	"kernel_service"

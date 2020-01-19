@@ -38,7 +38,7 @@ service_tresher:
 .pml4:
 	; zwolnij przestrzeń tablicy PML4 wątku
 	mov	rdi,	r11
-	call	kernel_page_purge	; zwalnia przestrzeń, którą zajmują puste tablice
+	; call	kernel_page_purge	; zwalnia przestrzeń, którą zajmują puste tablice
 	call	kernel_memory_release_page	; zwolnij przestrzeń tablicy PML4
 
 	; strona odzyskana z tablic stronicowania

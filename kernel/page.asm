@@ -164,6 +164,8 @@ kernel_page_purge:
 	; powrót z podprocedury
 	ret
 
+	macro_debug	"kernel_page_purge"
+
 ;===============================================================================
 ; wejście:
 ;	rdi - adres strony do wyczyszczenia
@@ -180,8 +182,6 @@ kernel_page_drain:
 
 	; powrót z procedury
 	ret
-
-	macro_debug	"kernel_page_drain"
 
 ;-------------------------------------------------------------------------------
 ; uwagi:
@@ -203,6 +203,8 @@ kernel_page_drain:
 
 	; powrót z podprocedury
 	ret
+
+	macro_debug	"kernel_page_drain"
 
 ;===============================================================================
 ; wejście:
@@ -320,7 +322,6 @@ kernel_page_map_physical:
 ;	zastrzeż odpowiednią ilość stron, rbp
 kernel_page_map_logical:
 	; zachowaj oryginalne rejestry
-	push	rax
 	push	rcx
 	push	rdx
 	push	rdi
@@ -331,9 +332,11 @@ kernel_page_map_logical:
 	push	r13
 	push	r14
 	push	r15
+	push	rax
 
 	; przygotuj podstawową ścieżkę z tablic do mapowanego adresu
 	call	kernel_page_prepare
+	jc	.error
 
 .record:
 	; sprawdź czy skończyły się rekordy w tablicy PML1
@@ -342,6 +345,7 @@ kernel_page_map_logical:
 
 	; utwórz nową tablicę stronicowania PML1
 	call	kernel_page_pml1
+	jc	.error
 
 .exists:
 	; rekord zajęty?
@@ -358,7 +362,7 @@ kernel_page_map_logical:
 
 	; przydziel wolną stronę
 	call	kernel_memory_alloc_page
-	jc	.end
+	jc	.error
 
 	; wyczyść
 	call	kernel_page_drain
@@ -381,8 +385,19 @@ kernel_page_map_logical:
 	dec	rcx
 	jnz	.record
 
+	; koniec procedury
+	jmp	.end
+
+.error:
+	; zwróć kod błędu
+	mov	qword [rsp],	rax
+
+	; flaga, błąd
+	stc
+
 .end:
 	; przywróć oryginalne rejestry
+	pop	rax
 	pop	r15
 	pop	r14
 	pop	r13
@@ -393,17 +408,9 @@ kernel_page_map_logical:
 	pop	rdi
 	pop	rdx
 	pop	rcx
-	pop	rax
 
 	; powrót z procedury
 	ret
-
-.error:
-	; flaga, błąd
-	stc
-
-	; koniec
-	jmp	.end
 
 	macro_debug	"kernel_page_map_logical"
 
@@ -426,9 +433,9 @@ kernel_page_map_logical:
 ;	r15 - numer następnego rekordu w tablicy PML4
 kernel_page_prepare:
 	; zachowaj oryginalne rejestry
-	push	rax
 	push	rcx
 	push	rdx
+	push	rax
 
 	; oblicz numer rekordu w tablicy PML4 na podstawie otrzymanego adresu fizycznego/logicznego
 	mov	rcx,	KERNEL_PAGE_PML3_SIZE_byte
@@ -459,7 +466,7 @@ kernel_page_prepare:
 .no_pml3:
 	; pobierz zarezerwowaną stronę na potrzebę utworzenia nowej tablicy
 	call	kernel_memory_alloc_page
-	jc	.end
+	jc	.error
 
 	; wyczyść
 	call	kernel_page_drain
@@ -509,7 +516,7 @@ kernel_page_prepare:
 .no_pml2:
 	; pobierz zarezerwowaną stronę na potrzebę utworzenia nowej tablicy
 	call	kernel_memory_alloc_page
-	jc	.end
+	jc	.error
 
 	; wyczyść
 	call	kernel_page_drain
@@ -559,7 +566,7 @@ kernel_page_prepare:
 .no_pml1:
 	; pobierz zarezerwowaną stronę na potrzebę utworzenia nowej tablicy
 	call	kernel_memory_alloc_page
-	jc	.end
+	jc	.error
 
 	; wyczyść
 	call	kernel_page_drain
@@ -595,11 +602,18 @@ kernel_page_prepare:
 	; zwróć wskaźnik do rekordu tablicy PML1
 	mov	rdi,	r8
 
+	; koniec procedury
+	jmp	.end
+
+.error:
+	; zwróć kod błędu
+	mov	qword [rsp],	rax
+
 .end:
 	; przywróć oryginalne rejestry
+	pop	rax
 	pop	rdx
 	pop	rcx
-	pop	rax
 
 	; powrót z procedury
 	ret
@@ -620,6 +634,7 @@ kernel_page_prepare:
 ;	r15 - numer aktualnego wiersza w tablicy PML4
 ; wyjście:
 ;	Flaga CF, jeśli błąd
+;	rax - kod błędu, jeśli Flaga CF jest podniesiona
 ;	rdi - wskaźnik do wiersza w tablicy PML1, początku opisywanego obszaru fizycznego
 ;
 ;	r8 - wskaźnik następnego wiersza w tablicy PML1
@@ -897,6 +912,7 @@ kernel_page_merge:
 ;	rcx - ilość stron do zarezerwowania
 ; wyjście:
 ;	Flaga CF - jeśli brak wystarczającej ilości
+;	rax - kod błędu, jeśli Flaga CF jest podniesiona
 kernel_page_secure:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -924,6 +940,9 @@ kernel_page_secure:
 	jmp	.end
 
 .error:
+	; zwróć kod błędu
+	mov	qword [rsp],	KERNEL_ERROR_PAGE_memory_low
+
 	; flaga, błąd
 	stc
 

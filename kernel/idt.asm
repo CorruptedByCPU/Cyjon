@@ -8,6 +8,13 @@ KERNEL_IDT_TYPE_exception		equ	0x8E00
 KERNEL_IDT_TYPE_irq			equ	0x8F00
 KERNEL_IDT_TYPE_isr			equ	0xEF00
 
+kernel_idt_string_exception_default	db	STATIC_ASCII_NEW_LINE, STATIC_COLOR_ASCII_RED_LIGHT, "IDT: exception default", STATIC_ASCII_NEW_LINE
+kernel_idt_string_exception_default_end:
+kernel_idt_string_exception_gpf		db	STATIC_ASCII_NEW_LINE, STATIC_COLOR_ASCII_RED_LIGHT, "IDT: exception general protection fault", STATIC_ASCII_NEW_LINE
+kernel_idt_string_exception_gpf_end:
+kernel_idt_string_exception_page_fault	db	STATIC_ASCII_NEW_LINE, STATIC_COLOR_ASCII_RED_LIGHT, "IDT: exception page fault", STATIC_ASCII_NEW_LINE
+kernel_idt_string_exception_page_fault_end:
+
 ;===============================================================================
 ; wejście:
 ;	rax - numer przerwania
@@ -102,31 +109,79 @@ kernel_idt_update:
 ;===============================================================================
 ; domyślna obsługa wyjątku procesora
 kernel_idt_exception_default:
+	; włącz tryb debugowania w kolejce zadań
+	mov	byte [kernel_task_debug_semaphore],	STATIC_STRUCTURE_BLOCK
+
+	; wyświetl komunikat
+	mov	ecx,	kernel_idt_string_exception_default_end - kernel_idt_string_exception_default
+	mov	rsi,	kernel_idt_string_exception_default
+	call	kernel_video_string
+
+	; wyświetl ostatnie 8 wartości z stosu kontekstu
+	mov	r8,	32
+
+	; w systemie szesnastkowym
+	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
+
+	; wypełnienie
+	mov	edx,	STATIC_ASCII_DIGIT_0
+
+	push	rsp
+
+.loop:
+	; pobierz wartość z stosu kontekstu
+	pop	rax
+	mov	ecx,	0x10	; wypełnij do 8 Bajtów
+	call	kernel_video_number
+
+	; przesuń kursor do nowej linii
+	mov	eax,	STATIC_ASCII_NEW_LINE
+	mov	ecx,	1
+	call	kernel_video_char
+
+	; następna wartość?
+	dec	r8
+	jnz	.loop	; tak
+
 	; przerwij pracę debugera Bochs
 	xchg	bx,bx
 
 	nop
 
-	; wróć do zadania
-	iretq
+	; zatrzymaj dalsze wykonywanie kodu dla aktualnego procesu
+	jmp	$
 
 	macro_debug	"kernel_idt_exception_default"
 
 ;===============================================================================
 kernel_idt_exception_general_protection_fault:
+	; wyświetl komunikat
+	mov	ecx,	kernel_idt_string_exception_gpf_end - kernel_idt_string_exception_gpf
+	mov	rsi,	kernel_idt_string_exception_gpf
+	call	kernel_video_string
+
 	; przerwij pracę debugera Bochs
 	xchg	bx,bx
 
 	nop
 	nop
 
-	; powrót do zadania
-	iretq
+	; zatrzymaj dalsze wykonywanie kodu dla aktualnego procesu
+	jmp	$
 
 	macro_debug	"kernel_idt_exception_general_protection_fault"
 
 ;===============================================================================
 kernel_idt_exception_page_fault:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rsi
+
+	; wyświetl komunikat
+	mov	ecx,	kernel_idt_string_exception_page_fault_end - kernel_idt_string_exception_page_fault
+	mov	rsi,	kernel_idt_string_exception_page_fault
+	call	kernel_video_string
+
 	; przerwij pracę debugera Bochs
 	xchg	bx,bx
 
@@ -134,8 +189,8 @@ kernel_idt_exception_page_fault:
 	nop
 	nop
 
-	; powrót do zadania
-	iretq
+	; zatrzymaj dalsze wykonywanie kodu dla aktualnego procesu
+	jmp	$
 
 	macro_debug	"kernel_idt_exception_page_fault"
 

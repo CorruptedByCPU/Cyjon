@@ -53,6 +53,9 @@ kernel_video_drain:
 	push	rcx
 	push	rdi
 
+	; wyłącz wirtualny kursor
+	call	kernel_video_cursor_disable
+
 	; wyczyść przestrzeń pamięci trybu tekstowego "jasno-szarymi znakami spacji"
 	mov	eax,	dword [kernel_video_color_background]
 	mov	rcx,	qword [kernel_video_size_pixel]
@@ -65,6 +68,9 @@ kernel_video_drain:
 	; ustaw sprzętowy kursor na miejsce
 	call	kernel_video_cursor_set
 
+	; włącz wirtualny kursor
+	call	kernel_video_cursor_enable
+
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rcx
@@ -72,6 +78,8 @@ kernel_video_drain:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_video_drain"
 
 ;===============================================================================
 ; wejście:
@@ -144,6 +152,8 @@ kernel_video_matrix:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_video_matrix"
+
 ;===============================================================================
 ; wejście:
 ;	rdi - wskaźnik pozycji znaku
@@ -192,6 +202,8 @@ kernel_video_char_clean:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_video_char_clean"
+
 ;===============================================================================
 kernel_video_cursor_set:
 	; zachowaj oryginalne rejestry
@@ -217,6 +229,8 @@ kernel_video_cursor_set:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_video_cursor_set"
 
 ;===============================================================================
 ; wejście:
@@ -512,6 +526,8 @@ kernel_video_string:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_video_string"
+
 ;===============================================================================
 ; wejście:
 ;	rax - kod ASCII znaku
@@ -699,6 +715,8 @@ kernel_video_char:
 	; kontynuuj
 	jmp	.continue
 
+	macro_debug	"kernel_video_char"
+
 ;===============================================================================
 ; wejście:
 ;	rax - wartość do wyświetlenia
@@ -805,6 +823,8 @@ kernel_video_number:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_video_number"
+
 ;===============================================================================
 kernel_video_scroll:
 	; zachowaj oryginalne rejestry
@@ -840,6 +860,8 @@ kernel_video_scroll:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_video_scroll"
 
 ;===============================================================================
 ; wejście:
@@ -882,6 +904,8 @@ kernel_video_line_drain:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_video_line_drain"
+
 ;===============================================================================
 kernel_video_cursor_disable:
 	; nałóż blokadę na kursor
@@ -897,6 +921,8 @@ kernel_video_cursor_disable:
 .ready:
 	; przywróć oryginalne rejestry
 	ret
+
+	macro_debug	"kernel_video_cursor_disable"
 
 ;===============================================================================
 kernel_video_cursor_enable:
@@ -917,6 +943,8 @@ kernel_video_cursor_enable:
 .ready:
 	; przywróć oryginalne rejestry
 	ret
+
+	macro_debug	"kernel_video_cursor_enable"
 
 ;===============================================================================
 kernel_video_cursor_switch:
@@ -956,3 +984,5 @@ kernel_video_cursor_switch:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_video_cursor_switch"

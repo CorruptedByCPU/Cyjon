@@ -46,3 +46,5 @@ kernel_io_apic_connect:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_io_apic_connect"

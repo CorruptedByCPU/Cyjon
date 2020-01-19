@@ -40,4 +40,5 @@ kernel_apic_id_get:
 
 	; powrót z procedury
 	ret
- 
+
+	macro_debug	"kernel_apic_id_get"

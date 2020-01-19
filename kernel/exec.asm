@@ -9,16 +9,17 @@
 ;	rdi - wskaźnik do supła pliku
 ; wyjście:
 ;	Flaga CF - wystąpił błąd
+;	rax - kod błędu, jeśli Flaga CF podniesiona
 ;	rcx - pid nowego procesu
 kernel_exec:
 	; zachowaj oryginalne rejestry
-	push	rax
 	push	rbx
 	push	rdx
 	push	rsi
 	push	rbp
 	push	r8
 	push	r11
+	push	rax
 	push	rcx
 	push	rdi
 
@@ -29,6 +30,7 @@ kernel_exec:
 	; zarezerwuj ilość stron, niezbędną do inicjalizacji procesu
 	add	rcx,	14
 	call	kernel_page_secure
+	jc	.error	; brak wystarczającej ilości pamięci
 
 	; poinformuj wszystkie procedury zależne by korzystały z zarezerwowanych stron
 	mov	rbp,	rcx
@@ -44,17 +46,20 @@ kernel_exec:
 	mov	rax,	KERNEL_MEMORY_HIGH_VIRTUAL_address
 	mov	ebx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user
 	call	kernel_page_map_logical
+	jc	.error
 
 	; przygotuj miejsce pod stos procesu
 	mov	rax,	(KERNEL_MEMORY_HIGH_VIRTUAL_address << STATIC_MULTIPLE_BY_2_shift) - KERNEL_PAGE_SIZE_byte
 	mov	rcx,	KERNEL_PAGE_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	call	kernel_page_map_logical
+	jc	.error
 
 	; przygotuj miejsce pod stos kontekstu (należy do jądra systemu)
 	mov	rax,	KERNEL_STACK_address
 	mov	rbx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
 	mov	rcx,	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	call	kernel_page_map_logical
+	jc	.error
 
 	; mapuj przestrzeń jądra systemu
 	mov	rsi,	qword [kernel_page_pml4_address]
@@ -105,6 +110,7 @@ kernel_exec:
 	; wstaw proces do kolejki zadań
 	mov	ebx,	KERNEL_TASK_FLAG_active
 	call	kernel_task_add
+	jc	.error
 
 	; zwolnij niewykrzystane, zarezerwowane strony
 	add	qword [kernel_page_free_count],	rbp
@@ -113,16 +119,23 @@ kernel_exec:
 	; zwróć numer PID utworzonego zadania
 	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rcx
 
+.error:
+	; zwróć kod błędu
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte * 0x02],	rax
+
+.end:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rcx
+	pop	rax
 	pop	r11
 	pop	r8
 	pop	rbp
 	pop	rsi
 	pop	rdx
 	pop	rbx
-	pop	rax
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_exec"

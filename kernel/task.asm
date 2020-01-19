@@ -45,6 +45,8 @@ struc	KERNEL_STRUCTURE_TASK_IRETQ
 	.ds				resb	8
 endstruc
 
+kernel_task_debug_semaphore		db	STATIC_FALSE
+
 kernel_task_address			dq	STATIC_EMPTY
 kernel_task_active_list			dq	STATIC_EMPTY
 
@@ -53,6 +55,14 @@ kernel_task_pid				dq	STATIC_EMPTY
 
 ;===============================================================================
 kernel_task:
+	; włączono tryb debugowania?
+	cmp	byte [kernel_task_debug_semaphore],	STATIC_FALSE
+	je	.no	; nie
+
+	; tak
+	xchg	bx,bx
+
+.no:
 	; zachowaj oryginalne rejestry na stosie kontekstu procesu/jądra
 	push	rax
 	push	rdi
@@ -395,7 +405,7 @@ kernel_task_pid_get:
 
 ;===============================================================================
 ; wejście:
-;	ecx - pid procesu poszukiwanego
+;	rcx - pid procesu poszukiwanego
 ; wyjście:
 ;	Flaga CF - jeśli proces nie istnieje
 kernel_task_pid_check:
@@ -404,7 +414,7 @@ kernel_task_pid_check:
 	push	rcx
 	push	rdi
 
-	; przeszukaj od początku kolejkę za wolnym rekordem
+	; przeszukaj kolejkę od początku
 	mov	rdi,	qword [kernel_task_address]
 
 .restart:
@@ -416,6 +426,7 @@ kernel_task_pid_check:
 	cmp	dword [rdi + KERNEL_STRUCTURE_TASK.pid],	ecx
 	je	.found	; tak
 
+.omit:
 	; prdesuń wskaźnik na następny wpis
 	add	rdi,	KERNEL_STRUCTURE_TASK.SIZE
 
@@ -441,6 +452,10 @@ kernel_task_pid_check:
 	jmp	.end
 
 .found:
+	; proces zamknięty?
+	cmp	byte [rdi + KERNEL_STRUCTURE_TASK.flags],	STATIC_EMPTY
+	je	.omit	; tak
+
 	; proces jest zamknięty?
 	bt	word [rdi + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_closed_bit
 

@@ -13,6 +13,8 @@ shell_cache:
 
 shell_command_clean			db	"clean"
 shell_command_clean_end:
+shell_command_exit			db	"exit"
+shell_command_exit_end:
 
 shell_command_unknown			db	"?"
 shell_command_unknown_end:

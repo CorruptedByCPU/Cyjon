@@ -54,6 +54,21 @@ shell_prompt:
 	jmp	.end
 
 .no_clean:
+	; sprawdź czy polecenie "exit"
+	cmp	rbx,	shell_command_exit_end - shell_command_exit
+	jne	.no_exit	; nie
+
+	; sprawdź czy polecenie "exit"
+	mov	ecx,	ebx
+	mov	rdi,	shell_command_exit
+	call	library_string_compare
+	jc	.no_exit	; nie
+
+	; zakończ działanie powłoki
+	xor	ax,	ax
+	int	KERNEL_SERVICE
+
+.no_exit:
 	nop
 
 .end:

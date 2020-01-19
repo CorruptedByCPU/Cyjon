@@ -8,3 +8,6 @@ init_string_logo_end:
 
 init_program_shell	db	"/bin/shell"
 init_program_shell_end:
+
+init_string_error	db	STATIC_COLOR_ASCII_RED_LIGHT, "Error code: "
+init_string_error_end:
