@@ -34,6 +34,8 @@ struc	KERNEL_STRUCTURE_TASK
 	.knot				resb	8	; wskaźnik do supła katalogu roboczego procesu
 	.flags				resb	2	; flagi stanu procesu
 	.stack				resb	2	; rozmiar przestrzeni stosu w stronach
+	.length				resb	1	; ilość znaków w nazwie procesu
+	.name				resb	255	; nazwa procesu
 	.SIZE:
 endstruc
 

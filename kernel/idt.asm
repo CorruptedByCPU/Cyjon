@@ -109,47 +109,8 @@ kernel_idt_update:
 ;===============================================================================
 ; domyślna obsługa wyjątku procesora
 kernel_idt_exception_default:
-	; włącz tryb debugowania w kolejce zadań
-	mov	byte [kernel_task_debug_semaphore],	STATIC_STRUCTURE_BLOCK
-
-	; wyświetl komunikat
-	mov	ecx,	kernel_idt_string_exception_default_end - kernel_idt_string_exception_default
-	mov	rsi,	kernel_idt_string_exception_default
-	call	kernel_video_string
-
-	; wyświetl ostatnie 8 wartości z stosu kontekstu
-	mov	r8,	32
-
-	; w systemie szesnastkowym
-	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
-
-	; wypełnienie
-	mov	edx,	STATIC_ASCII_DIGIT_0
-
-	push	rsp
-
-.loop:
-	; pobierz wartość z stosu kontekstu
-	pop	rax
-	mov	ecx,	0x10	; wypełnij do 8 Bajtów
-	call	kernel_video_number
-
-	; przesuń kursor do nowej linii
-	mov	eax,	STATIC_ASCII_NEW_LINE
-	mov	ecx,	1
-	call	kernel_video_char
-
-	; następna wartość?
-	dec	r8
-	jnz	.loop	; tak
-
-	; przerwij pracę debugera Bochs
-	xchg	bx,bx
-
-	nop
-
-	; zatrzymaj dalsze wykonywanie kodu dla aktualnego procesu
-	jmp	$
+	; przełącz w tryb debugowania
+	jmp	kernel_debug
 
 	macro_debug	"kernel_idt_exception_default"
 
