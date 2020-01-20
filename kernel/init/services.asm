@@ -2,6 +2,12 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
+struc	KERNEL_INIT_STRUCTURE_SERVICE
+	.pointer	resb	8
+	.length		resb	1
+	.name:
+endstruc
+
 ;===============================================================================
 kernel_init_services:
 	; ustaw wskaźnik na początek listy usług do uruchomienia
@@ -28,7 +34,7 @@ kernel_init_services:
 	add	rdi,	KERNEL_PAGE_SIZE_byte - ( STATIC_QWORD_SIZE_byte * 0x05 )	; odłóż 5 rejestrów
 
 	; RIP
-	lodsq	; wskaźnik wejścia do usługi
+	mov	rax,	qword [rsi + KERNEL_INIT_STRUCTURE_SERVICE.pointer]	; wskaźnik wejścia do usługi
 	stosq
 
 	; CS, wszystkie usługi pracują w przestrzeni jądra systemu
@@ -60,8 +66,13 @@ kernel_init_services:
 
 	; dodaj usługę do kolejki zadań
 	mov	bx,	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_service | KERNEL_TASK_FLAG_secured
+	movzx	ecx,	byte [rsi + KERNEL_INIT_STRUCTURE_SERVICE.length]
+	add	rsi,	KERNEL_INIT_STRUCTURE_SERVICE.name
+	push	rcx	; zapamiętaj ilość znaków w nazwie procesu
 	call	kernel_task_add
 
 	; koniec tablicy?
+	pop	rcx	; przywróć ilość znaków nazwie procesu
+	add	rsi,	rcx
 	cmp	qword [rsi],	STATIC_EMPTY
 	jne	.loop	; nie

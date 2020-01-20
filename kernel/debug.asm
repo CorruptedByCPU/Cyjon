@@ -26,6 +26,9 @@ kernel_debug:
 	push	r14
 	push	r15
 
+	; włącz tryb debugowania w kolejce zadań dla Bochs
+	mov	byte [kernel_task_debug_semaphore],	STATIC_TRUE
+
 	; włącz spowrotem przerwania
 	sti
 

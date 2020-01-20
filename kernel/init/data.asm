@@ -2,6 +2,9 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
+kernel_init_string_name				db	KERNEL_name
+kernel_init_string_name_end:
+
 kernel_init_string_error_memory			db	"Init: Memory map, error."
 kernel_init_string_error_memory_end:
 kernel_init_string_error_memory_low		db	"Not enough memory."
@@ -52,6 +55,8 @@ kernel_init_apic_id_highest			db	STATIC_EMPTY
 
 kernel_init_services_list:
 				dq	service_tresher
+				db	7
+				db	"tresher"
 				; dq	service_tx
 				; dq	service_network
 				; dq	service_http

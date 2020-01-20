@@ -61,7 +61,7 @@ struc	KERNEL_VFS_STRUCTURE_KNOT
 	.flags						resb	2
 	.time_modified					resb	8
 	.length						resb	1
-	.name						resb	16
+	.name						resb	255
 	.SIZE:
 endstruc
 

@@ -229,6 +229,8 @@ kernel_task:
 ;===============================================================================
 ; wejście:
 ;	bx - flagi zadania
+;	cl - ilość znaków w nazwie procesu
+;	rsi - wskaźni do nazwy procesu
 ;	r11 - adres tablicy PML4 zadania
 ; wyjście:
 ;	Flaga CF, jeśli brak wolnego miejsca w kolejce
@@ -238,6 +240,7 @@ kernel_task_add:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rsi
+	push	rcx
 	push	rdi
 
 	; znajdź wolny wpis na liście zadań
@@ -270,6 +273,9 @@ kernel_task_add:
 	; ustaw PID zadania
 	mov	qword [rdi + KERNEL_STRUCTURE_TASK.pid],	rcx
 
+	; zwróć numer PID do procesu rodzica, pobierz ilość znaków w nazwie procesu
+	xchg	rcx,	qword [rsp + STATIC_QWORD_SIZE_byte]
+
 	; zachowaj w wpisie zadania, czas jego uruchomienia
 	mov	rax,	qword [driver_rtc_microtime]
 	mov	qword [rdi + KERNEL_STRUCTURE_TASK.time],	rax
@@ -283,12 +289,21 @@ kernel_task_add:
 	; zwróć wskaźnik do zadania
 	mov	qword [rsp],	rdi
 
+	; wstaw ilość znaków reprezentujących nazwę procesu
+	mov	byte [rdi + KERNEL_STRUCTURE_TASK.length],	cl
+
+	; zapisz nazwę procesu w wpisie
+	and	ecx,	STATIC_BYTE_mask
+	add	rdi,	KERNEL_STRUCTURE_TASK.name
+	rep	movsb
+
 	; flaga, sukces
 	clc
 
 .end:
 	; przywróć oryginalne rejestry
 	pop	rdi
+	pop	rcx
 	pop	rsi
 	pop	rax
 
@@ -425,7 +440,7 @@ kernel_task_pid_check:
 
 .next:
 	; znaleziono poszukiwany wpis??
-	cmp	dword [rdi + KERNEL_STRUCTURE_TASK.pid],	ecx
+	cmp	qword [rdi + KERNEL_STRUCTURE_TASK.pid],	rcx
 	je	.found	; tak
 
 .omit:

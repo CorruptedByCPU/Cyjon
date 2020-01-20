@@ -109,6 +109,8 @@ kernel_idt_update:
 ;===============================================================================
 ; domyślna obsługa wyjątku procesora
 kernel_idt_exception_default:
+	xchg	bx,bx
+
 	; przełącz w tryb debugowania
 	jmp	kernel_debug
 
