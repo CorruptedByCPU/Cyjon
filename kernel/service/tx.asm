@@ -11,7 +11,7 @@ service_tx_ipc_message:
 service_tx:
 	; pobierz własny PID
 	call	kernel_task_active
-	mov	rax,	qword [rdi + KERNEL_STRUCTURE_TASK.pid]
+	mov	rax,	qword [rdi + KERNEL_TASK_STRUCTURE.pid]
 
 	; udostepnij własny PID dla pozostałych procesów
 	mov	qword [service_tx_pid],	rax

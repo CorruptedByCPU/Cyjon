@@ -545,7 +545,7 @@ service_network_tcp_port_assign:
 
 	; pobierz PID procesu wywołującego
 	call	kernel_task_active
-	mov	rcx,	qword [rdi + KERNEL_STRUCTURE_TASK.pid]
+	mov	rcx,	qword [rdi + KERNEL_TASK_STRUCTURE.pid]
 
 	; załaduj do tablicy portów identyfikator właściciela (zarazem wyczyść flagi)
 	mov	rdi,	qword [service_network_port_table]

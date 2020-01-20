@@ -179,7 +179,7 @@ kernel_idt_interrupt_hardware:
 ; obsługa nieprawidłowego przerwania programowego
 kernel_idt_interrupt_software:
 	; zwróć informację o błędzie
-	or	word [rsp + KERNEL_STRUCTURE_TASK_IRETQ.eflags],	KERNEL_TASK_EFLAGS_cf
+	or	word [rsp + KERNEL_TASK_STRUCTURE_IRETQ.eflags],	KERNEL_TASK_EFLAGS_cf
 
 	; wróć do zadania
 	iretq

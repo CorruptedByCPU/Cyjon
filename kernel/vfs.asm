@@ -188,7 +188,7 @@ kernel_vfs_path_resolve:
 	call	kernel_task_active
 
 	; pobierz identyfikator/węzeł katalogu roboczego rodzica
-	mov	rdi,	qword [rdi + KERNEL_STRUCTURE_TASK.knot]
+	mov	rdi,	qword [rdi + KERNEL_TASK_STRUCTURE.knot]
 
 	; kontynuuj
 	jmp	.suffix

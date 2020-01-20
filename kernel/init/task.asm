@@ -55,7 +55,7 @@ kernel_init_task:
 	call	kernel_task_add
 
 	; ustaw katalog roboczy jądra systemu na /
-	mov	qword [rdi + KERNEL_STRUCTURE_TASK.knot],	kernel_vfs_magicknot
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.knot],	kernel_vfs_magicknot
 
 	;-----------------------------------------------------------------------
 	; podłącz procedurę obsługi przełączacznia aktywnego zadania

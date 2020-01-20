@@ -8,13 +8,13 @@ service_tresher:
 	call	service_tresher_search
 
 	; zapamiętaj adres tablicy PML4 procesu
-	mov	r11,	qword [rsi + KERNEL_STRUCTURE_TASK.cr3]
+	mov	r11,	qword [rsi + KERNEL_TASK_STRUCTURE.cr3]
 
 	; ustaw wskaźnik na podstawę przestrzeni stosu kontekstu
 	mov	rax,	KERNEL_MEMORY_HIGH_VIRTUAL_address
 
 	; pobierz rozmiar stosu wątku
-	movzx	ecx,	word [rsi + KERNEL_STRUCTURE_TASK.stack]
+	movzx	ecx,	word [rsi + KERNEL_TASK_STRUCTURE.stack]
 
 	; koryguj pozycję wskaźnika
 	mov	rbx,	rcx
@@ -25,7 +25,7 @@ service_tresher:
 	call	kernel_memory_release_foreign
 
 	; proces był wątkiem?
-	test	word [rsi + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_thread
+	test	word [rsi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_thread
 	jz	.pml4	; tak, brak przestrzeni kodu/danych
 
 	; zwolnij przestrzeń kodu/danych procesu
@@ -45,7 +45,7 @@ service_tresher:
 	dec	qword [kernel_page_paged_count]
 
 	; zwolnij wpis w kolejce zadań
-	mov	word [rsi + KERNEL_STRUCTURE_TASK.flags],	STATIC_EMPTY
+	mov	word [rsi + KERNEL_TASK_STRUCTURE.flags],	STATIC_EMPTY
 
 	; szukaj nowego procesu do zwolnienia
 	jmp	service_tresher
@@ -64,15 +64,15 @@ service_tresher_search:
 
 .restart:
 	; ilość wpisów na blok danych kolejki zadań
-	mov	rcx,	STATIC_STRUCTURE_BLOCK.link / KERNEL_STRUCTURE_TASK.SIZE
+	mov	rcx,	STATIC_STRUCTURE_BLOCK.link / KERNEL_TASK_STRUCTURE.SIZE
 
 .next:
 	; sprawdź flagę zamkniętego procesu
-	test	word [rsi + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_closed
+	test	word [rsi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_closed
 	jnz	.found
 
 	; przesuń wskaźnik na następny rekord
-	add	rsi,	KERNEL_STRUCTURE_TASK.SIZE
+	add	rsi,	KERNEL_TASK_STRUCTURE.SIZE
 
 	; szukaj dalej?
 	dec	rcx
