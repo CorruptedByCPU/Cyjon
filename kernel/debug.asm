@@ -7,47 +7,47 @@ kernel_debug_string_welcome_end:
 kernel_debug_string_process_name	db	STATIC_COLOR_ASCII_GRAY_LIGHT, "Process name: ", STATIC_COLOR_ASCII_WHITE
 kernel_debug_string_process_name_end:
 
-kernel_debug_string_rax			db	""
+kernel_debug_string_rax			db	"rax"
 kernel_debug_string_rax_end:
-kernel_debug_string_rbx			db	""
+kernel_debug_string_rbx			db	"rbx"
 kernel_debug_string_rbx_end:
-kernel_debug_string_rcx			db	""
+kernel_debug_string_rcx			db	"rcx"
 kernel_debug_string_rcx_end:
-kernel_debug_string_rdx			db	""
+kernel_debug_string_rdx			db	"rdx"
 kernel_debug_string_rdx_end:
-kernel_debug_string_rsi			db	""
+kernel_debug_string_rsi			db	"rsi"
 kernel_debug_string_rsi_end:
-kernel_debug_string_rdi			db	""
+kernel_debug_string_rdi			db	"rdi"
 kernel_debug_string_rdi_end:
-kernel_debug_string_rbp			db	""
+kernel_debug_string_rbp			db	"rbp"
 kernel_debug_string_rbp_end:
-kernel_debug_string_rsp			db	""
+kernel_debug_string_rsp			db	"rsp"
 kernel_debug_string_rsp_end:
-kernel_debug_string_r8			db	""
+kernel_debug_string_r8			db	"r8"
 kernel_debug_string_r8_end:
-kernel_debug_string_r9			db	""
+kernel_debug_string_r9			db	"r9"
 kernel_debug_string_r9_end:
-kernel_debug_string_r10			db	""
+kernel_debug_string_r10			db	"r10"
 kernel_debug_string_r10_end:
-kernel_debug_string_r11			db	""
+kernel_debug_string_r11			db	"r11"
 kernel_debug_string_r11_end:
-kernel_debug_string_r12			db	""
+kernel_debug_string_r12			db	"r12"
 kernel_debug_string_r12_end:
-kernel_debug_string_r13			db	""
+kernel_debug_string_r13			db	"r13"
 kernel_debug_string_r13_end:
-kernel_debug_string_r14			db	""
+kernel_debug_string_r14			db	"r14"
 kernel_debug_string_r14_end:
-kernel_debug_string_r15			db	""
+kernel_debug_string_r15			db	"r15"
 kernel_debug_string_r15_end:
-kernel_debug_string_eflags		db	""
+kernel_debug_string_eflags		db	"eflags"
 kernel_debug_string_eflags_end:
-kernel_debug_string_cr0			db	""
+kernel_debug_string_cr0			db	"cr0"
 kernel_debug_string_cr0_end:
-kernel_debug_string_cr2			db	""
+kernel_debug_string_cr2			db	"cr2"
 kernel_debug_string_cr2_end:
-kernel_debug_string_cr3			db	""
+kernel_debug_string_cr3			db	"cr3"
 kernel_debug_string_cr3_end:
-kernel_debug_string_cr4			db	""
+kernel_debug_string_cr4			db	"cr4"
 kernel_debug_string_cr4_end:
 
 ;===============================================================================
@@ -74,9 +74,6 @@ kernel_debug:
 	; włącz tryb debugowania w kolejce zadań dla Bochs
 	mov	byte [kernel_task_debug_semaphore],	STATIC_TRUE
 
-	; włącz spowrotem przerwania
-	sti
-
 	;-----------------------------------------------------------------------
 	; wyświetl informacje
 	mov	ecx,	kernel_debug_string_welcome_end - kernel_debug_string_welcome
@@ -85,7 +82,7 @@ kernel_debug:
 
 .any:
 	; pobierz klawisz z bufora klawiatury
-	call	driver_ps2_keyboard_read
+	call	driver_ps2_keyboard_pull
 	jz	.any	; brak, sprawdź raz jeszcze
 
 	; klawisz ESC?
