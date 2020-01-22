@@ -25,6 +25,7 @@ struc	KERNEL_DEBUG_STRUCTURE_PRESERVED
 	.r14				resb	8
 	.r15				resb	8
 	.eflags				resb	8
+	.SIZE:
 endstruc
 
 kernel_debug_string_welcome		db	STATIC_COLOR_ASCII_MAGENTA_LIGHT, "Press ESC key to enter GOD mode."
@@ -80,6 +81,9 @@ kernel_debug_string_cr3_end:
 kernel_debug_string_cr4			db	STATIC_ASCII_NEW_LINE, STATIC_COLOR_ASCII_GRAY_LIGHT, "cr4 ", STATIC_COLOR_ASCII_WHITE
 kernel_debug_string_cr4_end:
 
+kernel_debug_string_memory		db	STATIC_COLOR_ASCII_GRAY, "Address          Memory                                          Content", STATIC_COLOR_ASCII_GRAY_LIGHT, STATIC_ASCII_NEW_LINE
+kernel_debug_string_memory_end:
+
 ;===============================================================================
 ; wejście:
 ;	WSZYSTKO :)
@@ -106,7 +110,7 @@ kernel_debug:
 	call	kernel_video_cursor_disable
 
 	; włącz tryb debugowania w kolejce zadań dla Bochs
-	mov	byte [kernel_task_debug_semaphore],	STATIC_TRUE
+	; mov	byte [kernel_task_debug_semaphore],	STATIC_TRUE
 
 	;-----------------------------------------------------------------------
 	; wyświetl informacje
@@ -115,13 +119,13 @@ kernel_debug:
 	call	kernel_video_string
 
 .any:
-	; pobierz klawisz z bufora klawiatury
-	call	driver_ps2_keyboard_pull
-	jz	.any	; brak, sprawdź raz jeszcze
-
-	; klawisz ESC?
-	cmp	ax,	STATIC_ASCII_ESCAPE
-	jne	.any	; nie, czekaj dalej
+;	; pobierz klawisz z bufora klawiatury
+;	call	driver_ps2_keyboard_pull
+;	jz	.any	; brak, sprawdź raz jeszcze
+;
+;	; klawisz ESC?
+;	cmp	ax,	STATIC_ASCII_ESCAPE
+;	jne	.any	; nie, czekaj dalej
 
 	; wyczyść przestrzeń konsoli
 	call	kernel_video_drain
@@ -152,14 +156,139 @@ kernel_debug:
 	call	kernel_video_string
 
 	; wyświetl stan rejestrów
-	call	kernel_registers
+	call	kernel_debug_registers
+
+	; pobierz zawartość rejestru RIP podczas wygenerowanego błędu
+	mov	rsi,	qword [rsp + KERNEL_DEBUG_STRUCTURE_PRESERVED.SIZE]
+
+	; na stosie znajduje się kod błędu?
+	cmp	qword [rsp + KERNEL_DEBUG_STRUCTURE_PRESERVED.SIZE + KERNEL_TASK_STRUCTURE_IRETQ.cs],	KERNEL_STRUCTURE_GDT.cs_ring0
+	je	.rip	; nie
+
+	; spradź od strony procesu
+	cmp	qword [rsp + KERNEL_DEBUG_STRUCTURE_PRESERVED.SIZE + KERNEL_TASK_STRUCTURE_IRETQ.cs],	KERNEL_STRUCTURE_GDT.cs_ring3
+	je	.rip	; nie ma
+
+	; zawartość rejestru RIP znajduje się za kodem błędu
+	mov	rsi,	qword [rsp + KERNEL_DEBUG_STRUCTURE_PRESERVED.SIZE + STATIC_QWORD_SIZE_byte]
+
+.rip:
+	; wyświetl zawartość pamięci na podstawie adresu RIP procesu
+	call	kernel_debug_memory
 
 	jmp	$
 
 	macro_debug	"kernel_debug"
 
 ;===============================================================================
-kernel_registers:
+; wejście:
+;	rsi - początek rozpatrywanej przestrzeni pamięci
+kernel_debug_memory:
+	; zachowaj oryginalne rejestry
+	push	rsi
+
+	; wyświetl N wierszy przestrzeni pamięci po 16 Bajtów każdy
+	mov	r8,	0x10
+
+	; ustaw wirtualny wskaźnik kursora na miejsce
+	mov	dword [kernel_video_cursor.x],	STATIC_EMPTY
+	mov	dword [kernel_video_cursor.y],	18
+	call	kernel_video_cursor_set
+
+	; wyświetl nagłówek
+	mov	ecx,	kernel_debug_string_memory_end - kernel_debug_string_memory
+	mov	rsi,	kernel_debug_string_memory
+	call	kernel_video_string
+
+	; przywróć adres przestrzeni, wyrównany do 0x10 w dół
+	mov	rsi,	qword [rsp]
+	and	si,	STATIC_WORD_mask - STATIC_BYTE_LOW_mask
+
+.row:
+	; wyświetl adres pierwszego wiersza danych
+	mov	rax,	rsi
+	mov	bl,	STATIC_NUMBER_SYSTEM_hexadecimal
+	mov	ecx,	STATIC_QWORD_DIGIT_length
+	mov	edx,	STATIC_ASCII_DIGIT_0
+	call	kernel_video_number
+
+	; zapamiętaj początek wiersza
+	push	rsi
+
+	; wyświetl w postaci Bajtów, 16 kolumn
+	mov	r9,	16
+
+.memory:
+	; odstęp
+	mov	eax,	STATIC_ASCII_SPACE
+	mov	ecx,	0x01
+	call	kernel_video_char
+
+	; wyświetl wartość z pierwszej kolumny
+	lodsb
+	mov	cl,	0x02	; uzupełnienie do Bajta na ekranie
+	call	kernel_video_number
+
+	; koniec kolumn do przetworzenia?
+	dec	r9
+	jnz	.memory	; nie, następna
+
+	; odstęp
+	mov	eax,	STATIC_ASCII_SPACE
+	mov	ecx,	0x01
+	call	kernel_video_char
+
+	; przywróć adres początku przestrzeni wiersza
+	mov	rsi,	qword [rsp]
+
+	; wyświetl w postaci ASCII, 16 kolumn
+	mov	r9,	16
+
+.ascii:
+	; pobierz znak ASCII
+	lodsb
+
+	; znak drukowalny?
+	cmp	al,	STATIC_ASCII_SPACE
+	jb	.hidden	; nie
+	cmp	al,	STATIC_ASCII_TILDE
+	jb	.show	; tak
+
+.hidden:
+	; zamień niedrukowalny znak w "."
+	mov	al,	STATIC_ASCII_DOT
+
+.show:
+	; wyświetl znak ASCII
+	mov	cl,	0x01
+	call	kernel_video_char
+
+	; koniec kolumn do przetworzenia?
+	dec	r9
+	jnz	.ascii	; nie, następna
+
+	; przesuń kursor do następnego wiersza
+	mov	al,	STATIC_ASCII_NEW_LINE
+	call	kernel_video_char
+
+	; przywróć adres początku wiersza
+	pop	rsi
+
+	; przesuń do następnego wiersza danych
+	add	rsi,	0x10
+
+	; koniec wierszy danych pamięci?
+	dec	r8
+	jnz	.row	; nie, kontynuuj
+
+	; przywróć oryginalne rejestry
+	pop	rsi
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+kernel_debug_registers:
 	; ustaw wirtualny wskaźnik kursora na miejsce
 	mov	dword [kernel_video_cursor.x],	STATIC_EMPTY
 	mov	dword [kernel_video_cursor.y],	KERNEL_DEBUG_FLOW_offset
@@ -299,6 +428,7 @@ kernel_registers:
 	mov	ecx,	STATIC_QWORD_DIGIT_length
 	call	kernel_video_number
 
-	jmp	$
+	; powrót z procedury
+	ret
 
 	macro_debug	"kernel_registers"

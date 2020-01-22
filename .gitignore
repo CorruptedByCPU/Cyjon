@@ -1,5 +1,3 @@
-
-*.bat
 *.dll
 *.ini
 *.bxrc
@@ -10,3 +8,5 @@ eth_null-tx.log
 eth_null-txdump.txt
 *.lock
 insight.png
+bochs.bat
+qemu.bat

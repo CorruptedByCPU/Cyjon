@@ -52,6 +52,7 @@ STATIC_MOVE_HIGH_TO_AX_shift				equ	16
 STATIC_MOVE_HIGH_TO_EAX_shift				equ	32
 
 STATIC_BYTE_mask					equ	0xFF
+STATIC_BYTE_LOW_mask					equ	0x0F
 
 STATIC_BYTE_SIZE_byte					equ	0x01
 STATIC_WORD_SIZE_byte					equ	0x02
