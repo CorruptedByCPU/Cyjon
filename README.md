@@ -3,6 +3,7 @@
 Prosty i wielozadaniowy system operacyjny, napisany w języku asemblera dla procesorów z rodziny amd64/x86-64.
 
 ![screenshot](https://raw.githubusercontent.com/blackend/cyjon/master/cyjon.png)
+![screenshot](https://raw.githubusercontent.com/blackend/cyjon/master/debug.png)
 
 ### Wymagania:
 
