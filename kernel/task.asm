@@ -22,8 +22,8 @@ KERNEL_TASK_FLAG_processing_bit		equ	3
 KERNEL_TASK_FLAG_secured_bit		equ	4
 KERNEL_TASK_FLAG_thread_bit		equ	5
 
-KERNEL_TASK_STACK_address		equ	(KERNEL_MEMORY_HIGH_VIRTUAL_address << STATIC_MULTIPLE_BY_2_shift) - KERNEL_TASK_STACK_SIZE_byte
-KERNEL_TASK_STACK_SIZE_byte		equ	KERNEL_PAGE_SIZE_byte
+KERNEL_TASK_STACK_address		equ	(KERNEL_MEMORY_HIGH_VIRTUAL_address << STATIC_MULTIPLE_BY_2_shift) - (KERNEL_TASK_STACK_SIZE_page << STATIC_MULTIPLE_BY_PAGE_shift)
+KERNEL_TASK_STACK_SIZE_page		equ	1
 
 struc	KERNEL_TASK_STRUCTURE
 	.cr3				resb	8	; adres tablicy PML4 procesu
@@ -50,6 +50,9 @@ endstruc
 kernel_task_debug_semaphore		db	STATIC_FALSE
 
 kernel_task_address			dq	STATIC_EMPTY
+kernel_task_size_page			dq	KERNEL_TASK_STACK_SIZE_page
+kernel_task_count			dq	STATIC_EMPTY
+kernel_task_free			dq	((KERNEL_TASK_STACK_SIZE_page << STATIC_MULTIPLE_BY_PAGE_shift) - (KERNEL_TASK_STACK_SIZE_page << STATIC_MULTIPLE_BY_QWORD_shift)) / KERNEL_TASK_STRUCTURE.SIZE
 kernel_task_active_list			dq	STATIC_EMPTY
 
 kernel_task_pid_semaphore		db	STATIC_FALSE
@@ -323,6 +326,10 @@ kernel_task_queue:
 	push	rsi
 	push	rdi
 
+	; istnieją wolne rekordy w kolejce zadań?
+	cmp	qword [kernel_task_free],	STATIC_EMPTY
+	je	.error	; nie
+
 	; przeszukaj od początku kolejkę za wolnym rekordem
 	mov	rdi,	qword [kernel_task_address]
 
@@ -365,6 +372,9 @@ kernel_task_queue:
 	mov	rsi,	qword [kernel_task_address]
 	mov	qword [rdi + STATIC_STRUCTURE_BLOCK.link],	rsi
 
+	; rozmiar kolejki zadań rozszerzono o 1 stronę
+	inc	qword [kernel_task_size_page]
+
 	; w nowym bloku automatycznie znajduje się wolny wpis
 	jmp	.found
 
@@ -381,6 +391,12 @@ kernel_task_queue:
 	jmp	.end
 
 .found:
+	; ilość dostępnych rekordów w kolejce zadań
+	dec	qword [kernel_task_free]
+
+	; ilość zadań w kolejce
+	inc	qword [kernel_task_count]
+
 	; zwróć adres kolejki i wolnego wpisu
 	mov	qword [rsp],	rdi
 

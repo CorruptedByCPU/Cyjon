@@ -44,8 +44,16 @@ service_tresher:
 	; strona odzyskana z tablic stronicowania
 	dec	qword [kernel_page_paged_count]
 
+	xchg	bx,bx
+
 	; zwolnij wpis w kolejce zadań
 	mov	word [rsi + KERNEL_TASK_STRUCTURE.flags],	STATIC_EMPTY
+
+	; ilość zadań w kolejce
+	dec	qword [kernel_task_count]
+
+	; ilość dostępnych rekordów w kolejce zadań
+	inc	qword [kernel_task_free]
 
 	; szukaj nowego procesu do zwolnienia
 	jmp	service_tresher

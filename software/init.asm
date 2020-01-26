@@ -66,6 +66,8 @@ init:
 	pop	r8	; kod błędu
 	int	KERNEL_SERVICE
 
+	int	0x00
+
 	; zatrzymaj dalsze wykonywanie kodu programu
 	jmp	$
 

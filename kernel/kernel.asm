@@ -28,10 +28,6 @@ init:
 align	KERNEL_PAGE_SIZE_byte,	db	STATIC_NOTHING
 
 clean:
-	; debug
-	cli
-	int	0x00
-
 	; ; rozmiar przestrzeni inicjalizacyjnej
 	; mov	ecx,	clean - $$
 	; call	library_page_from_size	; w stronach
