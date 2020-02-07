@@ -121,20 +121,16 @@ kernel_memory_alloc:
 
 	; wykorzystaj zarezerwowaną stronę?
 	test	rbp,	rbp
-	jz	.empty	; nie
+	jz	.next	; nie
 
 	; ilość zarezerwowanych stron mniejszyła się
 	dec	rbp
 	dec	dword [kernel_page_reserved_count]
 
-	; kontynuuj
-	jmp	.next
-
-.empty:
+.next:
 	; ilość dostępnych stron zmiejszyła się
 	dec	qword [kernel_page_free_count]
 
-.next:
 	; następna strona
 	inc	rax
 
@@ -253,9 +249,11 @@ kernel_memory_release:
 
 ;===============================================================================
 ; wejście:
+;	rax - wskaźnik do początku przestrzeni
 ;	rcx - rozmiar przestrzeni w stronach
-;	rdi - wskaźnik do początku przestrzeni
 ;	r11 - wskaźnik do tablicy PML4 przestrzeni
+; wyjście:
+;	Flaga CF, jeśli nieoczekiwany koniec tablic stronicowania
 kernel_memory_release_foreign:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -351,6 +349,10 @@ kernel_memory_release_foreign:
 	mov	rcx,	qword [rsp]
 
 .pml1:
+	; brak zarejestrowanej strony?
+	cmp	qword [r8],	STATIC_EMPTY
+	je	.pml1_omit	; tak, pomiń
+
 	; zwolnij przestrzeń
 	mov	rdi,	qword [r8]
 	and	di,	KERNEL_PAGE_mask
@@ -359,6 +361,7 @@ kernel_memory_release_foreign:
 	; zwolnij wpis w tablicy PMLx
 	mov	qword [r8],	STATIC_EMPTY
 
+.pml1_omit:
 	; następny wpis tablicy tablicy PML1
 	add	r8,	STATIC_QWORD_SIZE_byte
 	inc	r12
@@ -382,7 +385,13 @@ kernel_memory_release_foreign:
 
 	; pobierz adres tablicy PML1
 	mov	r8,	qword [r9]
-	xor	r8b,	r8b	; usuń flagi
+
+	; brak tablicy PML1
+	test	r8,	r8
+	jz	.pml2	; tak, następny rekord
+
+	; usuń flagi
+	xor	r8b,	r8b
 
 	; wyczyść ilość przetworzonych wpisów
 	xor	r12,	r12
@@ -401,7 +410,13 @@ kernel_memory_release_foreign:
 
 	; pobierz adres tablicy PML2
 	mov	r9,	qword [r10]
-	xor	r9b,	r9b	; usuń flagi
+
+	; brak tablicy PML2?
+	test	r9,	r9
+	jz	.pml3	; tak, następny rekord
+
+	; usuń flagi
+	xor	r9b,	r9b
 
 	; wyczyść ilość przetworzonych wpisów
 	xor	r13,	r13
@@ -420,7 +435,13 @@ kernel_memory_release_foreign:
 
 	; pobierz adres tablicy PML3
 	mov	r10,	qword [r11]
-	xor	r10b,	r10b	; usuń flagi
+
+	; brak tablicy PML3?
+	test	r10,	r10
+	jz	.pml4	; tak, następny rekord
+
+	; usuń flagi
+	xor	r10b,	r10b
 
 	; wyczyść ilość przetworzonych wpisów
 	xor	r14,	r14
@@ -429,15 +450,8 @@ kernel_memory_release_foreign:
 	jmp	.pml3
 
 .pml5:
-	xchg	bx,bx
-
-	nop
-	nop
-	nop
-	nop
-
-	; zatrzymaj dalsze wykonywanie kodu
-	jmp	$
+	; flaga, błąd
+	stc
 
 .end:
 	; przywróć oryginalne rejestry

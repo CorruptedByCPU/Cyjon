@@ -26,13 +26,14 @@ init:
 	mov	rsi,	init_string_logo
 	int	KERNEL_SERVICE
 
+.exec:
 	; uruchom powłokę systemu
 	mov	ax,	KERNEL_SERVICE_PROCESS_run
 	mov	ecx,	init_program_shell_end - init_program_shell
 	xor	edx,	edx	; bez argumentów
 	mov	rsi,	init_program_shell
 	int	KERNEL_SERVICE
-	jc	.error	; błąd podczas uruchamiania procesu
+	jc	.exec	; błąd podczas uruchamiania procesu
 
 	; czekaj na zakończenie procesu
 	mov	ax,	KERNEL_SERVICE_PROCESS_check

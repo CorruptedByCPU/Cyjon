@@ -96,6 +96,19 @@ kernel_debug_string_separator_end:
 kernel_debug_string_page		db	STATIC_COLOR_ASCII_GRAY_LIGHT, "Pages (Total/Used/Free)", STATIC_COLOR_ASCII_WHITE, STATIC_ASCII_NEW_LINE
 kernel_debug_string_page_end:
 
+kernel_debug_assembly_table:
+	db	0x02,	0x00,	0x31,	0xC9,	0x0C,	"xor	ecx,	ecx"
+	db	0x02,	0x08,	0x48,	0xBE,	0x09,	"mov	rsi,	"
+	db	0x01,	0x01,	0x72,	0x04,	"jb	+"
+	db	0x01,	0x01,	0x73,	0x05,	"jnb	+"
+	db	0x01,	0x04,	0xB9,	0x09,	"mov	ecx,	"
+	db	0x01,	0x04,	0xBB,	0x09,	"mov	ebx,	"
+	db	0x01,	0x01,	0xCD,	0x04,	"int	"
+	db	0x01,	0x04,	0xE8,	0x05,	"call	"
+	db	0x01,	0x01,	0xEB,	0x05,	"jmp	-"
+	db	STATIC_EMPTY
+kernel_debug_assembly_table_end:
+
 ;===============================================================================
 ; wejście:
 ;	WSZYSTKO :)
@@ -198,6 +211,12 @@ kernel_debug:
 
 	macro_debug	"kernel_debug"
 
+kernel_debug_assembly:
+
+
+	; powrót z procedury
+	ret
+
 ;===============================================================================
 kernel_debug_page:
 	; ustaw kursor na pozycję
@@ -242,6 +261,8 @@ kernel_debug_page:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_debug_page"
 
 ;===============================================================================
 kernel_debug_task:
@@ -294,6 +315,8 @@ kernel_debug_task:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_debug_task"
+
 ;===============================================================================
 ; wejście:
 ;	rsi - początek rozpatrywanej przestrzeni pamięci
@@ -317,6 +340,8 @@ kernel_debug_memory:
 	; przywróć adres przestrzeni, wyrównany do 0x10 w dół
 	mov	rsi,	qword [rsp]
 	and	si,	STATIC_WORD_mask - STATIC_BYTE_LOW_mask
+
+mov	rsi,	qword [kernel_memory_map_address]
 
 .row:
 	; wyświetl adres pierwszego wiersza danych
@@ -400,6 +425,8 @@ kernel_debug_memory:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_debug_memory"
 
 ;===============================================================================
 kernel_debug_registers:
@@ -545,4 +572,4 @@ kernel_debug_registers:
 	; powrót z procedury
 	ret
 
-	macro_debug	"kernel_registers"
+	macro_debug	"kernel_debug_registers"

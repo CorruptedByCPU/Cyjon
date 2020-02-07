@@ -26,14 +26,12 @@ service_tresher:
 
 	; proces był wątkiem?
 	test	word [rsi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_thread
-	jz	.pml4	; tak, brak przestrzeni kodu/danych
+	jnz	.pml4	; tak, brak przestrzeni kodu/danych
 
-	; zwolnij przestrzeń kodu/danych procesu
-	mov	rbx,	4	; podstawowy poziom tablicy przetwarzanej
-	mov	rcx,	1	; ile pozostało rekordów w tablicy PML4 do zwolnienia
-	mov	rdi,	r11	; wskaźnik do tablicy PML4
-	add	rdi,	KERNEL_PAGE_SIZE_byte - (256 * STATIC_QWORD_SIZE_byte)	; wpis w tablicy PML4 reprezentujący przestrzeń kodu/danych procesu
-	call	kernel_page_release_pml.loop
+	; zwolnij przestrzeń kodu/danych procesu
+	mov	rax,	KERNEL_MEMORY_HIGH_VIRTUAL_address
+	xor	ecx,	ecx
+	call	kernel_memory_release_foreign
 
 .pml4:
 	; zwolnij przestrzeń tablicy PML4 wątku
@@ -43,8 +41,6 @@ service_tresher:
 
 	; strona odzyskana z tablic stronicowania
 	dec	qword [kernel_page_paged_count]
-
-	xchg	bx,bx
 
 	; zwolnij wpis w kolejce zadań
 	mov	word [rsi + KERNEL_TASK_STRUCTURE.flags],	STATIC_EMPTY
