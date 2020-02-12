@@ -22,10 +22,10 @@ KERNEL_TASK_FLAG_processing_bit		equ	3
 KERNEL_TASK_FLAG_secured_bit		equ	4
 KERNEL_TASK_FLAG_thread_bit		equ	5
 
-KERNEL_TASK_STACK_address		equ	(KERNEL_MEMORY_HIGH_VIRTUAL_address << STATIC_MULTIPLE_BY_2_shift) - KERNEL_TASK_STACK_SIZE_byte
-KERNEL_TASK_STACK_SIZE_byte		equ	KERNEL_PAGE_SIZE_byte
+KERNEL_TASK_STACK_address		equ	(KERNEL_MEMORY_HIGH_VIRTUAL_address << STATIC_MULTIPLE_BY_2_shift) - (KERNEL_TASK_STACK_SIZE_page << STATIC_MULTIPLE_BY_PAGE_shift)
+KERNEL_TASK_STACK_SIZE_page		equ	1
 
-struc	KERNEL_STRUCTURE_TASK
+struc	KERNEL_TASK_STRUCTURE
 	.cr3				resb	8	; adres tablicy PML4 procesu
 	.rsp				resb	8	; ostatni znany wskaźnik szczytu stosu kontekstu procesu
 	.cpu				resb	8	; identyfikator procesora logicznego, obsługującego w danym czasie proces
@@ -34,10 +34,12 @@ struc	KERNEL_STRUCTURE_TASK
 	.knot				resb	8	; wskaźnik do supła katalogu roboczego procesu
 	.flags				resb	2	; flagi stanu procesu
 	.stack				resb	2	; rozmiar przestrzeni stosu w stronach
+	.length				resb	1	; ilość znaków w nazwie procesu
+	.name				resb	255	; nazwa procesu
 	.SIZE:
 endstruc
 
-struc	KERNEL_STRUCTURE_TASK_IRETQ
+struc	KERNEL_TASK_STRUCTURE_IRETQ
 	.rip				resb	8
 	.cs				resb	8
 	.eflags				resb	8
@@ -48,6 +50,9 @@ endstruc
 kernel_task_debug_semaphore		db	STATIC_FALSE
 
 kernel_task_address			dq	STATIC_EMPTY
+kernel_task_size_page			dq	KERNEL_TASK_STACK_SIZE_page
+kernel_task_count			dq	STATIC_EMPTY
+kernel_task_free			dq	((KERNEL_TASK_STACK_SIZE_page << STATIC_MULTIPLE_BY_PAGE_shift) - (KERNEL_TASK_STACK_SIZE_page << STATIC_MULTIPLE_BY_QWORD_shift)) / KERNEL_TASK_STRUCTURE.SIZE
 kernel_task_active_list			dq	STATIC_EMPTY
 
 kernel_task_pid_semaphore		db	STATIC_FALSE
@@ -101,30 +106,30 @@ kernel_task:
 	FXSAVE64	[rbp]
 
 	; zachowaj w kolejce aktualny wskaźnik stosu kontekstu zadania
-	mov	qword [rdi + KERNEL_STRUCTURE_TASK.rsp],	rsp
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.rsp],	rsp
 
 	; zachowaj identyfikator procesora
 	push	rax
 
 	; zachowaj w kolejce adres tablicy PML4 zadania
 	mov	rax,	cr3
-	mov	qword [rdi + KERNEL_STRUCTURE_TASK.cr3],	rax
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.cr3],	rax
 
 	; usuń z zadania informacje o przydzielonym procesorze logicznym
-	mov	qword [rdi + KERNEL_STRUCTURE_TASK.cpu],	STATIC_EMPTY
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.cpu],	STATIC_EMPTY
 
 	; zwolnij zadanie (następny procesor logiczny będzie mógł je rozpocząć)
-	and	word [rdi + KERNEL_STRUCTURE_TASK.flags],	~KERNEL_TASK_FLAG_processing
+	and	word [rdi + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_processing
 
 	; przelicz adres pośredni zadania na numer zadania w kolejce
 	movzx	eax,	di
 	and	ax,	~KERNEL_PAGE_mask
-	mov	rcx,	KERNEL_STRUCTURE_TASK.SIZE
+	mov	rcx,	KERNEL_TASK_STRUCTURE.SIZE
 	xor	edx,	edx
 	div	rcx
 
 	; maksymalna ilość zadań w bloku kolejki
-	mov	ecx,	STATIC_STRUCTURE_BLOCK.link / KERNEL_STRUCTURE_TASK.SIZE
+	mov	ecx,	STATIC_STRUCTURE_BLOCK.link / KERNEL_TASK_STRUCTURE.SIZE
 
 	; oblicz ilość rekordów do końca bloku kolejki
 	sub	rcx,	rax
@@ -142,7 +147,7 @@ kernel_task:
 
 .ap_entry:
 	; zresetuj ilość zadań w kolejce
-	mov	ecx,	STATIC_STRUCTURE_BLOCK.link / KERNEL_STRUCTURE_TASK.SIZE
+	mov	ecx,	STATIC_STRUCTURE_BLOCK.link / KERNEL_TASK_STRUCTURE.SIZE
 
 	; sprawdź pierwsze zadanie w kolejki
 	jmp	.check
@@ -153,39 +158,39 @@ kernel_task:
 	jz	.block	; nie
 
 	; przesuń wskaźnik na następne zadanie
- 	add	rdi,	KERNEL_STRUCTURE_TASK.SIZE
+ 	add	rdi,	KERNEL_TASK_STRUCTURE.SIZE
 
 .check:
 	; czy wpis jest pusty?
-	test	word [rdi + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_secured
+	test	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_secured
 	jz	.next	; tak
 
 	; czy wpis jest już obsługiwany przez inny procesor logiczny?
-	lock	bts	word [rdi + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_processing_bit
+	lock	bts	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_processing_bit
 	jc	.next	; tak, sprawdź następne zadanie
 
 	; czy wpis jest aktywny?
-	test	word [rdi + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_active
+	test	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active
 	jnz	.active	; tak
 
 	; proces jest uśpiony lub w trakcie zamykania
 
 	; zwolnij dostęp do procesu
-	and	word [rdi + KERNEL_STRUCTURE_TASK.flags],	~KERNEL_TASK_FLAG_processing
+	and	word [rdi + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_processing
 
 	; szukaj dalej
 	jmp	.next
 
 .active:
 	; zachowaj informacje w wpisie o procesorze logicznym przetwarzającym zadanie
-	mov	qword [rdi + KERNEL_STRUCTURE_TASK.cpu],	rax
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.cpu],	rax
 
 	; zachowaj nowy adres aktywnego zadania dla danego procesora logicznego
 	mov	qword [rsi + rbx],	rdi
 
 	; załaduj wskaźnik stosu kontekstu przywracanego zadania i adres tablicy PML4
-	mov	rsp,	qword [rdi + KERNEL_STRUCTURE_TASK.rsp]
-	mov	rax,	qword [rdi + KERNEL_STRUCTURE_TASK.cr3]
+	mov	rsp,	qword [rdi + KERNEL_TASK_STRUCTURE.rsp]
+	mov	rax,	qword [rdi + KERNEL_TASK_STRUCTURE.cr3]
 	mov	cr3,	rax
 
 	; przywróć rejestry "zmiennoprzecinkowe"
@@ -227,6 +232,8 @@ kernel_task:
 ;===============================================================================
 ; wejście:
 ;	bx - flagi zadania
+;	cl - ilość znaków w nazwie procesu
+;	rsi - wskaźni do nazwy procesu
 ;	r11 - adres tablicy PML4 zadania
 ; wyjście:
 ;	Flaga CF, jeśli brak wolnego miejsca w kolejce
@@ -236,6 +243,7 @@ kernel_task_add:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rsi
+	push	rcx
 	push	rdi
 
 	; znajdź wolny wpis na liście zadań
@@ -246,40 +254,51 @@ kernel_task_add:
 	push	rdi
 
 	; zapisz adres tablicy PML4 zadania
-	mov	qword [rdi + KERNEL_STRUCTURE_TASK.cr3],	r11
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.cr3],	r11
 
 	; zapisz spreparowany wskaźnik szczytu stosu kontekstu zadania
 	mov	rax,	KERNEL_STACK_pointer - (STATIC_QWORD_SIZE_byte * 0x14)
-	mov	qword [rdi + KERNEL_STRUCTURE_TASK.rsp],	rax
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.rsp],	rax
 
 	; pobierz katalog roboczy rodzica
 	call	kernel_task_active
-	mov	rax,	qword [rdi + KERNEL_STRUCTURE_TASK.knot]
+	mov	rax,	qword [rdi + KERNEL_TASK_STRUCTURE.knot]
 
 	; przywróć wskaźnik pozycji zadania w kolejce
 	pop	rdi
 
 	; ustaw katalog roboczy procesu na podstawie rodzica
-	mov	qword [rdi + KERNEL_STRUCTURE_TASK.knot],	rax
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.knot],	rax
 
 	; pobierz unikalny numer PID
 	call	kernel_task_pid_get
 
 	; ustaw PID zadania
-	mov	qword [rdi + KERNEL_STRUCTURE_TASK.pid],	rcx
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.pid],	rcx
+
+	; zwróć numer PID do procesu rodzica, pobierz ilość znaków w nazwie procesu
+	xchg	rcx,	qword [rsp + STATIC_QWORD_SIZE_byte]
 
 	; zachowaj w wpisie zadania, czas jego uruchomienia
 	mov	rax,	qword [driver_rtc_microtime]
-	mov	qword [rdi + KERNEL_STRUCTURE_TASK.time],	rax
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.time],	rax
 
 	; aktualizuj flagi zadania
-	or	word [rdi + KERNEL_STRUCTURE_TASK.flags],	bx
+	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	bx
 
 	; domyślny rozmiar stosu
-	mov	word [rdi + KERNEL_STRUCTURE_TASK.stack],	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
+	mov	word [rdi + KERNEL_TASK_STRUCTURE.stack],	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 
 	; zwróć wskaźnik do zadania
 	mov	qword [rsp],	rdi
+
+	; wstaw ilość znaków reprezentujących nazwę procesu
+	mov	byte [rdi + KERNEL_TASK_STRUCTURE.length],	cl
+
+	; zapisz nazwę procesu w wpisie
+	and	ecx,	STATIC_BYTE_mask
+	add	rdi,	KERNEL_TASK_STRUCTURE.name
+	rep	movsb
 
 	; flaga, sukces
 	clc
@@ -287,6 +306,7 @@ kernel_task_add:
 .end:
 	; przywróć oryginalne rejestry
 	pop	rdi
+	pop	rcx
 	pop	rsi
 	pop	rax
 
@@ -306,20 +326,24 @@ kernel_task_queue:
 	push	rsi
 	push	rdi
 
+	; istnieją wolne rekordy w kolejce zadań?
+	cmp	qword [kernel_task_free],	STATIC_EMPTY
+	je	.error	; nie
+
 	; przeszukaj od początku kolejkę za wolnym rekordem
 	mov	rdi,	qword [kernel_task_address]
 
 .restart:
 	; ilość wpisów na blok danych kolejki zadań
-	mov	rcx,	STATIC_STRUCTURE_BLOCK.link / KERNEL_STRUCTURE_TASK.SIZE
+	mov	rcx,	STATIC_STRUCTURE_BLOCK.link / KERNEL_TASK_STRUCTURE.SIZE
 
 .next:
 	; wpis wolny?
-	lock	bts word [rdi + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_secured_bit
+	lock	bts word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_secured_bit
 	jnc	.found	; tak
 
 	; prdesuń wskaźnik na następny wpis
-	add	rdi,	KERNEL_STRUCTURE_TASK.SIZE
+	add	rdi,	KERNEL_TASK_STRUCTURE.SIZE
 
 	; pozostały wpisy w bloku?
 	dec	rcx
@@ -348,6 +372,9 @@ kernel_task_queue:
 	mov	rsi,	qword [kernel_task_address]
 	mov	qword [rdi + STATIC_STRUCTURE_BLOCK.link],	rsi
 
+	; rozmiar kolejki zadań rozszerzono o 1 stronę
+	inc	qword [kernel_task_size_page]
+
 	; w nowym bloku automatycznie znajduje się wolny wpis
 	jmp	.found
 
@@ -364,6 +391,12 @@ kernel_task_queue:
 	jmp	.end
 
 .found:
+	; ilość dostępnych rekordów w kolejce zadań
+	dec	qword [kernel_task_free]
+
+	; ilość zadań w kolejce
+	inc	qword [kernel_task_count]
+
 	; zwróć adres kolejki i wolnego wpisu
 	mov	qword [rsp],	rdi
 
@@ -419,16 +452,16 @@ kernel_task_pid_check:
 
 .restart:
 	; ilość wpisów na blok danych kolejki zadań
-	mov	rax,	STATIC_STRUCTURE_BLOCK.link / KERNEL_STRUCTURE_TASK.SIZE
+	mov	rax,	STATIC_STRUCTURE_BLOCK.link / KERNEL_TASK_STRUCTURE.SIZE
 
 .next:
 	; znaleziono poszukiwany wpis??
-	cmp	dword [rdi + KERNEL_STRUCTURE_TASK.pid],	ecx
+	cmp	qword [rdi + KERNEL_TASK_STRUCTURE.pid],	rcx
 	je	.found	; tak
 
 .omit:
 	; prdesuń wskaźnik na następny wpis
-	add	rdi,	KERNEL_STRUCTURE_TASK.SIZE
+	add	rdi,	KERNEL_TASK_STRUCTURE.SIZE
 
 	; pozostały wpisy w bloku?
 	dec	rax
@@ -453,11 +486,11 @@ kernel_task_pid_check:
 
 .found:
 	; proces zamknięty?
-	cmp	byte [rdi + KERNEL_STRUCTURE_TASK.flags],	STATIC_EMPTY
+	cmp	byte [rdi + KERNEL_TASK_STRUCTURE.flags],	STATIC_EMPTY
 	je	.omit	; tak
 
 	; proces jest zamknięty?
-	bt	word [rdi + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_closed_bit
+	bt	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_closed_bit
 
 .end:
 	; przywróć oryginalne rejestry
@@ -481,7 +514,7 @@ kernel_task_active_pid:
 	call	kernel_task_active
 
 	; zwróć PID procesu
-	mov	rax,	qword [rdi + KERNEL_STRUCTURE_TASK.pid]
+	mov	rax,	qword [rdi + KERNEL_TASK_STRUCTURE.pid]
 
 	; przywróć oryginalne rejestry
 	pop	rdi
@@ -526,8 +559,8 @@ kernel_task_kill:
 	call	kernel_task_active
 
 	; oznacz wątek jako zakończony
-	and	word [rdi + KERNEL_STRUCTURE_TASK.flags],	~KERNEL_TASK_FLAG_active
-	or	word [rdi + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_closed
+	and	word [rdi + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_active
+	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_closed
 
 	; zatrzymaj dalsze wykonywanie kodu wątku
 	jmp	$

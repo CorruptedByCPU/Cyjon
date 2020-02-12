@@ -18,7 +18,7 @@ service_network:
 
 	; pobierz własny PID
 	call	kernel_task_active
-	mov	rax,	qword [rdi + KERNEL_STRUCTURE_TASK.pid]
+	mov	rax,	qword [rdi + KERNEL_TASK_STRUCTURE.pid]
 
 	; zachowaj informacje o własnym PID dla pozostałych procesów
 	mov	qword [service_network_pid],	rax

@@ -37,7 +37,7 @@ kernel_ipc_insert:
 
 	; pobierz PID procesu wywołującego
 	call	kernel_task_active
-	mov	rdx,	qword [rdi + KERNEL_STRUCTURE_TASK.pid]
+	mov	rdx,	qword [rdi + KERNEL_TASK_STRUCTURE.pid]
 
 	; uzyskaj dostęp do listy komunikatów
 	macro_close	kernel_ipc_semaphore, 0
@@ -149,7 +149,7 @@ kernel_ipc_receive:
 
 	; pobierz PID procesu wywołującego
 	call	kernel_task_active
-	mov	rax,	qword [rdi + KERNEL_STRUCTURE_TASK.pid]
+	mov	rax,	qword [rdi + KERNEL_TASK_STRUCTURE.pid]
 
 	; ilość dostępnych wpisów na liście
 	mov	rcx,	KERNEL_IPC_ENTRY_limit

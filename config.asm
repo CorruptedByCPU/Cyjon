@@ -52,6 +52,7 @@ STATIC_MOVE_HIGH_TO_AX_shift				equ	16
 STATIC_MOVE_HIGH_TO_EAX_shift				equ	32
 
 STATIC_BYTE_mask					equ	0xFF
+STATIC_BYTE_LOW_mask					equ	0x0F
 
 STATIC_BYTE_SIZE_byte					equ	0x01
 STATIC_WORD_SIZE_byte					equ	0x02
@@ -65,6 +66,8 @@ STATIC_QWORD_mask					equ	0xFFFFFFFF00000000
 STATIC_BYTE_BIT_sign					equ	7
 STATIC_WORD_BIT_sign					equ	15
 STATIC_QWORD_BIT_sign					equ	63
+
+STATIC_QWORD_DIGIT_length				equ	16
 
 STATIC_ASCII_TERMINATOR					equ	0x0000
 STATIC_ASCII_BACKSPACE					equ	0x0008

@@ -61,7 +61,7 @@ struc	KERNEL_VFS_STRUCTURE_KNOT
 	.flags						resb	2
 	.time_modified					resb	8
 	.length						resb	1
-	.name						resb	16
+	.name						resb	255
 	.SIZE:
 endstruc
 
@@ -188,7 +188,7 @@ kernel_vfs_path_resolve:
 	call	kernel_task_active
 
 	; pobierz identyfikator/węzeł katalogu roboczego rodzica
-	mov	rdi,	qword [rdi + KERNEL_STRUCTURE_TASK.knot]
+	mov	rdi,	qword [rdi + KERNEL_TASK_STRUCTURE.knot]
 
 	; kontynuuj
 	jmp	.suffix

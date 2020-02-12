@@ -214,13 +214,15 @@ kernel_video_cursor_set:
 	; oblicz pozycję kursora w znakach
 	mov	eax,	dword [kernel_video_cursor.y]
 	mul	qword [kernel_video_scanline_char]
-	mov	edx,	dword [kernel_video_cursor.x]
-	shl	rdx,	KERNEL_VIDEO_DEPTH_shift
-	add	rdx,	rax
+	push	rax	; zapamiętaj
+	mov	eax,	dword [kernel_video_cursor.x]
+	mul	qword [kernel_font_width_byte]
+	add	qword [rsp],	rax
+	pop	rax	; zwróć wynik
 
 	; zapisz nową pozycję wskaźnika w przestrzeni pamięci karty graficznej
-	add	rdx,	qword [kernel_video_framebuffer]
-	mov	qword [kernel_video_pointer],	rdx
+	add	rax,	qword [kernel_video_framebuffer]
+	mov	qword [kernel_video_pointer],	rax
 
 	; przywróć oryginalne rejestry
 	pop	rdx

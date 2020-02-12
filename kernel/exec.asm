@@ -109,6 +109,8 @@ kernel_exec:
 
 	; wstaw proces do kolejki zadań
 	mov	ebx,	KERNEL_TASK_FLAG_active
+	movzx	ecx,	byte [rsi + KERNEL_VFS_STRUCTURE_KNOT.length]
+	add	rsi,	KERNEL_VFS_STRUCTURE_KNOT.name
 	call	kernel_task_add
 	jc	.error
 
@@ -118,6 +120,9 @@ kernel_exec:
 
 	; zwróć numer PID utworzonego zadania
 	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rcx
+
+	; koniec obsługi procedury
+	jmp	.end
 
 .error:
 	; zwróć kod błędu
