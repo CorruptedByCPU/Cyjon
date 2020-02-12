@@ -65,19 +65,34 @@ kernel_service:
 
 ;-------------------------------------------------------------------------------
 .process_run:
+	; zachowaj oryginalne rejestry
+	push	rsi
+	push	rdi
+	push	rcx
+
+	; kod błędu, brak
+	xor	eax,	eax
+
 	; rozwiąż ścieżkę do programu
 	call	kernel_vfs_path_resolve
-	jc	.process_run_error	; błąd, niepoprawna ścieżka
+	jc	.process_run_end	; błąd, niepoprawna ścieżka
 
 	; odszukaj program w danym katalogu
 	call	kernel_vfs_file_find
-	jc	.process_run_error	; błąd, pliku nie znaleziono
+	jc	.process_run_end	; błąd, pliku nie znaleziono
 
 	; uruchom program
 	call	kernel_exec
-	jnc	kernel_service.end	; uruchomiono
 
-.process_run_error:
+	; zwróć identyfikator uruchomionego procesu
+	mov	qword [rsp],	rcx
+
+.process_run_end:
+	; przywróć oryginalne rejestry
+	pop	rcx
+	pop	rdi
+	pop	rsi
+
 	; zwróć kod błędu
 	mov	qword [rsp],	rax
 
@@ -198,13 +213,13 @@ kernel_service:
 	call	kernel_vfs_file_find
 
 .vfs_exist_not:
-	; zwróć kod błędu
-	mov	qword [rsp],	rax
-
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rsi
 	pop	rcx
+
+	; zwróć kod błędu
+	mov	qword [rsp],	rax
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
