@@ -21,9 +21,6 @@
 
 ;===============================================================================
 shell:
-	xor	ax,	ax
-	int	KERNEL_SERVICE
-
 	; domyślnie, znak zachęty od nowej linii
 	mov	ecx,	shell_string_prompt_end - shell_string_prompt_with_new_line
 	mov	rsi,	shell_string_prompt_with_new_line

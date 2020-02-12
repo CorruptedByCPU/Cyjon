@@ -25,145 +25,37 @@ kernel_page_paged_count		dq	STATIC_EMPTY
 
 ;===============================================================================
 ; wejście:
-;	r11 - wskaźnik do tablicy PML4
-kernel_page_purge:
+;	rdi - wskaźnik do strony
+; wyjście:
+;	Flaga ZF - jeśli pusta
+kernel_page_empty:
 	; zachowaj oryginalne rejestry
-	push	rbx
-	push	rcx
-	push	rdi
-
-	; aktualny poziom tablicy
-	mov	bl,	0x04
-
-	; ustaw wskaźnik na przestrzeń tablicy PML4
-	mov	rdi,	r11
-
-.recursion:
-	; zchodzimy poziom niżej
-	dec	bl
-
-	; zachowaj licznik przetworzonych wpisów poprzedniej tablicy PMLx
+	push	rax
 	push	rcx
 
-	; tablica pusta?
-	call	kernel_page_purge.table
-	jnc	.purge	; tak
+	; wyczyść akumulator
+	xor	eax,	eax
 
-	; znajdujemy się w najniższym poziomie PMLx?
-	test	bl,	bl
-	jz	.continue	; tak
-
-	; ilość wpisów na tablicę
-	mov	ecx,	KERNEL_PAGE_RECORDS_amount
+	; ilość rekordów do sprawdzenia
+	mov	ecx,	KERNEL_PAGE_RECORDS_amount - 0x01
 
 .loop:
-	; wpis w tablicy PMLx?
-	cmp	qword [rdi],	STATIC_EMPTY
-	je	.empty	; nie
+	; pobierz zawartość rekordu
+	or	rax,	qword [rdi + rcx * STATIC_QWORD_SIZE_byte]
 
-	; zachowaj wskaźnik wpisu w aktualnej tablicy PMLx
-	push	rdi
+	; koniec zliczania?
+	dec	cx
+	jns	.loop	; nie
 
-	; pobierz wskaźnik następnej tablicy PMLx
-	mov	rdi,	qword [rdi]
-	and	di,	KERNEL_PAGE_mask	; usuń flagi tablicy
+	; strona pusta?
+	test	rax,	rax
 
-	; przetwórz następny poziom tablicy PMLx
-	call	kernel_page_purge.recursion
-
-	; przywróć wskaźnik wpisu w aktualnej tablicy PMLx
-	pop	rdi
-
-.empty:
-	;  następny wpis w tablicy PMLx
-	add	rdi,	STATIC_QWORD_SIZE_byte
-
-	; koniec aktualnej tablicy?
-	dec	ecx
-	jnz	.loop	; nie
-
-.continue:
-	; przywróć licznik przetworzonych wpisów poprzedniej tablicy PMLx
-	pop	rcx
-
-	; wchodzimy poziom wyżej
-	inc	bl
-
-	; przetworzono całą tablice PML4?
-	cmp	bl,	0x04
-	je	.end	; tak
-
-	; porót z podprocedury
-	ret
-
-.purge:
-	; tablica najwyższego poziomu?
-	test	rdi,	r11
-	jz	.end	; tak, koniec procedury
-
-	; zwolnij przestrzeń tablicy PMLx
-	call	kernel_memory_release_page
-
-	; zwolnij wpis w poprzedniej tablicy PMLx
-	mov	rdi,	qword [rsp + STATIC_QWORD_SIZE_byte * 0x02]
-	mov	qword [rdi],	STATIC_EMPTY
-
-	; kontynuuj
-	jmp	.continue
-
-.end:
 	; przywróć oryginalne rejestry
-	pop	rdi
 	pop	rcx
-	pop	rbx
+	pop	rax
 
 	; powrót z procedury
 	ret
-
-;-------------------------------------------------------------------------------
-; wejście:
-;	rdi - wskaźnik do początku przestrzeni tablicy PMLx
-; wyjście:
-;	Flaga CF, jeśli tablica nie jest pusta
-.table:
-	; zachowaj oryginalne rejestry
-	push	rcx
-	push	rdi
-
-	; ilość wpisów na tablicę
-	mov	ecx,	KERNEL_PAGE_RECORDS_amount
-
-.table_check:
-	; tablica pusta?
-	cmp	qword [rdi],	STATIC_EMPTY
-	jne	.table_not_empty
-
-	; przesuń wskaźnik na następny wpis
-	add	rdi,	STATIC_QWORD_SIZE_byte
-
-	; następny wpis?
-	dec	ecx
-	jnz	.table_check	; tak
-
-	; sukces
-	clc
-
-	; koniec podprocedury
-	jmp	.table_end
-
-.table_not_empty:
-	; błąd
-	stc
-
-.table_end:
-	; przywróć oryginalne rejestry
-	pop	rdi
-	pop	rcx
-
-	; powrót z podprocedury
-	ret
-
-	macro_debug	"kernel_page_purge"
 
 ;===============================================================================
 ; wejście:
@@ -956,96 +848,3 @@ kernel_page_secure:
 	ret
 
 	macro_debug	"kernel_page_secure"
-
-;===============================================================================
-; wejście:
-;	rbx - poziom tablicy PML rozpoczynający
-;	rcx - ilość rekordów do zwolnienia z tablicy PML4
-;	rdi - wskaźnik do pierwszego rekordu tablicy PML4
-kernel_page_release_pml:
-	; wejdź do następnego poziomu tablicy PML
-	dec	rbx
-	mov	rcx,	KERNEL_PAGE_RECORDS_amount	; ilość rekordów do zwolnienia w następnym poziomie tablicy PML
-
-	; aktualna tablica PML1?
-	cmp	rbx,	0x01
-	je	.continue	; jeśli tak, kontynuuj
-
-.loop:
-	; zachowaj oryginalne rejestry
-	push	rcx
-	push	rdi
-
-	; sprawdź czy rekord jest pusty
-	cmp	qword [rdi],	STATIC_EMPTY
-	je	.empty	; tak, pomiń
-
-	; pobierz adres tablicy następnego poziomu tablicy PML
-	mov	rdi,	qword [rdi]
-	and	di,	KERNEL_PAGE_mask	; usuń flagi z adres następnej tablicy PML
-
-	; zapamiętaj adres nowej tablicy PML
-	push	rdi
-
-	; rekurencja, do czasu wejścia do tablicy PML1
-	call	kernel_page_release_pml
-
-	; przywróć adres tablicy PML aktualnie przetwarzanego rekordu
-	pop	rdi
-
-	; zwolnij tablicę z stronicowania
-	call	kernel_memory_release_page
-
-	; strona odzyskana z tablic stronicowania
-	dec	qword [kernel_page_paged_count]
-
-	; wróć do poprzedniego poziomu tablicy PML
-	inc	rbx
-
-.empty:
-	; przywróć oryginalne rejestry
-	pop	rdi
-	pop	rcx
-
-	; następny rekord aktualnej tablicy PML
-	add	rdi,	STATIC_QWORD_SIZE_byte
-
-	; przeszukaj kolejne rekordy
-	dec	rcx
-	jnz	.loop
-
-.end:
-	; powrót z procedury
-	ret
-
-.continue:
-	; sprawdź czy rekord jest pusty
-	cmp	qword [rdi],	STATIC_EMPTY
-	jne	.after	; jeśli nie, zwolnij przestrzeń opisywaną przez rekord
-
-.next:
-	add	rdi,	STATIC_QWORD_SIZE_byte	; następny rekord
-	dec	rcx
-	jnz	.continue
-
-	; powrót z procedury
-	ret
-
-.after:
-	; zachowaj oryginalny rejestr
-	push	rdi
-
-	; pobierz adres przestrzeni do zwolnienia
-	mov	rdi,	qword [rdi]
-	and	di,	KERNEL_PAGE_mask	; usuń flagi
-
-	; wyczyść i zwolnij przestrzeń
-	call	kernel_memory_release_page
-
-	;przywróć oryginalny rejestr
-	pop	rdi
-
-	; przetwórz następny rekord
-	jmp	.next
-
-	macro_debug	"kernel_page_release_pml1"

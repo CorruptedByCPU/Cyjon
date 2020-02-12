@@ -17,11 +17,11 @@ service_tresher:
 	movzx	ecx,	word [rsi + KERNEL_TASK_STRUCTURE.stack]
 
 	; koryguj pozycję wskaźnika
-	mov	rbx,	rcx
-	shl	rbx,	KERNEL_PAGE_SIZE_shift
-	sub	rax,	rbx
+	shl	rcx,	KERNEL_PAGE_SIZE_shift
+	sub	rax,	rcx
 
 	; zwolnij przestrzeń stosu kontekstu wątku
+	shr	rcx,	KERNEL_PAGE_SIZE_shift
 	call	kernel_memory_release_foreign
 
 	; proces był wątkiem?
@@ -30,13 +30,12 @@ service_tresher:
 
 	; zwolnij przestrzeń kodu/danych procesu
 	mov	rax,	KERNEL_MEMORY_HIGH_VIRTUAL_address
-	xor	ecx,	ecx
+	mov	rcx,	STATIC_MAX_unsigned	; do końca przestrzeni pamięci logicznej
 	call	kernel_memory_release_foreign
 
 .pml4:
 	; zwolnij przestrzeń tablicy PML4 wątku
 	mov	rdi,	r11
-	; call	kernel_page_purge	; zwalnia przestrzeń, którą zajmują puste tablice
 	call	kernel_memory_release_page	; zwolnij przestrzeń tablicy PML4
 
 	; strona odzyskana z tablic stronicowania

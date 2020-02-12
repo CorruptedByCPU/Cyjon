@@ -23,9 +23,6 @@ kernel_exec:
 	push	rcx
 	push	rdi
 
-	xchg	bx,bx
-	mov	rax,	qword [kernel_page_free_count]
-
 	; oblicz ilość stron niezbędnych do załadowania pliku do pamięci
 	mov	rcx,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.size]
 	call	library_page_from_size
@@ -123,9 +120,6 @@ kernel_exec:
 
 	; zwróć numer PID utworzonego zadania
 	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rcx
-
-	xchg	bx,bx
-	mov	rax,	qword [kernel_page_free_count]
 
 	; koniec obsługi procedury
 	jmp	.end

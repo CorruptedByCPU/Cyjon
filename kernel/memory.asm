@@ -349,6 +349,10 @@ kernel_memory_release_foreign:
 	mov	rcx,	qword [rsp]
 
 .pml1:
+	; koniec przetwarzania?
+	test	rcx,	rcx
+	jz	.end	; tak
+
 	; brak zarejestrowanej strony?
 	cmp	qword [r8],	STATIC_EMPTY
 	je	.pml1_omit	; tak, pomiń
@@ -362,17 +366,29 @@ kernel_memory_release_foreign:
 	mov	qword [r8],	STATIC_EMPTY
 
 .pml1_omit:
+	; "zwolniono" stronę z przestrzeni
+	dec	rcx
+
 	; następny wpis tablicy tablicy PML1
 	add	r8,	STATIC_QWORD_SIZE_byte
 	inc	r12
 
-	; koniec przetwarzania?
-	dec	rcx
-	jz	.end	; tak
-
 	; koniec tablicy PML1
 	cmp	r12,	KERNEL_PAGE_RECORDS_amount
 	jne	.pml1	; nie
+
+.pml2_entry:
+	; aktualna tablica PML1 jest pusta?
+	mov	rdi,	qword [r9]
+	and	di,	KERNEL_PAGE_mask
+	call	kernel_page_empty
+	jnz	.pml2	; nie
+
+	; zwolnij przestrzeń tablicy
+	call	kernel_memory_release_page
+
+	; usuń rekord z tablicy PML2
+	mov	qword [r9],	STATIC_EMPTY
 
 .pml2:
 	; następny wpis w tablicy PML2
@@ -381,8 +397,9 @@ kernel_memory_release_foreign:
 
 	; koniec tablicy PML2?
 	cmp	r13,	KERNEL_PAGE_RECORDS_amount
-	je	.pml3	; tak
+	je	.pml3_entry	; tak
 
+.pml2_record:
 	; pobierz adres tablicy PML1
 	mov	r8,	qword [r9]
 
@@ -399,6 +416,19 @@ kernel_memory_release_foreign:
 	; kontynuuj
 	jmp	.pml1
 
+.pml3_entry:
+	; aktualna tablica PML2 jest pusta?
+	mov	rdi,	qword [r10]
+	and	di,	KERNEL_PAGE_mask
+	call	kernel_page_empty
+	jnz	.pml3	; nie
+
+	; zwolnij przestrzeń tablicy
+	call	kernel_memory_release_page
+
+	; usuń rekord z tablicy PML3
+	mov	qword [r10],	STATIC_EMPTY
+
 .pml3:
 	; następny wpis w tablicy PML3
 	add	r10,	STATIC_QWORD_SIZE_byte
@@ -406,8 +436,9 @@ kernel_memory_release_foreign:
 
 	; koniec tablicy PML3?
 	cmp	r14,	KERNEL_PAGE_RECORDS_amount
-	je	.pml4	; tak
+	je	.pml4_entry	; tak
 
+.pml3_record:
 	; pobierz adres tablicy PML2
 	mov	r9,	qword [r10]
 
@@ -422,7 +453,20 @@ kernel_memory_release_foreign:
 	xor	r13,	r13
 
 	; kontynuuj
-	jmp	.pml2
+	jmp	.pml2_record
+
+.pml4_entry:
+	; aktualna tablica PML3 jest pusta?
+	mov	rdi,	qword [r11]
+	and	di,	KERNEL_PAGE_mask
+	call	kernel_page_empty
+	jnz	.pml4	; nie
+
+	; zwolnij przestrzeń tablicy
+	call	kernel_memory_release_page
+
+	; usuń rekord z tablicy PML4
+	mov	qword [r11],	STATIC_EMPTY
 
 .pml4:
 	; następny wpis w tablicy PML4
@@ -447,7 +491,7 @@ kernel_memory_release_foreign:
 	xor	r14,	r14
 
 	; kontynuuj
-	jmp	.pml3
+	jmp	.pml3_record
 
 .pml5:
 	; flaga, błąd
