@@ -39,6 +39,9 @@ kernel_exec:
 	call	kernel_memory_alloc_page
 	call	kernel_page_drain
 
+	; wykorzystano stronę do stronicowania
+	inc	qword [kernel_page_paged_count]
+
 	; zachowaj adres
 	mov	r11,	rdi
 

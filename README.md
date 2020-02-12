@@ -22,6 +22,7 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 	nasm -f bin software/init.asm		-o build/init
 	nasm -f bin software/shell.asm		-o build/shell
 	nasm -f bin software/hello.asm		-o build/hello
+	nasm -f bin software/free.asm		-o build/free
 
 	nasm -f bin kernel/init/boot.asm	-o build/boot
 	nasm -f bin kernel/kernel.asm		-o build/kernel \

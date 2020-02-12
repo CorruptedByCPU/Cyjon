@@ -362,7 +362,7 @@ kernel_memory_release_foreign:
 	and	di,	KERNEL_PAGE_mask
 	call	kernel_memory_release_page
 
-	; zwolnij wpis w tablicy PMLx
+	; zwolnij wpis w tablicy PML1
 	mov	qword [r8],	STATIC_EMPTY
 
 .pml1_omit:
@@ -386,6 +386,9 @@ kernel_memory_release_foreign:
 
 	; zwolnij przestrzeń tablicy
 	call	kernel_memory_release_page
+
+	; zwolniono tablicę stronicowania
+	dec	qword [kernel_page_paged_count]
 
 	; usuń rekord z tablicy PML2
 	mov	qword [r9],	STATIC_EMPTY
@@ -426,6 +429,9 @@ kernel_memory_release_foreign:
 	; zwolnij przestrzeń tablicy
 	call	kernel_memory_release_page
 
+	; zwolniono tablicę stronicowania
+	dec	qword [kernel_page_paged_count]
+
 	; usuń rekord z tablicy PML3
 	mov	qword [r10],	STATIC_EMPTY
 
@@ -464,6 +470,9 @@ kernel_memory_release_foreign:
 
 	; zwolnij przestrzeń tablicy
 	call	kernel_memory_release_page
+
+	; zwolniono tablicę stronicowania
+	dec	qword [kernel_page_paged_count]
 
 	; usuń rekord z tablicy PML4
 	mov	qword [r11],	STATIC_EMPTY
