@@ -211,6 +211,9 @@ kernel_video_cursor_set:
 	push	rcx
 	push	rdx
 
+	; wyłącz kursor
+	call	kernel_video_cursor_disable
+
 	; oblicz pozycję kursora w znakach
 	mov	eax,	dword [kernel_video_cursor.y]
 	mul	qword [kernel_video_scanline_char]
@@ -223,6 +226,9 @@ kernel_video_cursor_set:
 	; zapisz nową pozycję wskaźnika w przestrzeni pamięci karty graficznej
 	add	rax,	qword [kernel_video_framebuffer]
 	mov	qword [kernel_video_pointer],	rax
+
+	; włącz kursor
+	call	kernel_video_cursor_enable
 
 	; przywróć oryginalne rejestry
 	pop	rdx
@@ -735,6 +741,9 @@ kernel_video_number:
 
 	; wyłącz kursor
 	call	kernel_video_cursor_disable
+
+	; wyczyść zbędne dane w rejestrze RBX
+	and	ebx,	STATIC_BYTE_mask
 
 	; podstawa liczby w odpowiednim zakresie?
 	cmp	bl,	2

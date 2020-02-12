@@ -23,6 +23,10 @@ kernel_service:
 	cmp	al,	KERNEL_SERVICE_VFS
 	je	.vfs	; tak
 
+	; obsługa systemu?
+	cmp	al,	KERNEL_SERVICE_SYSTEM
+	je	.system	; tak
+
 .error:
 	; flaga, błąd
 	stc
@@ -69,9 +73,6 @@ kernel_service:
 	push	rsi
 	push	rdi
 	push	rcx
-
-	; kod błędu, brak
-	xor	eax,	eax
 
 	; rozwiąż ścieżkę do programu
 	call	kernel_vfs_path_resolve
@@ -129,6 +130,10 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_VIDEO_number
 	je	.video_number	; tak
 
+	; zwrócić pozycje kursora na ekranie?
+	cmp	ax,	KERNEL_SERVICE_VIDEO_cursor_set
+	je	.video_cursor_set
+
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
 
@@ -170,6 +175,17 @@ kernel_service:
 	; wstaw wartość do odpowiedniego rejestru dla procedury
 	mov	rax,	r8
 	call	kernel_video_number
+
+	; koniec obsługi podprocedury
+	jmp	kernel_service.end
+
+;-------------------------------------------------------------------------------
+.video_cursor_set:
+	; ustaw pozycję kusora
+	mov	qword [kernel_video_cursor],	rbx
+
+	; aktualizuj na ekranie
+	call	kernel_video_cursor_set
 
 	; koniec obsługi podprocedury
 	jmp	kernel_service.end
@@ -222,4 +238,18 @@ kernel_service:
 	mov	qword [rsp],	rax
 
 	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;===============================================================================
+.system:
+	; zwrócić właściwości pamięci RAM
+	cmp	ax,	KERNEL_SERVICE_SYSTEM_memory
+	jne	kernel_service.error	; nie
+
+	; rozmiar całkowity
+	mov	r8,	qword [kernel_page_total_count]
+	mov	r9,	qword [kernel_page_free_count]
+	mov	r10,	qword [kernel_page_paged_count]
+
+	; powrót do procesu
 	jmp	kernel_service.end
