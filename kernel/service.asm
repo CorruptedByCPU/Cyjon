@@ -19,6 +19,10 @@ kernel_service:
 	cmp	al,	KERNEL_SERVICE_KEYBOARD
 	je	.keyboard	; tak
 
+	; obsługa wirtualnego systemu plików?
+	cmp	al,	KERNEL_SERVICE_VFS
+	je	.vfs	; tak
+
 .error:
 	; flaga, błąd
 	stc
@@ -171,3 +175,36 @@ kernel_service:
 	jmp	kernel_service.end
 
 	macro_debug	"kernel_service"
+
+;===============================================================================
+.vfs:
+	; sprawdzić poprawność ścieżki?
+	cmp	ax,	KERNEL_SERVICE_VFS_exist
+	jne	kernel_service.error	; plik nie istnieje
+
+	; kod błędu, brak
+	xor	eax,	eax
+
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; rozwiąż ścieżkę do programu
+	call	kernel_vfs_path_resolve
+	jc	.vfs_exist_not	; błąd, niepoprawna ścieżka
+
+	; odszukaj program w danym katalogu
+	call	kernel_vfs_file_find
+
+.vfs_exist_not:
+	; zwróć kod błędu
+	mov	qword [rsp],	rax
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rcx
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end

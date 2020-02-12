@@ -60,7 +60,23 @@ shell:
 	call	library_string_trim
 	jc	shell	; bufor pusty lub przerwano wprowadzanie
 
+	; zachowaj rozmiar zawarości bufora
+	push	rcx
+
+	; zawartość bufora na początku?
+	cmp	rsi,	shell_cache
+	je	.begin	; tak
+
+	; przesuń zawartość bufora na początek
+	mov	rdi,	shell_cache
+	rep	movsb
+
+.begin:
+	; przywróć rozmiar zawartości bufora
+	pop	rcx
+
 	; znajdź nazwę polecenia
+	mov	rsi,	shell_cache
 	call	library_string_word_next
 
 	; przetwórz polecenie
