@@ -8,8 +8,8 @@ DRIVER_PS2_KEYBOARD_IO_APIC_register				equ	KERNEL_IO_APIC_iowin + (DRIVER_PS2_K
 DRIVER_PS2_MOUSE_IRQ_number					equ	0x0C	; 12
 DRIVER_PS2_MOUSE_IO_APIC_register				equ	KERNEL_IO_APIC_iowin + (DRIVER_PS2_MOUSE_IRQ_number * 0x02)
 
-DRIVER_PS2_PORT_COMMAND_OR_STATUS				equ	0x64
 DRIVER_PS2_PORT_DATA						equ	0x60
+DRIVER_PS2_PORT_COMMAND_OR_STATUS				equ	0x64
 
 DRIVER_PS2_DEVICE_ID_GET					equ	0xF2
 DRIVER_PS2_DEVICE_SET_SAMPLE_RATE				equ	0xF3
@@ -35,6 +35,7 @@ DRIVER_PS2_STATUS_output					equ	00000001b
 DRIVER_PS2_STATUS_input						equ	00000010b
 DRIVER_PS2_STATUS_system_flag					equ	00000100b
 DRIVER_PS2_STATUS_command_data					equ	00001000b
+DRIVER_PS2_STATUS_output_second					equ	00100000b
 DRIVER_PS2_STATUS_timeout					equ	01000000b
 DRIVER_PS2_STATUS_parity					equ	10000000b
 
@@ -167,6 +168,14 @@ DRIVER_PS2_KEYBOARD_RELEASE_INSERT				equ	DRIVER_PS2_KEYBOARD_key_release + DRIV
 DRIVER_PS2_KEYBOARD_RELEASE_DELETE				equ	DRIVER_PS2_KEYBOARD_key_release + DRIVER_PS2_KEYBOARD_PRESS_DELETE
 DRIVER_PS2_KEYBOARD_RELEASE_WIN_LEFT				equ	DRIVER_PS2_KEYBOARD_key_release + DRIVER_PS2_KEYBOARD_PRESS_WIN_LEFT
 DRIVER_PS2_KEYBOARD_RELEASE_MOUSE_RIGHT				equ	DRIVER_PS2_KEYBOARD_key_release + DRIVER_PS2_KEYBOARD_PRESS_MOUSE_RIGHT
+
+align	STATIC_QWORD_SIZE_byte,					db	STATIC_EMPTY
+driver_ps2_mouse_position:
+driver_ps2_mouse_x						dd	STATIC_EMPTY
+driver_ps2_mouse_y						dd	STATIC_EMPTY
+driver_ps2_mouse_type						db	STATIC_EMPTY
+driver_ps2_mouse_packet						db	STATIC_EMPTY
+driver_ps2_mouse_state						dw	STATIC_EMPTY
 
 driver_ps2_keyboard_sequence					db	STATIC_EMPTY
 
@@ -304,7 +313,7 @@ driver_ps2_keyboard_matrix_high					dw	STATIC_EMPTY
 								db	"K",	0x00				; 0x25
 								db	"L",	0x00				; 0x26
 								db	":",	0x00				; 0x27
-								db	'"',	0x00				; 0x28
+								db	'"',	0x00				; 0x28	"
 								db	"~",	0x00				; 0x29
 								dw	DRIVER_PS2_KEYBOARD_PRESS_SHIFT_LEFT
 								db	"|",	0x00				; 0x2B
@@ -362,6 +371,147 @@ driver_ps2_keyboard_shift_left_semaphore			db	STATIC_FALSE
 driver_ps2_keyboard_shift_right_semaphore			db	STATIC_FALSE
 driver_ps2_keyboard_alt_semaphore				db	STATIC_FALSE
 driver_ps2_keyboard_capslock_semaphore				db	STATIC_FALSE
+
+;===============================================================================
+driver_ps2_mouse:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rdx
+
+	; sprawdź czy dane należą do urządzenia wskazującego (myszka)
+	in	al,	DRIVER_PS2_PORT_COMMAND_OR_STATUS
+	test	al,	DRIVER_PS2_STATUS_output_second
+	jz	.end	; nie
+
+	; pobierz wiadomość z kontrolera PS2
+	xor	eax,	eax
+	in	al,	DRIVER_PS2_PORT_DATA
+
+	; pobierz aktualną pozycję na osi X i Y
+	mov	ebx,	dword [driver_ps2_mouse_x]
+	mov	edx,	dword [driver_ps2_mouse_y]
+
+	;-----------------------------------------------------------------------
+	; status?
+	cmp	byte [driver_ps2_mouse_packet],	STATIC_TRUE
+	jne	.no_status	; nie
+
+	; pakiet statusu zawiera "zawsze włączony" bit?
+	bt	ax,	DRIVER_PS2_DEVICE_MOUSE_PACKET_ALWAYS_ONE_bit
+	jnc	.end	; błąd, porzuć pakiet
+
+	; przepełnienie na osi X
+	bt	ax,	DRIVER_PS2_DEVICE_MOUSE_PACKET_OVERFLOW_x
+	jc	.end	; tak, porzuć pakiet
+
+	; przepełnienie na osi X
+	bt	ax,	DRIVER_PS2_DEVICE_MOUSE_PACKET_OVERFLOW_y
+	jc	.end	; tak, porzuć pakiet
+
+	; zachowaj status kontrolera
+	mov	byte [driver_ps2_mouse_state],	al
+
+	; następny pakiet to prdesunięcie na osi X
+	inc	byte [driver_ps2_mouse_packet]
+
+	; koniec obsługi przerwania
+	jmp	.end
+
+.no_status:
+	;-----------------------------------------------------------------------
+
+	; prdesunięcie na osi X?
+	cmp	byte [driver_ps2_mouse_packet],	STATIC_FALSE
+	jne	.no_x	; nie
+
+	; następny pakiet to prdesunięcie na osi Y
+	inc	byte [driver_ps2_mouse_packet]
+
+	; wartość z znakiem?
+	bt	word [driver_ps2_mouse_state],	DRIVER_PS2_DEVICE_MOUSE_PACKET_X_SIGNED_bit
+	jnc	.x_unsigned	; nie
+
+	; koryguj znak
+	neg	al
+
+	; przesuń wskaźnik w lewo
+	sub	ebx,	eax
+	jns	.ready	; koniec obsługi pakietu
+
+	; koryguj pozycje na osi X
+	xor	ebx,	ebx
+
+	; koniec obsługi pakietu
+	jmp	.ready
+
+.x_unsigned:
+	; przesuń wskaźnik w prawo
+	add	ebx,	eax
+
+	; wskaźnik poza ekranem na osi X?
+	cmp	ebx,	dword [kernel_video_width_pixel]
+	jb	.ready	; nie, koniec obsługi pakietu
+
+	; koryguj pozycję
+	mov	ebx,	dword [kernel_video_width_pixel]
+	dec	ebx
+
+	; koniec obsługi pakietu
+	jmp	.ready
+
+.no_x:
+	;-----------------------------------------------------------------------
+
+	; następny pakiet to status
+	mov	byte [driver_ps2_mouse_packet],	STATIC_TRUE
+
+	; wartość z znakiem?
+	bt	word [driver_ps2_mouse_state],	DRIVER_PS2_DEVICE_MOUSE_PACKET_Y_SIGNED_bit
+	jnc	.y_unsigned	; nie
+
+	; koryguj znak
+	neg	al
+
+	; przesuń wskaźnik w lewo
+	add	edx,	eax
+
+	; wskaźnik poda ekranem na osi X?
+	cmp	edx,	dword [kernel_video_height_pixel]
+	jb	.ready	; nie, koniec obsługi pakietu
+
+	; koryguj pozycję
+	mov	edx,	dword [kernel_video_height_pixel]
+	dec	edx
+
+	; koniec obsługi pakietu
+	jmp	.ready
+
+.y_unsigned:
+	; przesuń wskaźnik w prawo
+	sub	edx,	eax
+	jns	.ready	; koniec obsługi pakietu
+
+	; koryguj pozycje na osi X
+	xor	edx,	edx
+
+.ready:
+	; zachowaj nową pozycję wskaźnika
+	mov	dword [driver_ps2_mouse_x],	ebx
+	mov	dword [driver_ps2_mouse_y],	edx
+
+.end:
+	; poinformuj LAPIC o obsłużeniu przerwania sprzętowego
+	mov	rax,	qword [kernel_apic_base_address]
+	mov	dword [rax + KERNEL_APIC_EOI_register],	STATIC_EMPTY
+
+	; przywróć oryginalny rejestry
+	pop	rdx
+	pop	rbx
+	pop	rax
+
+	; powrót z przerwania sprzętowego
+	iretq
 
 ;===============================================================================
 ; wyjście:
