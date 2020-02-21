@@ -17,7 +17,7 @@ KERNEL_TASK_FLAG_thread			equ	0000000000100000b
 
 KERNEL_TASK_FLAG_active_bit		equ	0
 KERNEL_TASK_FLAG_closed_bit		equ	1
-KERNEL_TASK_FLAG_daemon_bit		equ	2
+KERNEL_TASK_FLAG_service_bit		equ	2
 KERNEL_TASK_FLAG_processing_bit		equ	3
 KERNEL_TASK_FLAG_secured_bit		equ	4
 KERNEL_TASK_FLAG_thread_bit		equ	5
@@ -417,7 +417,7 @@ kernel_task_queue:
 ;	ecx - unikalny identyfikator
 kernel_task_pid_get:
 	; zablokuj dostęp do podprocedury
-	macro_close	kernel_task_pid_semaphore, 0
+	macro_lock	kernel_task_pid_semaphore, 0
 
 .next:
 	; pobierz unikalny numer PID

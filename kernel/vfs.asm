@@ -553,7 +553,7 @@ kernel_vfs_knot_prepare:
 	push	rcx
 
 	; zablokuj dostęp do systemu plików
-	macro_close	kernel_vfs_semaphore, 0
+	macro_lock	kernel_vfs_semaphore, 0
 
 	; ustaw wskaźnik na pierwszy blok danych katalogu
 	mov	rdi,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.id_or_data]

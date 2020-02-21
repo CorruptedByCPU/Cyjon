@@ -40,7 +40,7 @@ kernel_ipc_insert:
 	mov	rdx,	qword [rdi + KERNEL_TASK_STRUCTURE.pid]
 
 	; uzyskaj dostęp do listy komunikatów
-	macro_close	kernel_ipc_semaphore, 0
+	macro_lock	kernel_ipc_semaphore, 0
 
 .wait:
 	; brak miejsca na liście?

@@ -532,7 +532,7 @@ service_network_tcp_port_assign:
 	push	rdi
 
 	; zablokuj dostęp do tablicy portów
-	macro_close	service_network_port_semaphore,	0
+	macro_lock	service_network_port_semaphore,	0
 
 	; numer portu obsługiwany?
 	cmp	cx,	512
