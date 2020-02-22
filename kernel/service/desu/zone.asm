@@ -3,54 +3,6 @@
 ;===============================================================================
 
 ;-------------------------------------------------------------------------------
-; UWAGA: brak zachowanych rejestrów
-service_desu_zone_subroutine:
-	; zablokuj dostęp do modyfikacji listy stref
-	macro_lock	service_desu_zone_semaphore,	0
-
-	; wskaźnik pośredni na koniec listy stref
-	mov	eax,	SERVICE_DESU_STRUCTURE_ZONE.SIZE
-	mul	qword [service_desu_zone_list_records]	; pozycja za ostatnią strefą listy
-
-	; wskaźnik bezpośredni końca listy stref
-	mov	rsi,	qword [service_desu_zone_list_address]
-	add	rsi,	rax
-
-	; wolne miejsce na liście stref?
-	cmp	qword [service_desu_zone_list_records],	SERVICE_DESU_ZONE_LIST_limit
-	je	.insert	; tak
-
-	; ilość stref na liście
-	xor	eax,	eax
-
-	; przesuń na początek listy wszystkie strefy
-	mov	rsi,	qword [service_desu_zone_list_address]
-	xchg	rsi,	rdi
-
-	; zwróć do nadprocedury nowy wskaźnik aktualnej strefy
-	mov	qword [rsp],	rdi
-
-.next:
-	; przesuń strefę na początek
-	mov	ecx,	SERVICE_DESU_STRUCTURE_ZONE.SIZE << STATIC_DIVIDE_BY_QWORD_shift
-	rep	movsq
-
-	; ilość stref na liście
-	inc	eax
-
-	; ostatnia strefa na liście?
-	cmp	qword [rsi + SERVICE_DESU_STRUCTURE_ZONE.object],	STATIC_EMPTY
-	jne	.next	; tak
-
-	; zachowaj ilość pozostałych stref na liście
-	mov	qword [service_desu_zone_list_records],	rax
-
-	; wstaw nową strefę na koniec
-	mov	rsi,	rdi
-
-.insert:
-	; powrót z podprocedury
-	ret
 
 ;===============================================================================
 ; wejście:
@@ -60,12 +12,20 @@ service_desu_zone_insert_by_object:
 	push	rax
 	push	rcx
 	push	rdx
-	push	rsi
 	push	rdi
+	push	rsi
 
 	; zablokuj dostęp do modyfikacji listy stref
 	macro_lock	service_desu_zone_semaphore,	0
 
+	; lista stref jest pełna?
+	cmp	qword [service_desu_zone_list_records],	SERVICE_DESU_ZONE_LIST_limit
+	jne	.no	; tak
+
+	xchg	bx,bx
+	jmp	$
+
+.no:
 	; wskaźnik pośredni na koniec listy stref
 	mov	eax,	SERVICE_DESU_STRUCTURE_ZONE.SIZE
 	mul	qword [service_desu_zone_list_records]	; pozycja za ostatnią strefą listy
@@ -75,8 +35,10 @@ service_desu_zone_insert_by_object:
 	add	rdi,	rax
 
 	; wstaw właściwości strefy
-	mov	ecx,	SERVICE_DESU_STRUCTURE_ZONE.SIZE << STATIC_DIVIDE_BY_QWORD_shift
-	rep	movsq
+	movsq	; pozycja na osi X
+	movsq	; pozycja na osi Y
+	movsq	; szerokość
+	movsq	; wysokość
 
 	; oraz informacje o obiekcie zależnym
 	mov	rax,	qword [rsp]
@@ -89,14 +51,16 @@ service_desu_zone_insert_by_object:
 	mov	byte [service_desu_zone_semaphore],	STATIC_FALSE
 
 	; przywróć oryginalne rejestry
-	pop	rdi
 	pop	rsi
+	pop	rdi
 	pop	rdx
 	pop	rcx
 	pop	rax
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"service_desu_zone_insert_by_object"
 
 ;===============================================================================
 ; wejście:
@@ -115,8 +79,24 @@ service_desu_zone_insert_by_register:
 	push	rsi
 	push	rdi
 
-	; ustaw wskaźnik na wolną pozycję
-	call	service_desu_zone_subroutine
+	; zablokuj dostęp do modyfikacji listy stref
+	macro_lock	service_desu_zone_semaphore,	0
+
+	; lista stref jest pełna?
+	cmp	qword [service_desu_zone_list_records],	SERVICE_DESU_ZONE_LIST_limit
+	je	.no	; tak
+
+	xchg	bx,bx
+	jmp	$
+
+.no:
+	; wskaźnik pośredni na koniec listy stref
+	mov	eax,	SERVICE_DESU_STRUCTURE_ZONE.SIZE
+	mul	qword [service_desu_zone_list_records]	; pozycja za ostatnią strefą listy
+
+	; wskaźnik bezpośredni końca listy stref
+	mov	rsi,	qword [service_desu_zone_list_address]
+	add	rsi,	rax
 
 	; dodaj do listy nową strefę
 	mov	qword [rsi + SERVICE_DESU_STRUCTURE_ZONE.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r8
@@ -144,54 +124,31 @@ service_desu_zone_insert_by_register:
 	; powrót z procedury
 	ret
 
+	macro_debug	"service_desu_zone_insert_by_register"
+
 ;===============================================================================
 ; wejście:
 ;	bl -	STATIC_TRUE - aktualizuj tylko widoczne podstrefy
 ;		STATIC_FALSE - aktualizuj wszystkie strefy
 service_desu_zone:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rdx
+	push	rsi
+	push	rdi
+	push	r8
+	push	r9
+	push	r10
+	push	r11
+	push	r12
+	push	r13
+	push	r14
+	push	r15
+
 	; zablokuj dostęp do modyfikacji listy obiektów
 	macro_lock	service_desu_object_semaphore,	0
 
-.refill:
-	; wypełnij pozostałą strefę zawartością obiektu pokrywającego
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r8
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r9
-	sub	r10,	r8
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width],	r10
-	sub	r11,	r9
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height],	r11
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.address],	rsi
-	xchg	rdi,	rsi	; ustaw wskaźnik źródłowy na strefę
-	call	service_desu_fill_register	; zarejestruj
-
-	; przywróć wskaźniki na miejsce
-	xchg	rdi,	rsi
-
-	; strefa przesłana do wypełnienia
-	jmp	.next	; usuń
-
-.fill:
-	;-----------------------------------------------------------------------
-	; zarejestruj wypełnienie
-	mov	rsi,	rdi
-	call	service_desu_fill_register
-
-	; usuń zarejestrowaną stregę
-	jmp	.next
-
-.remove:
-	; wypełnić porzuconą strefę?
-	test	bl,	bl
-	jnz	.refill	; tak
-
-.next:
-	; przesuń wskaźnik na następną strefę do przetworzenia
-	add	rdi,	SERVICE_DESU_STRUCTURE_ZONE.SIZE
-
-	; kontynuuj
-	jmp	.loop
-
-.restart:
 	; ustaw wskaźnik na pierwszą opisaną strefę na liście
 	mov	rdi,	qword [service_desu_zone_list_address]
 
@@ -413,9 +370,65 @@ service_desu_zone:
 	; usuń pozostały fragment strefy
 	jmp	.remove
 
+.refill:
+	; wypełnij pozostałą strefę zawartością obiektu pokrywającego
+	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r8
+	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r9
+	sub	r10,	r8
+	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width],	r10
+	sub	r11,	r9
+	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height],	r11
+	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.address],	rsi
+	xchg	rdi,	rsi	; ustaw wskaźnik źródłowy na strefę
+	call	service_desu_fill_register	; zarejestruj
+
+	; przywróć wskaźniki na miejsce
+	xchg	rdi,	rsi
+
+	; strefa przesłana do wypełnienia
+	jmp	.next	; usuń
+
+.fill:
+	;-----------------------------------------------------------------------
+	; zarejestruj wypełnienie
+	mov	rsi,	rdi
+	call	service_desu_fill_register
+
+	; usuń zarejestrowaną stregę
+	jmp	.next
+
+.remove:
+	; wypełnić porzuconą strefę?
+	test	bl,	bl
+	jnz	.refill	; tak
+
+.next:
+	; przesuń wskaźnik na następną strefę do przetworzenia
+	add	rdi,	SERVICE_DESU_STRUCTURE_ZONE.SIZE
+
+	; kontynuuj
+	jmp	.loop
+
 .end:
 	; odblokuj listę obiektów do modyfikacji
 	mov	byte [service_desu_object_semaphore],	STATIC_FALSE
 
+	; przywróć oryginalne rejestry
+	pop	r15
+	pop	r14
+	pop	r13
+	pop	r12
+	pop	r11
+	pop	r10
+	pop	r9
+	pop	r8
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rax
+
 	; powrót z procedury
 	ret
+
+	macro_debug	"service_desu_zone"

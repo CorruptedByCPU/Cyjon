@@ -28,40 +28,27 @@ init:
 align	KERNEL_PAGE_SIZE_byte,	db	STATIC_NOTHING
 
 clean:
-	; ; rozmiar przestrzeni inicjalizacyjnej
-	; mov	ecx,	clean - $$
-	; call	library_page_from_size	; w stronach
-	;
-	; ; zwolnij
-	; mov	rdi,	KERNEL_BASE_address
-	; call	kernel_memory_release
+	; zwolnij przestrzeń zajętą przez procedury inicjalizacyjne
+	mov	ecx,	clean - $$
+	mov	rdi,	KERNEL_BASE_address
+	call	library_page_from_size	; zamień rozmiar przestrzeni na strony
+	call	kernel_memory_release
 
 kernel:
-	; uruchom program inicjalizujący środowisko użytkownika
-	mov	ecx,	kernel_init_exec_end - kernel_init_exec
-	mov	rsi,	kernel_init_exec
-	call	kernel_vfs_path_resolve
-	jc	.error	; błędna ścieżka
-	call	kernel_vfs_file_find
-	jc	.error	; nie znaleziono pliku
-	call	kernel_exec
-	jnc	.end	; nie udało się uruchomić procesu
+	; pobierz wskaźnik do aktualnego zadania (jądro) w kolejce
+	call	kernel_task_active
 
-.error:
-	; wyświetl kod błędu
-	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
-	xor	ecx,	ecx	; brak wypełnienia
-	call	kernel_video_number
+	; zwolnij wpis
+	mov	word [rdi + KERNEL_TASK_STRUCTURE.flags],	STATIC_EMPTY
 
-.end:
-	; zatrzymaj dalsze wykonywanie kodu jądra systemu
+	; czekaj na wywłaszczenie
 	jmp	$
 
 	;-----------------------------------------------------------------------
 	; procedury, makra, dane, biblioteki, usługi - wszystko co niezbędne
 	; do prawidłowej pracy jądra systemu
 	;-----------------------------------------------------------------------
-	%include	"kernel/macro/close.asm"
+	%include	"kernel/macro/lock.asm"
 	%include	"kernel/macro/debug.asm"
 	%include	"kernel/macro/copy.asm"
 	;-----------------------------------------------------------------------
@@ -93,7 +80,9 @@ kernel:
 	%include	"kernel/service/http.asm"
 	%include	"kernel/service/tx.asm"
 	%include	"kernel/service/network.asm"
+	%include	"kernel/service/desu.asm"
 	;-----------------------------------------------------------------------
+	%include	"library/color.asm"
 	%include	"library/input.asm"
 	%include	"library/page_align_up.asm"
 	%include	"library/page_from_size.asm"
