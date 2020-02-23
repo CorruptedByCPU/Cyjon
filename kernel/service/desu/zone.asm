@@ -20,12 +20,12 @@ service_desu_zone_insert_by_object:
 
 	; lista stref jest pełna?
 	cmp	qword [service_desu_zone_list_records],	SERVICE_DESU_ZONE_LIST_limit
-	jne	.no	; tak
+	jb	.insert	; nie
 
 	xchg	bx,bx
 	jmp	$
 
-.no:
+.insert:
 	; wskaźnik pośredni na koniec listy stref
 	mov	eax,	SERVICE_DESU_STRUCTURE_ZONE.SIZE
 	mul	qword [service_desu_zone_list_records]	; pozycja za ostatnią strefą listy
@@ -84,12 +84,12 @@ service_desu_zone_insert_by_register:
 
 	; lista stref jest pełna?
 	cmp	qword [service_desu_zone_list_records],	SERVICE_DESU_ZONE_LIST_limit
-	je	.no	; tak
+	jb	.insert	; nie
 
 	xchg	bx,bx
 	jmp	$
 
-.no:
+.insert:
 	; wskaźnik pośredni na koniec listy stref
 	mov	eax,	SERVICE_DESU_STRUCTURE_ZONE.SIZE
 	mul	qword [service_desu_zone_list_records]	; pozycja za ostatnią strefą listy
@@ -149,13 +149,17 @@ service_desu_zone:
 	; ustaw wskaźnik na pierwszą opisaną strefę na liście
 	mov	rdi,	qword [service_desu_zone_list_address]
 
-	; korekta, względem procedury
-	sub	rdi,	SERVICE_DESU_STRUCTURE_ZONE.SIZE
+	; rozpocznij przetwarzanie
+	jmp	.entry
 
 .loop:
+	; zwolnij strefę z listy
+	mov	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.object],	STATIC_EMPTY
+
 	; przesuń wskaźnik na pierwszą/następną strefę do przetworzenia
 	add	rdi,	SERVICE_DESU_STRUCTURE_ZONE.SIZE
 
+.entry:
 	; brak strefy do przetworzenia?
 	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.object],	STATIC_EMPTY
 	je	.end	; tak
@@ -314,8 +318,7 @@ service_desu_zone:
 	; wytnij wystający fragment strefy
 
 	; szerokość odcinanej strefy
-	mov	r10,	r14
-	sub	r10,	r8
+	sub	r10,	r14
 
 	; zachowaj oryginalną pozycję lewej krawędzi strefy
 	push	r8
@@ -323,17 +326,11 @@ service_desu_zone:
 	; pozycja lewej krawędzi odcinanej strefy
 	mov	r8,	r14
 
-	; wysokość odcinanej strefy
-	sub	r11,	r9
-
 	; odłóż na listę stref
 	call	service_desu_zone_insert_by_register
 
 	; przywróć oryginalną pozycję lewej krawędzi strefy
 	pop	r8
-
-	; przywróć oryginalną pozycję dolnej krawędzi strefy
-	add	r11,	r9
 
 	; nowa pozycja prawej krawędzi strefy
 	mov	r10,	r14
@@ -341,13 +338,12 @@ service_desu_zone:
 .down:
 	; dolna krawędź strefy za dolną krawędzią obiektu?
 	cmp	r11,	r15
-	jle	.remove	; nie
+	jle	.cursor	; nie
 
 	; wytnij wystający fragment strefy
 
 	; wysokość odcinanej strefy
-	mov	r11,	r15
-	sub	r11,	r9
+	sub	r11,	r15
 
 	; zachowaj oryginalną pozycję górnej krawędzi strefy
 	push	r9
@@ -355,21 +351,16 @@ service_desu_zone:
 	; pozycja górnej krawędzi odcinanej strefy
 	mov	r9,	r15
 
-	; szerokość odcinanej strefy
-	sub	r10,	r8
-
 	; odłóż na listę stref
 	call	service_desu_zone_insert_by_register
 
 	; przywróć oryginalną pozycję lewej krawędzi strefy
 	pop	r9
 
-	; przywróć oryginalną pozycję dolnej krawędzi strefy
-	add	r10,	r8
-
 	; nowa pozycja dolnej krawędzi strefy
 	mov	r11,	r15
 
+.cursor:
 	; strefa należy do obiektu kursora?
 	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.object],	service_desu_object_cursor
 	jne	.loop	; nie, zignoruj pozostały fragment
@@ -379,10 +370,6 @@ service_desu_zone:
 	sub	r10,	r8	; zwróć szerokość strefy
 	sub	r11,	r9	; zwróć wysokość strefy
 	call	service_desu_fill_insert_by_register
-
-.remove:
-	; zwolnij strefę z listy
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.object],	STATIC_EMPTY
 
 	; kontynuuj
 	jmp	.loop

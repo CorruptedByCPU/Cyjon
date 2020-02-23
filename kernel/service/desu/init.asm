@@ -2,6 +2,15 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
+	;-----------------------------------------------------------------------
+
+	; odwróć kanała alfa obiektu
+	mov	ecx,	service_desu_object_cursor.end - service_desu_object_cursor.data
+	mov	rsi,	service_desu_object_cursor.data
+	call	library_color_alpha_invert
+
+	;-----------------------------------------------------------------------
+
 	; pobierz rozmiar przestrzeni pamięci karty graficznej w pikselach i Bajtach
 	mov	rbx,	qword [kernel_video_width_pixel]
 	mov	rcx,	qword [kernel_video_size_byte]
@@ -39,32 +48,23 @@
 	mov	qword [service_desu_zone_list_address],	rdi
 
 	;-----------------------------------------------------------------------
-
-	; odwróć kanała alfa obiektu
-	mov	ecx,	service_desu_object_cursor.end - service_desu_object_cursor.data
-	mov	rsi,	service_desu_object_cursor.data
-	call	library_color_alpha_invert
-
-	;-----------------------------------------------------------------------
-	; Temporary ------------------------------------------------------------
+	; DEBUG - remove on release with service_desu_object_tmp
 	;-----------------------------------------------------------------------
 	mov	rsi,	service_desu_object_workbench
-
-	; aktualizuj informacje o obszarze roboczym
 	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.size],	rcx
 	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width],	rbx
 	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height],	rdx
-
-	; przygotuj przegtrzeń dla obszaru roboczego
 	call	library_page_from_size
 	call	kernel_memory_alloc
 	call	kernel_page_drain_few
-
-	; zachowaj wskaźnik początku obszaru roboczego
 	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.address],	rdi
-
-	; ustaw flagi obiektu
 	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_fixed_xy | SERVICE_DESU_OBJECT_FLAG_fixed_z | SERVICE_DESU_OBJECT_FLAG_flush | SERVICE_DESU_OBJECT_FLAG_visible
-
-	; dodaj obiekt obszaru roboczego jako pierwszy na listę obiektów
 	call	service_desu_object_insert
+	mov	rsi,	service_desu_object_tmp
+	call	service_desu_object_insert
+	call	kernel_memory_alloc_page
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.address],	rdi
+	mov	eax,	0x00FF0000
+	mov	ecx,	4096 / 4
+	rep	stosd
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush | SERVICE_DESU_OBJECT_FLAG_visible

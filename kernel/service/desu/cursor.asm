@@ -14,8 +14,6 @@
 ; 	test	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
 ; 	jz	.no	; nie
 ;
-; 	xchg	bx,bx
-;
 ; 	; zarejestruj strefę kursora
 ; 	mov	rsi,	service_desu_object_cursor
 ; 	call	service_desu_zone_insert_by_object
@@ -57,7 +55,7 @@ service_desu_cursor:
 	; delta osi Y
 	mov	r11,	r9
 	sub	r11,	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
-;
+
 ; 	;-----------------------------------------------------------------------
 ; 	; naciśnięto lewy przycisk myszki?
 ; 	bt	word [driver_ps2_mouse_state],	DRIVER_PS2_DEVICE_MOUSE_PACKET_LMB_bit
@@ -198,8 +196,7 @@ service_desu_cursor:
 	jz	.end	; nie
 
 .moved:
-; 	; przetwórz strefę zajętą przez obiekt kursora
-; 	mov	bl,	STATIC_FALSE	; całą
+	; przetwórz strefę zajętą przez obiekt kursora
 	mov	rsi,	service_desu_object_cursor
 	call	service_desu_zone_insert_by_object
 	call	service_desu_zone

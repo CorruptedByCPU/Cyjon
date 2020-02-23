@@ -19,8 +19,8 @@ service_desu_fill_insert_by_register:
 	cmp	qword [service_desu_fill_list_records],	SERVICE_DESU_FILL_LIST_limit
 	jne	.insert	; nie
 
-	 xchg	bx,bx
-	 jmp	$
+	xchg	bx,bx
+	jmp	$
 
 .insert:
 	; oblicz pozycje pośrednią za ostatnim obiektem na liście
@@ -66,8 +66,12 @@ service_desu_fill_insert_by_object:
 
 	; brak miejsca?
 	cmp	qword [service_desu_fill_list_records],	SERVICE_DESU_FILL_LIST_limit
-	je	.end	; tak
+	jne	.insert	; nie
 
+	xchg	bx,bx
+	jmp	$
+
+.insert:
 	; oblicz pozycje pośrednią za ostatnim obiektem na liście
 	mov	rax,	SERVICE_DESU_STRUCTURE_FILL.SIZE
 	mul	qword [service_desu_fill_list_records]
@@ -123,8 +127,8 @@ service_desu_fill:
 	mov	rcx,	qword [service_desu_fill_list_records]
 
 	; lista zawiera rekordy?
-	cmp	rcx,	STATIC_EMPTY
-	je	.end	; nie
+	test	rcx,	rcx
+	jz	.end	; nie
 
 	; ustaw wskaźnik na listę wypełnień
 	mov	rsi,	qword [service_desu_fill_list_address]
@@ -198,8 +202,6 @@ service_desu_fill:
 	;-----------------------------------------------------------------------
 	; wylicz zmienne do opracji kopiowania przestrzeni
 	;-----------------------------------------------------------------------
-
-	xchg	bx,bx
 
 	mov	rsi,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.object]
 
