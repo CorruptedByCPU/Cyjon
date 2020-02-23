@@ -16,25 +16,18 @@ service_desu:
 
 .loop:
 	;-----------------------------------------------------------------------
-	; sprawdź stan klawiatury
-	;-----------------------------------------------------------------------
-	; call	service_desu_keyboard
-
-	;-----------------------------------------------------------------------
 	; sprawdź stan i położenie obiektu kursora
 	;-----------------------------------------------------------------------
 	call	service_desu_cursor
 
 	;-----------------------------------------------------------------------
-	; aktualizuj zawartość zmodyfikowanych obiektów w przestrzeni ekranu
+	; sprawdź, które obiekty aktualizowały ostatnio swoją zawartość
 	;-----------------------------------------------------------------------
-	call	service_desu_object_flush
+	call	service_desu_object
 
 	;-----------------------------------------------------------------------
-	; jeśli kursor został przemieszczony lub przysłonięty przez obiekt - wyświetl ponownie
+	; wypełnij wszystkie aktualizowane fragmenty ekranu
 	;-----------------------------------------------------------------------
-	call	service_desu_cursor_flush
-
 	call	service_desu_fill
 
 	; powróć do głównej pętli
@@ -43,11 +36,8 @@ service_desu:
 	;-----------------------------------------------------------------------
 	%include	"kernel/service/desu/data.asm"
 	%include	"kernel/service/desu/zone.asm"
-	; %include	"kernel/service/desu/panic.asm"
 	%include	"kernel/service/desu/cursor.asm"
 	%include	"kernel/service/desu/object.asm"
 	%include	"kernel/service/desu/fill.asm"
-	; %include	"kernel/service/desu/keyboard.asm"
 	;-----------------------------------------------------------------------
-
 service_desu_end:

@@ -454,7 +454,7 @@ service_desu_object_move_top:
 ; 	ret
 
 ;===============================================================================
-service_desu_object_flush:
+service_desu_object:
 	; zachowaj oryginalne rejestry
 	push	rbx
 	push	rsi

@@ -39,6 +39,13 @@
 	mov	qword [service_desu_zone_list_address],	rdi
 
 	;-----------------------------------------------------------------------
+
+	; odwróć kanała alfa obiektu
+	mov	ecx,	service_desu_object_cursor.end - service_desu_object_cursor.data
+	mov	rsi,	service_desu_object_cursor.data
+	call	library_color_alpha_invert
+
+	;-----------------------------------------------------------------------
 	; Temporary ------------------------------------------------------------
 	;-----------------------------------------------------------------------
 	mov	rsi,	service_desu_object_workbench
@@ -57,7 +64,7 @@
 	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.address],	rdi
 
 	; ustaw flagi obiektu
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_fixed_xy | SERVICE_DESU_OBJECT_FLAG_fixed_z | SERVICE_DESU_OBJECT_FLAG_flush | SERVICE_DESU_OBJECT_FLAG_visible 
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_fixed_xy | SERVICE_DESU_OBJECT_FLAG_fixed_z | SERVICE_DESU_OBJECT_FLAG_flush | SERVICE_DESU_OBJECT_FLAG_visible
 
 	; dodaj obiekt obszaru roboczego jako pierwszy na listę obiektów
 	call	service_desu_object_insert

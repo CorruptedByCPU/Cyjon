@@ -4,14 +4,65 @@
 
 ;===============================================================================
 ; wejście:
+;	rsi - wskaźnik do obiektu wypełniającego
+;	r8 - pozycja na osi X
+;	r9 - pozycja na osi Y
+;	r10 - szerokość strefy
+;	r11 - wysokość strefy
+service_desu_fill_insert_by_register:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rdx
+	push	rdi
+
+	; brak miejsca?
+	cmp	qword [service_desu_fill_list_records],	SERVICE_DESU_FILL_LIST_limit
+	jne	.insert	; nie
+
+	 xchg	bx,bx
+	 jmp	$
+
+.insert:
+	; oblicz pozycje pośrednią za ostatnim obiektem na liście
+	mov	rax,	SERVICE_DESU_STRUCTURE_FILL.SIZE
+	mul	qword [service_desu_fill_list_records]
+
+	; ustaw wskaźnik na pozycję bezpośrednią
+	mov	rdi,	qword [service_desu_fill_list_address]
+	add	rdi,	rax
+
+	; dodaj do listy nową strefę
+	mov	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r8
+	mov	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r9
+	mov	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.width],	r10
+	mov	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.height],	r11
+
+	; oraz jej obiekt zależny
+	mov	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.object],	rsi
+
+	; ilość wypełnień na liście
+	inc	qword [service_desu_fill_list_records]
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rdx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"service_desu_fill_insert_by_register"
+
+;===============================================================================
+; wejście:
 ;	rsi - wskaźnik do obiektu
-service_desu_fill_register:
+service_desu_fill_insert_by_object:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rcx
 	push	rdx
-	push	rsi
 	push	rdi
+	push	rsi
 
 	; brak miejsca?
 	cmp	qword [service_desu_fill_list_records],	SERVICE_DESU_FILL_LIST_limit
@@ -25,17 +76,23 @@ service_desu_fill_register:
 	mov	rdi,	qword [service_desu_fill_list_address]
 	add	rdi,	rax
 
-	; załaduj na listę
-	mov	rcx,	SERVICE_DESU_STRUCTURE_FILL.SIZE >> STATIC_DIVIDE_BY_8_shift
-	rep	movsq
+	; wstaw właściwości wypełnienia
+	movsq	; pozycja na osi X
+	movsq	; pozycja na osi Y
+	movsq	; szerokość
+	movsq	; wysokość
+
+	; oraz informacje o obiekcie zależnym
+	mov	rax,	qword [rsp]
+	mov	qword [rdi],	rax
 
 	; ilość fragmentów na liście
 	inc	qword [service_desu_fill_list_records]
 
 .end:
 	; przywróć oryginalne rejestry
-	pop	rdi
 	pop	rsi
+	pop	rdi
 	pop	rdx
 	pop	rcx
 	pop	rax
@@ -43,7 +100,6 @@ service_desu_fill_register:
 	; powrót z procedury
 	ret
 
-	; informacja dla Bochs
 	macro_debug	"service desu fill insert"
 
 ;===============================================================================
@@ -81,96 +137,71 @@ service_desu_fill:
 	;-----------------------------------------------------------------------
 	; pobierz właściwości wypełnienia
 	;-----------------------------------------------------------------------
-	mov	r8,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
-	mov	r9,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
-	mov	r10,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
-	mov	r11,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height]
-
-	;-----------------------------------------------------------------------
-	; sprawdź czy rozpatrywane wypełnienie jest widoczne
-	;-----------------------------------------------------------------------
-
-	; czy wypełnienie znajduje się poza przestrzenią ekranu z prawej?
-	mov	rax,	r8
-	cmp	rax,	qword [kernel_video_width_pixel]
-	jge	.leave	; tak
-
-	; z lewej?
-	add	rax,	r10
-	cmp	rax,	STATIC_EMPTY
-	jl	.leave	; tak
-
-	; czy wypełnienie znajduje się poza przestrzenią ekranu od dołu?
-	mov	rax,	r9
-	cmp	rax,	qword [kernel_video_height_pixel]
-	jge	.leave	; tak
-
-	; od góry?
-	add	rax,	r11
-	cmp	rax,	STATIC_EMPTY
-	jl	.leave	; tak
+	mov	r8,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.x]
+	mov	r9,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.y]
+	mov	r10,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.width]
+	mov	r11,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.height]
 
 	;-----------------------------------------------------------------------
 	; wytnij niewidoczne części wypełnienia
 	;-----------------------------------------------------------------------
 
+.left: ;)
 	;-----------------------------------------------------------------------
 	; wypełnienie wykracza poza ekran z lewej strony?
 	bt	r8,	STATIC_WORD_BIT_sign
-	jnc	.left_passive	; nie
+	jnc	.top	; nie
 
-	; wytnij niewidoczny fragment
-	not	r8
-	inc	r8
-	sub	r10,	r8
+	; zmiejsz szerokość wypełnienia
+	add	r10,	r8
 
-	; wypełnienie znajduje się na początku osi X
+	; nowa pozycja na osi X
 	xor	r8,	r8
 
-.left_passive:
+.top:
 	;-----------------------------------------------------------------------
 	; wypełnienie wykracza poza ekran od górnej strony?
 	bt	r9,	STATIC_WORD_BIT_sign
-	jnc	.top_passive	; nie
+	jnc	.right	; nie
 
-	; wytnij niewidoczny fragment
-	not	r9
-	inc	r9
-	sub	r11,	r9
+	; zmniejsz wysokość wypełnienia
+	add	r11,	r9
 
-	; wypełnienie znajduje się na początku osi Y
+	; nowa pozycja na osi Y
 	xor	r9,	r9
 
-.top_passive:
+.right:
 	;-----------------------------------------------------------------------
 	; wypełnienie wykracza poza ekran od prawej strony?
 	mov	rax,	r8
 	add	rax,	r10
 	cmp	rax,	qword [kernel_video_width_pixel]
-	jb	.right_passive	; nie
+	jb	.down	; nie
 
-	; wytnij niewidoczny fragment
+	; wytnij niewidoczne wypełnienie
 	sub	rax,	qword [kernel_video_width_pixel]
 	sub	r10,	rax
 
-.right_passive:
+.down:
 	;-----------------------------------------------------------------------
 	; wypełnienie wykracza poza ekran od dolnej strony?
 	mov	rax,	r9
 	add	rax,	r11
 	cmp	rax,	qword [kernel_video_height_pixel]
-	jb	.bottom_passive	; nie
+	jb	.ready	; nie
 
-	; wytnij niewidoczny fragment
+	; wytnij niewidoczne wypełnienie
 	sub	rax,	qword [kernel_video_height_pixel]
 	sub	r11,	rax
 
-.bottom_passive:
+.ready:
 	;-----------------------------------------------------------------------
-	; oblicz niezbędne zmienne do opracji kopiowania przestrzeni
+	; wylicz zmienne do opracji kopiowania przestrzeni
 	;-----------------------------------------------------------------------
 
-	mov	rsi,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.address]
+	xchg	bx,bx
+
+	mov	rsi,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.object]
 
 	; scanline fragmentu w Bajtach
 	mov	r12,	r10
@@ -300,5 +331,4 @@ service_desu_fill:
 	; powrót z procedury
 	ret
 
-	; informacja dla Bochs
-	macro_debug	"service desu fill"
+	macro_debug	"service_desu_fill"

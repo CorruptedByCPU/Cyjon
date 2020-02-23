@@ -127,9 +127,6 @@ service_desu_zone_insert_by_register:
 	macro_debug	"service_desu_zone_insert_by_register"
 
 ;===============================================================================
-; wejście:
-;	bl -	STATIC_TRUE - aktualizuj tylko widoczne podstrefy
-;		STATIC_FALSE - aktualizuj wszystkie strefy
 service_desu_zone:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -152,7 +149,13 @@ service_desu_zone:
 	; ustaw wskaźnik na pierwszą opisaną strefę na liście
 	mov	rdi,	qword [service_desu_zone_list_address]
 
+	; korekta, względem procedury
+	sub	rdi,	SERVICE_DESU_STRUCTURE_ZONE.SIZE
+
 .loop:
+	; przesuń wskaźnik na pierwszą/następną strefę do przetworzenia
+	add	rdi,	SERVICE_DESU_STRUCTURE_ZONE.SIZE
+
 	; brak strefy do przetworzenia?
 	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.object],	STATIC_EMPTY
 	je	.end	; tak
@@ -174,13 +177,13 @@ service_desu_zone:
 
 	; opisana strefa znajduje się w przestrzeni "ekranu"?
 	cmp	r8,	qword [kernel_video_width_pixel]
-	jge	.next	; nie
+	jge	.loop	; nie
 	cmp	r9,	qword [kernel_video_height_pixel]
-	jge	.next	; nie
+	jge	.loop	; nie
 	cmp	r10,	STATIC_EMPTY
-	jle	.next	; nie
+	jle	.loop	; nie
 	cmp	r11,	STATIC_EMPTY
-	jle	.next	; nie
+	jle	.loop	; nie
 
 	;-----------------------------------------------------------------------
 	; interferencja
@@ -367,49 +370,27 @@ service_desu_zone:
 	; nowa pozycja dolnej krawędzi strefy
 	mov	r11,	r15
 
-	; usuń pozostały fragment strefy
-	jmp	.remove
-
-.refill:
-	; wypełnij pozostałą strefę zawartością obiektu pokrywającego
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r8
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r9
-	sub	r10,	r8
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width],	r10
-	sub	r11,	r9
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height],	r11
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.address],	rsi
-	xchg	rdi,	rsi	; ustaw wskaźnik źródłowy na strefę
-	call	service_desu_fill_register	; zarejestruj
-
-	; przywróć wskaźniki na miejsce
-	xchg	rdi,	rsi
-
-	; strefa przesłana do wypełnienia
-	jmp	.next	; usuń
+	; strefa należy do obiektu kursora?
+	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.object],	service_desu_object_cursor
+	jne	.loop	; nie, zignoruj pozostały fragment
 
 .fill:
-	;-----------------------------------------------------------------------
-	; zarejestruj wypełnienie
-	mov	rsi,	rdi
-	call	service_desu_fill_register
-
-	; usuń zarejestrowaną stregę
-	jmp	.next
+	; wypełnij pozostały fragment danym obiektem
+	sub	r10,	r8	; zwróć szerokość strefy
+	sub	r11,	r9	; zwróć wysokość strefy
+	call	service_desu_fill_insert_by_register
 
 .remove:
-	; wypełnić porzuconą strefę?
-	test	bl,	bl
-	jnz	.refill	; tak
-
-.next:
-	; przesuń wskaźnik na następną strefę do przetworzenia
-	add	rdi,	SERVICE_DESU_STRUCTURE_ZONE.SIZE
+	; zwolnij strefę z listy
+	mov	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.object],	STATIC_EMPTY
 
 	; kontynuuj
 	jmp	.loop
 
 .end:
+	; wszystkie strefy na liście zostały przetworzone
+	mov	qword [service_desu_zone_list_records],	STATIC_EMPTY
+
 	; odblokuj listę obiektów do modyfikacji
 	mov	byte [service_desu_object_semaphore],	STATIC_FALSE
 
