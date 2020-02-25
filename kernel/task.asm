@@ -69,7 +69,7 @@ kernel_task:
 
 .no:
 	; nie wiem dlaczego, ale Bochs odkłada czasami 1..2 wartości na stos...
-	cmp	byte [rsp + STATIC_QWORD_SIZE_byte],	KERNEL_STRUCTURE_GDT.cs_ring0
+	cmp	qword [rsp + STATIC_QWORD_SIZE_byte],	KERNEL_STRUCTURE_GDT.cs_ring0
 	je	.cs	; znaleziono deskryptor CS
 
 	; usuń wartość ze stosu

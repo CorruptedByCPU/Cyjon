@@ -21,14 +21,14 @@ service_desu:
 	call	service_desu_object
 
 	;-----------------------------------------------------------------------
-	; wypełnij wszystkie aktualizowane fragmenty ekranu
-	;-----------------------------------------------------------------------
-	call	service_desu_fill
-
-	;-----------------------------------------------------------------------
 	; sprawdź stan i położenie obiektu kursora
 	;-----------------------------------------------------------------------
 	call	service_desu_cursor
+
+	;-----------------------------------------------------------------------
+	; wypełnij wszystkie aktualizowane fragmenty ekranu
+	;-----------------------------------------------------------------------
+	call	service_desu_fill
 
 	; powróć do głównej pętli
 	jmp	.loop

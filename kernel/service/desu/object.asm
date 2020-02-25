@@ -194,6 +194,320 @@ service_desu_object_id_get:
 
 	macro_debug	"service_desu_object_id_get"
 
+;===============================================================================
+; wejście:
+;	r8w - pozycja kursora na osi X
+;	r9w - pozycja kursora na osi Y
+; wyjście:
+;	rsi - wskaźnik do obiektu znajdującego się pod współrzędnymi kursora
+service_desu_object_find:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rdx
+	push	rsi
+
+	; na liście znajdują się obiekty?
+	cmp	qword [service_desu_object_list_records],	STATIC_EMPTY
+	je	.error	; nie
+
+	; ilość obiektów na liście
+	mov	rcx,	qword [service_desu_object_list_records]
+
+	; oblicz adres względny za ostatnim rekordem listy obiektów
+	mov	rax,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+	mul	rcx
+
+	; ustaw wskaźnik na adres bezwzględny początku listy obiektów
+	mov	rsi,	qword [service_desu_object_list_address]
+	add	rsi,	rax	; przesuń wskaźnik na koniec
+
+.next:
+	; cofnij wskaźnik na poprzedni obiekt
+	sub	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+
+	; obiekt widoczny?
+	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_visible
+	jz	.fail	; nie
+
+	;-----------------------------------------------------------------------
+	; wskaźnik w przestrzeni obiektu względem lewej krawędzi?
+	cmp	r8,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
+	jl	.fail	; nie
+
+	; wskaźnik w przestrzeni obiektu względem górnej krawędzi?
+	cmp	r9,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
+	jl	.fail	; nie
+
+	; wskaźnik w przestrzeni obiektu względem prawej krawędzi?
+	mov	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
+	add	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
+	cmp	r8,	rax
+	jge	.fail	; nie
+
+	; wskaźnik w przestrzeni obiektu względem dolnej krawędzi?
+	mov	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
+	add	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height]
+	cmp	r9,	rax
+	jge	.fail	; nie
+	;-----------------------------------------------------------------------
+
+	; zwróć wskaźnik do obiektu
+	mov	qword [rsp],	rsi
+
+	; flaga, sukces
+	clc
+
+	; koniec
+	jmp	.end
+
+.fail:
+	; istnieją pozostałe obiekty do sprawdzenia?
+	dec	rcx
+	jnz	.next	; tak
+
+.error:
+	; flaga, błąd
+	stc
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"service_desu_object_find"
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do obiektu
+; wyjście:
+;	rsi - nowy wskaźnik do obiektu
+service_desu_object_up:
+	; zachowaj wskaźnik do aktualnego obiektu
+	push	rsi
+
+	; dodaj obiekt ponownie na listę
+	call	service_desu_object_insert
+
+	; zwróć nowy wskaźnik do obiektu
+	xchg	rsi,	qword [rsp]
+
+	; usuń stary obiekt z listy
+	call	service_desu_object_remove
+
+	; zwróć wskaźni do obiektu
+	pop	rsi
+
+	; koryguj pozycje
+	sub	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"service_desu_object_move_top"
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik rekordu do usunięcia
+service_desu_object_remove:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; ustaw wskaźnik źródłowy i docelowy
+	mov	rdi,	rsi
+	add	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+
+.loop:
+	; kopiuj następny rekord w miejsce aktualnego
+	mov	rcx,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+	rep	movsb
+
+	; pozostały inne rekordy do prdesunięcia?
+	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width],	STATIC_EMPTY
+	jne	.loop	; tak
+
+	; ilość rekordów na liście
+	dec	qword [service_desu_object_list_records]
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rcx
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"service_desu_object_remove"
+
+;===============================================================================
+; wejście:
+;	r14 - delta osi X
+;	r15 - delta osi Y
+service_desu_object_move:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rcx
+	push	rsi
+	push	rdi
+	push	r8
+	push	r9
+	push	r10
+	push	r11
+	push	r12
+	push	r13
+	push	r14
+	push	r15
+
+	xchg	bx,bx
+
+	; ustaw wskaźnik na wybrany obiekt
+	mov	rsi,	qword [service_desu_object_selected_pointer]
+
+	; obiekt można przemieszczać?
+	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_fixed_xy
+	jnz	.end	; nie
+
+	; pobierz właściwości obiektu
+	mov	r8,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
+	mov	r9,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
+	mov	r10,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
+	mov	r11,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height]
+
+	; zmienne lokalne
+	mov	r12,	r10
+	mov	r13,	r9
+
+	;-----------------------------------------------------------------------
+	; obiekt został przemieszczony na osi X?
+	test	r14,	r14
+	jz	.y	; nie, sprawdź oś Y
+	;-----------------------------------------------------------------------
+
+	; obiekt został przemieszczony w prawo?
+	bt	r14,	STATIC_QWORD_BIT_sign
+	jc	.to_left	; nie
+
+	; szerokość strefy do przetworzenia
+	mov	r10,	r14	; o rozmiarze delty na osi X
+	mov	rdi,	qword [service_desu_object_list_address]
+	call	service_desu_zone_insert_by_register
+
+	; przemieść obiekt w prawo o deltę osi X
+	add	r8,	r14
+
+	; obiekt przesunięty o całą swą szerokość?
+	cmp	r14,	r12
+	jae	.y_overflow	; tak
+
+	; zmiejsz szerokość przetwarzanej przestrzeni obiektu
+	mov	r10,	r12
+	sub	r10,	r14
+
+	; kontynuuj z osią Y
+	jmp	.y
+
+.to_left:
+	; zamień deltę osi X na wartość bezwzględną
+	neg	r14
+
+	; pozycja i szerokość strefy do przetworzenia
+	add	r8,	r10
+	sub	r8,	r14
+	mov	r10,	r14
+	mov	rdi,	qword [service_desu_object_list_address]
+	call	service_desu_zone_insert_by_register
+
+	; przemieść obiekt w prawo o deltę osi X
+	mov	r8,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
+	sub	r8,	r14
+
+	; obiekt przesunięty o całą swą szerokość?
+	cmp	r14,	r12
+	jae	.y_overflow	; tak
+
+.y:
+	;-----------------------------------------------------------------------
+	; obiekt został przemieszczony na osi Y?
+	test	r15,	r15
+	jz	.ready	; nie, gotowe
+	;-----------------------------------------------------------------------
+
+	; obiekt został przemieszczony w dół?
+	bt	r15,	STATIC_QWORD_BIT_sign
+	jc	.to_up	; nie
+
+	push	r8
+
+	; wysokość strefy do przetworzenia
+	mov	r8,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
+	mov	r11,	r15	; o rozmiarze delty na osi Y
+	mov	rdi,	qword [service_desu_object_list_address]
+	call	service_desu_zone_insert_by_register
+
+	pop	r8
+
+.y_overflow:
+	; ustaw nową pozycję obiektu na osi Y
+	add	r9,	r15
+
+	; kontynuuj z osią Y
+	jmp	.ready
+
+.to_up:
+	; zamień deltę osi X na wartość bezwzględną
+	neg	r15
+
+	; pozycja i szerokość strefy do przetworzenia
+	add	r9,	r11
+	sub	r9,	r15
+	mov	r11,	r15
+	mov	rdi,	qword [service_desu_object_list_address]
+	call	service_desu_zone_insert_by_register
+
+	; ustaw nową pozycję obiektu na osi Y
+	mov	r9,	r13
+	sub	r9,	r15
+
+.ready:
+	; aktualizuj pozycję obiektu
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r8
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r9
+
+	; wyświetl ponownie zawartość obiektu okna
+	or	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
+
+	call	service_desu_zone
+	call	service_desu_fill
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	r15
+	pop	r14
+	pop	r13
+	pop	r12
+	pop	r11
+	pop	r10
+	pop	r9
+	pop	r8
+	pop	rdi
+	pop	rsi
+	pop	rcx
+	pop	rbx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"service_desu_object_move"
+
 ; ;===============================================================================
 ; service_desu_object_hide:
 ; 	; zachowaj oryginalne rejestry
@@ -244,43 +558,6 @@ service_desu_object_id_get:
 ; 	ret
 
 
-
-; ;===============================================================================
-; ; wejście:
-; ;	rsi - wskaźnik rekordu do usunięcia
-; service_desu_object_remove:
-; 	; zachowaj oryginalne rejestry
-; 	push	rcx
-; 	push	rsi
-; 	push	rdi
-;
-; 	; ustaw wskaźnik źródłowy i docelowy
-; 	mov	rdi,	rsi
-; 	add	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
-;
-; .loop:
-; 	; kopiuj następny rekord w miejsce aktualnego
-; 	mov	rcx,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
-; 	rep	movsb
-;
-; 	; pozostały inne rekordy do prdesunięcia?
-; 	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width],	STATIC_EMPTY
-; 	jne	.loop	; tak
-;
-; 	; ilość rekordów na liście
-; 	dec	qword [service_desu_object_list_records]
-;
-; 	; przywróć oryginalne rejestry
-; 	pop	rdi
-; 	pop	rsi
-; 	pop	rcx
-;
-; 	; powrót z procedury
-; 	ret
-;
-; 	; informacja dla Bochs
-; 	macro_debug	"service desu object remove"
-
 ; ;===============================================================================
 ; service_desu_object_lock:
 ; 	; zablokuj dostęp do modyfikacji listy obiektów
@@ -297,305 +574,6 @@ service_desu_object_id_get:
 ; 	; informacja dla Bochs
 ; 	macro_debug	"service desu object list lock"
 
-; ;===============================================================================
-; ; wejście:
-; ;	rsi - wskaźnik do obiektu
-; ; wyjście:
-; ;	rsi - nowy wskaźnik do obiektu
-; service_desu_object_move_top:
-; 	; zachowaj wskaźnik do aktualnego obiektu
-; 	push	rsi
-;
-; 	; dodaj obiekt ponownie na listę
-; 	call	service_desu_object_insert
-;
-; 	; zwróć nowy wskaźnik do obiektu
-; 	xchg	rsi,	qword [rsp]
-;
-; 	; usuń stary obiekt z listy
-; 	call	service_desu_object_remove
-;
-; 	; zwróć wskaźni do obiektu
-; 	pop	rsi
-;
-; 	; koryguj pozycje
-; 	sub	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
-;
-; 	; powrót z procedury
-; 	ret
-;
-; 	; informacja dla Bochs
-; 	macro_debug	"service desu object move top"
-
-; ;===============================================================================
-; service_desu_object_move:
-; 	; zachowaj oryginalne rejestry
-; 	push	rax
-; 	push	rbx
-; 	push	rcx
-; 	push	rsi
-; 	push	rdi
-; 	push	r10
-; 	push	r11
-; 	push	r12
-; 	push	r13
-; 	push	r14
-; 	push	r15
-;
-; 	; ustaw wskaźnik na wybrany obiekt
-; 	mov	rsi,	qword [service_desu_object_selected_pointer]
-;
-; 	; obiekt można przemieszczać?
-; 	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_fixed_xy
-; 	jnz	.leave	; nie
-;
-; 	; pobierz właściwości obiektu
-; 	mov	r12,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
-; 	mov	r13,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
-; 	mov	r14,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
-; 	mov	r15,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height]
-;
-; 	; wszystkie strefy obiektów wypełnij domyślnie pierwszym obiektem z listy
-; 	mov	rax,	qword [service_desu_object_list_address]
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.address],	rax
-;
-; 	;-----------------------------------------------------------------------
-; 	; rozpatrzenie osi X
-; 	;-----------------------------------------------------------------------
-;
-; 	; brak przesunięcia na osi X?
-; 	test	r10,	r10
-; 	jz	.x_ok	; tak
-;
-; 	; przesunięcie obiektu w prawo?
-; 	bt	r10,	STATIC_QWORD_BIT_sign
-; 	jc	.left	; nie
-;
-; 	; ustaw pozycje X,Y strefy
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r12
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r13
-;
-; 	; ustaw wysokość i szerokość strefy
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width],	r10
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height],	r15
-;
-; 	; dodaj strefę do przetworzenia
-; 	call	service_desu_zone_register
-;
-; 	; ustaw nową pozycję obiektu na osi X
-; 	add	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r10
-;
-; 	; aktualizuj pozycje obiektu na osi X
-; 	add	r12,	r10
-;
-; 	; obiekt przesunięty o całą swą szerokość?
-; 	cmp	r10,	r14
-; 	jae	.y_overwrite	; tak
-;
-; 	; zmiejsz szerokość przetwarzanej przestrzeni obiektu
-; 	sub	r14,	r10
-;
-; 	; kontynuuj z osią Y
-; 	jmp	.x_ok
-;
-; .left:
-; 	; zamień deltę osi X na wartość bezwzględną
-; 	neg	r10
-;
-; 	; ustaw pozycje X,Y strefy
-; 	mov	rax,	r12
-; 	add	rax,	r14
-; 	sub	rax,	r10
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	rax
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r13
-;
-; 	; ustaw szerokość i wysokość strefy
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width],	r10
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height],	r15
-;
-; 	; dodaj strefę do przetworzenia
-; 	call	service_desu_zone_register
-;
-; 	; ustaw nową pozycję obiektu na osi X
-; 	sub	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r10
-;
-; 	; aktualizuj pozycje obiektu na osi X
-; 	sub	r12,	r10
-;
-; 	; obiekt przesunięty o całą swą szerokość?
-; 	cmp	r10,	r14
-; 	jnb	.y_overwrite	; tak
-;
-; .x_ok:
-; 	;-----------------------------------------------------------------------
-; 	; rozpatrzenie osi Y
-; 	;-----------------------------------------------------------------------
-;
-; 	; brak przesunięcia na osi Y?
-; 	test	r11,	r11
-; 	jz	.ready	 ; tak
-;
-; 	; przesunięcie obiektu w dół?
-; 	bt	r11,	STATIC_QWORD_BIT_sign
-; 	jc	.up	; nie
-;
-; 	; ustaw pozycje X,Y strefy
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r12
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r13
-;
-; 	; ustaw wysokość i szerokość strefy
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width],	r14
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height],	r11
-;
-; 	; dodaj strefę do przetworzenia
-; 	call	service_desu_zone_register
-;
-; .y_overwrite:
-; 	; ustaw nową pozycję obiektu na osi Y
-; 	add	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r11
-;
-; 	; kontynuuj z osią Y
-; 	jmp	.ready
-;
-; .up:
-; 	; zamień deltę osi Y na wartość bezwzględną
-; 	neg	r11
-;
-; 	; ustaw pozycje X,Y strefy
-; 	mov	rax,	r13
-; 	add	rax,	r15
-; 	sub	rax,	r11
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r12
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	rax
-;
-; 	; ustaw szerokość i wysokość strefy
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width],	r14
-; 	mov	qword [service_desu_zone_assign + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height],	r11
-;
-; 	; dodaj strefę do przetworzenia
-; 	call	service_desu_zone_register
-;
-; 	; ustaw nową pozycję obiektu na osi Y
-; 	sub	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r11
-;
-; .ready:
-; 	; wyświetl ponownie zawartość obiektu okna
-; 	or	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
-;
-; 	; przetwórz zarejestrowane pola i wypełnij zależnymi obiektami
-; 	call	service_desu_zone_disassemble.registered
-; 	call	service_desu_fill
-;
-; .leave:
-; 	; przywróć oryginalne rejestry
-; 	pop	r15
-; 	pop	r14
-; 	pop	r13
-; 	pop	r12
-; 	pop	r11
-; 	pop	r10
-; 	pop	rdi
-; 	pop	rsi
-; 	pop	rcx
-; 	pop	rbx
-; 	pop	rax
-;
-; 	; powrót z procedury
-; 	ret
-
-; ;===============================================================================
-; ; wejście:
-; ;	r8w - pozycja kursora na osi X
-; ;	r9w - pozycja kursora na osi Y
-; ; wyjście:
-; ;	rsi - wskaźnik do obiektu znajdującego się pod współrzędnymi kursora
-; service_desu_object_find:
-; 	; zachowaj oryginalne rejestry
-; 	push	rax
-; 	push	rcx
-; 	push	rdx
-; 	push	rsi
-;
-; 	; na liście znajdują się obiekty?
-; 	cmp	qword [service_desu_object_list_records],	STATIC_EMPTY
-; 	je	.error	; nie
-;
-; 	; ilość obiektów na liście
-; 	mov	rcx,	qword [service_desu_object_list_records]
-;
-; 	; oblicz adres względny za ostatnim rekordem listy obiektów
-; 	mov	rax,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
-; 	mul	rcx
-;
-; 	; ustaw wskaźnik na adres bezwzględny początku listy obiektów
-; 	mov	rsi,	qword [service_desu_object_list_address]
-; 	add	rsi,	rax	; przesuń wskaźnik na koniec
-;
-; .next:
-; 	; cofnij wskaźnik na poprzedni obiekt
-; 	sub	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
-;
-; 	; obiekt widoczny?
-; 	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_visible
-; 	jz	.fail	; nie
-;
-; 	;=======================================================================
-; 	; lewa krawędź obiektu
-; 	cmp	r8,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
-; 	jl	.fail	; poza obszarem obiektu
-;
-; 	;=======================================================================
-; 	; górna krawędź obiektu
-; 	cmp	r9,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
-; 	jl	.fail	; poza obszarem obiektu
-;
-; 	;=======================================================================
-; 	; prawa krawędź obiektu
-; 	mov	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
-; 	add	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
-; 	dec	rax
-; 	cmp	r8,	rax
-; 	jg	.fail	; poza obszarem obiektu
-;
-; 	;=======================================================================
-; 	; dolna krawędź obiektu
-; 	mov	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
-; 	add	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height]
-; 	dec	rax
-; 	cmp	r9,	rax
-; 	jg	.fail	; poza obszarem obiektu
-;
-; 	; zwróć wskaźnik do pasującego obiektu
-; 	mov	qword [rsp],	rsi
-;
-; 	; flaga, sukces
-; 	clc
-;
-; 	; koniec
-; 	jmp	.end
-;
-; .fail:
-; 	; istnieją pozostałe obiekty do sprawdzenia?
-; 	dec	rcx
-; 	jnz	.next	; tak
-;
-; .error:
-; 	; flaga, błąd
-; 	stc
-;
-; .end:
-; 	; przywróć oryginalne rejestry
-; 	pop	rsi
-; 	pop	rdx
-; 	pop	rcx
-; 	pop	rax
-;
-; 	; powrót z procedury
-; 	ret
-;
-; 	; informacja dla Bochs
-; 	macro_debug	"service DESU object find"
-;
 ; ;===============================================================================
 ; ; wejście:
 ; ;	rbx - identyfikator okna
