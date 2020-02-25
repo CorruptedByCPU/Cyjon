@@ -33,10 +33,6 @@ endstruc
 struc	SERVICE_DESU_STRUCTURE_OBJECT_EXTRA
 	.size						resb	8
 	.flags						resb	8
-	.id						resb	8
-	.pid						resb	8
-	.length						resb	1
-	.name:						resb	SERVICE_DESU_OBJECT_NAME_length
 	.SIZE:
 endstruc
 

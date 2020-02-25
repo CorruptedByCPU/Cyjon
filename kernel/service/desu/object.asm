@@ -29,73 +29,73 @@ service_desu_object_insert:
 
 	; koryguj pozycje wskaźnika
 	add	rdi,	rax
-
-	; na liście znajduje się arbiter?
-	cmp	qword [service_desu_object_arbiter_pointer],	STATIC_EMPTY
-	je	.no	; nie
-
-	; pobierz PID procesu
-	call	kernel_task_active_pid
-
-	; proces urzywilejowany?
-	cmp	rax,	qword [service_desu_object_privileged_pid]
-	je	.privileged	; tak
-
-	;-----------------------------------------------------------------------
-	; ustaw wskaźnik źródłowy za ostatni obiekt listy
-	mov	rsi,	rdi
-	sub	rsi,	STATIC_QWORD_SIZE_byte
-
-	; ustaw wskaźnik docelowy na wolne miejsce
-	add	rdi,	(SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE) - STATIC_QWORD_SIZE_byte
-
-	; cofaj wskaźniki przy przesunięciu
-	std
-
-.replace:
-	; przesuń wszystkie obiekty za (i wraz) arbitrem o jedną pozycję dalej
-	mov	ecx,	(SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE) >> STATIC_DIVIDE_BY_8_shift
-	rep	movsq
-
-	; zwolniono miejsce przed arbitrem?
-	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags + STATIC_QWORD_SIZE_byte],	SERVICE_DESU_OBJECT_FLAG_arbiter
-	jz	.replace	; nie, przemieść następny obiekt
-
-	; przywróć flagę na miejsce
-	cld
-	;-----------------------------------------------------------------------
-
-	; ustaw wskaźnik docelowy na zwolnione miejsce
-	mov	rdi,	rsi
-	add	rdi,	STATIC_QWORD_SIZE_byte
-
-.privileged:
-	; przywróć wskaźnik źródłowy na rejestrowany obiekt
-	mov	rsi,	qword [rsp]
-
-.no:
+;
+; 	; na liście znajduje się arbiter?
+; 	cmp	qword [service_desu_object_arbiter_pointer],	STATIC_EMPTY
+; 	je	.no	; nie
+;
+; 	; pobierz PID procesu
+; 	call	kernel_task_active_pid
+;
+; 	; proces urzywilejowany?
+; 	cmp	rax,	qword [service_desu_object_privileged_pid]
+; 	je	.privileged	; tak
+;
+; 	;-----------------------------------------------------------------------
+; 	; ustaw wskaźnik źródłowy za ostatni obiekt listy
+; 	mov	rsi,	rdi
+; 	sub	rsi,	STATIC_QWORD_SIZE_byte
+;
+; 	; ustaw wskaźnik docelowy na wolne miejsce
+; 	add	rdi,	(SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE) - STATIC_QWORD_SIZE_byte
+;
+; 	; cofaj wskaźniki przy przesunięciu
+; 	std
+;
+; .replace:
+; 	; przesuń wszystkie obiekty za (i wraz) arbitrem o jedną pozycję dalej
+; 	mov	ecx,	(SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE) >> STATIC_DIVIDE_BY_8_shift
+; 	rep	movsq
+;
+; 	; zwolniono miejsce przed arbitrem?
+; 	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags + STATIC_QWORD_SIZE_byte],	SERVICE_DESU_OBJECT_FLAG_arbiter
+; 	jz	.replace	; nie, przemieść następny obiekt
+;
+; 	; przywróć flagę na miejsce
+; 	cld
+; 	;-----------------------------------------------------------------------
+;
+; 	; ustaw wskaźnik docelowy na zwolnione miejsce
+; 	mov	rdi,	rsi
+; 	add	rdi,	STATIC_QWORD_SIZE_byte
+;
+; .privileged:
+; 	; przywróć wskaźnik źródłowy na rejestrowany obiekt
+; 	mov	rsi,	qword [rsp]
+;
+; .no:
 	; zwróć bezpośredni wskaźnik na liście do wstawianego obiektu
 	mov	qword [rsp],	rdi
 
-	; przygotuj dla obiektu nowy identyfikator
-	call	service_desu_object_id_get
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id],	rcx
-
-	; zwróć informacje o identyfikatorze
-	mov	qword [rsp + STATIC_QWORD_SIZE_byte * 0x03],	rcx
-
-	; rejestrowany obiekt będzie arbitrem?
-	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_arbiter
-	jz	.insert	; nie
-
-	; nie pozwól na zarejestrowanie kolejnego arbitra
-	cmp	qword [service_desu_object_arbiter_pointer],	STATIC_EMPTY
-	jne	.insert	; istnieje już, zignoruj
-
-	; zachowaj wskaźnik na liście do arbitra
-	mov	qword [service_desu_object_arbiter_pointer],	rsi
-
-.insert:
+; 	; przygotuj dla obiektu nowy identyfikator
+; 	call	service_desu_object_id_get
+; 	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id],	rcx
+;
+; 	; zwróć informacje o identyfikatorze
+; 	mov	qword [rsp + STATIC_QWORD_SIZE_byte * 0x03],	rcx
+;
+; 	; rejestrowany obiekt będzie arbitrem?
+; 	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_arbiter
+; 	jz	.insert	; nie
+;
+; 	; nie pozwól na zarejestrowanie kolejnego arbitra
+; 	cmp	qword [service_desu_object_arbiter_pointer],	STATIC_EMPTY
+; 	jne	.insert	; istnieje już, zignoruj
+;
+; 	; zachowaj wskaźnik na liście do arbitra
+; 	mov	qword [service_desu_object_arbiter_pointer],	rsi
+;
+; .insert:
 	; zachowaj wskaźnik do obiektu
 	push	rsi
 

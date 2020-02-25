@@ -209,7 +209,7 @@ service_desu_cursor:
 	call	service_desu_fill
 
 	; obiekt kursora został zaaktualizowany
-	; or	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
+	or	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
 
 ; 	;-----------------------------------------------------------------------
 ;

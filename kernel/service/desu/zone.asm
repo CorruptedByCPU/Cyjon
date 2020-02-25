@@ -10,7 +10,6 @@
 service_desu_zone_insert_by_object:
 	; zachowaj oryginalne rejestry
 	push	rax
-	push	rcx
 	push	rdx
 	push	rdi
 	push	rsi
@@ -54,7 +53,6 @@ service_desu_zone_insert_by_object:
 	pop	rsi
 	pop	rdi
 	pop	rdx
-	pop	rcx
 	pop	rax
 
 	; powrót z procedury
@@ -74,7 +72,6 @@ service_desu_zone_insert_by_object:
 service_desu_zone_insert_by_register:
 	; zachowaj oryginalne rejestry
 	push	rax
-	push	rcx
 	push	rdx
 	push	rsi
 	push	rdi
@@ -118,7 +115,6 @@ service_desu_zone_insert_by_register:
 	pop	rdi
 	pop	rsi
 	pop	rdx
-	pop	rcx
 	pop	rax
 
 	; powrót z procedury
@@ -253,6 +249,14 @@ service_desu_zone:
 	;-----------------------------------------------------------------------
 
 .left: ;)
+	; lewa strefa poza ekranem?
+	cmp	r8,	STATIC_EMPTY
+	jge	.left_positive	; nie
+
+	; przesuń na początek ekranu
+	xor	r8,	r8
+
+.left_positive:
 	; lewa krawędź strefy przed lewą krawędzią obiektu?
 	cmp	r8,	r12
 	jge	.up	; nie
@@ -282,6 +286,14 @@ service_desu_zone:
 	mov	r8,	r12
 
 .up:
+	; lewa strefa poza ekranem?
+	cmp	r9,	STATIC_EMPTY
+	jge	.up_positive	; nie
+
+	; przesuń na początek ekranu
+	xor	r9,	r9
+
+.up_positive:
 	; górna krawędź strefy przed górną krawędzią obiektu?
 	cmp	r9,	r13
 	jge	.right	; nie
@@ -311,6 +323,14 @@ service_desu_zone:
 	mov	r9,	r13
 
 .right:
+	; lewa strefa poza ekranem?
+	cmp	r10,	qword [kernel_video_width_pixel]
+	jle	.right_positive	; nie
+
+	; przesuń na początek ekranu
+	mov	r10,	qword [kernel_video_width_pixel]
+
+.right_positive:
 	; prawa krawędź strefy za prawą krawędzią obiektu?
 	cmp	r10,	r14
 	jle	.down	; nie
@@ -336,6 +356,14 @@ service_desu_zone:
 	mov	r10,	r14
 
 .down:
+	; lewa strefa poza ekranem?
+	cmp	r11,	qword [kernel_video_height_pixel]
+	jle	.down_positive	; nie
+
+	; przesuń na początek ekranu
+	mov	r11,	qword [kernel_video_height_pixel]
+
+.down_positive:
 	; dolna krawędź strefy za dolną krawędzią obiektu?
 	cmp	r11,	r15
 	jle	.cursor	; nie

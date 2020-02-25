@@ -58,6 +58,10 @@
 	call	kernel_memory_alloc
 	call	kernel_page_drain_few
 	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.address],	rdi
+	mov	eax,	0x00101010
+	mov	rcx,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.size]
+	shr	rcx,	STATIC_DIVIDE_BY_DWORD_shift
+	rep	stosd
 	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_fixed_xy | SERVICE_DESU_OBJECT_FLAG_fixed_z | SERVICE_DESU_OBJECT_FLAG_flush | SERVICE_DESU_OBJECT_FLAG_visible
 	call	service_desu_object_insert
 	mov	rsi,	service_desu_object_tmp
