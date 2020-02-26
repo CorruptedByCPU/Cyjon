@@ -69,8 +69,16 @@ service_desu_object_cursor:				dq	STATIC_EMPTY
 
 service_desu_object_tmp:				dq	0
 							dq	0
-							dq	32
-							dq	32
+							dq	16
+							dq	16
+							dq	STATIC_EMPTY
+.extra:							dq	4096
+							dq	STATIC_EMPTY
+
+service_desu_object_another:				dq	16
+							dq	16
+							dq	16
+							dq	16
 							dq	STATIC_EMPTY
 .extra:							dq	4096
 							dq	STATIC_EMPTY

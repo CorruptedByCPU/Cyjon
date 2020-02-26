@@ -72,3 +72,11 @@
 	mov	ecx,	4096 / 4
 	rep	stosd
 	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush | SERVICE_DESU_OBJECT_FLAG_visible
+	mov	rsi,	service_desu_object_another
+	call	service_desu_object_insert
+	call	kernel_memory_alloc_page
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.address],	rdi
+	mov	eax,	0x0000FF00
+	mov	ecx,	4096 / 4
+	rep	stosd
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush | SERVICE_DESU_OBJECT_FLAG_visible

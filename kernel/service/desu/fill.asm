@@ -25,6 +25,13 @@ service_desu_fill_insert_by_register:
 	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.object],	STATIC_EMPTY
 	jne	.next	; nie
 
+	cmp	r10,	STATIC_EMPTY
+	jge	.ok
+
+	xchg	bx,bx
+
+.ok:
+
 	; dodaj do listy nową strefę
 	mov	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r8
 	mov	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r9
@@ -164,45 +171,57 @@ service_desu_fill:
 	; pobierz wskaźnik do obiektu wypełniającego
 	mov	rsi,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.object]
 
-	; scanlines
 	;-----------------------------------------------------------------------
+	; scanlines
 	; r12 - scanline wypelnienia w Bajtach
-	; r13 - scanline obiektu w Bajtach
-	; r14 - scanline bufora w Bajtach
 	mov	r12,	r10
 	shl	r12,	KERNEL_VIDEO_DEPTH_shift
+	; r13 - scanline obiektu w Bajtach
 	mov	r13,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
 	shl	r13,	KERNEL_VIDEO_DEPTH_shift
+	; r14 - scanline bufora w Bajtach
 	mov	r14,	qword [service_desu_object_framebuffer + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
 	shl	r14,	KERNEL_VIDEO_DEPTH_shift
 
-	; pozycja początku wypełnienia względem bufora
+	; wylicz wskaźnik początku wypełnienia w przestrzeni bufora
+	;-----------------------------------------------------------------------
+
+	; pozycja względem osi X
+	mov	rdi,	r8
+	shl	rdi,	KERNEL_VIDEO_DEPTH_shift
+
+	; pozycja względem osi Y
+	mov	rax,	r14
+	mul	r9
+
+	; wskaźnik bezpośredni do przestrzeni wypełnienia w buforze
+	add	rdi,	rax
+	add	rdi,	qword [service_desu_object_framebuffer + SERVICE_DESU_STRUCTURE_OBJECT.address]
+
+	; korekta pozycji wypełnienia względem obiektu
+	;-----------------------------------------------------------------------
+	sub	r8,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
+	sub	r9,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
+
+
+	; wylicz wskaźnik początku wypełnienia w przestrzeni obiektu
 	;-----------------------------------------------------------------------
 
 	; pozycja na osi Y w Bajtach (względna)
 	mov	rax,	r9
-	sub	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
-	mul	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
-	shl	rax,	KERNEL_VIDEO_DEPTH_shift
-	mov	r15,	rax
+	mul	r13
 
-	; pozycja X obszaru wypełniającego
-	mov	rax,	r8
-	sub	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
-	shl	rax,	KERNEL_VIDEO_DEPTH_shift
-	add	r15,	rax
-	add	r15,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.address]
-
-	; ustaw wskaźnik przestrzeni kawałka w przestrzeni bufora
-	mov	rax,	r9
-	mul	qword [kernel_video_scanline_byte]
-	mov	rdi,	rax
+	; pozycja na osi X w Bajtach (względna)
 	shl	r8,	KERNEL_VIDEO_DEPTH_shift
-	add	rdi,	r8
-	add	rdi,	qword [service_desu_object_framebuffer + SERVICE_DESU_STRUCTURE_OBJECT.address]
 
-	; ustaw wskaźnik na przestrzeń kawałka w przestrzeni wypełniacza
-	mov	rsi,	r15
+	; przeliczna wskaźnik bezwzględny
+	mov	rsi,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.address]
+	add	rsi,	rax
+	add	rsi,	r8
+
+	;-----------------------------------------------------------------------
+	; Wypełnianie
+	;-----------------------------------------------------------------------
 
 .row:
 	; następny wiersz N pikseli
@@ -267,10 +286,10 @@ service_desu_fill:
 	pop	rsi
 	pop	rcx
 
-.next:
 	; zwolnij wypełnienie na liście
 	mov	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.object],	STATIC_EMPTY
 
+.next:
 	; przesuń wskaźnik na następne wypełnienie
 	add	rsi,	SERVICE_DESU_STRUCTURE_FILL.SIZE
 

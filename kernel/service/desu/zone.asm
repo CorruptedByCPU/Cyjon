@@ -185,6 +185,38 @@ service_desu_zone:
 	cmp	r11,	STATIC_EMPTY
 	jle	.loop	; nie
 
+	; opisana strefa znajduje się na ujemnej osi X?
+	cmp	r8,	STATIC_EMPTY
+	jnl	.x_positive	; nie
+
+	; przesuń na początek osi X
+	xor	r8,	r8
+
+.x_positive:
+	; opisana strefa znajduje się na ujemnej osi Y?
+	cmp	r9,	STATIC_EMPTY
+	jnl	.y_positive	; nie
+
+	; przesuń na początek osi Y
+	xor	r9,	r9
+
+.y_positive:
+	; opisana strefa wykracza poza oś X?
+	cmp	r10,	qword [kernel_video_width_pixel]
+	jbe	.x_inside	; nie
+
+	; ogranicz strefę do przestrzeni ekranu
+	mov	r10,	qword [kernel_video_width_pixel]
+
+.x_inside:
+	; opisana strefa wykracza poza oś Y?
+	cmp	r11,	qword [kernel_video_height_pixel]
+	jbe	.y_inside	; nie
+
+	; ogranicz strefę do przestrzeni ekranu
+	mov	r11,	qword [kernel_video_height_pixel]
+
+.y_inside:
 	;-----------------------------------------------------------------------
 	; interferencja
 	;-----------------------------------------------------------------------

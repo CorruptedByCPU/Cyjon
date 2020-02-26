@@ -415,8 +415,6 @@ service_desu_object_move:
 	sub	r11,	r15
 
 .ready:
-	xchg	bx,bx
-
 	; przetwórz wszystkie zarejestrowane strefy
 	call	service_desu_zone
 
