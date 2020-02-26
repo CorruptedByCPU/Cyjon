@@ -18,7 +18,6 @@ service_desu_object_list_records			dq	STATIC_EMPTY
 service_desu_object_list_records_free			dq	KERNEL_PAGE_SIZE_byte / (SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE)
 
 service_desu_fill_list_address				dq	STATIC_EMPTY
-service_desu_fill_list_records				dq	STATIC_EMPTY
 
 service_desu_zone_list_address				dq	STATIC_EMPTY
 service_desu_zone_list_records				dq	STATIC_EMPTY
