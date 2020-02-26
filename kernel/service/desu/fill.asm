@@ -11,25 +11,19 @@
 ;	r11 - wysokość strefy
 service_desu_fill_insert_by_register:
 	; zachowaj oryginalne rejestry
-	push	rax
-	push	rdx
+	push	rcx
 	push	rdi
 
-	; brak miejsca?
-	cmp	qword [service_desu_fill_list_records],	SERVICE_DESU_FILL_LIST_limit
-	jne	.insert	; nie
+	; maksymalna ilość miejsc na liście
+	mov	ecx,	SERVICE_DESU_FILL_LIST_limit
 
-	xchg	bx,bx
-	jmp	$
-
-.insert:
-	; oblicz pozycje pośrednią za ostatnim obiektem na liście
-	mov	rax,	SERVICE_DESU_STRUCTURE_FILL.SIZE
-	mul	qword [service_desu_fill_list_records]
-
-	; ustaw wskaźnik na pozycję bezpośrednią
+	; ustaw wskaźnik na listy
 	mov	rdi,	qword [service_desu_fill_list_address]
-	add	rdi,	rax
+
+.loop:
+	; wolne miejsce?
+	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.object],	STATIC_EMPTY
+	jne	.next	; nie
 
 	; dodaj do listy nową strefę
 	mov	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r8
@@ -40,13 +34,25 @@ service_desu_fill_insert_by_register:
 	; oraz jej obiekt zależny
 	mov	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.object],	rsi
 
-	; ilość wypełnień na liście
-	inc	qword [service_desu_fill_list_records]
+	; zrealizowano
+	jmp	.end
 
+.next:
+	; przesuń wskaźnik na następny wpis
+	add	rdi,	SERVICE_DESU_STRUCTURE_FILL.SIZE
+
+	; koniec wpisów
+	dec	rcx
+	jnz	.loop	; nie
+
+	; błąd
+	xchg	bx,bx
+	jmp	$
+
+.end:
 	; przywróć oryginalne rejestry
 	pop	rdi
-	pop	rdx
-	pop	rax
+	pop	rcx
 
 	; powrót z procedury
 	ret
@@ -60,25 +66,19 @@ service_desu_fill_insert_by_object:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rcx
-	push	rdx
 	push	rdi
 	push	rsi
 
-	; brak miejsca?
-	cmp	qword [service_desu_fill_list_records],	SERVICE_DESU_FILL_LIST_limit
-	jne	.insert	; nie
+	; maksymalna ilość miejsc na liście
+	mov	ecx,	SERVICE_DESU_FILL_LIST_limit
 
-	xchg	bx,bx
-	jmp	$
-
-.insert:
-	; oblicz pozycje pośrednią za ostatnim obiektem na liście
-	mov	rax,	SERVICE_DESU_STRUCTURE_FILL.SIZE
-	mul	qword [service_desu_fill_list_records]
-
-	; ustaw wskaźnik na pozycję bezpośrednią
+	; ustaw wskaźnik na listy
 	mov	rdi,	qword [service_desu_fill_list_address]
-	add	rdi,	rax
+
+.loop:
+	; wolne miejsce?
+	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.object],	STATIC_EMPTY
+	jne	.next	; nie
 
 	; wstaw właściwości wypełnienia
 	movsq	; pozycja na osi X
@@ -90,21 +90,32 @@ service_desu_fill_insert_by_object:
 	mov	rax,	qword [rsp]
 	mov	qword [rdi],	rax
 
-	; ilość fragmentów na liście
-	inc	qword [service_desu_fill_list_records]
+	; zrealizowano
+	jmp	.end
+
+.next:
+	; przesuń wskaźnik na następny wpis
+	add	rdi,	SERVICE_DESU_STRUCTURE_FILL.SIZE
+
+	; koniec wpisów
+	dec	rcx
+	jnz	.loop	; nie
+
+	; błąd
+	xchg	bx,bx
+	jmp	$
 
 .end:
 	; przywróć oryginalne rejestry
 	pop	rsi
 	pop	rdi
-	pop	rdx
 	pop	rcx
 	pop	rax
 
 	; powrót z procedury
 	ret
 
-	macro_debug	"service desu fill insert"
+	macro_debug	"service_desu_fill_insert_by_object"
 
 ;===============================================================================
 service_desu_fill:
@@ -122,13 +133,6 @@ service_desu_fill:
 	push	r13
 	push	r14
 	push	r15
-
-	; ilość rekordów na liście wypełnień
-	mov	rcx,	qword [service_desu_fill_list_records]
-
-	; lista zawiera rekordy?
-	test	rcx,	rcx
-	jz	.end	; nie
 
 	; ustaw wskaźnik na listę wypełnień
 	mov	rsi,	qword [service_desu_fill_list_address]
@@ -312,9 +316,6 @@ service_desu_fill:
 	jnz	.loop	; tak
 
 .end:
-	; przetworzono wszystkie wypełnienia z listy
-	mov	qword [service_desu_fill_list_records],	STATIC_EMPTY
-
 	; przywróć oryginalne rejestry
 	pop	r15
 	pop	r14
