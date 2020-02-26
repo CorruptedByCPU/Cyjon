@@ -134,10 +134,17 @@ service_desu_fill:
 	push	r14
 	push	r15
 
+	; maksymalna ilość miejsc na liście
+	mov	ecx,	SERVICE_DESU_FILL_LIST_limit
+
 	; ustaw wskaźnik na listę wypełnień
 	mov	rsi,	qword [service_desu_fill_list_address]
 
 .loop:
+	; pusta pozycja?
+	cmp	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.object],	STATIC_EMPTY
+	je	.next	; tak
+
 	; zachowaj wskaźnik i rozmiar listy
 	push	rcx
 	push	rsi
@@ -151,76 +158,28 @@ service_desu_fill:
 	mov	r11,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.height]
 
 	;-----------------------------------------------------------------------
-	; wytnij niewidoczne części wypełnienia
-	;-----------------------------------------------------------------------
-
-.left: ;)
-	;-----------------------------------------------------------------------
-	; wypełnienie wykracza poza ekran z lewej strony?
-	bt	r8,	STATIC_WORD_BIT_sign
-	jnc	.top	; nie
-
-	; zmiejsz szerokość wypełnienia
-	add	r10,	r8
-
-	; nowa pozycja na osi X
-	xor	r8,	r8
-
-.top:
-	;-----------------------------------------------------------------------
-	; wypełnienie wykracza poza ekran od górnej strony?
-	bt	r9,	STATIC_WORD_BIT_sign
-	jnc	.right	; nie
-
-	; zmniejsz wysokość wypełnienia
-	add	r11,	r9
-
-	; nowa pozycja na osi Y
-	xor	r9,	r9
-
-.right:
-	;-----------------------------------------------------------------------
-	; wypełnienie wykracza poza ekran od prawej strony?
-	mov	rax,	r8
-	add	rax,	r10
-	cmp	rax,	qword [kernel_video_width_pixel]
-	jb	.down	; nie
-
-	; wytnij niewidoczne wypełnienie
-	sub	rax,	qword [kernel_video_width_pixel]
-	sub	r10,	rax
-
-.down:
-	;-----------------------------------------------------------------------
-	; wypełnienie wykracza poza ekran od dolnej strony?
-	mov	rax,	r9
-	add	rax,	r11
-	cmp	rax,	qword [kernel_video_height_pixel]
-	jb	.ready	; nie
-
-	; wytnij niewidoczne wypełnienie
-	sub	rax,	qword [kernel_video_height_pixel]
-	sub	r11,	rax
-
-.ready:
-	;-----------------------------------------------------------------------
 	; wylicz zmienne do opracji kopiowania przestrzeni
 	;-----------------------------------------------------------------------
 
+	; pobierz wskaźnik do obiektu wypełniającego
 	mov	rsi,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.object]
 
-	; scanline fragmentu w Bajtach
+	; scanlines
+	;-----------------------------------------------------------------------
+	; r12 - scanline wypelnienia w Bajtach
+	; r13 - scanline obiektu w Bajtach
+	; r14 - scanline bufora w Bajtach
 	mov	r12,	r10
 	shl	r12,	KERNEL_VIDEO_DEPTH_shift
-
-	; scanline obiektu w Bajtach
 	mov	r13,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
 	shl	r13,	KERNEL_VIDEO_DEPTH_shift
+	mov	r14,	qword [service_desu_object_framebuffer + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
+	shl	r14,	KERNEL_VIDEO_DEPTH_shift
 
-	; scanline bufora w Bajtach
-	mov	r14,	qword [kernel_video_scanline_byte]
+	; pozycja początku wypełnienia względem bufora
+	;-----------------------------------------------------------------------
 
-	; pozycja Y obszaru wypełniającego
+	; pozycja na osi Y w Bajtach (względna)
 	mov	rax,	r9
 	sub	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
 	mul	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
@@ -308,10 +267,14 @@ service_desu_fill:
 	pop	rsi
 	pop	rcx
 
-	; przesuń wskaźnik na następne wypełnienie
-	add	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE
+.next:
+	; zwolnij wypełnienie na liście
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.object],	STATIC_EMPTY
 
-	; pozostały rekordy na liście wypełnień?
+	; przesuń wskaźnik na następne wypełnienie
+	add	rsi,	SERVICE_DESU_STRUCTURE_FILL.SIZE
+
+	; następny wpis na liście?
 	dec	rcx
 	jnz	.loop	; tak
 
