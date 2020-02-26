@@ -286,7 +286,7 @@ service_desu_zone:
 	mov	r8,	r12
 
 .up:
-	; lewa strefa poza ekranem?
+	; górna strefa poza ekranem?
 	cmp	r9,	STATIC_EMPTY
 	jge	.up_positive	; nie
 
@@ -323,11 +323,11 @@ service_desu_zone:
 	mov	r9,	r13
 
 .right:
-	; lewa strefa poza ekranem?
+	; prawa strefa poza ekranem?
 	cmp	r10,	qword [kernel_video_width_pixel]
 	jle	.right_positive	; nie
 
-	; przesuń na początek ekranu
+	; przesuń na koniec ekranu
 	mov	r10,	qword [kernel_video_width_pixel]
 
 .right_positive:
@@ -356,11 +356,11 @@ service_desu_zone:
 	mov	r10,	r14
 
 .down:
-	; lewa strefa poza ekranem?
+	; dolna strefa poza ekranem?
 	cmp	r11,	qword [kernel_video_height_pixel]
 	jle	.down_positive	; nie
 
-	; przesuń na początek ekranu
+	; przesuń na koniec ekranu
 	mov	r11,	qword [kernel_video_height_pixel]
 
 .down_positive:
