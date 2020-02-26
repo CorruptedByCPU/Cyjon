@@ -352,9 +352,7 @@ service_desu_object_remove:
 ;	r15 - delta osi Y
 service_desu_object_move:
 	; zachowaj oryginalne rejestry
-	push	rax
 	push	rbx
-	push	rcx
 	push	rsi
 	push	rdi
 	push	r8
@@ -366,7 +364,8 @@ service_desu_object_move:
 	push	r14
 	push	r15
 
-	xchg	bx,bx
+	; pobierz wskaźnik domyślnego obiektu wypełniającego strefy
+	mov	rbx,	qword [service_desu_object_list_address]
 
 	; ustaw wskaźnik na wybrany obiekt
 	mov	rsi,	qword [service_desu_object_selected_pointer]
@@ -381,116 +380,114 @@ service_desu_object_move:
 	mov	r10,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
 	mov	r11,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height]
 
-	; zmienne lokalne
-	mov	r12,	r10
-	mov	r13,	r9
+	; ustaw zmienne lokalne
+	mov	r12,	r8
+	mov	r13,	r10
 
-	;-----------------------------------------------------------------------
-	; obiekt został przemieszczony na osi X?
+	; brak przesunięcia na osi X?
 	test	r14,	r14
-	jz	.y	; nie, sprawdź oś Y
-	;-----------------------------------------------------------------------
+	jz	.y	; tak
 
-	; obiekt został przemieszczony w prawo?
-	bt	r14,	STATIC_QWORD_BIT_sign
-	jc	.to_left	; nie
+	; przesunięcie na osi X jest dodatnie?
+	cmp	r14,	STATIC_EMPTY
+	jl	.to_left	; nie
 
-	; szerokość strefy do przetworzenia
-	mov	r10,	r14	; o rozmiarze delty na osi X
-	mov	rdi,	qword [service_desu_object_list_address]
+	; szerokość strefy
+	mov	r10,	r14
+	; zarejestruj
+	mov	rdi,	rbx
 	call	service_desu_zone_insert_by_register
 
-	; przemieść obiekt w prawo o deltę osi X
+	; koryguj pozycję strefy na osi X
 	add	r8,	r14
 
-	; obiekt przesunięty o całą swą szerokość?
-	cmp	r14,	r12
-	jae	.y_overflow	; tak
-
-	; zmiejsz szerokość przetwarzanej przestrzeni obiektu
-	mov	r10,	r12
-	sub	r10,	r14
-
-	; kontynuuj z osią Y
-	jmp	.y
-
 .to_left:
-	; zamień deltę osi X na wartość bezwzględną
+	; przesunięcie na osi X jest ujemne?
+	cmp	r14,	STATIC_EMPTY
+	jnl	.x_done	; nie
+
+	; zamień przesunięcie na wartość bezwzględną
 	neg	r14
 
-	; pozycja i szerokość strefy do przetworzenia
+	; pozycja i szerokość strefy
 	add	r8,	r10
 	sub	r8,	r14
 	mov	r10,	r14
-	mov	rdi,	qword [service_desu_object_list_address]
+	; zarejestruj
+	mov	rdi,	rbx
 	call	service_desu_zone_insert_by_register
 
-	; przemieść obiekt w prawo o deltę osi X
-	mov	r8,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
-	sub	r8,	r14
+	; koryguj pozycję strefy na osi X
+	mov	r8,	r12
 
-	; obiekt przesunięty o całą swą szerokość?
-	cmp	r14,	r12
-	jae	.y_overflow	; tak
+.x_done:
+	; koryguj szerokość strefy
+	mov	r10,	r13
+	sub	r10,	r14
 
 .y:
-	;-----------------------------------------------------------------------
-	; obiekt został przemieszczony na osi Y?
+	; ustaw zmienne lokalne
+	mov	r12,	r9
+	mov	r13,	r11
+
+	; brak przesunięcia na osi X?
 	test	r15,	r15
-	jz	.ready	; nie, gotowe
-	;-----------------------------------------------------------------------
+	jz	.ready	; tak
 
-	; obiekt został przemieszczony w dół?
-	bt	r15,	STATIC_QWORD_BIT_sign
-	jc	.to_up	; nie
+	; przesunięcie na osi Y jest dodatnie?
+	cmp	r15,	STATIC_EMPTY
+	jl	.to_up	; nie
 
-	push	r8
-
-	; wysokość strefy do przetworzenia
-	mov	r8,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
-	mov	r11,	r15	; o rozmiarze delty na osi Y
-	mov	rdi,	qword [service_desu_object_list_address]
+	; wysokość strefy
+	mov	r11,	r15
+	; zarejestruj
+	mov	rdi,	rbx
 	call	service_desu_zone_insert_by_register
 
-	pop	r8
-
-.y_overflow:
-	; ustaw nową pozycję obiektu na osi Y
+	; koryguj pozycję strefy na osi Y
 	add	r9,	r15
 
-	; kontynuuj z osią Y
-	jmp	.ready
-
 .to_up:
-	; zamień deltę osi X na wartość bezwzględną
+	; przesunięcie na osi Y jest ujemne?
+	cmp	r15,	STATIC_EMPTY
+	jnl	.y_done	; nie
+
+	; zamień przesunięcie na wartość bezwzględną
 	neg	r15
 
-	; pozycja i szerokość strefy do przetworzenia
+	; pozycja i wysokość strefy
 	add	r9,	r11
 	sub	r9,	r15
 	mov	r11,	r15
-	mov	rdi,	qword [service_desu_object_list_address]
+	; zarejestruj
+	mov	rdi,	rbx
 	call	service_desu_zone_insert_by_register
 
-	; ustaw nową pozycję obiektu na osi Y
-	mov	r9,	r13
-	sub	r9,	r15
+	; koryguj pozycję strefy na osi Y
+	mov	r9,	r12
+
+.y_done:
+	; koryguj wysokość strefy
+	mov	r11,	r13
+	sub	r11,	r15
 
 .ready:
-	; aktualizuj pozycję obiektu
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r8
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r9
-
-	; wyświetl ponownie zawartość obiektu okna
-	or	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
-
+	; przetwórz wszystkie zarejestrowane strefy
 	call	service_desu_zone
-	call	service_desu_fill
 
 .end:
 	; przywróć oryginalne rejestry
 	pop	r15
 	pop	r14
+
+	; aktualizuj pozycję obiektu
+	add	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r14
+	add	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r15
+
+	; wyświetl ponownie zawartość obiektu
+	or	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
+
+	; przywróć oryginalne rejestry
 	pop	r13
 	pop	r12
 	pop	r11
@@ -499,9 +496,7 @@ service_desu_object_move:
 	pop	r8
 	pop	rdi
 	pop	rsi
-	pop	rcx
 	pop	rbx
-	pop	rax
 
 	; powrót z procedury
 	ret
