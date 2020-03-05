@@ -25,13 +25,6 @@ service_desu_fill_insert_by_register:
 	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.object],	STATIC_EMPTY
 	jne	.next	; nie
 
-	cmp	r10,	STATIC_EMPTY
-	jge	.ok
-
-	xchg	bx,bx
-
-.ok:
-
 	; dodaj do listy nową strefę
 	mov	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r8
 	mov	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r9
@@ -164,6 +157,38 @@ service_desu_fill:
 	mov	r10,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.width]
 	mov	r11,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.height]
 
+	; opisana strefa znajduje się na ujemnej osi X?
+	cmp	r8,	STATIC_EMPTY
+	jnl	.x_positive	; nie
+
+	; przesuń na początek osi X
+	xor	r8,	r8
+
+.x_positive:
+	; opisana strefa znajduje się na ujemnej osi Y?
+	cmp	r9,	STATIC_EMPTY
+	jnl	.y_positive	; nie
+
+	; przesuń na początek osi Y
+	xor	r9,	r9
+
+.y_positive:
+	; opisana strefa wykracza poza oś X?
+	cmp	r10,	qword [kernel_video_width_pixel]
+	jbe	.x_inside	; nie
+
+	; ogranicz strefę do przestrzeni ekranu
+	mov	r10,	qword [kernel_video_width_pixel]
+
+.x_inside:
+	; opisana strefa wykracza poza oś Y?
+	cmp	r11,	qword [kernel_video_height_pixel]
+	jbe	.y_inside	; nie
+
+	; ogranicz strefę do przestrzeni ekranu
+	mov	r11,	qword [kernel_video_height_pixel]
+
+.y_inside:
 	;-----------------------------------------------------------------------
 	; wylicz zmienne do opracji kopiowania przestrzeni
 	;-----------------------------------------------------------------------

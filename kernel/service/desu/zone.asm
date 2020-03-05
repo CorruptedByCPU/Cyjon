@@ -185,38 +185,6 @@ service_desu_zone:
 	cmp	r11,	STATIC_EMPTY
 	jle	.loop	; nie
 
-	; opisana strefa znajduje się na ujemnej osi X?
-	cmp	r8,	STATIC_EMPTY
-	jnl	.x_positive	; nie
-
-	; przesuń na początek osi X
-	xor	r8,	r8
-
-.x_positive:
-	; opisana strefa znajduje się na ujemnej osi Y?
-	cmp	r9,	STATIC_EMPTY
-	jnl	.y_positive	; nie
-
-	; przesuń na początek osi Y
-	xor	r9,	r9
-
-.y_positive:
-	; opisana strefa wykracza poza oś X?
-	cmp	r10,	qword [kernel_video_width_pixel]
-	jbe	.x_inside	; nie
-
-	; ogranicz strefę do przestrzeni ekranu
-	mov	r10,	qword [kernel_video_width_pixel]
-
-.x_inside:
-	; opisana strefa wykracza poza oś Y?
-	cmp	r11,	qword [kernel_video_height_pixel]
-	jbe	.y_inside	; nie
-
-	; ogranicz strefę do przestrzeni ekranu
-	mov	r11,	qword [kernel_video_height_pixel]
-
-.y_inside:
 	;-----------------------------------------------------------------------
 	; interferencja
 	;-----------------------------------------------------------------------
@@ -281,14 +249,6 @@ service_desu_zone:
 	;-----------------------------------------------------------------------
 
 .left: ;)
-	; lewa strefa poza ekranem?
-	cmp	r8,	STATIC_EMPTY
-	jge	.left_positive	; nie
-
-	; przesuń na początek ekranu
-	xor	r8,	r8
-
-.left_positive:
 	; lewa krawędź strefy przed lewą krawędzią obiektu?
 	cmp	r8,	r12
 	jge	.up	; nie
@@ -318,14 +278,6 @@ service_desu_zone:
 	mov	r8,	r12
 
 .up:
-	; górna strefa poza ekranem?
-	cmp	r9,	STATIC_EMPTY
-	jge	.up_positive	; nie
-
-	; przesuń na początek ekranu
-	xor	r9,	r9
-
-.up_positive:
 	; górna krawędź strefy przed górną krawędzią obiektu?
 	cmp	r9,	r13
 	jge	.right	; nie
@@ -355,14 +307,6 @@ service_desu_zone:
 	mov	r9,	r13
 
 .right:
-	; prawa strefa poza ekranem?
-	cmp	r10,	qword [kernel_video_width_pixel]
-	jle	.right_positive	; nie
-
-	; przesuń na koniec ekranu
-	mov	r10,	qword [kernel_video_width_pixel]
-
-.right_positive:
 	; prawa krawędź strefy za prawą krawędzią obiektu?
 	cmp	r10,	r14
 	jle	.down	; nie
@@ -388,14 +332,6 @@ service_desu_zone:
 	mov	r10,	r14
 
 .down:
-	; dolna strefa poza ekranem?
-	cmp	r11,	qword [kernel_video_height_pixel]
-	jle	.down_positive	; nie
-
-	; przesuń na koniec ekranu
-	mov	r11,	qword [kernel_video_height_pixel]
-
-.down_positive:
 	; dolna krawędź strefy za dolną krawędzią obiektu?
 	cmp	r11,	r15
 	jle	.cursor	; nie

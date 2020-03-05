@@ -60,6 +60,9 @@ kernel_task_pid				dq	STATIC_EMPTY
 
 ;===============================================================================
 kernel_task:
+	; wyłącz przerwania i wyjątki
+	cli
+
 	; włączono tryb debugowania?
 	cmp	byte [kernel_task_debug_semaphore],	STATIC_FALSE
 	je	.no	; nie
@@ -234,6 +237,9 @@ kernel_task:
 	; przywróć oryginalne rejestry procesu
 	pop	rdi
 	pop	rax
+
+	; włącz przerwania i wyjątki
+	sti
 
 	; powrót z procedury
 	iretq
