@@ -552,7 +552,7 @@ kernel_video_char:
 	call	kernel_video_cursor_disable
 
 	; zablokuj dostęp do przestrzeni karty graficznej
-	macro_close	kernel_video_semaphore,	0
+	macro_lock	kernel_video_semaphore,	0
 
 	; pozycja kursora na osi X,Y
 	mov	ebx,	dword [kernel_video_cursor]

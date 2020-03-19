@@ -133,6 +133,11 @@ kernel_init:
 	%include	"kernel/init/services.asm"
 
 	;-----------------------------------------------------------------------
+	; inicjalizuj port COM1
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/serial.asm"
+
+	;-----------------------------------------------------------------------
 	; konfiguruj wew. przerwanie lokalnego kontrolera APIC (przełączanie zadań w kolejce)
 	;-----------------------------------------------------------------------
 	call	kernel_init_apic

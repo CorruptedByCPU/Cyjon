@@ -165,7 +165,7 @@ kernel_memory_alloc:
 ;===============================================================================
 kernel_memory_lock:
 	; zablokuj dostęp do binarnej mapy pamięci
-	macro_close	kernel_memory_lock_semaphore, 0
+	macro_lock	kernel_memory_lock_semaphore, 0
 
 	; powrót z procedury
 	ret

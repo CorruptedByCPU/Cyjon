@@ -113,6 +113,8 @@ kernel_debug_assembly_table_end:
 ; wejście:
 ;	WSZYSTKO :)
 kernel_debug:
+	xchg	bx,bx
+
 	; zachowaj wszystkie rejestry
 	pushf
 	push	r15

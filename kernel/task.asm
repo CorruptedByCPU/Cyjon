@@ -17,7 +17,7 @@ KERNEL_TASK_FLAG_thread			equ	0000000000100000b
 
 KERNEL_TASK_FLAG_active_bit		equ	0
 KERNEL_TASK_FLAG_closed_bit		equ	1
-KERNEL_TASK_FLAG_daemon_bit		equ	2
+KERNEL_TASK_FLAG_service_bit		equ	2
 KERNEL_TASK_FLAG_processing_bit		equ	3
 KERNEL_TASK_FLAG_secured_bit		equ	4
 KERNEL_TASK_FLAG_thread_bit		equ	5
@@ -60,6 +60,9 @@ kernel_task_pid				dq	STATIC_EMPTY
 
 ;===============================================================================
 kernel_task:
+	; wyłącz przerwania i wyjątki
+	cli
+
 	; włączono tryb debugowania?
 	cmp	byte [kernel_task_debug_semaphore],	STATIC_FALSE
 	je	.no	; nie
@@ -68,6 +71,17 @@ kernel_task:
 	xchg	bx,bx
 
 .no:
+; 	; nie wiem dlaczego, ale Bochs odkłada czasami 1..2 wartości na stos...
+; 	cmp	qword [rsp + STATIC_QWORD_SIZE_byte],	KERNEL_STRUCTURE_GDT.cs_ring0
+; 	je	.cs	; znaleziono deskryptor CS
+;
+; 	; usuń wartość ze stosu
+; 	add	rsp,	STATIC_QWORD_SIZE_byte
+;
+; 	; sprawdź raz jeszcze
+; 	jmp	.no
+;
+; .cs:
 	; zachowaj oryginalne rejestry na stosie kontekstu procesu/jądra
 	push	rax
 	push	rdi
@@ -223,6 +237,9 @@ kernel_task:
 	; przywróć oryginalne rejestry procesu
 	pop	rdi
 	pop	rax
+
+	; włącz przerwania i wyjątki
+	sti
 
 	; powrót z procedury
 	iretq
@@ -417,7 +434,7 @@ kernel_task_queue:
 ;	ecx - unikalny identyfikator
 kernel_task_pid_get:
 	; zablokuj dostęp do podprocedury
-	macro_close	kernel_task_pid_semaphore, 0
+	macro_lock	kernel_task_pid_semaphore, 0
 
 .next:
 	; pobierz unikalny numer PID
