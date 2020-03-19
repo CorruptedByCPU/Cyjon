@@ -158,35 +158,51 @@ service_desu_fill:
 	mov	r11,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.height]
 
 	; opisana strefa znajduje się na ujemnej osi X?
-	cmp	r8,	STATIC_EMPTY
-	jnl	.x_positive	; nie
+	bt	r8,	STATIC_QWORD_BIT_sign
+	jnc	.x_positive	; nie
+
+	; wytnij niewidoczny fragment
+	not	r8
+	inc	r8
+	sub	r10,	r8
 
 	; przesuń na początek osi X
 	xor	r8,	r8
 
 .x_positive:
 	; opisana strefa znajduje się na ujemnej osi Y?
-	cmp	r9,	STATIC_EMPTY
-	jnl	.y_positive	; nie
+	bt	r9,	STATIC_QWORD_BIT_sign
+	jnc	.y_positive	; nie
+
+	; wytnij niewidoczny fragment
+	not	r9
+	inc	r9
+	sub	r11,	r9
 
 	; przesuń na początek osi Y
 	xor	r9,	r9
 
 .y_positive:
 	; opisana strefa wykracza poza oś X?
-	cmp	r10,	qword [kernel_video_width_pixel]
-	jbe	.x_inside	; nie
+	mov	rax,	r8
+	add	rax,	r10
+	cmp	rax,	qword [kernel_video_width_pixel]
+	jb	.x_inside	; nie
 
 	; ogranicz strefę do przestrzeni ekranu
-	mov	r10,	qword [kernel_video_width_pixel]
+	sub	rax,	qword [kernel_video_width_pixel]
+	sub	r10,	rax
 
 .x_inside:
 	; opisana strefa wykracza poza oś Y?
-	cmp	r11,	qword [kernel_video_height_pixel]
-	jbe	.y_inside	; nie
+	mov	rax,	r9
+	add	rax,	r11
+	cmp	rax,	qword [kernel_video_height_pixel]
+	jb	.y_inside	; nie
 
 	; ogranicz strefę do przestrzeni ekranu
-	mov	r11,	qword [kernel_video_height_pixel]
+	sub	rax,	qword [kernel_video_height_pixel]
+	sub	r11,	rax
 
 .y_inside:
 	;-----------------------------------------------------------------------
@@ -224,7 +240,7 @@ service_desu_fill:
 	add	rdi,	qword [service_desu_object_framebuffer + SERVICE_DESU_STRUCTURE_OBJECT.address]
 
 	; korekta pozycji wypełnienia względem obiektu
-	;-----------------------------------------------------------------------
+	; -----------------------------------------------------------------------
 	sub	r8,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
 	sub	r9,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
 
@@ -241,8 +257,8 @@ service_desu_fill:
 
 	; przeliczna wskaźnik bezwzględny
 	mov	rsi,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.address]
-	add	rsi,	rax
-	add	rsi,	r8
+	; add	rsi,	rax
+	; add	rsi,	r8
 
 	;-----------------------------------------------------------------------
 	; Wypełnianie

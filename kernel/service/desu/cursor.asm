@@ -205,7 +205,6 @@ service_desu_cursor:
 	; aktualizuj specyfikacje obiektu kursora
 	add	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r14
 	add	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r15
-
 	call	service_desu_fill_insert_by_object
 
 	; obiekt kursora został zaaktualizowany

@@ -301,7 +301,7 @@ service_desu_object_move:
 	push	r14
 	push	r15
 
-	; pobierz wskaźnik domyślnego obiektu wypełniającego strefy
+	; pobierz wskaźnik domyślnego obiektu wypełniającego strefę
 	mov	rbx,	qword [service_desu_object_list_address]
 
 	; ustaw wskaźnik na wybrany obiekt
@@ -415,9 +415,6 @@ service_desu_object_move:
 	sub	r11,	r15
 
 .ready:
-	; przetwórz wszystkie zarejestrowane strefy
-	call	service_desu_zone
-
 	; wyświetl ponownie zawartość obiektu
 	or	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
 

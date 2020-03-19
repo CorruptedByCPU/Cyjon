@@ -26,7 +26,12 @@ service_desu:
 	call	service_desu_cursor
 
 	;-----------------------------------------------------------------------
-	; wypełnij wszystkie aktualizowane fragmenty ekranu
+	; przetwórz wszystkie zarejestrowane strefy
+	;-----------------------------------------------------------------------
+	call	service_desu_zone
+
+	;-----------------------------------------------------------------------
+	; wypełnij wszystkie zarejestrowane fragmenty
 	;-----------------------------------------------------------------------
 	call	service_desu_fill
 

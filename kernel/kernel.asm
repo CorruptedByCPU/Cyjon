@@ -75,6 +75,7 @@ kernel:
 	%include	"kernel/driver/pci.asm"
 	%include	"kernel/driver/network/i82540em.asm"
 	%include	"kernel/driver/storage/ide.asm"
+	%include	"kernel/driver/serial.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/service/tresher.asm"
 	%include	"kernel/service/http.asm"

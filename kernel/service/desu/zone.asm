@@ -102,8 +102,7 @@ service_desu_zone_insert_by_register:
 	mov	qword [rsi + SERVICE_DESU_STRUCTURE_ZONE.field + SERVICE_DESU_STRUCTURE_FIELD.height],	r11
 
 	; oraz jej obiekt zależny
-	mov	rax,	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.object]
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_ZONE.object],	rax
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_ZONE.object],	rdi
 
 	; ilość stref na liście
 	inc	qword [service_desu_zone_list_records]
@@ -126,7 +125,6 @@ service_desu_zone_insert_by_register:
 service_desu_zone:
 	; zachowaj oryginalne rejestry
 	push	rax
-	push	rcx
 	push	rdx
 	push	rsi
 	push	rdi
@@ -141,6 +139,10 @@ service_desu_zone:
 
 	; zablokuj dostęp do modyfikacji listy obiektów
 	macro_lock	service_desu_object_semaphore,	0
+
+	; brak stref na liście?
+	cmp	qword [service_desu_zone_list_records],	STATIC_EMPTY
+	je	.end	; tak
 
 	; ustaw wskaźnik na pierwszą opisaną strefę na liście
 	mov	rdi,	qword [service_desu_zone_list_address]
@@ -164,7 +166,7 @@ service_desu_zone:
 	; pobierz właściwości strefy
 	;-----------------------------------------------------------------------
 
-	; lewa krawędź na oxi X
+	; lewa krawędź na osi X
 	mov	r8,	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.field + SERVICE_DESU_STRUCTURE_FIELD.x]
 	; górna krawędź na osi Y
 	mov	r9,	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.field + SERVICE_DESU_STRUCTURE_FIELD.y]
@@ -176,12 +178,17 @@ service_desu_zone:
 	add	r11,	r9
 
 	; opisana strefa znajduje się w przestrzeni "ekranu"?
+
+	; poza prawą krawędzią ekranu?
 	cmp	r8,	qword [kernel_video_width_pixel]
-	jge	.loop	; nie
+	jge	.loop	; tak
+	; poza dolną krawędzią ekranu?
 	cmp	r9,	qword [kernel_video_height_pixel]
-	jge	.loop	; nie
+	jge	.loop	; tak
+	; poza lewą krawędzią ekranu?
 	cmp	r10,	STATIC_EMPTY
-	jle	.loop	; nie
+	jle	.loop	; tak
+	; poza górną krawędzią ekranu?
 	cmp	r11,	STATIC_EMPTY
 	jle	.loop	; nie
 
@@ -314,7 +321,11 @@ service_desu_zone:
 	; wytnij wystający fragment strefy
 
 	; szerokość odcinanej strefy
+	push	r10
 	sub	r10,	r14
+
+	; wysokość odcinanej strefy
+	sub	r11,	r9
 
 	; zachowaj oryginalną pozycję lewej krawędzi strefy
 	push	r8
@@ -329,7 +340,12 @@ service_desu_zone:
 	pop	r8
 
 	; nowa pozycja prawej krawędzi strefy
-	mov	r10,	r14
+	sub	qword [rsp],	r10
+	pop	r10
+	; mov	r10,	r14
+
+	; przywróć pozycję dolnej krawędzi
+	add	r11,	r9
 
 .down:
 	; dolna krawędź strefy za dolną krawędzią obiektu?
@@ -339,6 +355,7 @@ service_desu_zone:
 	; wytnij wystający fragment strefy
 
 	; wysokość odcinanej strefy
+	push	r11
 	sub	r11,	r15
 
 	; zachowaj oryginalną pozycję górnej krawędzi strefy
@@ -354,17 +371,22 @@ service_desu_zone:
 	pop	r9
 
 	; nowa pozycja dolnej krawędzi strefy
-	mov	r11,	r15
+	sub	qword [rsp],	r11
+	pop	r11
+	; mov	r11,	r15
 
 .cursor:
-	; strefa należy do obiektu kursora?
-	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.object],	service_desu_object_cursor
-	jne	.loop	; nie, zignoruj pozostały fragment
+	; ; strefa należy do obiektu kursora?
+	; cmp	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.object],	service_desu_object_cursor
+	; jne	.loop	; nie, zignoruj pozostały fragment
 
 .fill:
 	; wypełnij pozostały fragment danym obiektem
 	sub	r10,	r8	; zwróć szerokość strefy
 	sub	r11,	r9	; zwróć wysokość strefy
+	cmp	r10,	STATIC_EMPTY
+	jle	.loop
+
 	call	service_desu_fill_insert_by_register
 
 	; kontynuuj
@@ -389,7 +411,6 @@ service_desu_zone:
 	pop	rdi
 	pop	rsi
 	pop	rdx
-	pop	rcx
 	pop	rax
 
 	; powrót z procedury
