@@ -67,21 +67,21 @@ service_desu_object_cursor:				dq	STATIC_EMPTY
 							dd	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xFF000000, 0xFF000000, 0x00000000, 0x00000000, 0x00000000
 .end:
 
-service_desu_object_tmp:				dq	0
-							dq	0
-							dq	16
-							dq	16
-							dq	STATIC_EMPTY
-.extra:							dq	1024
-							dq	STATIC_EMPTY
-
-service_desu_object_another:				dq	0
-							dq	0
-							dq	16
-							dq	16
-							dq	STATIC_EMPTY
-.extra:							dq	1024
-							dq	STATIC_EMPTY
+; service_desu_object_tmp:				dq	0
+; 							dq	0
+; 							dq	16
+; 							dq	16
+; 							dq	STATIC_EMPTY
+; .extra:							dq	1024
+; 							dq	STATIC_EMPTY
+;
+; service_desu_object_another:				dq	0
+; 							dq	0
+; 							dq	16
+; 							dq	16
+; 							dq	STATIC_EMPTY
+; .extra:							dq	1024
+; 							dq	STATIC_EMPTY
 
 ;===============================================================================
 ;===============================================================================
