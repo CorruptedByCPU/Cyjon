@@ -57,9 +57,9 @@ kernel_init_services_list:
 				dq	service_tresher
 				db	7
 				db	"tresher"
-				dq	service_desu
-				db	4
-				db	"desu"
+				; dq	service_desu
+				; db	4
+				; db	"desu"
 				; dq	service_tx
 				; dq	service_network
 				; dq	service_http

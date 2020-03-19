@@ -71,17 +71,17 @@ kernel_task:
 	xchg	bx,bx
 
 .no:
-	; nie wiem dlaczego, ale Bochs odkłada czasami 1..2 wartości na stos...
-	cmp	qword [rsp + STATIC_QWORD_SIZE_byte],	KERNEL_STRUCTURE_GDT.cs_ring0
-	je	.cs	; znaleziono deskryptor CS
-
-	; usuń wartość ze stosu
-	add	rsp,	STATIC_QWORD_SIZE_byte
-
-	; sprawdź raz jeszcze
-	jmp	.no
-
-.cs:
+; 	; nie wiem dlaczego, ale Bochs odkłada czasami 1..2 wartości na stos...
+; 	cmp	qword [rsp + STATIC_QWORD_SIZE_byte],	KERNEL_STRUCTURE_GDT.cs_ring0
+; 	je	.cs	; znaleziono deskryptor CS
+;
+; 	; usuń wartość ze stosu
+; 	add	rsp,	STATIC_QWORD_SIZE_byte
+;
+; 	; sprawdź raz jeszcze
+; 	jmp	.no
+;
+; .cs:
 	; zachowaj oryginalne rejestry na stosie kontekstu procesu/jądra
 	push	rax
 	push	rdi
