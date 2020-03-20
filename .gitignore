@@ -4,8 +4,9 @@
 *.cfg
 *.exe
 tcp.png
-eth_null-tx.log
-eth_null-txdump.txt
 *.lock
 insight.png
 *.bat
+*.pdf
+*.txt
+*.log
