@@ -89,6 +89,7 @@ kernel:
 	%include	"kernel/service/tx.asm"
 	%include	"kernel/service/network.asm"
 	%include	"kernel/service/desu.asm"
+	%include	"kernel/service/cero.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/color.asm"
 	%include	"library/input.asm"

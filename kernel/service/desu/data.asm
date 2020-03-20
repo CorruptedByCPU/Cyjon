@@ -2,9 +2,17 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
+service_desu_semaphore					db	STATIC_FALSE
+
 service_desu_object_semaphore				db	STATIC_FALSE
 service_desu_fill_semaphore				db	STATIC_FALSE
 service_desu_zone_semaphore				db	STATIC_FALSE
+
+service_desu_mouse_button_left_semaphore		db	STATIC_FALSE
+service_desu_mouse_button_right_semaphore		db	STATIC_FALSE
+
+service_desu_object_id_semaphore			db	STATIC_FALSE
+service_desu_object_id					dq	0x01	; wartość podstawowa
 
 align	STATIC_QWORD_SIZE_byte,				db	STATIC_NOTHING
 
@@ -24,14 +32,6 @@ service_desu_zone_list_records				dq	STATIC_EMPTY
 
 ;-------------------------------------------------------------------------------
 service_desu_object_framebuffer:			dq	0
-							dq	0
-							dq	STATIC_EMPTY
-							dq	STATIC_EMPTY
-							dq	STATIC_EMPTY
-.extra:							dq	STATIC_EMPTY
-							dq	STATIC_EMPTY
-
-service_desu_object_workbench:				dq	0
 							dq	0
 							dq	STATIC_EMPTY
 							dq	STATIC_EMPTY
@@ -66,31 +66,3 @@ service_desu_object_cursor:				dq	STATIC_EMPTY
 							dd	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xFF000000, 0xFFFFFFFF, 0xFFFFFFFF, 0xFF000000, 0x00000000, 0x00000000
 							dd	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xFF000000, 0xFF000000, 0x00000000, 0x00000000, 0x00000000
 .end:
-
-; service_desu_object_tmp:				dq	0
-; 							dq	0
-; 							dq	16
-; 							dq	16
-; 							dq	STATIC_EMPTY
-; .extra:							dq	1024
-; 							dq	STATIC_EMPTY
-;
-; service_desu_object_another:				dq	0
-; 							dq	0
-; 							dq	16
-; 							dq	16
-; 							dq	STATIC_EMPTY
-; .extra:							dq	1024
-; 							dq	STATIC_EMPTY
-
-;===============================================================================
-;===============================================================================
-
-service_desu_object_lock_level				db	STATIC_FALSE
-
-service_desu_keyboard_alt_left_semaphore			db	STATIC_FALSE
-service_desu_mouse_button_left_semaphore			db	STATIC_FALSE
-service_desu_mouse_button_right_semaphore		db	STATIC_FALSE
-
-service_desu_object_id_semaphore				db	STATIC_FALSE
-service_desu_object_id					dq	0x01	; wartość podstawowa
