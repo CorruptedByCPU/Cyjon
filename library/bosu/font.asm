@@ -13,11 +13,12 @@ LIBRARY_BOSU_FONT_HEIGHT_pixel	equ	12
 library_bosu_font_width_pixel	dq	KERNEL_FONT_WIDTH_pixel
 library_bosu_font_height_pixel	dq	KERNEL_FONT_HEIGHT_pixel
 library_bosu_font_width_byte	dq	KERNEL_FONT_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift
+library_bosu_font_offset	db	0x20
 
 library_bosu_font_string_name	db	STATIC_COLOR_ASCII_WHITE, "Canele", STATIC_COLOR_ASCII_GRAY, " from https://addy-dclxvi.github.io/"
 library_bosu_font_string_name_end:
 
-align	STATIC_QWORD_SIZE_byte, db	STATIC_EMPTY
+align	STATIC_QWORD_SIZE_byte, db	STATIC_NOTHING
 library_bosu_font_matrix	db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 				db	0x00, 0x00, 0x00, 0x08, 0x08, 0x08, 0x08, 0x08, 0x00, 0x08, 0x00, 0x00
 				db	0x00, 0x00, 0x00, 0x14, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00

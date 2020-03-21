@@ -200,7 +200,6 @@ service_desu_cursor:
 	; przetwórz strefę zajętą przez obiekt kursora
 	mov	rsi,	service_desu_object_cursor
 	call	service_desu_zone_insert_by_object
-	call	service_desu_zone
 
 	; aktualizuj specyfikacje obiektu kursora
 	add	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r14

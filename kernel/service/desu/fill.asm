@@ -257,8 +257,8 @@ service_desu_fill:
 
 	; przeliczna wskaźnik bezwzględny
 	mov	rsi,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.address]
-	; add	rsi,	rax
-	; add	rsi,	r8
+	add	rsi,	rax
+	add	rsi,	r8
 
 	;-----------------------------------------------------------------------
 	; Wypełnianie

@@ -2,6 +2,8 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
+LIBRARY_BOSU_WINDOW_BACKGROUND_color		equ	0x00202020
+
 ;-------------------------------------------------------------------------------
 LIBRARY_BOSU_WINDOW_FLAG_visible		equ	1 << 0	; okno widoczne
 LIBRARY_BOSU_WINDOW_FLAG_flush			equ	1 << 1	; okno wymaga przerysowania
@@ -11,7 +13,6 @@ LIBRARY_BOSU_WINDOW_FLAG_fragile		equ	1 << 4	; okno ukrywane przy wystąpieniu a
 LIBRARY_BOSU_WINDOW_FLAG_arbiter		equ	1 << 6	; nadobiekt
 							; powyżej 7, przeznaczone dla GUI
 LIBRARY_BOSU_WINDOW_FLAG_header			equ	1 << 8
-LIBRARY_BOSU_WINDOW_FLAG_border			equ	1 << 9
 ;-------------------------------------------------------------------------------
 
 LIBRARY_BOSU_ELEMENT_TYPE_none			equ	0x00
@@ -20,6 +21,10 @@ LIBRARY_BOSU_ELEMENT_TYPE_label			equ	0x02
 LIBRARY_BOSU_ELEMENT_TYPE_draw			equ	0x03
 LIBRARY_BOSU_ELEMENT_TYPE_chain			equ	0x04
 LIBRARY_BOSU_ELEMENT_TYPE_button		equ	0x05
+
+LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel	equ	LIBRARY_BOSU_FONT_HEIGHT_pixel + (LIBRARY_BOSU_ELEMENT_HEADER_PADDING_pixel << STATIC_MULTIPLE_BY_2_shift)
+LIBRARY_BOSU_ELEMENT_HEADER_PADDING_pixel	equ	0x02
+LIBRARY_BOSU_ELEMENT_HEADER_FOREGROUND_color	equ	0x00AAAAAA
 
 struc	LIBRARY_BOSU_STRUCTURE_FIELD
 	.x					resb	8
@@ -38,6 +43,8 @@ endstruc
 struc	LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA
 	.size					resb	8
 	.flags					resb	8
+	;--- dane specyficzne dla Bosu
+	.scanline				resb	8
 	.SIZE:
 endstruc
 
@@ -50,8 +57,8 @@ struc	LIBRARY_BOSU_STRUCTURE_ELEMENT
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_HEADER
-	.type					resb	1
-	.size					resb	2
+	.type					resb	4
+	.size					resb	8
 	.length					resb	1
 	.string:
 endstruc
