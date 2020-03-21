@@ -350,7 +350,7 @@ service_desu_zone:
 .down:
 	; dolna krawędź strefy za dolną krawędzią obiektu?
 	cmp	r11,	r15
-	jle	.cursor	; nie
+	jle	.fill	; nie
 
 	; wytnij wystający fragment strefy
 
@@ -374,11 +374,6 @@ service_desu_zone:
 	sub	qword [rsp],	r11
 	pop	r11
 	; mov	r11,	r15
-
-.cursor:
-	; ; strefa należy do obiektu kursora?
-	; cmp	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.object],	service_desu_object_cursor
-	; jne	.loop	; nie, zignoruj pozostały fragment
 
 .fill:
 	; wypełnij pozostały fragment danym obiektem

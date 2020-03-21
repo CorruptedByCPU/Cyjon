@@ -2,37 +2,8 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
-; ;===============================================================================
-; service_desu_cursor_flush:
-; 	; zachowaj oryginalne rejestry
-; 	push	rax
-; 	push	rsi
-;
-; 	;-----------------------------------------------------------------------
-; 	; wyświetlić nową zawartość macierzy kursora?
-; 	;-----------------------------------------------------------------------
-; 	test	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
-; 	jz	.no	; nie
-;
-; 	; zarejestruj strefę kursora
-; 	mov	rsi,	service_desu_object_cursor
-; 	call	service_desu_zone_insert_by_object
-; 	call	service_desu_zone
-; 	call	service_desu_fill
-;
-; 	; obiekt kursora został wyświetlony
-; 	and	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	~SERVICE_DESU_OBJECT_FLAG_flush
-;
-; .no:
-; 	; przywróć oryginalne rejestry
-; 	pop	rsi
-; 	pop	rax
-;
-; 	; powrót z procedury
-; 	ret
-
 ;===============================================================================
-service_desu_cursor:
+service_desu_event:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rbx
@@ -236,5 +207,4 @@ service_desu_cursor:
 	; powrót z procedury
 	ret
 
-	; informacja dla Bochs
-	macro_debug	"service desu cursor"
+	macro_debug	"service_desu_event"
