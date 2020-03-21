@@ -36,3 +36,18 @@ service_cero_init:
 
 	; zarejestruj okno
 	call	service_desu_object_insert
+
+	;-----------------------------------------------------------------------
+	; utwórz menu kontekstowe
+	;-----------------------------------------------------------------------
+	mov	rsi,	service_cero_window_menu
+
+	; ilość elementów wchodzących w skład menu oraz ich łączna wysokość względem siebie
+	call	library_bosu_elements_specification
+
+	; ustaw szerokość i wysokość okna menu
+	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	r8
+	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height],	r9
+
+	; utwórz okno menu
+	call	library_bosu
