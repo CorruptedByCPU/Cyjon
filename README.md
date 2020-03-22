@@ -50,5 +50,5 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 
 ### Exec:
 
-	# 2 MiB RAM, 2 logical CPUs, no network, hard disk connected to IDE controller
-	qemu-system-x86_64 -hda file=build/disk.raw -m 2 -smp 2 -rtc base=localtime
+	# 16 MiB RAM, 2 logical CPUs, no network, hard disk connected to IDE controller
+	qemu-system-x86_64 -hda file=build/disk.raw -m 16 -smp 2 -rtc base=localtime
