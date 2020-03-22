@@ -407,4 +407,111 @@ library_bosu_char:
 ;	r9 - wysokość okna w pikselach
 ;	r10 - scanline okna w Bajtach
 library_bosu_element_button:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+	push	rdi
+	push	r8
+	push	r9
+	push	r10
+	push	r11
+	push	r12
+	push	r13
+
+	; zachowaj wskaźnik do właściwości okna
+	mov	rbx,	rdi
+
+	; wylicz szerokość, wysokość i scanline elementu
+	mov	r11,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	mov	r12,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	mov	r13,	r11
+	shl	r13,	KERNEL_VIDEO_DEPTH_shift
+
+	; pozycja bezwzględna elementu na osi Y
+	xor	eax,	eax
+
+	; okno posiada nagłówek?
+	test	qword [rbx + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_header
+	jz	.no_header	; nie
+
+	; koryguj pozycje na osi Y o nagówek
+	mov	rax,	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel
+
+.no_header:
+	; wylicz pozycję bezwzględną elementu w przestrzeni danych okna
+	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
+	mul	r13	; * scanline
+	mov	rdi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
+	shl	rdi,	KERNEL_VIDEO_DEPTH_shift
+	add	rdi,	rax
+	add	rdi,	qword [rbx + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
+
+	; wyczyść przestrzeń elementu domyślnym kolorem tła
+	mov	eax,	LIBRARY_BOSU_ELEMENT_BUTTON_BACKGROUND_color
+	call	library_bosu_element_drain
+
+	; rozmiar ciągu do wypisania w etykiecie
+	movzx	rcx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.length]
+
+	; wyświetl ciąg o domyślnym kolorze czcionki
+	mov	ebx,	LIBRARY_BOSU_ELEMENT_BUTTON_FOREGROUND_color
+	movzx	ecx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.length]
+	add	rsi,	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.string
+	call	library_bosu_string
+
+	; przywróć oryginalne rejestry
+	pop	r13
+	pop	r12
+	pop	r11
+	pop	r10
+	pop	r9
+	pop	r8
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+	pop	rax
+
+	; powrót z procedry
+	ret
+
+;===============================================================================
+; wejście:
+;	eax - kolor tła interfejsu
+;	rdi - wskaźnik do przestrzeni elementu w pikselach
+;	r10 - scanline okna w Bajtach
+;	r11 - szerokość elementu w pikselach
+;	r12 - wysokość elementu w pikselach
+;	r13 - scanline elmentu w Bajtach
+library_bosu_element_drain:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rdx
+	push	rdi
+	push	r12
+
+.loop:
+	; zmień kolor pikseli na całej szerokości przestrzeni elementu
+	mov	rcx,	r11
+	rep	stosd
+
+	; przesuń wskaźnik na następną linię pikseli w przestrzeni elementu
+	sub	rdi,	r13	; scanline elementu
+	add	rdi,	r10	; scanline okna
+
+	; koniec przestrzeni elementu?
+	dec	r12
+	jnz	.loop	; nie, kontynuuj
+
+	; przywróć oryginalne rejestry
+	pop	r12
+	pop	rdi
+	pop	rdx
+	pop	rcx
+
+	; powrót z procedury
 	ret

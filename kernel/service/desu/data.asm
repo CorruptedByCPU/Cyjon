@@ -39,8 +39,8 @@ service_desu_object_framebuffer:			dq	0
 .extra:							dq	STATIC_EMPTY
 							dq	STATIC_EMPTY
 
-service_desu_object_cursor:				dq	STATIC_EMPTY
-							dq	STATIC_EMPTY
+service_desu_object_cursor:				dq	0
+							dq	0
 							dq	12
 							dq	19
 							dq	service_desu_object_cursor.data

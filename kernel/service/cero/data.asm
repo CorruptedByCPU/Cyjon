@@ -38,8 +38,8 @@ service_cero_window_menu		dq	STATIC_EMPTY	; pozycja na osi X względem wskaźnik
 					dq	.element_button_0_end - .element_button_0 ; rozmiar elementu w Bajtach
 					dq	0	; pozycja na osi X względem przestrzeni danych okna
 					dq	0	; pozycja na osi Y względem przestrzeni danych okna
-					dq	72	; szerokość elementu
-					dq	16	; wysokość elementu
+					dq	(.element_button_0_end - .element_button_0_string) * LIBRARY_BOSU_FONT_WIDTH_pixel	; szerokość elementu
+					dq	LIBRARY_BOSU_FONT_HEIGHT_pixel	; wysokość elementu
 					dq	STATIC_EMPTY	; wskaźnik do procedury obsługującej wyjątek
 					db	.element_button_0_end - .element_button_0_string
 .element_button_0_string:		db	" Console "

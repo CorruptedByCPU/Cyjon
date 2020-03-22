@@ -355,7 +355,6 @@ service_desu_zone:
 	; wytnij wystający fragment strefy
 
 	; wysokość odcinanej strefy
-	push	r11
 	sub	r11,	r15
 
 	; zachowaj oryginalną pozycję górnej krawędzi strefy
@@ -372,8 +371,7 @@ service_desu_zone:
 
 	; nowa pozycja dolnej krawędzi strefy
 	sub	qword [rsp],	r11
-	pop	r11
-	; mov	r11,	r15
+	mov	r11,	r15
 
 .fill:
 	; wypełnij pozostały fragment danym obiektem

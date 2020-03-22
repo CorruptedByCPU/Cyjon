@@ -160,14 +160,15 @@ service_desu_event:
 	mov	byte [service_desu_mouse_button_right_semaphore],	STATIC_FALSE
 
 .no_mouse_button_right_release:
-	;-----------------------------------------------------------------------
-	; wystąpiło przesunięcie wskaźnika kursora? (delty)
+	; przesunięcie wskaźnika kursora na osi X
 	test	r14,	r14
-	jnz	.moved	; tak
+	jnz	.move	; tak
+
+	; przesunięcie wskaźnika kursora na osi Y
 	test	r15,	r15
 	jz	.end	; nie
 
-.moved:
+.move:
 	; przetwórz strefę zajętą przez obiekt kursora
 	mov	rsi,	service_desu_object_cursor
 	call	service_desu_zone_insert_by_object
@@ -175,7 +176,6 @@ service_desu_event:
 	; aktualizuj specyfikacje obiektu kursora
 	add	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r14
 	add	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r15
-	call	service_desu_fill_insert_by_object
 
 	; obiekt kursora został zaaktualizowany
 	or	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush

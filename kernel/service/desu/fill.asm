@@ -242,8 +242,9 @@ service_desu_fill:
 	; korekta pozycji wypełnienia względem obiektu
 	; -----------------------------------------------------------------------
 	sub	r8,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
+	js	.overflow	; obiekt wypełniający poza obszarem fragmentu
 	sub	r9,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
-
+	js	.overflow	; obietk wypełniający poza obszarem fragmentu
 
 	; wylicz wskaźnik początku wypełnienia w przestrzeni obiektu
 	;-----------------------------------------------------------------------
@@ -255,7 +256,7 @@ service_desu_fill:
 	; pozycja na osi X w Bajtach (względna)
 	shl	r8,	KERNEL_VIDEO_DEPTH_shift
 
-	; przeliczna wskaźnik bezwzględny
+	; przelicz na wskaźnik bezwzględny
 	mov	rsi,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.address]
 	add	rsi,	rax
 	add	rsi,	r8
@@ -283,6 +284,15 @@ service_desu_fill:
 
 	; kontynuuj
 	jmp	.continue
+
+.overflow:
+	; przetwórz ponownie fragment jako strefę
+	mov	rsi,	qword [rsp]
+	call	service_desu_zone_insert_by_object
+	call	service_desu_zone
+
+	; pomiń fragment
+	jmp	.leave
 
 ; .alpha:
 ; 	; zachowaj oryginalne rejestry
