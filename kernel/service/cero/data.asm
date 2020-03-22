@@ -11,7 +11,42 @@ service_cero_window_workbench		dq	0	; pozycja na osi X
 					dq	STATIC_EMPTY	; wysokość okna
 					dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
-					dq	SERVICE_DESU_OBJECT_FLAG_fixed_xy | SERVICE_DESU_OBJECT_FLAG_fixed_z | SERVICE_DESU_OBJECT_FLAG_visible | SERVICE_DESU_OBJECT_FLAG_flush
+					dq	LIBRARY_BOSU_WINDOW_FLAG_fixed_xy | LIBRARY_BOSU_WINDOW_FLAG_fixed_z | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
+
+;===============================================================================
+service_cero_window_taskbar		dq	0	; pozycja na osi X
+					dq	STATIC_EMPTY	; pozycja na osi Y
+					dq	STATIC_EMPTY	; szerokość okna
+					dq	SERVICE_CERO_WINDOW_TASKBAR_HEIGHT_pixel	; wysokość okna
+					dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna
+.extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
+					dq	LIBRARY_BOSU_WINDOW_FLAG_fixed_xy | LIBRARY_BOSU_WINDOW_FLAG_fixed_z | LIBRARY_BOSU_WINDOW_FLAG_arbiter | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
+					dq	STATIC_EMPTY	; szerokość okna w Bajtach
+.elements:				;-----------------------------------------------------------------------
+					; element "łańcuch 0"
+					;-----------------------------------------------------------------------
+.element_chain_0:			dd	LIBRARY_BOSU_ELEMENT_TYPE_chain
+					dq	LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.SIZE
+					dq	STATIC_EMPTY	; wartość uzupełniana automatycznie
+					;-----------------------------------------------------------------------
+					; element "etykieta zegar"
+					;-----------------------------------------------------------------------
+.element_label_clock:			dd	LIBRARY_BOSU_ELEMENT_TYPE_label
+					dq	.element_label_clock_end - .element_label_clock ; rozmiar elementu w Bajtach
+					dq	0	; pozycja na osi X względem okna
+					dq	0	; pozycja na osi Y względem okna
+					dq	LIBRARY_BOSU_FONT_WIDTH_pixel * (.element_label_clock_end - .element_label_clock_string_hour)	; szerokość elementu w pikselach
+					dq	LIBRARY_BOSU_FONT_HEIGHT_pixel	; wysokość elementu w pikselach
+					dq	STATIC_EMPTY	; wskaźnik procedury obsługi zdarzenia
+					db	.element_label_clock_end - .element_label_clock_string_hour   ; rozmiar ciągu w znakach
+.element_label_clock_string_hour:	db	"00"
+.element_label_clock_char_colon:	db	":"
+.element_label_clock_string_minute:	db	"00"
+.element_label_clock_end:		;---------------------------------------
+					; koniec elementów okna
+					;---------------------------------------
+					dd	STATIC_EMPTY
+service_cero_window_taskbar_end:
 
 ;===============================================================================
 service_cero_window_menu		dq	STATIC_EMPTY	; pozycja na osi X względem wskaźnika kursora

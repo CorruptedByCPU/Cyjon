@@ -35,12 +35,12 @@ clean:
 	call	kernel_memory_release
 
 kernel:
-	; uruchom program inicjalizujący środowisko użytkownika
-	mov	ecx,	kernel_init_exec_end - kernel_init_exec
-	mov	rsi,	kernel_init_exec
-	call	kernel_vfs_path_resolve
-	call	kernel_vfs_file_find
-	call	kernel_exec
+	; ; uruchom program inicjalizujący środowisko użytkownika
+	; mov	ecx,	kernel_init_exec_end - kernel_init_exec
+	; mov	rsi,	kernel_init_exec
+	; call	kernel_vfs_path_resolve
+	; call	kernel_vfs_file_find
+	; call	kernel_exec
 
 	; pobierz wskaźnik do aktualnego zadania (jądro) w kolejce
 	call	kernel_task_active

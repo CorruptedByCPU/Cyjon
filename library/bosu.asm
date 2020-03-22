@@ -108,6 +108,10 @@ library_bosu_elements_specification:
 	cmp	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	LIBRARY_BOSU_ELEMENT_TYPE_header
 	je	.next	; tak, pomiń
 
+	; element typu "łańcuch"?
+	cmp	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	LIBRARY_BOSU_ELEMENT_TYPE_chain
+	je	.next	; tak, pomiń
+
 	; pozycja elementu na osi X
 	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
 	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
@@ -514,4 +518,91 @@ library_bosu_element_drain:
 	pop	rcx
 
 	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do elementu "łańcuch"
+library_bosu_element_chain:
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rdi - wskaźnik do struktury okna
+;	rsi - wskaźnik do elementu
+;	r8 - szerokość okna w pikselach
+;	r9 - wysokość okna w pikselach
+;	r10 - scanline okna w Bajtach
+library_bosu_element_label:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+	push	rdi
+	push	r8
+	push	r9
+	push	r10
+	push	r11
+	push	r12
+	push	r13
+
+	; zachowaj wskaźnik do właściwości okna
+	mov	rbx,	rdi
+
+	; wylicz szerokość, wysokość i scanline elementu
+	mov	r11,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	mov	r12,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	mov	r13,	r11
+	shl	r13,	KERNEL_VIDEO_DEPTH_shift
+
+	; pozycja bezwzględna elementu na osi Y
+	xor	eax,	eax
+
+	; okno posiada nagłówek?
+	test	qword [rbx + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_header
+	jz	.no_header	; nie
+
+	; koryguj pozycje na osi Y o nagówek
+	mov	rax,	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel
+
+.no_header:
+	; wylicz pozycję bezwzględną elementu w przestrzeni danych okna
+	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
+	mul	r13	; * scanline
+	mov	rdi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
+	shl	rdi,	KERNEL_VIDEO_DEPTH_shift
+	add	rdi,	rax
+	add	rdi,	qword [rbx + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
+
+	; wyczyść przestrzeń elementu domyślnym kolorem tła
+	mov	eax,	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
+	call	library_bosu_element_drain
+
+	; rozmiar ciągu do wypisania w etykiecie
+	movzx	rcx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.length]
+
+	; wyświetl ciąg o domyślnym kolorze czcionki
+	mov	ebx,	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+	movzx	ecx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.length]
+	add	rsi,	LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.string
+	call	library_bosu_string
+
+	; przywróć oryginalne rejestry
+	pop	r13
+	pop	r12
+	pop	r11
+	pop	r10
+	pop	r9
+	pop	r8
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+	pop	rax
+
+	; powrót z procedry
 	ret
