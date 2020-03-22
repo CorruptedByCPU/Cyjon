@@ -21,9 +21,9 @@ service_desu:
 	call	service_desu_object
 
 	;-----------------------------------------------------------------------
-	; sprawdź stan i położenie obiektu kursora
+	; sprawdź zdarzenia od myszki i klawiatury
 	;-----------------------------------------------------------------------
-	call	service_desu_cursor
+	call	service_desu_event
 
 	;-----------------------------------------------------------------------
 	; przetwórz wszystkie zarejestrowane strefy
@@ -35,6 +35,11 @@ service_desu:
 	;-----------------------------------------------------------------------
 	call	service_desu_fill
 
+	;-----------------------------------------------------------------------
+	; sprawdź położenie i stan kursora
+	;-----------------------------------------------------------------------
+	call	service_desu_cursor
+
 	; powróć do głównej pętli
 	jmp	.loop
 
@@ -44,5 +49,6 @@ service_desu:
 	%include	"kernel/service/desu/cursor.asm"
 	%include	"kernel/service/desu/object.asm"
 	%include	"kernel/service/desu/fill.asm"
+	%include	"kernel/service/desu/event.asm"
 	;-----------------------------------------------------------------------
 service_desu_end:
