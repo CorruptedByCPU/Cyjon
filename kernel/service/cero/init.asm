@@ -37,6 +37,32 @@ service_cero_init:
 	; zarejestruj okno
 	call	service_desu_object_insert
 
+	; zachowaj wskaźnik zarejestrowanego okna
+	mov	qword [service_cero_window_workbench_pointer],	rsi
+
+	;-----------------------------------------------------------------------
+	; skonfiguruj przestrzeń paska zadań
+	;-----------------------------------------------------------------------
+	mov	rsi,	service_cero_window_taskbar
+
+	; ustaw pozycję paska zadań na dole ekranu
+	sub	rbx,	SERVICE_CERO_WINDOW_TASKBAR_HEIGHT_pixel
+	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	rbx
+
+	; ustaw szerokość paska zadań na cały ekran
+	mov	rax,	qword [kernel_video_width_pixel]
+	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	rax
+
+	; ustaw etykietę "zegar" na końcu paska zadań
+	sub	rax,	qword [service_cero_window_taskbar.element_label_clock + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	mov	qword [service_cero_window_taskbar.element_label_clock + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	rax
+
+	; utwórz okno paska zadań
+	call	library_bosu
+
+	; zachowaj wskaźnik zarejestrowanego okna
+	mov	qword [service_cero_window_taskbar_pointer],	rsi
+
 	;-----------------------------------------------------------------------
 	; utwórz menu kontekstowe
 	;-----------------------------------------------------------------------
@@ -51,3 +77,6 @@ service_cero_init:
 
 	; utwórz okno menu
 	call	library_bosu
+
+	; zachowaj wskaźnik zarejestrowanego okna
+	mov	qword [service_cero_window_menu_pointer],	rsi

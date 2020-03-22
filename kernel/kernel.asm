@@ -93,6 +93,7 @@ kernel:
 	;-----------------------------------------------------------------------
 	%include	"library/color.asm"
 	%include	"library/input.asm"
+	%include	"library/integer_to_string.asm"
 	%include	"library/page_align_up.asm"
 	%include	"library/page_from_size.asm"
 	%include	"library/string_compare.asm"
