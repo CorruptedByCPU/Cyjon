@@ -22,16 +22,14 @@ service_cero_window_menu		dq	STATIC_EMPTY	; pozycja na osi X względem wskaźnik
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
 					dq	LIBRARY_BOSU_WINDOW_FLAG_header | LIBRARY_BOSU_WINDOW_FLAG_fragile | SERVICE_DESU_OBJECT_FLAG_visible | SERVICE_DESU_OBJECT_FLAG_flush
 					dq	STATIC_EMPTY	; szerokosć okna w Bajtach
-.elements:
-					;---------------------------------------
+.elements:				;---------------------------------------
 					; element "nagłówek"
 					;---------------------------------------
 .element_header:			dd	LIBRARY_BOSU_ELEMENT_TYPE_header
 					dq	.element_header_end - .element_header	; rozmiar elementu
 					db	.element_header_end - .element_header_string
 .element_header_string:			db	"Menu"
-.element_header_end:
-					;---------------------------------------
+.element_header_end:			;---------------------------------------
 					; element "przycisk 0"
 					;---------------------------------------
 .element_button_0:			dd	LIBRARY_BOSU_ELEMENT_TYPE_button
@@ -43,8 +41,7 @@ service_cero_window_menu		dq	STATIC_EMPTY	; pozycja na osi X względem wskaźnik
 					dq	STATIC_EMPTY	; wskaźnik do procedury obsługującej wyjątek
 					db	.element_button_0_end - .element_button_0_string
 .element_button_0_string:		db	" Console "
-.element_button_0_end:
-					;---------------------------------------
+.element_button_0_end:			;---------------------------------------
 					; koniec elementów okna
 					;---------------------------------------
 					dd	STATIC_EMPTY
