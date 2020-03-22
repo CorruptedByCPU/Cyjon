@@ -15,11 +15,15 @@ service_cero:
 	%include	"kernel/service/cero/init.asm"
 
 .loop:
+	; aktualizuj etykietę "zegar"
+	call	service_cero_clock
+
 	; powrót do głównej pętli
 	jmp	.loop
 
 	;-----------------------------------------------------------------------
 	%include	"kernel/service/cero/data.asm"
+	%include	"kernel/service/cero/clock.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"
 	;-----------------------------------------------------------------------

@@ -2,9 +2,13 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
+service_cero_clock_last_state		dq	STATIC_EMPTY
+service_cero_clock_colon		db	STATIC_ASCII_SPACE
+
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
 ;===============================================================================
+service_cero_window_workbench_pointer	dq	STATIC_EMPTY
 service_cero_window_workbench		dq	0	; pozycja na osi X
 					dq	0	; pozycja na osi Y
 					dq	STATIC_EMPTY	; szerokość okna
@@ -14,6 +18,7 @@ service_cero_window_workbench		dq	0	; pozycja na osi X
 					dq	LIBRARY_BOSU_WINDOW_FLAG_fixed_xy | LIBRARY_BOSU_WINDOW_FLAG_fixed_z | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
 
 ;===============================================================================
+service_cero_window_taskbar_pointer	dq	STATIC_EMPTY
 service_cero_window_taskbar		dq	0	; pozycja na osi X
 					dq	STATIC_EMPTY	; pozycja na osi Y
 					dq	STATIC_EMPTY	; szerokość okna
@@ -49,6 +54,7 @@ service_cero_window_taskbar		dq	0	; pozycja na osi X
 service_cero_window_taskbar_end:
 
 ;===============================================================================
+service_cero_window_menu_pointer	dq	STATIC_EMPTY
 service_cero_window_menu		dq	STATIC_EMPTY	; pozycja na osi X względem wskaźnika kursora
 					dq	STATIC_EMPTY	; pozycja na osi Y względem wskaźnika kursora
 					dq	STATIC_EMPTY	; szerokość okna względem zawartości elementów

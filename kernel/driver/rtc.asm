@@ -70,8 +70,7 @@ driver_rtc:
 
 ;===============================================================================
 ; wyjście:
-;	driver_rtc_time
-;	driver_rtc_date
+;	driver_rtc_date_and_time
 driver_rtc_get_date_and_time:
 	; zachowaj oryginalny rejestr
 	push	rax

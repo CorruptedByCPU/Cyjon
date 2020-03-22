@@ -37,6 +37,9 @@ service_cero_init:
 	; zarejestruj okno
 	call	service_desu_object_insert
 
+	; zachowaj wskaźnik zarejestrowanego okna
+	mov	qword [service_cero_window_workbench_pointer],	rsi
+
 	;-----------------------------------------------------------------------
 	; skonfiguruj przestrzeń paska zadań
 	;-----------------------------------------------------------------------
@@ -57,6 +60,9 @@ service_cero_init:
 	; utwórz okno paska zadań
 	call	library_bosu
 
+	; zachowaj wskaźnik zarejestrowanego okna
+	mov	qword [service_cero_window_taskbar_pointer],	rsi
+
 	;-----------------------------------------------------------------------
 	; utwórz menu kontekstowe
 	;-----------------------------------------------------------------------
@@ -71,3 +77,6 @@ service_cero_init:
 
 	; utwórz okno menu
 	call	library_bosu
+
+	; zachowaj wskaźnik zarejestrowanego okna
+	mov	qword [service_cero_window_menu_pointer],	rsi

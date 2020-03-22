@@ -13,6 +13,8 @@
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do struktury okna
+; wyjście:
+;	rsi - wskaźnik zarejestrowanego okna
 library_bosu:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -68,6 +70,9 @@ library_bosu:
 	;-----------------------------------------------------------------------
 	; zarejestruj okno w menedżerze okien
 	call	service_desu_object_insert
+
+	; zwróć wskaźnik zarejestrowanego okna
+	mov	qword [rsp],	rsi
 
 	; przywróć oryginalne rejestry
 	pop	rsi
@@ -349,6 +354,9 @@ library_bosu_char:
 	; zmień kolor
 	stosd
 
+	; wyświetl cień za pikselem
+	mov	dword [rdi],	STATIC_EMPTY
+
 	; kontynuuj
 	jmp	.continue
 
@@ -549,8 +557,10 @@ library_bosu_element_label:
 	push	r12
 	push	r13
 
-	; zachowaj wskaźnik do właściwości okna
-	mov	rbx,	rdi
+	; pobierz szerokość, wysokość i scanline okna
+	mov	r8,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	mov	r9,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	mov	r10,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline]
 
 	; wylicz szerokość, wysokość i scanline elementu
 	mov	r11,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
@@ -562,13 +572,16 @@ library_bosu_element_label:
 	xor	eax,	eax
 
 	; okno posiada nagłówek?
-	test	qword [rbx + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_header
+	test	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_header
 	jz	.no_header	; nie
 
 	; koryguj pozycje na osi Y o nagówek
 	mov	rax,	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel
 
 .no_header:
+	; zachowaj wskaźnik do właściwości okna
+	mov	rbx,	rdi
+
 	; wylicz pozycję bezwzględną elementu w przestrzeni danych okna
 	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
 	mul	r13	; * scanline
