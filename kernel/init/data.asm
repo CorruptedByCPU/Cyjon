@@ -60,9 +60,9 @@ kernel_init_services_list:
 				dq	service_desu
 				db	4
 				db	"desu"
-				; dq	service_cero
-				; db	4
-				; db	"cero"
+				dq	service_cero
+				db	4
+				db	"cero"
 				; dq	service_tx
 				; dq	service_network
 				; dq	service_http
