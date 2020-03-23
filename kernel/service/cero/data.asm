@@ -7,6 +7,9 @@ service_cero_clock_colon		db	STATIC_ASCII_SPACE
 
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
+service_cero_ipc_data:
+times KERNEL_IPC_STRUCTURE.SIZE	db	STATIC_EMPTY
+
 ;===============================================================================
 service_cero_window_workbench_pointer	dq	STATIC_EMPTY
 service_cero_window_workbench		dq	0	; pozycja na osi X
@@ -16,6 +19,8 @@ service_cero_window_workbench		dq	0	; pozycja na osi X
 					dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
 					dq	LIBRARY_BOSU_WINDOW_FLAG_fixed_xy | LIBRARY_BOSU_WINDOW_FLAG_fixed_z | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
+					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
+					dq	STATIC_EMPTY
 
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
@@ -28,16 +33,17 @@ service_cero_window_taskbar		dq	0	; pozycja na osi X
 					dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
 					dq	LIBRARY_BOSU_WINDOW_FLAG_fixed_xy | LIBRARY_BOSU_WINDOW_FLAG_fixed_z | LIBRARY_BOSU_WINDOW_FLAG_arbiter | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
+					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
 					dq	STATIC_EMPTY	; szerokość okna w Bajtach
-.elements:				;-----------------------------------------------------------------------
+.elements:				;---------------------------------------
 					; element "łańcuch 0"
-					;-----------------------------------------------------------------------
+					;---------------------------------------
 .element_chain_0:			dd	LIBRARY_BOSU_ELEMENT_TYPE_chain
 					dq	LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.SIZE
 					dq	STATIC_EMPTY	; wartość uzupełniana automatycznie
-					;-----------------------------------------------------------------------
+					;---------------------------------------
 					; element "etykieta zegar"
-					;-----------------------------------------------------------------------
+					;---------------------------------------
 .element_label_clock:			dd	LIBRARY_BOSU_ELEMENT_TYPE_label
 					dq	.element_label_clock_end - .element_label_clock ; rozmiar elementu w Bajtach
 					dq	0	; pozycja na osi X względem okna
@@ -65,7 +71,8 @@ service_cero_window_menu		dq	160	; pozycja na osi X względem wskaźnika kursora
 					dq	STATIC_EMPTY	; wysokość okna względem zawartości elementów
 					dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
-					dq	LIBRARY_BOSU_WINDOW_FLAG_border | LIBRARY_BOSU_WINDOW_FLAG_header | LIBRARY_BOSU_WINDOW_FLAG_fragile | SERVICE_DESU_OBJECT_FLAG_visible | SERVICE_DESU_OBJECT_FLAG_flush
+					dq	LIBRARY_BOSU_WINDOW_FLAG_border | LIBRARY_BOSU_WINDOW_FLAG_header | LIBRARY_BOSU_WINDOW_FLAG_fragile
+					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
 					dq	STATIC_EMPTY	; szerokosć okna w Bajtach
 .elements:				;---------------------------------------
 					; element "nagłówek"

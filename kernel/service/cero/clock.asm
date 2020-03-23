@@ -56,8 +56,6 @@ service_cero_clock:
 	mov	rsi,	service_cero_window_taskbar.element_label_clock
 	call	library_bosu_element_label
 
-	xchg	bx,bx
-
 	; ustaw flagę okna: nowa zawartość
 	mov	rsi,	qword [service_cero_window_taskbar_pointer]
 	or	byte [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush

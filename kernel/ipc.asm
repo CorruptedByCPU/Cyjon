@@ -3,11 +3,11 @@
 ;===============================================================================
 
 KERNEL_IPC_SIZE_page_default	equ	1
-KERNEL_IPC_ENTRY_limit		equ	(KERNEL_IPC_SIZE_page_default << KERNEL_PAGE_SIZE_shift) / KERNEL_IPC_STRUCTURE_LIST.SIZE
+KERNEL_IPC_ENTRY_limit		equ	(KERNEL_IPC_SIZE_page_default << KERNEL_PAGE_SIZE_shift) / KERNEL_IPC_STRUCTURE.SIZE
 
 KERNEL_IPC_TTL_default		equ	DRIVER_RTC_Hz / 10	; ~100ms
 
-struc	KERNEL_IPC_STRUCTURE_LIST
+struc	KERNEL_IPC_STRUCTURE
 	.ttl			resb	8
 	.pid_source		resb	8
 	.pid_destination	resb	8
@@ -25,7 +25,7 @@ kernel_ipc_entry_count		dq	STATIC_EMPTY
 ;===============================================================================
 ; wejście:
 ;	rbx - PID procesu docelowego
-;	ecx - rozmiar przestrzeni w Bajtach lub jeśli wartość pusta, 32 Bajty z pozycji wskaźnika RSI
+;	ecx - rozmiar przestrzeni w Bajtach lub jeśli wartość pusta, 40 Bajtów z pozycji wskaźnika RSI
 ;	rsi - wskaźnik do przestrzeni danych
 kernel_ipc_insert:
 	; zachowaj oryginalne rejestry
@@ -59,11 +59,11 @@ kernel_ipc_insert:
 
 .loop:
 	; wpis przeterminowany?
-	cmp	rax,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.ttl]
+	cmp	rax,	qword [rdi + KERNEL_IPC_STRUCTURE.ttl]
 	ja	.found	; tak
 
 	; przesuń wskaźnik na następny wpis
-	add	rdi,	KERNEL_IPC_STRUCTURE_LIST.SIZE
+	add	rdi,	KERNEL_IPC_STRUCTURE.SIZE
 
 	; koniec miejsca?
 	dec	rcx
@@ -74,10 +74,10 @@ kernel_ipc_insert:
 
 .found:
 	; ustaw PID nadawcy
-	mov	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pid_source],	rdx
+	mov	qword [rdi + KERNEL_IPC_STRUCTURE.pid_source],	rdx
 
 	; ustaw PID odbiorcy
-	mov	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pid_destination],	rbx
+	mov	qword [rdi + KERNEL_IPC_STRUCTURE.pid_destination],	rbx
 
 	; przywróć oryginalny rejestr
 	mov	rcx,	qword [rsp]
@@ -87,10 +87,10 @@ kernel_ipc_insert:
 	jz	.load	; tak, uzupełnij komunikat danymi z wskaźnika RSI
 
 	; ustaw rozmiar danych przestrzeni
-	mov	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.size],	rcx
+	mov	qword [rdi + KERNEL_IPC_STRUCTURE.size],	rcx
 
 	; ustaw wskaźnik do przestrzeni danych
-	mov	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pointer],	rsi
+	mov	qword [rdi + KERNEL_IPC_STRUCTURE.pointer],	rsi
 
 	; koniec tworzenia wiadomości do procesu
 	jmp	.end
@@ -100,8 +100,8 @@ kernel_ipc_insert:
 	push	rdi
 
 	; załaduj treść wiadomości
-	mov	ecx,	KERNEL_IPC_STRUCTURE_LIST.SIZE - KERNEL_IPC_STRUCTURE_LIST.data
-	add	rdi,	KERNEL_IPC_STRUCTURE_LIST.data
+	mov	ecx,	KERNEL_IPC_STRUCTURE.SIZE - KERNEL_IPC_STRUCTURE.data
+	add	rdi,	KERNEL_IPC_STRUCTURE.data
 	rep	movsb
 
 	; przywróć wskaźnik początku wpisu
@@ -113,7 +113,7 @@ kernel_ipc_insert:
 
 	; ustaw czas przedawnienia wiadomości
 	add	rax,	KERNEL_IPC_TTL_default
-	mov	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.ttl],	rax
+	mov	qword [rdi + KERNEL_IPC_STRUCTURE.ttl],	rax
 
 	; zwolnij dostęp
 	mov	byte [kernel_ipc_semaphore],	STATIC_FALSE
@@ -162,16 +162,16 @@ kernel_ipc_receive:
 
 .loop:
 	; wpis dla procesu?
-	cmp	qword [rsi + KERNEL_IPC_STRUCTURE_LIST.pid_destination],	rax
+	cmp	qword [rsi + KERNEL_IPC_STRUCTURE.pid_destination],	rax
 	jne	.next	; nie
 
 	; wiadomość przeterminowana?
-	cmp	rdi,	qword [rsi + KERNEL_IPC_STRUCTURE_LIST.ttl]
+	cmp	rdi,	qword [rsi + KERNEL_IPC_STRUCTURE.ttl]
 	jbe	.found	; nie
 
 .next:
 	; przesuń wskaźnik na następny wpis
-	add	rsi,	KERNEL_IPC_STRUCTURE_LIST.SIZE
+	add	rsi,	KERNEL_IPC_STRUCTURE.SIZE
 
 	; pozostały wpisy do przejrzenia?
 	dec	rcx
@@ -188,12 +188,12 @@ kernel_ipc_receive:
 
 .found:
 	; prześlij komunikat do przestrzeni procesu
-	mov	ecx,	KERNEL_IPC_STRUCTURE_LIST.SIZE
+	mov	ecx,	KERNEL_IPC_STRUCTURE.SIZE
 	mov	rdi,	qword [rsp]
 	rep	movsb
 
 	; zwolnij wpis na liście
-	mov	qword [rsi - KERNEL_IPC_STRUCTURE_LIST.SIZE],	STATIC_EMPTY
+	mov	qword [rsi - KERNEL_IPC_STRUCTURE.SIZE],	STATIC_EMPTY
 
 	; ilość komunikatów na liście
 	dec	qword [kernel_ipc_entry_count]

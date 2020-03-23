@@ -2,21 +2,19 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
-	;-----------------------------------------------------------------------
+	; pobierz własny PID
+	call	kernel_task_active_pid
+	mov	qword [service_desu_pid],	rax
 
 	; odwróć kanała alfa obiektu
 	mov	ecx,	service_desu_object_cursor.end - service_desu_object_cursor.data
 	mov	rsi,	service_desu_object_cursor.data
 	call	library_color_alpha_invert
 
-	;-----------------------------------------------------------------------
-
 	; pobierz rozmiar przestrzeni pamięci karty graficznej w pikselach i Bajtach
 	mov	rbx,	qword [kernel_video_width_pixel]
 	mov	rcx,	qword [kernel_video_size_byte]
 	mov	rdx,	qword [kernel_video_height_pixel]
-
-	;-----------------------------------------------------------------------
 
 	; aktualizuj właściwości bufora
 	mov	qword [service_desu_object_framebuffer + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.size],	rcx
@@ -29,8 +27,6 @@
 
 	; zachowaj wskaźnik początku przestrzeni bufora
 	mov	qword [service_desu_object_framebuffer + SERVICE_DESU_STRUCTURE_OBJECT.address],	rdi
-
-	;-----------------------------------------------------------------------
 
 	; przygotuj przestrzeń dla listy obiektów
 	call	kernel_memory_alloc_page
@@ -46,8 +42,6 @@
 	call	kernel_memory_alloc_page
 	call	kernel_page_drain	; wyczyść
 	mov	qword [service_desu_zone_list_address],	rdi
-
-	;-----------------------------------------------------------------------
 
 	; menedżer okien zainicjowany
 	mov	byte [service_desu_semaphore],	STATIC_TRUE

@@ -56,6 +56,7 @@ endstruc
 struc	LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA
 	.size					resb	8
 	.flags					resb	8
+	.id					resb	8
 	;--- dane specyficzne dla Bosu
 	.scanline				resb	8
 	.SIZE:

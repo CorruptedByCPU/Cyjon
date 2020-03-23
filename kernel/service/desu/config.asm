@@ -16,6 +16,17 @@ SERVICE_DESU_OBJECT_FLAG_arbiter			equ	1 << 6	; nadobiekt
 SERVICE_DESU_FILL_LIST_limit				equ	(KERNEL_PAGE_SIZE_byte / SERVICE_DESU_STRUCTURE_FILL.SIZE) - 0x01
 SERVICE_DESU_ZONE_LIST_limit				equ	(KERNEL_PAGE_SIZE_byte / SERVICE_DESU_STRUCTURE_ZONE.SIZE) - 0x01
 
+SERVICE_DESU_IPC_MOUSE_BUTTON_LEFT_press		equ	0
+SERVICE_DESU_IPC_MOUSE_BUTTON_RIGHT_press		equ	1
+
+struc	SERVICE_DESU_STRUCTURE_IPC
+	.type						resb	1
+	.reserved					resb	7
+	.id						resb	8
+	.value0						resb	8
+	.value1						resb	8
+endstruc
+
 struc	SERVICE_DESU_STRUCTURE_FIELD
 	.x						resb	8
 	.y						resb	8
@@ -33,6 +44,9 @@ endstruc
 struc	SERVICE_DESU_STRUCTURE_OBJECT_EXTRA
 	.size						resb	8
 	.flags						resb	8
+	.id						resb	8
+	;--- dane specyficzne dla Desu
+	.pid						resb	8
 	.SIZE:
 endstruc
 
@@ -47,20 +61,3 @@ struc	SERVICE_DESU_STRUCTURE_ZONE
 	.object						resb	8
 	.SIZE:
 endstruc
-
-;===============================================================================
-;===============================================================================
-
-SERVICE_DESU_COLOR_base				equ	0x00181818
-
-SERVICE_DESU_OBJECT_FLAG_mask_unprivileged	equ	SERVICE_DESU_OBJECT_FLAG_visible | SERVICE_DESU_OBJECT_FLAG_flush
-
-SERVICE_DESU_OBJECT_ERROR_full			equ	0x01
-SERVICE_DESU_OBJECT_ERROR_memory_low		equ	0x02
-SERVICE_DESU_OBJECT_ERROR_corruped		equ	0x03
-
-SERVICE_DESU_UPDATE_LIST_size_page		equ	0x01
-SERVICE_DESU_UPDATE_LIST_amount_limit		equ	((SERVICE_DESU_UPDATE_LIST_size_page << KERNEL_PAGE_SIZE_shift) / SERVICE_DESU_STRUCTURE_OBJECT.SIZE) - 0x01
-
-SERVICE_DESU_SHADOW_LIST_size_page		equ	0x01
-SERVICE_DESU_SHADOW_LIST_amount_limit		equ	((SERVICE_DESU_SHADOW_LIST_size_page << KERNEL_PAGE_SIZE_shift) / SERVICE_DESU_STRUCTURE_OBJECT.SIZE) - 0x01

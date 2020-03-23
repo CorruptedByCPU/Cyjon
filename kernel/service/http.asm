@@ -12,7 +12,7 @@
 %ENDMACRO
 
 service_http_ipc_message:
-	times	KERNEL_IPC_STRUCTURE_LIST.SIZE	db	STATIC_EMPTY
+	times	KERNEL_IPC_STRUCTURE.SIZE	db	STATIC_EMPTY
 
 service_http:
 	; zarejestruj port 80
@@ -27,11 +27,11 @@ service_http:
 	jc	.loop	; brak, sprawdź raz jeszcze
 
 	; pobierz identyfikator połączenia
-	mov	rbx,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.other]
+	mov	rbx,	qword [rdi + KERNEL_IPC_STRUCTURE.other]
 
 	; zapytanie o rdzeń usługi?
 	mov	ecx,	service_http_get_root_end - service_http_get_root
-	mov	rsi,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pointer]
+	mov	rsi,	qword [rdi + KERNEL_IPC_STRUCTURE.pointer]
 	mov	rdi,	service_http_get_root
 	call	library_string_compare
 	jc	.no	; nie

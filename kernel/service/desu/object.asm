@@ -11,9 +11,9 @@
 service_desu_object_insert:
 	; zachowaj oryginalne rejestry
 	push	rax
-	push	rcx
 	push	rdx
 	push	rdi
+	push	rcx
 	push	rsi
 
 	; brak miejsca?
@@ -33,8 +33,28 @@ service_desu_object_insert:
 	; zwróć bezpośredni wskaźnik na liście do wstawianego obiektu
 	mov	qword [rsp],	rdi
 
-	; zachowaj wskaźnik do obiektu
+	; przygotuj dla obiektu nowy identyfikator
+	call	service_desu_object_id_new
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id],	rcx
+
+	; zwróć informacje o identyfikatorze
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rcx
+
+	; rejestrowany obiekt będzie arbitrem?
+	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_arbiter
+	jz	.insert	; nie
+
+	; nie pozwól na zarejestrowanie kolejnego arbitra
+	cmp	byte [service_desu_object_arbiter_semaphore],	STATIC_FALSE
+	jne	.insert	; istnieje już, zignoruj
+
+	; zablokuj dostęp do arbitra
+	mov	byte [service_desu_object_arbiter_semaphore],	STATIC_TRUE
+
+.insert:
+	; zachowaj wskaźniki do obiektów
 	push	rsi
+	push	rdi
 
 	; załaduj na koniec listy
 	mov	rcx,	(SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE) >> STATIC_DIVIDE_BY_QWORD_shift
@@ -43,15 +63,20 @@ service_desu_object_insert:
 	; ilość obiektów na liście
 	inc	qword [service_desu_object_list_records]
 
-	; przywróć wskaźnik do obiektu
+	; przywróć wskaźniki do obiektów
+	pop	rdi
 	pop	rsi
+
+	; pobierz PID procesu właściciela okna
+	call	kernel_task_active_pid
+	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.pid],	rax
 
 .end:
 	; przywróć oryginalne rejestry
 	pop	rsi
+	pop	rcx
 	pop	rdi
 	pop	rdx
-	pop	rcx
 	pop	rax
 
 	; powrót z procedury
@@ -437,55 +462,73 @@ service_desu_object_move:
 
 	macro_debug	"service_desu_object_move"
 
-; ;===============================================================================
-; service_desu_object_hide:
-; 	; zachowaj oryginalne rejestry
-; 	push	rbx
-; 	push	rcx
-; 	push	rsi
-;
-; 	; ilość obiektów na liście
-; 	mov	rcx,	qword [service_desu_object_list_records]
-;
-; 	; ustaw wskaźnik na początek listy obiektów
-; 	mov	rsi,	qword [service_desu_object_list_address]
-;
-; .loop:
-; 	; obiekt widoczny?
-; 	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_visible
-; 	jz	.next	; nie
-;
-; 	; obiekt "kruchy"?
-; 	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_fragile
-; 	jz	.next	; nie
-;
-; 	; wyłącz flagę "widoczny"
-; 	and	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	~SERVICE_DESU_OBJECT_FLAG_visible
-;
-; 	; dodaj strefę do przetworzenia
-; 	call	service_desu_zone_insert_by_object
-;
-; .next:
-; 	; przesuń wskaźnik na następny obiekt
-; 	add	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
-;
-; 	; pozostały obiekty do sprawdzenia?
-; 	dec	rcx
-; 	jnz	.loop	; tak
-;
-; 	; przetwórz strefy
-; 	mov	bl,	STATIC_FALSE	; całe
-; 	call	service_desu_zone
-;
-; .end:
-; 	; przywróć oryginalne rejestry
-; 	pop	rsi
-; 	pop	rcx
-; 	pop	rbx
-;
-; 	; powrót z podprocedury
-; 	ret
+;===============================================================================
+service_desu_object_hide:
+	; zachowaj oryginalne rejestry
+	push	rbx
+	push	rcx
+	push	rsi
 
+	; ilość obiektów na liście
+	mov	rcx,	qword [service_desu_object_list_records]
+
+	; ustaw wskaźnik na początek listy obiektów
+	mov	rsi,	qword [service_desu_object_list_address]
+
+.loop:
+	; obiekt widoczny?
+	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_visible
+	jz	.next	; nie
+
+	; obiekt "kruchy"?
+	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_fragile
+	jz	.next	; nie
+
+	; wyłącz flagę "widoczny"
+	and	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	~SERVICE_DESU_OBJECT_FLAG_visible
+
+	; dodaj strefę do przetworzenia
+	call	service_desu_zone_insert_by_object
+
+.next:
+	; przesuń wskaźnik na następny obiekt
+	add	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+
+	; pozostały obiekty do sprawdzenia?
+	dec	rcx
+	jnz	.loop	; tak
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rcx
+	pop	rbx
+
+	; powrót z podprocedury
+	ret
+
+	macro_debug	"service_desu_object_hide"
+
+;===============================================================================
+; wyjście:
+;	rcx - nowy identyfikator
+service_desu_object_id_new:
+	; zablokuj dostęp do procedury
+	macro_lock	service_desu_object_id_semaphore,	0
+
+	; pobierz wolny identyfikator
+	mov	rcx,	qword [service_desu_object_id]
+
+	; przygotuj następny
+	inc	qword [service_desu_object_id]
+
+	; zwolnij dostęp do procedury
+	mov	byte [service_desu_object_id_semaphore],	STATIC_FALSE
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"service_desu_object_id"
 
 ; ;===============================================================================
 ; service_desu_object_lock:
