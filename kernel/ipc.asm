@@ -45,7 +45,11 @@ kernel_ipc_insert:
 .wait:
 	; brak miejsca na liście?
 	cmp	qword [kernel_ipc_entry_count],	KERNEL_IPC_ENTRY_limit
-	je	.wait	; czekaj na zwolnienie przynajmniej jednego miejsca
+	jne	.reload	; czekaj na zwolnienie przynajmniej jednego miejsca
+
+	; przepełniono, debug
+	xchg	bx,bx
+	jmp	$
 
 .reload:
 	; pobierz aktualny czas systemu
