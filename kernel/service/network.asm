@@ -30,8 +30,8 @@ service_network:
 	jc	.loop	; brak, sprawdź raz jeszcze
 
 	; pobierz rozmiar i wskaźnik do przestrzeni
-	mov	rcx,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.size]
-	mov	rsi,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pointer]
+	mov	rcx,	qword [rdi + KERNEL_IPC_STRUCTURE.size]
+	mov	rsi,	qword [rdi + KERNEL_IPC_STRUCTURE.pointer]
 
 	; protokół ARP?
 	cmp	word [rsi + SERVICE_NETWORK_STRUCTURE_FRAME_ETHERNET.type],	SERVICE_NETWORK_FRAME_ETHERNET_TYPE_arp

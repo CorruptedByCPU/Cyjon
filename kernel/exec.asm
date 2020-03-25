@@ -2,6 +2,8 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
+
+
 ;===============================================================================
 ; wejście:
 ;	rcx - ilość znaków reprezentujących nazwę uruchamianego programu
@@ -19,6 +21,8 @@ kernel_exec:
 	push	rbp
 	push	r8
 	push	r11
+	push	r12
+	push	r13
 	push	rax
 	push	rcx
 	push	rdi
@@ -26,6 +30,10 @@ kernel_exec:
 	; oblicz ilość stron niezbędnych do załadowania pliku do pamięci
 	mov	rcx,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.size]
 	call	library_page_from_size
+
+	; zachowaj rozmiar przestrzeni kodu w Bajtach
+	mov	r12,	rcx
+	shl	r12,	KERNEL_PAGE_SIZE_shift
 
 	; zarezerwuj ilość stron, niezbędną do inicjalizacji procesu
 	add	rcx,	14
@@ -45,18 +53,47 @@ kernel_exec:
 	; zachowaj adres
 	mov	r11,	rdi
 
+	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod przestrzeń kodu procesu
 	mov	rax,	KERNEL_MEMORY_HIGH_VIRTUAL_address
 	mov	ebx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user
 	call	kernel_page_map_logical
 	jc	.error
 
+	;-----------------------------------------------------------------------
+	; przygotuj miejsce pod binarną mapę pamięci procesu
+	add	rax,	r12	; za przestrzenią kodu procesu
+	mov	ebx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write	; dostęp tylko od strony jądra systemu
+	mov	rcx,	KERNEL_MEMORY_MAP_SIZE_page
+	call	kernel_page_map_logical
+
+	; zachowaj bezpośredni adres binarnej mapy pamięci procesu
+	mov	r13,	rax
+
+	; pobierz adres fizyczny strony przeznaczonej na binarną mapę pamięci procesu
+	mov	rdi,	qword [r8]
+	and	di,	KERNEL_PAGE_mask	; usuń flagi z adresu strony
+	push	rdi	; zachowaj
+
+	; wyczyść binarną mapę pamięci procesu
+	mov	rax,	STATIC_MAX_unsigned
+	mov	ecx,	(KERNEL_MEMORY_MAP_SIZE_page << KERNEL_PAGE_SIZE_shift) >> STATIC_DIVIDE_BY_QWORD_shift
+	rep	stosq
+
+	; oznacz w binarnej mapie pamięci procesu przestrzeń zajętą przez kod i binarną mapę
+	pop	rsi
+	mov	rcx,	r12
+	shr	rcx,	KERNEL_PAGE_SIZE_shift
+	call	kernel_memory_secure
+
+	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod stos procesu
 	mov	rax,	(KERNEL_MEMORY_HIGH_VIRTUAL_address << STATIC_MULTIPLE_BY_2_shift) - KERNEL_PAGE_SIZE_byte
 	mov	rcx,	KERNEL_PAGE_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	call	kernel_page_map_logical
 	jc	.error
 
+	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod stos kontekstu (należy do jądra systemu)
 	mov	rax,	KERNEL_STACK_address
 	mov	rbx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
@@ -106,16 +143,23 @@ kernel_exec:
 	mov	rdi,	SOFTWARE_base_address
 	call	kernel_vfs_file_read
 
-	; przywróć przestrze pamięci na rodzica
+	; przywróć przestrzeń pamięci na rodzica
 	mov	cr3,	rax
 	;-----------------------------------------------------------------------
 
 	; wstaw proces do kolejki zadań
-	mov	ebx,	KERNEL_TASK_FLAG_active
+	xor	bx,	bx	; brak dodatkowych flag
 	movzx	ecx,	byte [rsi + KERNEL_VFS_STRUCTURE_KNOT.length]
 	add	rsi,	KERNEL_VFS_STRUCTURE_KNOT.name
 	call	kernel_task_add
 	jc	.error
+
+	xchg	bx,bx
+
+	; uzupełnij wpis o adres binarnej mapy pamięci procesu i jej rozmiar
+	add	r13,	qword [kernel_memory_high_mask]
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.map],	r13
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.map_size],	(KERNEL_MEMORY_MAP_SIZE_page << KERNEL_PAGE_SIZE_shift) << STATIC_MULTIPLE_BY_8_shift
 
 	; zwolnij niewykrzystane, zarezerwowane strony
 	add	qword [kernel_page_free_count],	rbp
@@ -129,13 +173,15 @@ kernel_exec:
 
 .error:
 	; zwróć kod błędu
-	mov	qword [rsp + STATIC_QWORD_SIZE_byte * 0x02],	rax
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte * 0x03],	rax
 
 .end:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rcx
 	pop	rax
+	pop	r13
+	pop	r12
 	pop	r11
 	pop	r8
 	pop	rbp

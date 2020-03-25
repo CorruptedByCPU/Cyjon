@@ -89,12 +89,10 @@ kernel_init_memory:
 	sub	rdi,	KERNEL_BASE_address
 	shr	rdi,	STATIC_DIVIDE_BY_PAGE_shift
 
- 	; jako, że pobierając dostępną stronę z binarnej mapy pamięci, zawsze otrzymujemy pierwszą wolną
- 	; możemy uprościć sposób oznaczenia pierwszych N zajętych
-
-	; zarezerwuj przestrzeń o danym rozmiarze w binarnej mapie pamięci jądra systemu
+	; oznacz N pierwszych stron w binarnej mapie pamięci jako zajęte
 	mov	rcx,	rdi
-	call	kernel_memory_alloc
+	mov	rsi,	qword [kernel_memory_map_address]
+	call	kernel_memory_secure
 
 	; wyświetl komunikat
 	mov	ecx,	kernel_init_string_memory_size_end - kernel_init_string_memory_size

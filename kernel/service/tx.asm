@@ -5,7 +5,7 @@
 service_tx_pid					dq	STATIC_EMPTY
 
 service_tx_ipc_message:
-	times	KERNEL_IPC_STRUCTURE_LIST.SIZE	db	STATIC_EMPTY
+	times	KERNEL_IPC_STRUCTURE.SIZE	db	STATIC_EMPTY
 
 ;===============================================================================
 service_tx:
@@ -23,7 +23,7 @@ service_tx:
 	jc	.loop	; brak, sprawdź raz jeszcze
 
 	; pobierz rozmiar danych pakietu
-	mov	rcx,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.size]
+	mov	rcx,	qword [rdi + KERNEL_IPC_STRUCTURE.size]
 
 	; brak danych?
 	test	rcx,	rcx
@@ -31,7 +31,7 @@ service_tx:
 
  	; wyślij
  	mov	rax,	rcx
- 	mov	rdi,	qword [rdi + KERNEL_IPC_STRUCTURE_LIST.pointer]
+ 	mov	rdi,	qword [rdi + KERNEL_IPC_STRUCTURE.pointer]
  	call	driver_nic_i82540em_transfer
 
 	; zwolnij przesterzeń

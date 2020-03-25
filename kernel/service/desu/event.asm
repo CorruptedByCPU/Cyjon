@@ -50,13 +50,9 @@ service_desu_event:
 	; ustaw obiekt jako aktywny
 	mov	qword [service_desu_object_selected_pointer],	rsi
 
-; 	; ukryj "kruche" obiekty
-; 	call	service_desu_object_hide
-;
-; 	; jest to pierwszy obiekt z listy?
-; 	cmp	rsi,	qword [service_desu_object_list_address]
-; 	je	.privileged	; tak
-;
+	; ukryj "kruche" obiekty
+	call	service_desu_object_hide
+
 	; obiekt powinien zachować swoją warstwę?
 	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_fixed_z
 	jnz	.fixed_z	; tak
@@ -74,10 +70,6 @@ service_desu_event:
 	or	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
 
 .fixed_z:
-;
-; 	;-----------------------------------------------------------------------
-;
-; .privileged:
 ; 	; ; pobierz ID okna i PID
 ; 	; mov	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id]
 ; 	; mov	rbx,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.pid]
@@ -112,45 +104,46 @@ service_desu_event:
 	mov	qword [service_desu_object_selected_pointer],	STATIC_EMPTY
 
 .no_mouse_button_left_release:
-; 	;-----------------------------------------------------------------------
-; 	; naciśnięto prawy przycisk myszki?
-; 	bt	word [driver_ps2_mouse_state],	DRIVER_PS2_DEVICE_MOUSE_PACKET_RMB_bit
-; 	jnc	.no_mouse_button_right_action	; nie
-;
-; 	; prawy przycisk myszki był już naciśnięty?
-; 	cmp	byte [service_desu_mouse_button_right_semaphore],	STATIC_TRUE
-; 	je	.no_mouse_button_right_action	; tak, zignoruj
-;
-; 	; zapamiętaj ten stan
-; 	mov	byte [service_desu_mouse_button_right_semaphore],	STATIC_TRUE
-;
-; 	; sprawdź, który obiekt znajduje się pod wskaźnikiem kursora
-;  	call	service_desu_object_find
-; 	jc	.no_mouse_button_right_action	; brak obiektu pod wskaźnikiem
-;
-; 	; ukryj "kruche" obiekty
-; 	call	service_desu_object_hide
-;
-; 	; ; pobierz ID okna i PID
-; 	; mov	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id]
-; 	; mov	rbx,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.pid]
-; 	;
-; 	; ; skomponuj komunikat dla procesu
-; 	; mov	rsi,	service_desu_message
-; 	;
-; 	; ; wyślij informacje o typie akcji
-; 	; mov	byte [rsi + SERVICE_DESU_STRUCTURE_MESSAGE.type],	SERVICE_DESU_MESSAGE_TYPE_MOUSE_BUTTON_right_press
-; 	;
-; 	; ; wyślij informacje o ID okna biorącego udział
-; 	; mov	qword [rsi + SERVICE_DESU_STRUCTURE_MESSAGE.id],	rax
-; 	;
-; 	; ; wyślij informacje o pozycji wskaźnika kursora
-; 	; mov	qword [rsi + SERVICE_DESU_STRUCTURE_MESSAGE.value0],	r8	; x
-; 	; mov	qword [rsi + SERVICE_DESU_STRUCTURE_MESSAGE.value1],	r9	; y
-; 	;
-; 	; ; wyślij komunikat
-; 	; call	kernel_ipc_send
-;
+	;-----------------------------------------------------------------------
+	; naciśnięto prawy przycisk myszki?
+	bt	word [driver_ps2_mouse_state],	DRIVER_PS2_DEVICE_MOUSE_PACKET_RMB_bit
+	jnc	.no_mouse_button_right_action	; nie
+
+	; prawy przycisk myszki był już naciśnięty?
+	cmp	byte [service_desu_mouse_button_right_semaphore],	STATIC_TRUE
+	je	.no_mouse_button_right_action	; tak, zignoruj
+
+	; zapamiętaj ten stan
+	mov	byte [service_desu_mouse_button_right_semaphore],	STATIC_TRUE
+
+	; sprawdź, który obiekt znajduje się pod wskaźnikiem kursora
+ 	call	service_desu_object_find
+	jc	.no_mouse_button_right_action	; brak obiektu pod wskaźnikiem
+
+	; ukryj "kruche" obiekty
+	call	service_desu_object_hide
+
+	; pobierz ID okna i PID
+	mov	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id]
+	mov	rbx,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.pid]
+
+	; skomponuj komunikat dla procesu
+	mov	rsi,	service_desu_ipc_data
+
+	; wyślij informacje o typie akcji
+	mov	byte [rsi + SERVICE_DESU_STRUCTURE_IPC.type],	SERVICE_DESU_IPC_MOUSE_BUTTON_RIGHT_press
+
+	; wyślij informacje o ID okna biorącego udział
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_IPC.id],	rax
+
+	; wyślij informacje o pozycji wskaźnika kursora
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_IPC.value0],	r8	; x
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_IPC.value1],	r9	; y
+
+	; wyślij komunikat
+	xor	ecx,	ecx	; standardowy rozmiar komunikatu pod adresem w rejestrze RSI
+	call	kernel_ipc_insert
+
 .no_mouse_button_right_action:
 	; puszczono prawy przycisk myszki?
 	bt	word [driver_ps2_mouse_state],	DRIVER_PS2_DEVICE_MOUSE_PACKET_RMB_bit

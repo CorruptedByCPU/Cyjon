@@ -15,6 +15,9 @@ service_cero:
 	%include	"kernel/service/cero/init.asm"
 
 .loop:
+	; sprawdż wiadomości przychodzące
+	call	service_cero_ipc
+
 	; aktualizuj etykietę "zegar"
 	call	service_cero_clock
 
@@ -24,6 +27,7 @@ service_cero:
 	;-----------------------------------------------------------------------
 	%include	"kernel/service/cero/data.asm"
 	%include	"kernel/service/cero/clock.asm"
+	%include	"kernel/service/cero/ipc.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"
 	;-----------------------------------------------------------------------
