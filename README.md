@@ -7,7 +7,7 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 
 ### Requirements:
 
-  - 16 MiB of RAM (1 MiB after 0x00100000)
+  - 8 MiB of RAM (1 MiB after 0x00100000)
   - keyboard and mouse at PS2 port
 
 ### Optional:
@@ -24,6 +24,7 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 	nasm -f bin software/shell.asm		-o build/shell
 	nasm -f bin software/hello.asm		-o build/hello
 	nasm -f bin software/free.asm		-o build/free
+	nasm -f bin software/console.asm	-o build/console
 
 	nasm -f bin kernel/init/boot.asm	-o build/boot
 	nasm -f bin kernel/kernel.asm		-o build/kernel \
@@ -43,6 +44,7 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 	nasm -f bin software/shell.asm		-o build/shell
 	nasm -f bin software/hello.asm		-o build/hello
 	nasm -f bin software/free.asm		-o build/free
+	nasm -f bin software/console.asm	-o build/console
 
 	nasm -f bin kernel/init/boot.asm	-o build/boot
 	nasm -f bin kernel/kernel.asm		-o build/kernel -dMULTIBOOT_VIDEO_WIDTH_pixel=%WIDTH% -dMULTIBOOT_VIDEO_HEIGHT_pixel=%HEIGHT%
@@ -50,5 +52,5 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 
 ### Exec:
 
-	# 16 MiB RAM, 2 logical CPUs, no network, hard disk connected to IDE controller
-	qemu-system-x86_64 -hda file=build/disk.raw -m 16 -smp 2 -rtc base=localtime
+	# 8 MiB RAM, 2 logical CPUs, no network, hard disk connected to IDE controller
+	qemu-system-x86_64 -hda file=build/disk.raw -m 8 -smp 2 -rtc base=localtime
