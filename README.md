@@ -2,7 +2,6 @@
 
 A simple, clean, multi-tasking operating system written in pure assembly language for 64-bit processors from the AMD64 family.
 
-![screenshot](https://raw.githubusercontent.com/blackend/cyjon/master/cyjon.png)
 ![screenshot](https://raw.githubusercontent.com/blackend/cyjon/master/gui.png)
 
 ### Requirements:
