@@ -2,10 +2,6 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
-KERNEL_VIDEO_DEPTH_shift			equ	2
-KERNEL_VIDEO_DEPTH_byte				equ	4
-KERNEL_VIDEO_DEPTH_bit				equ	32
-
 kernel_video_semaphore				db	STATIC_FALSE
 kernel_video_base_address			dq	STATIC_EMPTY
 kernel_video_pointer				dq	STATIC_EMPTY

@@ -8,6 +8,7 @@ kernel_memory_map_address		dq	STATIC_EMPTY
 kernel_memory_map_address_end		dq	STATIC_EMPTY
 
 kernel_memory_high_mask			dq	KERNEL_MEMORY_HIGH_mask
+kernel_memory_real_address		dq	KERNEL_MEMORY_HIGH_REAL_address
 
 kernel_memory_lock_semaphore		db	STATIC_FALSE
 

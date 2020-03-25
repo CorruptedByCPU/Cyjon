@@ -84,6 +84,7 @@ kernel_exec:
 	pop	rsi
 	mov	rcx,	r12
 	shr	rcx,	KERNEL_PAGE_SIZE_shift
+	add	rcx,	KERNEL_MEMORY_MAP_SIZE_page
 	call	kernel_memory_secure
 
 	;-----------------------------------------------------------------------
@@ -154,12 +155,13 @@ kernel_exec:
 	call	kernel_task_add
 	jc	.error
 
-	xchg	bx,bx
-
 	; uzupełnij wpis o adres binarnej mapy pamięci procesu i jej rozmiar
 	add	r13,	qword [kernel_memory_high_mask]
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.map],	r13
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.map_size],	(KERNEL_MEMORY_MAP_SIZE_page << KERNEL_PAGE_SIZE_shift) << STATIC_MULTIPLE_BY_8_shift
+
+	; oznacz proces jako gotowy do przetwarzania
+	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active
 
 	; zwolnij niewykrzystane, zarezerwowane strony
 	add	qword [kernel_page_free_count],	rbp

@@ -189,7 +189,7 @@ kernel_task:
 	test	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active
 	jnz	.active	; tak
 
-	; proces jest uśpiony lub w trakcie zamykania
+	; proces jest uśpiony
 
 	; zwolnij dostęp do procesu
 	and	word [rdi + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_processing

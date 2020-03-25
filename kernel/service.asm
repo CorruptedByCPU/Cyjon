@@ -64,6 +64,10 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_PROCESS_check
 	je	.process_check	; tak
 
+	; przydzilić przestrzeń pamięci o podanym rozmiarze?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_memory_alloc
+	je	.process_memory_alloc	; tak
+
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
 
@@ -104,6 +108,15 @@ kernel_service:
 .process_check:
 	; odszukaj proces w kolejce zadań
 	call	kernel_task_pid_check
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;-------------------------------------------------------------------------------
+.process_memory_alloc:
+	; zamień rozmiar przestrzeni na strony
+	call	library_page_from_size
+	call	kernel_service_memory_alloc
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
@@ -253,3 +266,120 @@ kernel_service:
 
 	; powrót do procesu
 	jmp	kernel_service.end
+
+;===============================================================================
+; wejście:
+;	rcx - rozmiar przestrzeni w stronach
+; wyjście:
+;	Flaga CF, jeśli brak dostępnej
+;	rax - kod błędu, jeśli Flaga CF jest podniesiona
+;	rdi - wskaźnik do przydzielonej przestrzeni
+kernel_service_memory_alloc:
+	; zachowaj oryginalne rejestry
+	push	rbx
+	push	rdx
+	push	rsi
+	push	rdi
+	push	rax
+	push	rcx
+
+	; zresetuj numer pierwszego bitu poszukiwanej przestrzeni
+	mov	rax,	STATIC_MAX_unsigned
+
+	; pobierz wskaźnik do właściwości procesu
+	call	kernel_task_active
+
+	; pobierz ilość opisanych stron w binarnej mapie pamięci
+	mov	rcx,	qword [rdi + KERNEL_TASK_STRUCTURE.map_size]
+
+	; przeszukaj binarną mapę pamięci procesu od początku
+	mov	rsi,	qword [rdi + KERNEL_TASK_STRUCTURE.map]
+
+.reload:
+	; ilość stron wchodzących w skład rozpatrywanej przestrzeni
+	xor	edx,	edx
+
+.search:
+	; sprawdź następną stronę
+	inc	rax
+
+	; koniec binarnej mapy pamięci?
+	cmp	rax,	rcx
+	je	.error	; tak
+
+	; znaleziono wolną stronę?
+	bt	qword [rsi],	rax
+	jnc	.search	; nie
+
+	; zachowaj numer pierwszego bitu wchodzącego w skład poszukiwanej przestrzeni
+	mov	rbx,	rax
+
+.check:
+	; sprawdź następną stronę
+	inc	rax
+
+	; zalicz aktualną stronę do poszukiwanej przestrzeni
+	inc	rdx
+
+	; znaleziono całkowity rozmiar przestrzeni
+	cmp	rdx,	qword [rsp]
+	je	.found	; tak
+
+	; koniec binarnej mapy pamięci?
+	cmp	rax,	rcx
+	je	.error	; tak
+
+	; następna strona wchodząca w skład poszukiwanej przestrzeni?
+	bt	qword [rsi],	rax
+	jc	.check	; tak
+
+	; rozpatrywana przestrzeń jest niepełna, znajdź następną
+	jmp	.reload
+
+.error:
+	; zwróć kod błędu
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	KERNEL_ERROR_PAGE_memory_low
+
+	; flaga, błąd
+	stc
+
+	; koniec procedury
+	jmp	.end
+
+.found:
+	; ustaw numer pierwszej strony przestrzeni do zablokowania
+	mov	rax,	rbx
+
+.lock:
+	; zwolnij kolejne strony wchodzące w skład znalezionej przestrzeni
+	btr	qword [rsi],	rax
+
+	; następna strona
+	inc	rax
+
+	; koniec przetwarzania przestrzeni?
+	dec	rdx
+	jnz	.lock	; nie, kontynuuj
+
+	; przelicz numer pierwszej strony przestrzeni na adres WZGLĘDNY
+	shl	rbx,	STATIC_MULTIPLE_BY_PAGE_shift
+
+	; koryguj o adres początku opisanej przestrzeni przez binarną mapę pamięci procesu
+	add	rbx,	qword [kernel_memory_real_address]
+
+	; zwróć adres do procesu
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte * 0x02],	rbx
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rcx
+	pop	rax
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rbx
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"kernel_service_memory_alloc"

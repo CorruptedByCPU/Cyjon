@@ -4,7 +4,7 @@
 
 %define	KERNEL_name					"Cyjon"
 %define	KERNEL_version					"0"
-%define	KERNEL_revision					"1200"
+%define	KERNEL_revision					"1201"
 %define	KERNEL_architecture				"x86_64"
 
 KERNEL_BASE_address					equ	0x0000000000100000
@@ -20,6 +20,13 @@ KERNEL_STACK_TEMPORARY_pointer				equ	0x8000 + KERNEL_PAGE_SIZE_byte
 KERNEL_MEMORY_HIGH_mask					equ	0xFFFF000000000000
 KERNEL_MEMORY_HIGH_REAL_address				equ	0xFFFF800000000000
 KERNEL_MEMORY_HIGH_VIRTUAL_address			equ	KERNEL_MEMORY_HIGH_REAL_address - KERNEL_MEMORY_HIGH_mask
+
+;===============================================================================
+; VIDEO
+;===============================================================================
+KERNEL_VIDEO_DEPTH_shift				equ	2
+KERNEL_VIDEO_DEPTH_byte					equ	4
+KERNEL_VIDEO_DEPTH_bit					equ	32
 
 ;===============================================================================
 ; SERVICE
