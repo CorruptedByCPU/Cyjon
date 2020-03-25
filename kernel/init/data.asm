@@ -100,6 +100,12 @@ kernel_init_vfs_files:
 				db	9
 				db	"/bin/free"
 
+				dq	kernel_init_vfs_file_console
+				dq	kernel_init_vfs_file_console_end - kernel_init_vfs_file_console
+				db	12
+.console:			db	"/bin/console"
+.console_end:
+
 				; koniec listy plików
 				dq	STATIC_EMPTY
 
@@ -111,6 +117,8 @@ kernel_init_vfs_file_hello	incbin	"build/hello"
 kernel_init_vfs_file_hello_end:
 kernel_init_vfs_file_free	incbin	"build/free"
 kernel_init_vfs_file_free_end:
+kernel_init_vfs_file_console	incbin	"build/console"
+kernel_init_vfs_file_console_end:
 
 kernel_init_boot_file:
 				incbin	"build/boot"

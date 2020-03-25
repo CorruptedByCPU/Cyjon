@@ -84,3 +84,5 @@ service_cero_ipc:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"service_cero_ipc"

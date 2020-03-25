@@ -89,3 +89,10 @@ service_cero_init:
 
 	; zachowaj wskaźnik zarejestrowanego okna
 	mov	qword [service_cero_window_menu_pointer],	rsi
+
+	; debug
+	mov	ecx,	kernel_init_vfs_files.console_end - kernel_init_vfs_files.console
+	mov	rsi,	kernel_init_vfs_files.console
+	call	kernel_vfs_path_resolve
+	call	kernel_vfs_file_find
+	call	kernel_exec

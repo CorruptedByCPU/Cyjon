@@ -8,11 +8,11 @@ KERNEL_TASK_EFLAGS_cf			equ	000000000000000000000001b
 KERNEL_TASK_EFLAGS_df			equ	000000000000010000000000b
 KERNEL_TASK_EFLAGS_default		equ	KERNEL_TASK_EFLAGS_if
 
-KERNEL_TASK_FLAG_active			equ	0000000000000001b
-KERNEL_TASK_FLAG_closed			equ	0000000000000010b
+KERNEL_TASK_FLAG_active			equ	0000000000000001b	; oznaczenie wpisu gotowego do uruchomienia
+KERNEL_TASK_FLAG_closed			equ	0000000000000010b	; oznaczenie wpisu gotowego do zamknięcia
 KERNEL_TASK_FLAG_service		equ	0000000000000100b
-KERNEL_TASK_FLAG_processing		equ	0000000000001000b
-KERNEL_TASK_FLAG_secured		equ	0000000000010000b
+KERNEL_TASK_FLAG_processing		equ	0000000000001000b	; oznaczenie wpisu aktualnie przerwarzanego (obsługiwanego przez jeden z procesorów)
+KERNEL_TASK_FLAG_secured		equ	0000000000010000b	; oznaczenie wpisu zajętego
 KERNEL_TASK_FLAG_thread			equ	0000000000100000b
 
 KERNEL_TASK_FLAG_active_bit		equ	0
@@ -32,6 +32,8 @@ struc	KERNEL_TASK_STRUCTURE
 	.pid				resb	8	; identyfikator procesu
 	.time				resb	8	; czas uruchomienia procesu względem czasu życia jądra systemu
 	.knot				resb	8	; wskaźnik do supła katalogu roboczego procesu
+	.map				resb	8	; wskaźnik do przestrzeni binarnej mapy pamięci procesu
+	.map_size			resb	8	; rozmiar przestrzeni binarnej mapy pamięci procesu w bitach
 	.flags				resb	2	; flagi stanu procesu
 	.stack				resb	2	; rozmiar przestrzeni stosu w stronach
 	.length				resb	1	; ilość znaków w nazwie procesu

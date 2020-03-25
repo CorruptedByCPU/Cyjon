@@ -7,7 +7,39 @@ KERNEL_MEMORY_MAP_SIZE_page		equ	0x01	; domyślny rozmiar 4088 Bajtów (~128 MiB
 kernel_memory_map_address		dq	STATIC_EMPTY
 kernel_memory_map_address_end		dq	STATIC_EMPTY
 
+kernel_memory_high_mask			dq	KERNEL_MEMORY_HIGH_mask
+
 kernel_memory_lock_semaphore		db	STATIC_FALSE
+
+;===============================================================================
+; wejście:
+;	rcx - ilość stron do oznaczenia jako zajęte
+;	rsi - wskaźnik dp binarnej mapy pamięci
+kernel_memory_secure:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rsi
+
+	; rozpocznij blokowanie stron od początku binarnej mapy pamięci
+	mov	rax,	STATIC_MAX_unsigned
+
+.loop:
+	; zablokuj dostęp do pierwszej strony "zestawu"
+	inc	rax
+	btr	qword [rsi],	rax
+
+	; zablokować pozostałe strony?
+	dec	rcx
+	jnz	.loop	; tak
+
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rcx
+	pop	rax
+
+	; powrót z procedury
+	ret
 
 ;===============================================================================
 ; wejście:
