@@ -9,8 +9,15 @@
 	;-----------------------------------------------------------------------
 
 console:
-	; inicjalizacja przestrzeni konsoli
+	; ; inicjalizacja przestrzeni konsoli
 	%include	"software/console/init.asm"
 
 	; zatrzymaj dalsze wykonywanie kodu
 	jmp	$
+
+	;-----------------------------------------------------------------------
+	%include	"software/console/data.asm"
+	;-----------------------------------------------------------------------
+	%include	"library/bosu.asm"
+	%include	"library/page_from_size.asm"
+	;-----------------------------------------------------------------------

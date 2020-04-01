@@ -2,7 +2,11 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
-	; przydziel przestrzeń pod dane okna
-	mov	ax,	KERNEL_SERVICE_PROCESS_memory_alloc
-	mov	ecx,	(CONSOLE_WINDOW_WIDTH_pixel * CONSOLE_WINDOW_HEIGHT_pixel) << KERNEL_VIDEO_DEPTH_shift
-	int	KERNEL_SERVICE
+	; utwórz okno
+	mov	rsi,	console_window
+	call	library_bosu
+
+	; wyświetl okno
+	mov	al,	SERVICE_DESU_WINDOW_flags
+	or	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
+	int	SERVICE_DESU_IRQ

@@ -56,14 +56,14 @@ kernel_exec:
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod przestrzeń kodu procesu
 	mov	rax,	KERNEL_MEMORY_HIGH_VIRTUAL_address
-	mov	ebx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user
+	mov	bx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user
 	call	kernel_page_map_logical
 	jc	.error
 
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod binarną mapę pamięci procesu
 	add	rax,	r12	; za przestrzenią kodu procesu
-	mov	ebx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write	; dostęp tylko od strony jądra systemu
+	and	bx,	~KERNEL_PAGE_FLAG_user	; dostęp tylko od strony jądra systemu
 	mov	rcx,	KERNEL_MEMORY_MAP_SIZE_page
 	call	kernel_page_map_logical
 
@@ -90,6 +90,7 @@ kernel_exec:
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod stos procesu
 	mov	rax,	(KERNEL_MEMORY_HIGH_VIRTUAL_address << STATIC_MULTIPLE_BY_2_shift) - KERNEL_PAGE_SIZE_byte
+	or	bx,	KERNEL_PAGE_FLAG_user
 	mov	rcx,	KERNEL_PAGE_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	call	kernel_page_map_logical
 	jc	.error

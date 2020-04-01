@@ -2,6 +2,61 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
+;===============================================================================
+; wejście:
+;	rbx - identyfikator okna
+; wyjście:
+;	Flaga CF, jeśli nie znaleziono
+;	rdi - wskaźnik do obiektu na liście
+service_desu_object_by_id:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rdi
+
+	; na liście znajdują się obiekty?
+	cmp	qword [service_desu_object_list_records],	STATIC_EMPTY
+	je	.error	; nie
+
+	; ilość obiektów na liście
+	mov	rcx,	qword [service_desu_object_list_records]
+
+	; pobierz wskaźnik początku listy obiektów
+	mov	rdi,	qword [service_desu_object_list_address]
+
+.loop:
+	; poszukiwany identyfikator?
+	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id],	rbx
+	je	.found	; tak
+
+	; przesuń wskaźnik na następny obiekt
+	add	rdi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+
+	; koniec obiektów?
+	dec	rcx
+	jnz	.loop	; nie, szukaj dalej
+
+.error:
+	; Flaga, błąd
+	stc
+
+	; koniec obsługi procedury
+	jmp	.end
+
+.found:
+	; zwróć wskaźnik do obiektu
+	mov	qword [rsp],	rdi
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rcx
+
+	; powrót z procedury
+	ret
+
+	; informacja dla Bochs
+	macro_debug	"service_desu_object_by_id"
+
 ;===============================================================================+
 ; wejście:
 ;	rsi - wskaźnik do obiektu

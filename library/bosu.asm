@@ -14,14 +14,14 @@
 ; wejście:
 ;	rsi - wskaźnik do struktury okna
 ; wyjście:
-;	rsi - wskaźnik zarejestrowanego okna
+;	rcx - identyfikator okna
 library_bosu:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rbx
-	push	rcx
 	push	rdi
 	push	rsi
+	push	rcx
 
 	; pobierz szerokość i wysokość okna
 	mov	r8,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
@@ -39,17 +39,23 @@ library_bosu:
 	; zachowaj
 	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.size],	rax
 
-	; przydziel przestrzeń pod dane okna
-	mov	rcx,	rax
-	call	library_page_from_size
-	call	kernel_memory_alloc
-	; zachowaj wskaźnik do przestrzeni danych okna
-	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.address],	rdi
+	; zarejestrować okno w menedżerze okien?
+	test	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_unregistered
+	jnz	.unregistered	; nie
 
+	; utwórz okno
+	mov	al,	SERVICE_DESU_WINDOW_create
+	int	SERVICE_DESU_IRQ
+
+	; zwróć wskaźnik/identyfikator zarejestrowanego okna
+	mov	qword [rsp],	rcx
+
+.unregistered:
 	; wypełnij przestrzeń okna domyślnym kolorem tła
 	mov	eax,	LIBRARY_BOSU_WINDOW_BACKGROUND_color
 	mov	rcx,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.size]
 	shr	rcx,	KERNEL_VIDEO_DEPTH_shift
+	mov	rdi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
 	rep	stosd
 
 	; oznaczyć krawędzie okna?
@@ -64,16 +70,10 @@ library_bosu:
 	; przetwórz wszystkie elementy wchodzące w skład okna
 	call	library_bosu_elements
 
-	; zarejestruj okno w menedżerze okien
-	call	service_desu_object_insert
-
-	; zwróć wskaźnik zarejestrowanego okna
-	mov	qword [rsp],	rsi
-
 	; przywróć oryginalne rejestry
+	pop	rcx
 	pop	rsi
 	pop	rdi
-	pop	rcx
 	pop	rbx
 	pop	rax
 
@@ -153,8 +153,12 @@ library_bosu_elements_specification:
 library_bosu_elements:
 	; zachowaj oryginalne rejestry
 	push	rax
+	push	rbx
 	push	rcx
 	push	rsi
+
+	; lista skoków do procedur
+	mov	rbx,	library_bosu_element_entry
 
 	; zachowaj wskaźnik do struktury okna
 	mov	rdi,	rsi
@@ -169,7 +173,7 @@ library_bosu_elements:
 	je	.ready	; tak
 
 	; przejdź do procedury obsługi elementu
-	call	qword [library_bosu_element_entry + rax * STATIC_QWORD_SIZE_byte]
+	call	qword [rbx + rax * STATIC_QWORD_SIZE_byte]
 
 	; przesuń wskaźnik na następny element
 	add	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
@@ -181,6 +185,7 @@ library_bosu_elements:
 	; przywróć oryginalny rejestr
 	pop	rsi
 	pop	rcx
+	pop	rbx
 	pop	rax
 
 	; powrót z procedury

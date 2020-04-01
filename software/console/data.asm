@@ -11,9 +11,9 @@ console_window			dq	0	; pozycja na osi X
 				dq	CONSOLE_WINDOW_HEIGHT_pixel	; wysokość okna
 				dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna (uzupełnia Bosu)
 .extra:				dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach (uzupełnia Bosu)
-				dq	LIBRARY_BOSU_WINDOW_FLAG_header | LIBRARY_BOSU_WINDOW_FLAG_border | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
+				dq	LIBRARY_BOSU_WINDOW_FLAG_header | LIBRARY_BOSU_WINDOW_FLAG_border
 				dq	STATIC_EMPTY	; identyfikator okna (uzupełnia Bosu)
-				dq	STATIC_EMPTY	; szerokość okna w Bajtach (uzupełnie Bosu)
+				dq	STATIC_EMPTY	; szerokość okna w Bajtach (uzupełnia Bosu)
 .elements:			;---------------------------------------
 				; element "nagłówek"
 				;---------------------------------------

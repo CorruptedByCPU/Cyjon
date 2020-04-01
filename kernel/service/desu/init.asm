@@ -43,6 +43,12 @@
 	call	kernel_page_drain	; wyczyść
 	mov	qword [service_desu_zone_list_address],	rdi
 
+	; podłącz procedurę obsługi "systemu zarządzania oknami"
+	mov	rax,	SERVICE_DESU_IRQ
+	mov	bx,	KERNEL_IDT_TYPE_isr
+	mov	rdi,	service_desu_irq
+	call	kernel_idt_mount
+
 	; menedżer okien zainicjowany
 	mov	byte [service_desu_semaphore],	STATIC_TRUE
 

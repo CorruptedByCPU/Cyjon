@@ -21,6 +21,13 @@ KERNEL_PAGE_SIZE_shift					equ	12
 SOFTWARE_base_address					equ	KERNEL_MEMORY_HIGH_REAL_address
 
 ;===============================================================================
+; SERVICE
+;===============================================================================
+SERVICE_DESU_IRQ					equ	0x41
+SERVICE_DESU_WINDOW_create				equ	0x00
+SERVICE_DESU_WINDOW_flags				equ	0x01
+
+;===============================================================================
 ; STAŁE OGÓLNEGO PRZEZNACZENIA
 ;===============================================================================
 STATIC_REPLACE_AL_WITH_HIGH_shift			equ	8

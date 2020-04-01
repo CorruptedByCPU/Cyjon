@@ -16,8 +16,9 @@ LIBRARY_BOSU_WINDOW_FLAG_fixed_z		equ	1 << 3	; okno nieruchome na osi Z
 LIBRARY_BOSU_WINDOW_FLAG_fragile		equ	1 << 4	; okno ukrywane przy wystąpieniu akcji z LPM lub PPM
 LIBRARY_BOSU_WINDOW_FLAG_arbiter		equ	1 << 6	; nadobiekt
 							; powyżej 7, przeznaczone dla GUI
-LIBRARY_BOSU_WINDOW_FLAG_header			equ	1 << 8	; pokaż nagłówek okna
-LIBRARY_BOSU_WINDOW_FLAG_border			equ	1 << 9	; rysuj krawędź wokół okna
+LIBRARY_BOSU_WINDOW_FLAG_unregistered		equ	1 << 8	; nie rejestruj okna w menedżerze okien
+LIBRARY_BOSU_WINDOW_FLAG_header			equ	1 << 9	; pokaż nagłówek okna
+LIBRARY_BOSU_WINDOW_FLAG_border			equ	1 << 10	; rysuj krawędź wokół okna
 ;-------------------------------------------------------------------------------
 
 LIBRARY_BOSU_ELEMENT_TYPE_none			equ	0x00

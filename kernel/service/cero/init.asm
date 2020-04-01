@@ -57,8 +57,24 @@ service_cero_init:
 	sub	rax,	qword [service_cero_window_taskbar.element_label_clock + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
 	mov	qword [service_cero_window_taskbar.element_label_clock + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	rax
 
+	; oblicz rozmiar przestrzeni danych okna w Bajtach
+	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	shl	rax,	KERNEL_VIDEO_DEPTH_shift
+	mul	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+
+	; przygotuj miejsce pod przestrzeń okna
+	mov	rcx,	rax
+	call	library_page_from_size
+	call	kernel_memory_alloc
+
+	; zachowaj adres przestrzeni
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.address],	rdi
+
 	; utwórz okno paska zadań
 	call	library_bosu
+
+	; zarejestruj okno w menedżerze okien
+	call	service_desu_object_insert
 
 	; zachowaj wskaźnik zarejestrowanego okna
 	mov	qword [service_cero_window_taskbar_pointer],	rsi
@@ -84,8 +100,24 @@ service_cero_init:
 	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	r8
 	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height],	r9
 
-	; utwórz okno menu
+	; oblicz rozmiar przestrzeni danych okna w Bajtach
+	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	shl	rax,	KERNEL_VIDEO_DEPTH_shift
+	mul	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+
+	; przygotuj miejsce pod przestrzeń okna
+	mov	rcx,	rax
+	call	library_page_from_size
+	call	kernel_memory_alloc
+
+	; zachowaj adres przestrzeni
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.address],	rdi
+
+	; utwórz okno paska zadań
 	call	library_bosu
+
+	; zarejestruj okno w menedżerze okien
+	call	service_desu_object_insert
 
 	; zachowaj wskaźnik zarejestrowanego okna
 	mov	qword [service_cero_window_menu_pointer],	rsi
