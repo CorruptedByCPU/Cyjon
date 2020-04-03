@@ -7,11 +7,11 @@
 ;	rbx - identyfikator okna
 ; wyjście:
 ;	Flaga CF, jeśli nie znaleziono
-;	rdi - wskaźnik do obiektu na liście
+;	rsi - wskaźnik do obiektu na liście
 service_desu_object_by_id:
 	; zachowaj oryginalne rejestry
 	push	rcx
-	push	rdi
+	push	rsi
 
 	; na liście znajdują się obiekty?
 	cmp	qword [service_desu_object_list_records],	STATIC_EMPTY
@@ -21,15 +21,15 @@ service_desu_object_by_id:
 	mov	rcx,	qword [service_desu_object_list_records]
 
 	; pobierz wskaźnik początku listy obiektów
-	mov	rdi,	qword [service_desu_object_list_address]
+	mov	rsi,	qword [service_desu_object_list_address]
 
 .loop:
 	; poszukiwany identyfikator?
-	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id],	rbx
+	cmp	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id],	rbx
 	je	.found	; tak
 
 	; przesuń wskaźnik na następny obiekt
-	add	rdi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+	add	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
 
 	; koniec obiektów?
 	dec	rcx
@@ -44,11 +44,11 @@ service_desu_object_by_id:
 
 .found:
 	; zwróć wskaźnik do obiektu
-	mov	qword [rsp],	rdi
+	mov	qword [rsp],	rsi
 
 .end:
 	; przywróć oryginalne rejestry
-	pop	rdi
+	pop	rsi
 	pop	rcx
 
 	; powrót z procedury

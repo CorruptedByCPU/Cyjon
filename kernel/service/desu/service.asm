@@ -91,7 +91,7 @@ service_desu_irq:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rbx
-	push	rdi
+	push	rsi
 
 	; pobierz nowe flagi obiektu
 	mov	rbx,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags]
@@ -104,11 +104,11 @@ service_desu_irq:
 	call	service_desu_object_by_id
 
 	; obiekt należy do procesu?
-	cmp	rax,	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.pid]
+	cmp	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.pid]
 	jne	.error	; nie
 
 	; aktualizuj informacje o flagach obiektu
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	rcx
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	rcx
 
 .window_flags_error:
 	; flaga, błąd
@@ -116,7 +116,7 @@ service_desu_irq:
 
 .window_flags_end:
 	; przywróć oryginalne rejestry
-	pop	rdi
+	pop	rsi
 	pop	rbx
 	pop	rax
 
