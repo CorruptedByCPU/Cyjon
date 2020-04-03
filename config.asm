@@ -25,7 +25,7 @@ SOFTWARE_base_address					equ	KERNEL_MEMORY_HIGH_REAL_address
 ;===============================================================================
 SERVICE_DESU_IRQ					equ	0x41
 SERVICE_DESU_WINDOW_create				equ	0x00
-SERVICE_DESU_WINDOW_flags				equ	0x01
+SERVICE_DESU_WINDOW_update				equ	0x01
 
 ;===============================================================================
 ; STAŁE OGÓLNEGO PRZEZNACZENIA

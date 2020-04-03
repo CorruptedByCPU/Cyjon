@@ -21,9 +21,9 @@ service_desu_irq:
 	cmp	al,	SERVICE_DESU_WINDOW_create
 	je	.window_create	; tak
 
-	; aktualizacja flag?
-	cmp	al,	SERVICE_DESU_WINDOW_flags
-	je	.window_flags	; tak
+	; aktualizacja właściwości obiektu?
+	cmp	al,	SERVICE_DESU_WINDOW_update
+	je	.window_update	; tak
 
 .error:
 	; flaga, błąd
@@ -85,30 +85,41 @@ service_desu_irq:
 
 ;-------------------------------------------------------------------------------
 ; wejście:
-;	rcx - identyfikator obiektu
 ;	rsi - wskaźnik do struktury obiektu
-.window_flags:
+.window_update:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rbx
 	push	rsi
 
-	; pobierz nowe flagi obiektu
-	mov	rbx,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags]
+	; odszukaj obiekt o danym identyfikatorze
+	mov	rbx,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id]
+	call	service_desu_object_by_id
 
 	; pobierz PID procesu
 	call	kernel_task_active_pid
 
-	; odszukaj obiekt o danym identyfikatorze należący do procesu
-	xchg	rbx,	rcx
-	call	service_desu_object_by_id
-
 	; obiekt należy do procesu?
 	cmp	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.pid]
-	jne	.error	; nie
+	jne	.window_flags_error	; nie
 
-	; aktualizuj informacje o flagach obiektu
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	rcx
+	; aktualizuj właściwości okna
+	mov	rbx,	qword [rsp]
+
+	; pozycja na osi X
+	mov	rax,	qword [rbx + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	rax
+
+	; pozycja na osi Y
+	mov	rax,	qword [rbx + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	rax
+
+	; flagi
+	mov	rax,	qword [rbx + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags]
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	rax
+
+	; koniec procedury
+	jmp	.window_flags_end
 
 .window_flags_error:
 	; flaga, błąd
@@ -123,4 +134,4 @@ service_desu_irq:
 	; koniec obsługi opcji
 	jmp	service_desu_irq.end
 
-	macro_debug	"service_desu_irq.window_create"
+	macro_debug	"service_desu_irq.window_update"

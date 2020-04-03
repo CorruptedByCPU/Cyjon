@@ -57,7 +57,7 @@ service_cero_clock:
 	call	library_bosu_element_label
 
 	; ustaw flagę okna: nowa zawartość
-	mov	al,	SERVICE_DESU_WINDOW_flags
+	mov	al,	SERVICE_DESU_WINDOW_update
 	mov	rsi,	service_cero_window_taskbar
 	int	SERVICE_DESU_IRQ
 
