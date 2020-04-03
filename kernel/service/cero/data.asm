@@ -11,7 +11,6 @@ service_cero_ipc_data:
 times KERNEL_IPC_STRUCTURE.SIZE	db	STATIC_EMPTY
 
 ;===============================================================================
-service_cero_window_workbench_pointer	dq	STATIC_EMPTY
 service_cero_window_workbench		dq	0	; pozycja na osi X
 					dq	0	; pozycja na osi Y
 					dq	STATIC_EMPTY	; szerokość okna
@@ -25,7 +24,6 @@ service_cero_window_workbench		dq	0	; pozycja na osi X
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
 ;===============================================================================
-service_cero_window_taskbar_pointer	dq	STATIC_EMPTY
 service_cero_window_taskbar		dq	0	; pozycja na osi X
 					dq	STATIC_EMPTY	; pozycja na osi Y
 					dq	STATIC_EMPTY	; szerokość okna
@@ -64,7 +62,6 @@ service_cero_window_taskbar_end:
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
 ;===============================================================================
-service_cero_window_menu_pointer	dq	STATIC_EMPTY
 service_cero_window_menu		dq	160	; pozycja na osi X względem wskaźnika kursora
 					dq	80	; pozycja na osi Y względem wskaźnika kursora
 					dq	STATIC_EMPTY	; szerokość okna względem zawartości elementów

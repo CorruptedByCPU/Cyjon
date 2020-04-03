@@ -61,7 +61,6 @@ service_desu_object_by_id:
 ; wejście:
 ;	rsi - wskaźnik do obiektu
 ; wyjście:
-;	rcx - identyfikator okna
 ;	rsi - wskaźnik do rekordu na liście
 service_desu_object_insert:
 	; zachowaj oryginalne rejestry
@@ -87,13 +86,6 @@ service_desu_object_insert:
 
 	; zwróć bezpośredni wskaźnik na liście do wstawianego obiektu
 	mov	qword [rsp],	rdi
-
-	; przygotuj dla obiektu nowy identyfikator
-	call	service_desu_object_id_new
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id],	rcx
-
-	; zwróć informacje o identyfikatorze
-	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rcx
 
 	; rejestrowany obiekt będzie arbitrem?
 	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_arbiter

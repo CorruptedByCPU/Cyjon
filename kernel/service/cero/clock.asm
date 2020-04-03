@@ -57,8 +57,9 @@ service_cero_clock:
 	call	library_bosu_element_label
 
 	; ustaw flagę okna: nowa zawartość
-	mov	rsi,	qword [service_cero_window_taskbar_pointer]
-	or	byte [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
+	mov	al,	SERVICE_DESU_WINDOW_flags
+	mov	rsi,	service_cero_window_taskbar
+	int	SERVICE_DESU_IRQ
 
 .end:
 	; przywróć oryginalne rejestry

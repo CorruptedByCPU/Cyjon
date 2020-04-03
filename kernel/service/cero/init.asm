@@ -34,11 +34,12 @@ service_cero_init:
 	shr	rcx,	STATIC_DIVIDE_BY_DWORD_shift
 	rep	stosd
 
+	; przydziel identyfikator dla okna
+	call	service_desu_object_id_new
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id],	rcx
+
 	; zarejestruj okno
 	call	service_desu_object_insert
-
-	; zachowaj wskaźnik zarejestrowanego okna
-	mov	qword [service_cero_window_workbench_pointer],	rsi
 
 	;-----------------------------------------------------------------------
 	; skonfiguruj przestrzeń paska zadań
@@ -73,11 +74,12 @@ service_cero_init:
 	; utwórz okno paska zadań
 	call	library_bosu
 
+	; przydziel identyfikator dla okna
+	call	service_desu_object_id_new
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id],	rcx
+
 	; zarejestruj okno w menedżerze okien
 	call	service_desu_object_insert
-
-	; zachowaj wskaźnik zarejestrowanego okna
-	mov	qword [service_cero_window_taskbar_pointer],	rsi
 
 	;-----------------------------------------------------------------------
 	; utwórz menu kontekstowe
@@ -116,11 +118,12 @@ service_cero_init:
 	; utwórz okno paska zadań
 	call	library_bosu
 
+	; przydziel identyfikator dla okna
+	call	service_desu_object_id_new
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id],	rcx
+
 	; zarejestruj okno w menedżerze okien
 	call	service_desu_object_insert
-
-	; zachowaj wskaźnik zarejestrowanego okna
-	mov	qword [service_cero_window_menu_pointer],	rsi
 
 	; debug
 	mov	ecx,	kernel_init_vfs_files.console_end - kernel_init_vfs_files.console

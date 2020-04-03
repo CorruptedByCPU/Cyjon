@@ -67,6 +67,10 @@ service_desu_irq:
 	; oznacz przesterzeń jako dostępną dla procesu
 	call	kernel_memory_mark
 
+	; przydziel identyfikator dla okna
+	call	service_desu_object_id_new
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id],	rcx
+
 	; zarejestruj obiekt
 	call	service_desu_object_insert
 
