@@ -51,5 +51,6 @@ service_desu:
 	%include	"kernel/service/desu/fill.asm"
 	%include	"kernel/service/desu/event.asm"
 	%include	"kernel/service/desu/service.asm"
+	%include	"kernel/service/desu/ipc.asm"
 	;-----------------------------------------------------------------------
 service_desu_end:

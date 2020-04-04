@@ -50,7 +50,7 @@ service_desu_event:
 	; ustaw obiekt jako aktywny
 	mov	qword [service_desu_object_selected_pointer],	rsi
 
-	; ukryj "kruche" obiekty
+	; ukryj obiekty z flagą "kruchy"
 	call	service_desu_object_hide
 
 	; obiekt powinien zachować swoją warstwę?
@@ -63,6 +63,12 @@ service_desu_event:
 	; aktualizuj wskaźnik obiektu aktywnego
 	mov	qword [service_desu_object_selected_pointer],	rsi
 
+	; tutaj można by się pokusić o sprawdzenie, który fragment obiektu nie jest widoczny
+	; zamiast przerysowywać cały... todo
+	;
+	; można przyjąć, że część obiektów będzie na tyle mała...
+	; szybciej przerysujemy cały, niż znajdziemy fragmenty niewidoczne
+
 	; wyświetl ponownie zawartość obiektu
 	or	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
 
@@ -70,26 +76,10 @@ service_desu_event:
 	or	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
 
 .fixed_z:
-; 	; ; pobierz ID okna i PID
-; 	; mov	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id]
-; 	; mov	rbx,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.pid]
-; 	;
-; 	; ; skomponuj komunikat dla procesu
-; 	; mov	rsi,	service_desu_message
-; 	;
-; 	; ; wyślij informacje o typie akcji
-; 	; mov	byte [rsi + SERVICE_DESU_STRUCTURE_MESSAGE.type],	SERVICE_DESU_MESSAGE_TYPE_MOUSE_BUTTON_left_press
-; 	;
-; 	; ; wyślij informacje o ID okna biorącego udział
-; 	; mov	qword [rsi + SERVICE_DESU_STRUCTURE_MESSAGE.id],	rax
-; 	;
-; 	; ; wyślij informacje o pozycji wskaźnika kursora
-; 	; mov	qword [rsi + SERVICE_DESU_STRUCTURE_MESSAGE.value0],	r8	; x
-; 	; mov	qword [rsi + SERVICE_DESU_STRUCTURE_MESSAGE.value1],	r9	; y
-; 	;
-; 	; ; wyślij komunikat
-; 	; call	kernel_ipc_send
-;
+	; wyślij komunikat do procesu "naciśnięcie lewego klawisza myszki"
+	mov	cl,	SERVICE_DESU_IPC_MOUSE_BUTTON_LEFT_press
+	call	service_desu_ipc
+
 .no_mouse_button_left_action:
 	; puszczono lewy przycisk myszki?
 	bt	word [driver_ps2_mouse_state],	DRIVER_PS2_DEVICE_MOUSE_PACKET_LMB_bit
@@ -123,26 +113,9 @@ service_desu_event:
 	; ukryj "kruche" obiekty
 	call	service_desu_object_hide
 
-	; pobierz ID okna i PID
-	mov	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id]
-	mov	rbx,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.pid]
-
-	; skomponuj komunikat dla procesu
-	mov	rsi,	service_desu_ipc_data
-
-	; wyślij informacje o typie akcji
-	mov	byte [rsi + SERVICE_DESU_STRUCTURE_IPC.type],	SERVICE_DESU_IPC_MOUSE_BUTTON_RIGHT_press
-
-	; wyślij informacje o ID okna biorącego udział
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_IPC.id],	rax
-
-	; wyślij informacje o pozycji wskaźnika kursora
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_IPC.value0],	r8	; x
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_IPC.value1],	r9	; y
-
-	; wyślij komunikat
-	xor	ecx,	ecx	; standardowy rozmiar komunikatu pod adresem w rejestrze RSI
-	call	kernel_ipc_insert
+	; wyślij komunikat do procesu "naciśnięcie prawego klawisza myszki"
+	mov	cl,	SERVICE_DESU_IPC_MOUSE_BUTTON_RIGHT_press
+	call	service_desu_ipc
 
 .no_mouse_button_right_action:
 	; puszczono prawy przycisk myszki?
