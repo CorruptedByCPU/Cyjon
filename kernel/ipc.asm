@@ -69,12 +69,17 @@ kernel_ipc_insert:
 	; przesuń wskaźnik na następny wpis
 	add	rdi,	KERNEL_IPC_STRUCTURE.SIZE
 
-	; koniec miejsca?
+	; sprawdzić następny wpis?
 	dec	rcx
-	jz	.loop	; tak
+	jnz	.loop	; tak
 
-	; powrót do pętli głównej
-	jmp	.reload
+	; brak miejsca na liście komunikatów
+
+	; flaga, błąd
+	stc
+
+	; koniec procedury
+	jmp	.error
 
 .found:
 	; ustaw PID nadawcy
@@ -119,6 +124,7 @@ kernel_ipc_insert:
 	add	rax,	KERNEL_IPC_TTL_default
 	mov	qword [rdi + KERNEL_IPC_STRUCTURE.ttl],	rax
 
+.error:
 	; zwolnij dostęp
 	mov	byte [kernel_ipc_semaphore],	STATIC_FALSE
 
