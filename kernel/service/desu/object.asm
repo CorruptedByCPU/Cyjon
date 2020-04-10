@@ -300,8 +300,11 @@ service_desu_object_up:
 	; zachowaj wskaźnik do aktualnego obiektu
 	push	rsi
 
-	; dodaj obiekt ponownie na listę
+	; dodaj kopię obiektu na listę
 	call	service_desu_object_insert
+
+	; koryguj PID właścieciela
+	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.pid],	rax
 
 	; zwróć nowy wskaźnik do obiektu
 	xchg	rsi,	qword [rsp]
@@ -309,7 +312,7 @@ service_desu_object_up:
 	; usuń stary obiekt z listy
 	call	service_desu_object_remove
 
-	; zwróć wskaźni do obiektu
+	; zwróć wskaźni do nowego obiektu
 	pop	rsi
 
 	; koryguj pozycje
@@ -318,7 +321,7 @@ service_desu_object_up:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_object_move_top"
+	macro_debug	"service_desu_object_up"
 
 ;===============================================================================
 ; wejście:

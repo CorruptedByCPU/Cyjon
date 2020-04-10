@@ -28,6 +28,7 @@ service_cero:
 	%include	"kernel/service/cero/data.asm"
 	%include	"kernel/service/cero/clock.asm"
 	%include	"kernel/service/cero/ipc.asm"
+	%include	"kernel/service/cero/event.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"
 	;-----------------------------------------------------------------------

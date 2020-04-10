@@ -11,8 +11,30 @@ service_cero_ipc_desu:
 
 	; naciśnięcie prawego klawisza myszki?
 	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + SERVICE_DESU_STRUCTURE_IPC.type],	SERVICE_DESU_IPC_MOUSE_BUTTON_RIGHT_press
+	je	.right_mouse_button	; tak
+
+	; akcja dotyczy okna "menu"?
+	cmp	rax,	qword [service_cero_window_menu + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.id]
 	jne	.end	; nie
 
+	; sprawdź, którego elementu okna dotyczny akcja
+	mov	rsi,	service_cero_window_menu
+	call	library_bosu_element
+	jc	.end	; brak akcji
+
+	; element posiada przypisaną procedurę obsługi akcji?
+	cmp	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	STATIC_EMPTY
+	je	.end	; nie, koniec obsługi akcji
+
+	; wykonaj procedurę powiązaną z elementem
+	push	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.event]
+	ret
+
+.left_mouse_button_no_menu:
+	; koniec obsługi komunikatu
+	jmp	.end
+
+.right_mouse_button:
 	; akcja dotyczy okna "taskbar"?
 	cmp	rax,	qword [service_cero_window_taskbar + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.id]
 	je	.end	; tak, brak akcji cdn.

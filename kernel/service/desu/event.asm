@@ -50,6 +50,10 @@ service_desu_event:
 	; ustaw obiekt jako aktywny
 	mov	qword [service_desu_object_selected_pointer],	rsi
 
+	; wyślij komunikat do procesu "naciśnięcie lewego klawisza myszki"
+	mov	cl,	SERVICE_DESU_IPC_MOUSE_BUTTON_LEFT_press
+	call	service_desu_ipc
+
 	; ukryj obiekty z flagą "kruchy"
 	call	service_desu_object_hide
 
@@ -58,6 +62,7 @@ service_desu_event:
 	jnz	.fixed_z	; tak
 
 	; przesuń obiekt na koniec listy
+	mov	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.pid]
 	call	service_desu_object_up
 
 	; aktualizuj wskaźnik obiektu aktywnego
@@ -76,9 +81,7 @@ service_desu_event:
 	or	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
 
 .fixed_z:
-	; wyślij komunikat do procesu "naciśnięcie lewego klawisza myszki"
-	mov	cl,	SERVICE_DESU_IPC_MOUSE_BUTTON_LEFT_press
-	call	service_desu_ipc
+
 
 .no_mouse_button_left_action:
 	; puszczono lewy przycisk myszki?

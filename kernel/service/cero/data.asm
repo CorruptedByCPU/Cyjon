@@ -8,7 +8,9 @@ service_cero_clock_colon		db	STATIC_ASCII_SPACE
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
 service_cero_ipc_data:
-times KERNEL_IPC_STRUCTURE.SIZE	db	STATIC_EMPTY
+	times KERNEL_IPC_STRUCTURE.SIZE	db	STATIC_EMPTY
+
+align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
 ;===============================================================================
 service_cero_window_workbench		dq	0	; pozycja na osi X
@@ -92,7 +94,7 @@ service_cero_window_menu		dq	160	; pozycja na osi X względem wskaźnika kursora
 					dq	1 + LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel	; pozycja na osi Y względem przestrzeni danych okna
 					dq	((.element_label_0_end - .element_label_0_string) * LIBRARY_BOSU_FONT_WIDTH_pixel)	; szerokość elementu
 					dq	LIBRARY_BOSU_FONT_HEIGHT_pixel	; wysokość elementu
-					dq	STATIC_EMPTY
+					dq	service_cero_event_console
 					db	.element_label_0_end - .element_label_0_string
 .element_label_0_string:		db	" Console "
 .element_label_0_end:			;---------------------------------------

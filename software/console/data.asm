@@ -5,8 +5,8 @@
 align	STATIC_QWORD_SIZE_byte,	db	STATIC_NOTHING
 
 ;===============================================================================
-console_window			dq	0	; pozycja na osi X
-				dq	0	; pozycja na osi Y
+console_window			dq	STATIC_EMPTY	; pozycja na osi X
+				dq	STATIC_EMPTY	; pozycja na osi Y
 				dq	CONSOLE_WINDOW_WIDTH_pixel	; szerokość okna
 				dq	CONSOLE_WINDOW_HEIGHT_pixel	; wysokość okna
 				dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna (uzupełnia Bosu)

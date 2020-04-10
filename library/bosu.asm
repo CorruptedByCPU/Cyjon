@@ -713,3 +713,82 @@ library_bosu_element_label:
 
 	; powrót z procedry
 	ret
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do właściwości okna
+;	r8 - pozycja kursora na osi X
+;	r9 - pozycja kursora na osi Y
+; wyjście:
+;	rsi - wskaźnik do elementu okna
+library_bosu_element:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	r8
+	push	r9
+	push	rsi
+
+	; przesuń wskaźnik na listę elementów
+	add	rsi,	LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.SIZE
+
+.loop:
+	; sprawdzaj kolejno elementy okna
+
+	; koniec listy elementów?
+	cmp	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	STATIC_EMPTY
+	je	.error	; tak
+
+	; pobierz rozmiar elementu
+	mov	rcx,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+
+	; porównaj pozycję wskaźnika z lewą krawędzią elementu
+	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
+	cmp	r8,	rax
+	jl	.next	; poza przestrzenią elementu
+
+	; porównaj pozycję wskaźnika z prawą krawędzią elementu
+	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	cmp	r8,	rax
+	jge	.next	; poza przestrzenią elementu
+
+	; porównaj pozycję wskaźnika z górną krawędzią elementu
+	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
+	cmp	r9,	rax
+	jl	.next	; poza przestrzenią elementu
+
+	; porównaj pozycję wskaźnika z dolną krawędzią elementu
+	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	cmp	r9,	rax
+	jge	.next	; poza przestrzenią elementu
+
+	; flaga, sukces
+	clc
+
+	; zwróć wskaźnik do elementu
+	mov	qword [rsp],	rsi
+
+	; koniec procedury
+	jmp	.end
+
+.next:
+	; przesuń wskaźnik na następny element z listy
+	add	rsi,	rcx
+
+	; kontynuuj
+	jmp	.loop
+
+.error:
+	; flaga, błąd
+	stc
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	r9
+	pop	r8
+	pop	rcx
+	pop	rax
+
+	; powrót z procedury
+	ret

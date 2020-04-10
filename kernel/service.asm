@@ -122,6 +122,10 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_VIDEO_clean
 	je	.video_clean	; tak
 
+	; zwrócić informacje o ekranie?
+	cmp	ax,	KERNEL_SERVICE_VIDEO_properties
+	je	.video_properties	; tak
+
 	; wyświetlić liczbę?
 	cmp	ax,	KERNEL_SERVICE_VIDEO_number
 	je	.video_number	; tak
@@ -162,6 +166,18 @@ kernel_service:
 .video_clean:
 	; wyczyść przestrzeń konsoli
 	call	kernel_video_drain
+
+	; koniec obsługi podprocedury
+	jmp	kernel_service.end
+
+;-------------------------------------------------------------------------------
+.video_properties:
+	; szerokość i wysokość ekranu w pikselach
+	mov	r8,	qword [kernel_video_width_pixel]
+	mov	r9,	qword [kernel_video_height_pixel]
+
+	; rozmiar przestrzeni danych ekranu w Bajtach
+	mov	r10,	qword [kernel_video_size_byte]
 
 	; koniec obsługi podprocedury
 	jmp	kernel_service.end
