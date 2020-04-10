@@ -63,11 +63,6 @@ kernel_init:
 	%include	"kernel/init/video.asm"
 
 	;-----------------------------------------------------------------------
-	; wyświetl informacje o czcionce
-	;-----------------------------------------------------------------------
-	%include	"kernel/init/font.asm"
-
-	;-----------------------------------------------------------------------
 	; utworzenie binarnej mapy pamięci i oznaczenie w niej jądra systemu
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/memory.asm"

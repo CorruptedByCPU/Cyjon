@@ -106,69 +106,12 @@ kernel_service:
 
 ;===============================================================================
 .video:
-	; wyświetlić ciąg znaków w konsoli?
-	cmp	ax,	KERNEL_SERVICE_VIDEO_string
-	je	.video_string	; tak
-
-	; pobrać pozycję wirtualnego kursora?
-	cmp	ax,	KERNEL_SERVICE_VIDEO_cursor
-	je	.video_cursor	; tak
-
-	; wyświetlić znak N razy?
-	cmp	ax,	KERNEL_SERVICE_VIDEO_char
-	je	.video_char	; tak
-
-	; wyczyścić przestrzeń konsoli?
-	cmp	ax,	KERNEL_SERVICE_VIDEO_clean
-	je	.video_clean	; tak
-
 	; zwrócić informacje o ekranie?
 	cmp	ax,	KERNEL_SERVICE_VIDEO_properties
 	je	.video_properties	; tak
 
-	; wyświetlić liczbę?
-	cmp	ax,	KERNEL_SERVICE_VIDEO_number
-	je	.video_number	; tak
-
-	; zwrócić pozycje kursora na ekranie?
-	cmp	ax,	KERNEL_SERVICE_VIDEO_cursor_set
-	je	.video_cursor_set
-
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
-
-;-------------------------------------------------------------------------------
-.video_string:
-	; wyświetl ciąg w konsoli
-	call	kernel_video_string
-
-	; koniec obsługi podprocedury
-	jmp	kernel_service.end
-
-;-------------------------------------------------------------------------------
-.video_cursor:
-	; zwróć informacje o pozycji wirtualnego kursora
-	mov	rbx,	qword [kernel_video_cursor]
-
-	; koniec obsługi podprocedury
-	jmp	kernel_service.end
-
-;-------------------------------------------------------------------------------
-.video_char:
-	; wyświetl znak N razy
-	mov	ax,	dx
-	call	kernel_video_char
-
-	; koniec obsługi podprocedury
-	jmp	kernel_service.end
-
-;-------------------------------------------------------------------------------
-.video_clean:
-	; wyczyść przestrzeń konsoli
-	call	kernel_video_drain
-
-	; koniec obsługi podprocedury
-	jmp	kernel_service.end
 
 ;-------------------------------------------------------------------------------
 .video_properties:
@@ -178,26 +121,6 @@ kernel_service:
 
 	; rozmiar przestrzeni danych ekranu w Bajtach
 	mov	r10,	qword [kernel_video_size_byte]
-
-	; koniec obsługi podprocedury
-	jmp	kernel_service.end
-
-;-------------------------------------------------------------------------------
-.video_number:
-	; wstaw wartość do odpowiedniego rejestru dla procedury
-	mov	rax,	r8
-	call	kernel_video_number
-
-	; koniec obsługi podprocedury
-	jmp	kernel_service.end
-
-;-------------------------------------------------------------------------------
-.video_cursor_set:
-	; ustaw pozycję kusora
-	mov	qword [kernel_video_cursor],	rbx
-
-	; aktualizuj na ekranie
-	call	kernel_video_cursor_set
 
 	; koniec obsługi podprocedury
 	jmp	kernel_service.end

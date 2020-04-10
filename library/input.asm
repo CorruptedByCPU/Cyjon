@@ -7,6 +7,7 @@
 ;	rbx - ilość znaków w buforze
 ;	rcx - maksymalna ilość znaków w buforze
 ;	rsi - wskaźnik do początku bufora
+;	r8 - wskaźnik do struktury terminala
 ; wyjście:
 ;	Falga CF - użytkownik przerwał wprowadzanie (np. klawisz ESC) lub bufor pusty
 ;	rcx - ilość znaków w buforze
@@ -17,14 +18,16 @@ library_input:
 	push	rsi
 	push	rcx
 
+	; wyczyść akumulator
+	xor	eax,	eax
+
 	; wyświetlić zawartość bufora?
 	cmp	rbx,	STATIC_EMPTY
 	je	.loop	; nie
 
 	; wyświetl zawartość bufora
-	mov	ax,	KERNEL_SERVICE_VIDEO_string
 	mov	rcx,	rbx
-	int	KERNEL_SERVICE
+	call	library_terminal_string
 
 	; przywróć maksymalny rozmiar bufora
 	mov	rcx,	qword [rsp]
@@ -79,10 +82,8 @@ library_input:
 	push	rcx
 
 	; wyświetl znak z bufora na ekran
-	mov	edx,	KERNEL_SERVICE_VIDEO_char
-	xchg	dx,	ax
 	mov	ecx,	1	; jedna kopia
-	int	KERNEL_SERVICE
+	call	library_terminal_char
 
 	; przywróć rozmiar bufora
 	pop	rcx
@@ -131,5 +132,3 @@ library_input:
 
 	; powrót z liblioteki
 	ret
-
-	; macro_debug	"library_input"

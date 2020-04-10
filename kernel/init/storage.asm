@@ -16,11 +16,6 @@ kernel_init_storage:
 	cmp	byte [driver_ide_devices_count],	STATIC_EMPTY
 	je	.ide_end	; nie
 
-	; wyświetl komunikat
-	mov	ecx,	kernel_init_string_storage_ide_end - kernel_init_string_storage_ide
-	mov	rsi,	kernel_init_string_storage_ide
-	call	kernel_video_string
-
 	; maksymalna ilość urządzeń IDE
 	mov	cl,	0x04
 
@@ -55,27 +50,6 @@ kernel_init_storage:
 
 	; aktualizuj rozmiar urządzenia blokowego
 	mov	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.size],	rax
-
-	; wyświetl ścieżkę do urządzenia
-	mov	ecx,	kernel_init_string_storage_ide_hd_end - kernel_init_string_storage_ide_hd
-	mov	rsi,	kernel_init_string_storage_ide_hd
-	call	kernel_video_string
-
-	; wyświetl infomację o rozmiarze
-	mov	ecx,	kernel_init_string_storage_ide_size_end - kernel_init_string_storage_ide_size
-	mov	rsi,	kernel_init_string_storage_ide_size
-	call	kernel_video_string
-
-	; wyświetl rozmiar
-	shr	rax,	STATIC_DIVIDE_BY_1024_shift	; zamień na KiB
-	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
-	xor	ecx,	ecx
-	call	kernel_video_number
-
-	; wyświetl format rozmiaru
-	mov	ecx,	kernel_init_string_storage_ide_format_end - kernel_init_string_storage_ide_format
-	mov	rsi,	kernel_init_string_storage_ide_format
-	call	kernel_video_string
 
 	; przywróć oryginalne rejestry
 	pop	rdi

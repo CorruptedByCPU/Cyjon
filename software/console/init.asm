@@ -26,10 +26,19 @@
 	mov	rsi,	console_window
 	call	library_bosu
 
-	; wyczyść przestrzeń elementu "draw_0"
-	call	console_clear
+	; wylicz adres wskaźnika przestrzeni danych elementu "terminal"
+	mov	rax,	qword [console_window.element_terminal + LIBRARY_BOSU_STRUCTURE_ELEMENT_DRAW.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
+	mul	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline]
+	add	rax,	qword [console_window + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
 
-	;-----------------------------------------------------------------------
+	; uzupełnij tablicę "terminal" o dany wskaźnik
+	mov	qword [console_terminal_table + LIBRARY_TERMINAL_STRUCTURE.address],	rax
+
+	xchg	bx,bx
+
+	; inicjalizuj przestrzeń elementu "terminal"
+	mov	r8,	console_terminal_table
+	call	library_terminal
 
 	; wyświetl okno
 	mov	al,	SERVICE_DESU_WINDOW_update

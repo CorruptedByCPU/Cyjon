@@ -5,6 +5,9 @@
 service_cero_clock_last_state		dq	STATIC_EMPTY
 service_cero_clock_colon		db	STATIC_ASCII_SPACE
 
+service_cero_event_console_file		db	"/bin/console"
+service_cero_event_console_file_end:
+
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
 service_cero_ipc_data:

@@ -203,11 +203,6 @@ driver_nic_i82540em_vlan			dw	STATIC_EMPTY
 driver_nic_i82540em_rx_count			dq	STATIC_EMPTY
 driver_nic_i82540em_tx_count			dq	STATIC_EMPTY
 
-driver_nic_i82540em_string			db	STATIC_COLOR_ASCII_GREEN_LIGHT, "::", STATIC_COLOR_ASCII_DEFAULT, " Network controller:", STATIC_ASCII_NEW_LINE, "   Intel 82540EM, MAC ", STATIC_COLOR_ASCII_WHITE
-driver_nic_i82540em_string_end:
-driver_nic_i82540em_string_irq			db	STATIC_COLOR_ASCII_DEFAULT, ", IRQ ", STATIC_COLOR_ASCII_WHITE
-driver_nic_i82540em_string_irq_end:
-
 ;===============================================================================
 driver_nic_i82540em_irq:
 	; zachowaj oryginalne rejestry
@@ -358,7 +353,7 @@ driver_nic_i82540em_transfer:
 	macro_debug	"driver_nic_i82540em_transfer"
 
 ;===============================================================================
-	; wejście:
+; wejście:
 ;	rbx - szyna
 ;	rcx - urządzenie
 ;	rdx - funkcja
@@ -446,61 +441,6 @@ driver_nic_i82540em:
 
 	; inicjalizuj kontroler
 	call	driver_nic_i82540em_setup
-
-	; wyświetl podstawową informację o karcie sieciowej
-	mov	ecx,	driver_nic_i82540em_string_end - driver_nic_i82540em_string
-	mov	rsi,	driver_nic_i82540em_string
-	call	kernel_video_string
-
-	; wyświetl adres MAC kontrolera sieciowego
-
-	; system liczbowy
-	mov	bl,	STATIC_NUMBER_SYSTEM_hexadecimal
-
-	; brak przedrostka
-	xor	cl,	cl
-
-	; ilość oktetów
-	mov	dl,	6
-
-	; ustaw wskaźnik na przestrzeń adresu IPv4 kontrolera sieciowego
-	mov	rsi,	driver_nic_i82540em_mac_address
-
-.mac:
-	; pobierz pierwszy oktet
-	lodsb
-
-	; wyświetl pierwszy oktet
-	call	kernel_video_number
-
-	; wyświetlić pozostałe oktety?
-	dec	dl
-	jz	.end	; nie
-
-	; wyświetl separator oktetów w adresie IPV4
-	mov	eax,	STATIC_ASCII_COLON
-	mov	cl,	1	; jeden raz
-	call	kernel_video_char
-
-	; powrót do pętli
-	jmp	.mac
-
-.end:
-	; wyświeyl informacje o przerwaniu
-	mov	ecx,	driver_nic_i82540em_string_irq_end - driver_nic_i82540em_string_irq
-	mov	rsi,	driver_nic_i82540em_string_irq
-	call	kernel_video_string
-
-	; wyświetl numer przerwania
-	movzx	eax,	byte [driver_nic_i82540em_irq_number]
-	mov	bl,	STATIC_NUMBER_SYSTEM_decimal
-	xor	ecx,	ecx	; brak prefiksu
-	call	kernel_video_number
-
-	; przesuń kursor do nowej linii
-	mov	eax,	STATIC_ASCII_NEW_LINE
-	mov	cl,	1	; jeden raz
-	call	kernel_video_char
 
 	; przywróć oryginalne rejestry
 	pop	r11

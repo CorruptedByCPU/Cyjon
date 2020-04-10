@@ -9,8 +9,8 @@ service_cero_event_console:
 	push	rsi
 
 	; uruchom program "Console"
-	mov	ecx,	kernel_init_vfs_files.console_end - kernel_init_vfs_files.console
-	mov	rsi,	kernel_init_vfs_files.console
+	mov	ecx,	service_cero_event_console_file_end - service_cero_event_console_file
+	mov	rsi,	service_cero_event_console_file
 	call	kernel_vfs_path_resolve
 	call	kernel_vfs_file_find
 	call	kernel_exec

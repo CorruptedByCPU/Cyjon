@@ -17,8 +17,9 @@ console:
 
 	;-----------------------------------------------------------------------
 	%include	"software/console/data.asm"
-	%include	"software/console/clear.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"
+	%include	"library/font.asm"
 	%include	"library/page_from_size.asm"
+	%include	"library/terminal.asm"
 	;-----------------------------------------------------------------------
