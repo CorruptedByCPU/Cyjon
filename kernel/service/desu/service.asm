@@ -106,13 +106,13 @@ service_desu_irq:
 	; aktualizuj właściwości okna
 	mov	rbx,	qword [rsp]
 
-	; pozycja na osi X
-	mov	rax,	qword [rbx + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	rax
+	; ; pozycja na osi X
+	; mov	rax,	qword [rbx + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
+	; mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	rax
 
-	; pozycja na osi Y
-	mov	rax,	qword [rbx + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	rax
+	; ; pozycja na osi Y
+	; mov	rax,	qword [rbx + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
+	; mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	rax
 
 	; flagi
 	mov	rax,	qword [rbx + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags]

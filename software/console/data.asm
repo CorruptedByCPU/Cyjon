@@ -19,14 +19,24 @@ console_window			dq	STATIC_EMPTY	; pozycja na osi X
 				;---------------------------------------
 .element_header:		dd	LIBRARY_BOSU_ELEMENT_TYPE_header
 				dq	.element_header_end - .element_header	; rozmiar elementu
-				dq	1	; pozycja na osi X względem przestrzeni danych okna
-				dq	1	; pozycja na osi Y względem przestrzeni danych okna
+				dq	0	; pozycja na osi X względem przestrzeni danych okna
+				dq	0	; pozycja na osi Y względem przestrzeni danych okna
 				dq	STATIC_EMPTY	; wartość ignorowana, nagłówek zawsze jest na całą szerokość okna (-krawędzie)
 				dq	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel	; wysokość elementu
 				dq	STATIC_EMPTY	; wskaźnik do procedury obsługi zdarzenia
 				db	.element_header_end - .element_header_string
 .element_header_string:		db	"Console"
 .element_header_end:		;---------------------------------------
+				; koniec elementów okna
+				;---------------------------------------
+.element_draw_0:		dd	LIBRARY_BOSU_ELEMENT_TYPE_draw
+				dq	.element_draw_0_end - .element_draw_0
+				dq	0	; pozycja na osi X względem przestrzeni danych okna
+				dq	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel
+				dq	CONSOLE_WINDOW_WIDTH_pixel
+				dq	CONSOLE_WINDOW_HEIGHT_pixel - LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel
+				dq	STATIC_EMPTY	; brak akcji związanej z elementem
+.element_draw_0_end:		;---------------------------------------
 				; koniec elementów okna
 				;---------------------------------------
 				dd	STATIC_EMPTY

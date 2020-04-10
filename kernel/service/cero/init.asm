@@ -89,15 +89,6 @@ service_cero_init:
 	; ilość elementów wchodzących w skład menu oraz ich łączna wysokość względem siebie
 	call	library_bosu_elements_specification
 
-	; krawędź okna ma być oznaczona?
-	test	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_border
-	jz	.no_border	; nie
-
-	; koryguj szerokość i wysokość okna o krawędź prawą i dolną
-	add	r8,	LIBRARY_BOSU_BORDER_SIZE_pixel
-	add	r9,	LIBRARY_BOSU_BORDER_SIZE_pixel
-
-.no_border:
 	; ustaw szerokość i wysokość okna menu
 	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	r8
 	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height],	r9

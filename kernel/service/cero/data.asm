@@ -70,7 +70,7 @@ service_cero_window_menu		dq	160	; pozycja na osi X względem wskaźnika kursora
 					dq	STATIC_EMPTY	; wysokość okna względem zawartości elementów
 					dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
-					dq	LIBRARY_BOSU_WINDOW_FLAG_border | LIBRARY_BOSU_WINDOW_FLAG_header | LIBRARY_BOSU_WINDOW_FLAG_fragile | LIBRARY_BOSU_WINDOW_FLAG_unregistered
+					dq	LIBRARY_BOSU_WINDOW_FLAG_fragile | LIBRARY_BOSU_WINDOW_FLAG_unregistered
 					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
 					dq	STATIC_EMPTY	; szerokosć okna w Bajtach
 .elements:				;---------------------------------------
@@ -78,8 +78,8 @@ service_cero_window_menu		dq	160	; pozycja na osi X względem wskaźnika kursora
 					;---------------------------------------
 .element_header:			dd	LIBRARY_BOSU_ELEMENT_TYPE_header
 					dq	.element_header_end - .element_header	; rozmiar elementu
-					dq	1	; pozycja na osi X względem przestrzeni danych okna
-					dq	1	; pozycja na osi Y względem przestrzeni danych okna
+					dq	0	; pozycja na osi X względem przestrzeni danych okna
+					dq	0	; pozycja na osi Y względem przestrzeni danych okna
 					dq	STATIC_EMPTY	; wartość ignorowana, nagłówek zawsze jest na całą szerokość okna (-krawędzie)
 					dq	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel	; wysokość elementu
 					dq	STATIC_EMPTY
@@ -90,8 +90,8 @@ service_cero_window_menu		dq	160	; pozycja na osi X względem wskaźnika kursora
 					;---------------------------------------
 .element_label_0:			dd	LIBRARY_BOSU_ELEMENT_TYPE_label
 					dq	.element_label_0_end - .element_label_0 ; rozmiar elementu w Bajtach
-					dq	1	; pozycja na osi X względem przestrzeni danych okna
-					dq	1 + LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel	; pozycja na osi Y względem przestrzeni danych okna
+					dq	0	; pozycja na osi X względem przestrzeni danych okna
+					dq	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel	; pozycja na osi Y względem przestrzeni danych okna
 					dq	((.element_label_0_end - .element_label_0_string) * LIBRARY_BOSU_FONT_WIDTH_pixel)	; szerokość elementu
 					dq	LIBRARY_BOSU_FONT_HEIGHT_pixel	; wysokość elementu
 					dq	service_cero_event_console

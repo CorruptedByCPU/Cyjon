@@ -58,15 +58,6 @@ library_bosu:
 	mov	rdi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
 	rep	stosd
 
-	; oznaczyć krawędzie okna?
-	test	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_border
-	jz	.no_border	; nie
-
-	; oznacz krawędź okna
-	mov	rdi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
-	call	library_bosu_border
-
-.no_border:
 	; przetwórz wszystkie elementy wchodzące w skład okna
 	call	library_bosu_elements
 
@@ -172,9 +163,14 @@ library_bosu_elements:
 	cmp	eax,	STATIC_EMPTY
 	je	.ready	; tak
 
+	; element typu "draw"?
+	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_draw
+	je	.leave	; tak, brak obłsugi
+
 	; przejdź do procedury obsługi elementu
 	call	qword [rbx + rax * STATIC_QWORD_SIZE_byte]
 
+.leave:
 	; przesuń wskaźnik na następny element
 	add	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
 
@@ -217,14 +213,6 @@ library_bosu_element_header:
 	; domyślna szerokość elementu nagłówka
 	mov	r11,	r8
 
-	; korygowac o krawędź okna?
-	test	qword [rbx + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_border
-	jz	.no_border	; nie
-
-	; zmniejsz szerokość elementu o obrys
-	sub	r11,	LIBRARY_BOSU_BORDER_SIZE_pixel << STATIC_MULTIPLE_BY_2_shift
-
-.no_border:
 	; ustaw wysokość i scanline elementu
 	mov	r12,	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel
 	mov	r13,	r11
@@ -232,7 +220,6 @@ library_bosu_element_header:
 
 	; pobierz wskaźnik do przestrzeni danych okna
 	mov	rdi,	qword [rbx + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
-	push	rdi	; zachowaj
 
 	; wylicz bezwzględny adres elementu w przestrzeni okna
 
@@ -256,26 +243,6 @@ library_bosu_element_header:
 	add	rdi,	LIBRARY_BOSU_ELEMENT_HEADER_PADDING_LEFT_pixel << KERNEL_VIDEO_DEPTH_shift
 	call	library_bosu_string
 
-	; oblicz pozycję względną pod nagłówkiem
-	mov	rsi,	qword [rsp + STATIC_QWORD_SIZE_byte]
-	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_HEADER.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
-	add	rax,	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel - LIBRARY_BOSU_ELEMENT_HEADER_FOOT_pixel
-	mul	r10
-
-	; ustaw wskaźnik na stopkę nagłówka w przestrzeni danych okna
-	pop	rdi	; przywróć
-	add	rdi,	rax
-
-	; rysuj krawędź dolną krawędź nagłówka
-	mov	rax,	(LIBRARY_BOSU_BORDER_DEFAULT_color >> STATIC_MOVE_EAX_TO_HIGH_shift) | (LIBRARY_BOSU_BORDER_DEFAULT_color << STATIC_MOVE_EAX_TO_HIGH_shift)
-	mov	rcx,	r8
-	rep	stosd
-
-	; rysuj górną krawędź przestrzeni okna
-	rol	rax,	STATIC_REPLACE_EAX_WITH_HIGH_shift
-	mov	rcx,	r8
-	rep	stosd
-
 	; przywróć oryginalne rejestry
 	pop	rsi
 	pop	rdi
@@ -289,71 +256,6 @@ library_bosu_element_header:
 	pop	rax
 
 	; powrót z procedry
-	ret
-
-;===============================================================================
-; wejscie:
-;	r8 - szerokość okna w pikselach
-;	r9 - wysokość okna w pikselach
-;	r10 - scanline okna w Bajtach
-;	rdi - wskaźnik do przestrzeni danych okna
-library_bosu_border:
-	; zachowaj oryginalne rejestry
-	push	rax
-	push	rcx
-	push	rdi
-	push	r9
-	push	r8
-
-	; ustaw kolorystykę krawędzi
-	mov	rax,	LIBRARY_BOSU_BORDER_DEFAULT_color
-
-	; szerokość okna w pikselach
-	mov	rcx,	r8
-
-	; rysuj górną krawędź
-	rep	stosd
-
-	; zamień kolory krawędzi miejscami
-	rol	rax,	STATIC_REPLACE_EAX_WITH_HIGH_shift
-
-	; scanline okna bez krawędzi
-	sub	r8,	LIBRARY_BOSU_BORDER_SIZE_pixel << STATIC_MULTIPLE_BY_2_shift
-	shl	r8,	KERNEL_VIDEO_DEPTH_shift
-
-	; wysokość okna bez krawędzi
-	sub	r9,	LIBRARY_BOSU_BORDER_SIZE_pixel << STATIC_MULTIPLE_BY_2_shift
-
-.loop:
-	; rysuj lewą krawędź
-	rol	rax,	STATIC_REPLACE_EAX_WITH_HIGH_shift
-	stosd
-
-	; przesuń wskaźnik na prawą krawędź
-	add	rdi,	r8
-
-	; rysuj prawą krawędź
-	rol	rax,	STATIC_REPLACE_EAX_WITH_HIGH_shift
-	stosd
-
-	; kontynuować?
-	dec	r9
-	jnz	.loop	; tak
-
-	; szerokość okna w pikselach
-	mov	rcx,	qword [rsp]
-
-	; rysuj dolną krawędź
-	rep	stosd
-
-	; przywróć oryginalne rejestry
-	pop	r8
-	pop	r9
-	pop	rdi
-	pop	rcx
-	pop	rax
-
-	; powrót z procedury
 	ret
 
 ;===============================================================================
@@ -550,14 +452,6 @@ library_bosu_element_button:
 	; pozycja bezwzględna elementu na osi Y
 	xor	eax,	eax
 
-	; okno posiada nagłówek?
-	test	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_header
-	jz	.no_header	; nie
-
-	; koryguj pozycje na osi Y o nagówek
-	mov	rax,	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel
-
-.no_header:
 	; zachowaj wskaźnik do właściwości okna
 	mov	rbx,	rdi
 

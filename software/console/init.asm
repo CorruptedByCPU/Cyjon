@@ -26,6 +26,11 @@
 	mov	rsi,	console_window
 	call	library_bosu
 
+	; wyczyść przestrzeń elementu "draw_0"
+	call	console_clear
+
+	;-----------------------------------------------------------------------
+
 	; wyświetl okno
 	mov	al,	SERVICE_DESU_WINDOW_update
 	or	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
