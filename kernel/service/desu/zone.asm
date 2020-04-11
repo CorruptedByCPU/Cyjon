@@ -137,9 +137,6 @@ service_desu_zone:
 	push	r14
 	push	r15
 
-	; zablokuj dostęp do modyfikacji listy obiektów
-	macro_lock	service_desu_object_semaphore,	0
-
 	; brak stref na liście?
 	cmp	qword [service_desu_zone_list_records],	STATIC_EMPTY
 	je	.end	; tak
@@ -388,9 +385,6 @@ service_desu_zone:
 .end:
 	; wszystkie strefy na liście zostały przetworzone
 	mov	qword [service_desu_zone_list_records],	STATIC_EMPTY
-
-	; odblokuj listę obiektów do modyfikacji
-	mov	byte [service_desu_object_semaphore],	STATIC_FALSE
 
 	; przywróć oryginalne rejestry
 	pop	r15

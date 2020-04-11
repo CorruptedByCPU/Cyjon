@@ -54,9 +54,6 @@ service_desu_event:
 	mov	cl,	SERVICE_DESU_IPC_MOUSE_BUTTON_LEFT_press
 	call	service_desu_ipc
 
-	; ukryj obiekty z flagą "kruchy"
-	call	service_desu_object_hide
-
 	; obiekt powinien zachować swoją warstwę?
 	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_fixed_z
 	jnz	.fixed_z	; tak
@@ -81,7 +78,8 @@ service_desu_event:
 	or	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
 
 .fixed_z:
-
+	; ukryj obiekty z flagą "kruchy"
+	call	service_desu_object_hide
 
 .no_mouse_button_left_action:
 	; puszczono lewy przycisk myszki?

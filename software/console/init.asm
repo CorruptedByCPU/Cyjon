@@ -34,8 +34,6 @@
 	; uzupełnij tablicę "terminal" o dany wskaźnik
 	mov	qword [console_terminal_table + LIBRARY_TERMINAL_STRUCTURE.address],	rax
 
-	xchg	bx,bx
-
 	; inicjalizuj przestrzeń elementu "terminal"
 	mov	r8,	console_terminal_table
 	call	library_terminal
