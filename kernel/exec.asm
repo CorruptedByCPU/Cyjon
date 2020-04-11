@@ -33,7 +33,6 @@ kernel_exec:
 
 	; zachowaj rozmiar przestrzeni kodu w Bajtach
 	mov	r12,	rcx
-	shl	r12,	KERNEL_PAGE_SIZE_shift
 
 	; zarezerwuj ilość stron, niezbędną do inicjalizacji procesu
 	add	rcx,	14
@@ -57,11 +56,13 @@ kernel_exec:
 	; przygotuj miejsce pod przestrzeń kodu procesu
 	mov	rax,	KERNEL_MEMORY_HIGH_VIRTUAL_address
 	mov	bx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user
+	mov	rcx,	r12
 	call	kernel_page_map_logical
 	jc	.error
 
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod binarną mapę pamięci procesu
+	shl	r12,	KERNEL_PAGE_SIZE_shift
 	add	rax,	r12	; za przestrzenią kodu procesu
 	and	bx,	~KERNEL_PAGE_FLAG_user	; dostęp tylko od strony jądra systemu
 	mov	rcx,	KERNEL_MEMORY_MAP_SIZE_page

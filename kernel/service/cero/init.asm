@@ -118,4 +118,4 @@ service_cero_init:
 
 	; zachowaj informacje o ostatniej modyfikacji listy okien
 	mov	rax,	qword [service_desu_object_list_modify_time]
-	mov	qword [service_cero_window_list_modify_time],	rax
+	mov	qword [service_cero_window_taskbar_modify_time],	rax

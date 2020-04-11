@@ -2,8 +2,6 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
-service_cero_window_list_modify_time	dq	STATIC_EMPTY
-
 service_cero_clock_last_state		dq	STATIC_EMPTY
 service_cero_clock_colon		db	STATIC_ASCII_SPACE
 
@@ -31,6 +29,7 @@ service_cero_window_workbench		dq	0	; pozycja na osi X
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
 ;===============================================================================
+service_cero_window_taskbar_modify_time	dq	STATIC_EMPTY
 service_cero_window_taskbar		dq	0	; pozycja na osi X
 					dq	STATIC_EMPTY	; pozycja na osi Y
 					dq	STATIC_EMPTY	; szerokość okna

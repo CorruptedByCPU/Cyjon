@@ -161,10 +161,8 @@ library_terminal_cursor_switch:
 
 .loop:
 	; odróć kolor piksela
-	not	dword [rdi]
-
-	; piksel w pełni widoczny
-	or	byte [rdi + 0x03],	STATIC_MAX_unsigned
+	not	word [rdi]
+	not	byte [rdi + STATIC_WORD_SIZE_byte]
 
 	; przesuń wskaźnik na następny piksel
 	add	rdi,	rax

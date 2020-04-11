@@ -70,6 +70,9 @@ service_desu_object_insert:
 	push	rcx
 	push	rsi
 
+	; zablokuj dostęp do modyfikacji listy obiektów
+	macro_lock	service_desu_object_semaphore,	0
+
 	; brak miejsca?
 	cmp	qword [service_desu_object_list_records_free],	STATIC_EMPTY
 	je	.end	; tak
@@ -123,6 +126,9 @@ service_desu_object_insert:
 	mov	qword [service_desu_object_list_modify_time],	rax
 
 .end:
+	; zwolnij dostęp do modyfikacji listy obiektów
+	mov	byte [service_desu_object_semaphore],	STATIC_FALSE
+
 	; przywróć oryginalne rejestry
 	pop	rsi
 	pop	rcx
@@ -301,6 +307,9 @@ service_desu_object_find:
 ; wyjście:
 ;	rsi - nowy wskaźnik do obiektu
 service_desu_object_up:
+	; przesunięcie obiektu na liście, nie jest równoznaczne z jego modyfikacją
+	push	qword [service_desu_object_list_modify_time]
+
 	; zachowaj wskaźnik do aktualnego obiektu
 	push	rsi
 
@@ -322,6 +331,9 @@ service_desu_object_up:
 	; koryguj pozycje
 	sub	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
 
+	; przywróć oryginalny czas ostatniej modyfikacji listy obiektów
+	pop	qword [service_desu_object_list_modify_time]
+
 	; powrót z procedury
 	ret
 
@@ -335,6 +347,9 @@ service_desu_object_remove:
 	push	rcx
 	push	rsi
 	push	rdi
+
+	; zablokuj dostęp do modyfikacji listy obiektów
+	macro_lock	service_desu_object_semaphore,	0
 
 	; ustaw wskaźnik źródłowy i docelowy
 	mov	rdi,	rsi
@@ -355,6 +370,9 @@ service_desu_object_remove:
 	; zachowaj czas ostatniej modyfikacji listy
 	mov	rcx,	qword [driver_rtc_microtime]
 	mov	qword [service_desu_object_list_modify_time],	rcx
+
+	; zwolnij dostęp do modyfikacji listy obiektów
+	mov	byte [service_desu_object_semaphore],	STATIC_FALSE
 
 	; przywróć oryginalne rejestry
 	pop	rdi

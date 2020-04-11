@@ -136,7 +136,7 @@ kernel_memory_alloc:
 
 .error:
 	; zwróć kod błędu
-	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	KERNEL_ERROR_PAGE_memory_low
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	KERNEL_ERROR_memory_low
 
 	; flaga, błąd
 	stc

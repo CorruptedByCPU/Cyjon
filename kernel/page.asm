@@ -853,7 +853,7 @@ kernel_page_secure:
 
 .error:
 	; zwróć kod błędu
-	mov	qword [rsp],	KERNEL_ERROR_PAGE_memory_low
+	mov	qword [rsp],	KERNEL_ERROR_memory_low
 
 	; flaga, błąd
 	stc

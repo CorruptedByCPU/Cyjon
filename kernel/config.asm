@@ -4,7 +4,7 @@
 
 %define	KERNEL_name					"Cyjon"
 %define	KERNEL_version					"0"
-%define	KERNEL_revision					"1212"
+%define	KERNEL_revision					"1213"
 %define	KERNEL_architecture				"x86_64"
 
 KERNEL_BASE_address					equ	0x0000000000100000
@@ -54,4 +54,4 @@ KERNEL_SERVICE_SYSTEM_memory				equ	0x0000 + KERNEL_SERVICE_SYSTEM
 ;===============================================================================
 ; ERROR
 ;===============================================================================
-KERNEL_ERROR_PAGE_memory_low				equ	0x0001
+KERNEL_ERROR_memory_low					equ	0x0001
