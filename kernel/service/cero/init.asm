@@ -115,3 +115,7 @@ service_cero_init:
 
 	; zarejestruj okno w menedżerze okien
 	call	service_desu_object_insert
+
+	; zachowaj informacje o ostatniej modyfikacji listy okien
+	mov	rax,	qword [service_desu_object_list_modify_time]
+	mov	qword [service_cero_window_list_modify_time],	rax

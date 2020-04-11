@@ -118,6 +118,10 @@ service_desu_object_insert:
 	call	kernel_task_active_pid
 	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.pid],	rax
 
+	; zachowaj czas ostatniej modyfikacji listy
+	mov	rax,	qword [driver_rtc_microtime]
+	mov	qword [service_desu_object_list_modify_time],	rax
+
 .end:
 	; przywróć oryginalne rejestry
 	pop	rsi
@@ -347,6 +351,10 @@ service_desu_object_remove:
 
 	; ilość rekordów na liście
 	dec	qword [service_desu_object_list_records]
+
+	; zachowaj czas ostatniej modyfikacji listy
+	mov	rcx,	qword [driver_rtc_microtime]
+	mov	qword [service_desu_object_list_modify_time],	rcx
 
 	; przywróć oryginalne rejestry
 	pop	rdi

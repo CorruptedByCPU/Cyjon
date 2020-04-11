@@ -9,8 +9,8 @@
 	%include	"config.asm"	; globalne
 	;-----------------------------------------------------------------------
 
-CONSOLE_WINDOW_WIDTH_pixel	equ	120
-CONSOLE_WINDOW_HEIGHT_pixel	equ	66
+CONSOLE_WINDOW_WIDTH_pixel	equ	LIBRARY_FONT_WIDTH_pixel * 40
+CONSOLE_WINDOW_HEIGHT_pixel	equ	LIBRARY_FONT_HEIGHT_pixel * 12
 
 CONSOLE_WINDOW_BACKGROUND_color	equ	0x00000000
 

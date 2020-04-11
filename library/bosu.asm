@@ -7,7 +7,6 @@
 	;-----------------------------------------------------------------------
 	%include	"library/bosu/config.asm"
 	%include	"library/bosu/data.asm"
-	%include	"library/bosu/font.asm"
 	;-----------------------------------------------------------------------
 
 ;===============================================================================
@@ -167,6 +166,31 @@ library_bosu_elements:
 	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_draw
 	je	.leave	; tak, brak obłsugi
 
+	; element typu "chain"?
+	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_chain
+	jne	.other	; nie
+
+	; "łańcuch" jest pusty?
+	cmp	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.address],	STATIC_EMPTY
+	je	.leave	; tak, pomiń
+
+	; zachowaj wskaźnik aktualnego elementu
+	push	rsi
+
+	; pobierz adres "łańcucha"
+	mov	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.address]
+	call	library_bosu_elements	; przetwórz wszystkie elementy łańcucha
+
+	; przywróć wskaźnik aktualnego elementu
+	pop	rsi
+
+	; przesuń wskaźnik na następny element
+	add	rsi,	LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.SIZE
+
+	; kontynuuj
+	jmp	.loop
+
+.other:
 	; przejdź do procedury obsługi elementu
 	call	qword [rbx + rax * STATIC_QWORD_SIZE_byte]
 
@@ -288,14 +312,14 @@ library_bosu_string:
 	call	library_bosu_char
 
 	; przesuń wskaźnik na następną pozycję w przestrzeni elementu
-	add	rdi,	LIBRARY_BOSU_FONT_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift
+	add	rdi,	LIBRARY_FONT_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift
 
 	; koniec ciągu?
 	dec	rcx
 	jz	.end	; nie, wyświetl następny
 
 	; koniec przestrzeni elementu?
-	sub	r11,	LIBRARY_BOSU_FONT_WIDTH_pixel
+	sub	r11,	LIBRARY_FONT_WIDTH_pixel
 	jns	.loop	; nie, zmieścimy jeszcze jeden znak
 
 .end:
@@ -330,28 +354,28 @@ library_bosu_char:
 	push	r11
 
 	; ustaw wskaźnik na macierz czcionki
-	mov	rsi,	library_bosu_font_matrix
+	mov	rsi,	library_font_matrix
 
-	; koryguj kod ASCII o prdesunięcie w macierzy czcionki
-	sub	al,	byte [library_bosu_font_offset]
+	; koryguj kod ASCII o przesunięcie w macierzy czcionki
+	sub	al,	LIBRARY_FONT_MATRIX_offset
 	js	.end	; przekręcono licznik, znak niedrukowalny - pomiń
 
 	; ustaw wskaźnik na matrycę znaku
-	mul	qword [library_bosu_font_height_pixel]
+	mul	qword [library_font_height_pixel]
 	add	rsi,	rax
 
 	; ustaw kolor kolejnych pikseli ciągu
 	mov	eax,	ebx
 
 	; wysokość matrycy w pikselach
-	mov	rdx,	qword [library_bosu_font_height_pixel]
+	mov	rdx,	qword [library_font_height_pixel]
 
 .next:
 	; przywróć pozostałą szerokość obiektu
 	mov	r11,	qword [rsp]
 
 	; szerokość matrycy
-	mov	rcx,	qword [library_bosu_font_width_pixel]
+	mov	rcx,	qword [library_font_width_pixel]
 	dec	rcx	; liczymy od zera
 
 .loop:
@@ -391,7 +415,7 @@ library_bosu_char:
 
 .end_of_line:
 	; przesuń wskaźnik na następny wiersz matrycy w przestrzeni elementu
-	sub	rdi,	LIBRARY_BOSU_FONT_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift
+	sub	rdi,	LIBRARY_FONT_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift
 	add	rdi,	r10
 
 	; przesuń wskaźnik na następny wiersz matrycy
@@ -527,13 +551,6 @@ library_bosu_element_drain:
 	pop	rdx
 	pop	rcx
 
-	; powrót z procedury
-	ret
-
-;===============================================================================
-; wejście:
-;	rsi - wskaźnik do elementu "łańcuch"
-library_bosu_element_chain:
 	; powrót z procedury
 	ret
 

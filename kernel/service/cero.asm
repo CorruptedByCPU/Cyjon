@@ -31,4 +31,5 @@ service_cero:
 	%include	"kernel/service/cero/event.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"
+	%include	"library/font.asm"
 	;-----------------------------------------------------------------------

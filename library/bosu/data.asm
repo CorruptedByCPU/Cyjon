@@ -9,5 +9,5 @@ library_bosu_element_entry:
 	.header:		dq	library_bosu_element_header
 	.label:			dq	library_bosu_element_label
 	.draw:			dq	STATIC_EMPTY
-	.chain:			dq	library_bosu_element_chain
+	.chain:			dq	STATIC_EMPTY
 	.button:		dq	library_bosu_element_button

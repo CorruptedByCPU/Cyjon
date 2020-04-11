@@ -2,6 +2,8 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
+service_cero_window_list_modify_time	dq	STATIC_EMPTY
+
 service_cero_clock_last_state		dq	STATIC_EMPTY
 service_cero_clock_colon		db	STATIC_ASCII_SPACE
 
@@ -51,8 +53,8 @@ service_cero_window_taskbar		dq	0	; pozycja na osi X
 					dq	.element_label_clock_end - .element_label_clock ; rozmiar elementu w Bajtach
 					dq	0	; pozycja na osi X względem okna
 					dq	0	; pozycja na osi Y względem okna
-					dq	LIBRARY_BOSU_FONT_WIDTH_pixel * (.element_label_clock_end - .element_label_clock_string_hour)	; szerokość elementu w pikselach
-					dq	LIBRARY_BOSU_FONT_HEIGHT_pixel	; wysokość elementu w pikselach
+					dq	LIBRARY_FONT_WIDTH_pixel * (.element_label_clock_end - .element_label_clock_string_hour)	; szerokość elementu w pikselach
+					dq	LIBRARY_FONT_HEIGHT_pixel	; wysokość elementu w pikselach
 					dq	STATIC_EMPTY	; wskaźnik procedury obsługi zdarzenia
 					db	.element_label_clock_end - .element_label_clock_string_hour   ; rozmiar ciągu w znakach
 .element_label_clock_string_hour:	db	"00"
@@ -95,8 +97,8 @@ service_cero_window_menu		dq	160	; pozycja na osi X względem wskaźnika kursora
 					dq	.element_label_0_end - .element_label_0 ; rozmiar elementu w Bajtach
 					dq	0	; pozycja na osi X względem przestrzeni danych okna
 					dq	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel	; pozycja na osi Y względem przestrzeni danych okna
-					dq	((.element_label_0_end - .element_label_0_string) * LIBRARY_BOSU_FONT_WIDTH_pixel)	; szerokość elementu
-					dq	LIBRARY_BOSU_FONT_HEIGHT_pixel	; wysokość elementu
+					dq	((.element_label_0_end - .element_label_0_string) * LIBRARY_FONT_WIDTH_pixel)	; szerokość elementu
+					dq	LIBRARY_FONT_HEIGHT_pixel	; wysokość elementu
 					dq	service_cero_event_console
 					db	.element_label_0_end - .element_label_0_string
 .element_label_0_string:		db	" Console "
