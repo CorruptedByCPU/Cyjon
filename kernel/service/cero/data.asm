@@ -2,6 +2,8 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
+service_cero_pid			dq	STATIC_EMPTY
+
 service_cero_clock_last_state		dq	STATIC_EMPTY
 service_cero_clock_colon		db	STATIC_ASCII_SPACE
 
@@ -24,6 +26,8 @@ service_cero_window_workbench		dq	0	; pozycja na osi X
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
 					dq	LIBRARY_BOSU_WINDOW_FLAG_fixed_xy | LIBRARY_BOSU_WINDOW_FLAG_fixed_z | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
 					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
+					db	16
+					db	"cero - workbench       "
 					dq	STATIC_EMPTY
 
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
@@ -38,13 +42,15 @@ service_cero_window_taskbar		dq	0	; pozycja na osi X
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
 					dq	LIBRARY_BOSU_WINDOW_FLAG_fixed_xy | LIBRARY_BOSU_WINDOW_FLAG_fixed_z | LIBRARY_BOSU_WINDOW_FLAG_arbiter | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush | LIBRARY_BOSU_WINDOW_FLAG_unregistered
 					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
+					db	14
+					db	"cero - taskbar         "
 					dq	STATIC_EMPTY	; szerokość okna w Bajtach
 .elements:				;---------------------------------------
 					; element "łańcuch 0"
 					;---------------------------------------
 .element_chain_0:			dd	LIBRARY_BOSU_ELEMENT_TYPE_chain
-					dq	LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.SIZE
-					dq	STATIC_EMPTY	; wartość uzupełniana automatycznie
+					dq	STATIC_EMPTY	; rozmiar przestrzeni łańcucha w Bajtach
+					dq	STATIC_EMPTY	; adres przestrzeni łańcucha
 					;---------------------------------------
 					; element "etykieta zegar"
 					;---------------------------------------
@@ -76,6 +82,8 @@ service_cero_window_menu		dq	160	; pozycja na osi X względem wskaźnika kursora
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
 					dq	LIBRARY_BOSU_WINDOW_FLAG_fragile | LIBRARY_BOSU_WINDOW_FLAG_unregistered
 					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
+					db	11
+					db	"cero - menu            "
 					dq	STATIC_EMPTY	; szerokosć okna w Bajtach
 .elements:				;---------------------------------------
 					; element "nagłówek"

@@ -171,8 +171,8 @@ library_bosu_elements:
 	jne	.other	; nie
 
 	; "łańcuch" jest pusty?
-	cmp	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.address],	STATIC_EMPTY
-	je	.leave	; tak, pomiń
+	cmp	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.size],	STATIC_EMPTY
+	je	.empty	; tak, pomiń
 
 	; zachowaj wskaźnik aktualnego elementu
 	push	rsi
@@ -184,6 +184,7 @@ library_bosu_elements:
 	; przywróć wskaźnik aktualnego elementu
 	pop	rsi
 
+.empty:
 	; przesuń wskaźnik na następny element
 	add	rsi,	LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.SIZE
 
@@ -205,6 +206,62 @@ library_bosu_elements:
 	; przywróć oryginalny rejestr
 	pop	rsi
 	pop	rcx
+	pop	rbx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do elementu "łańcuch"
+;	rdi - wskaźnik do struktury okna
+library_bosu_element_chain:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rsi
+	push	r8
+	push	r9
+	push	r10
+
+	; pobierz szerokość, wysokość i scanline okna
+	mov	r8,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	mov	r9,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	mov	r10,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline]
+
+	; lista skoków do procedur
+	mov	rbx,	library_bosu_element_entry
+
+	; przetwórz wszystkie elementy łańcucha
+	mov	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.address]
+
+.loop:
+	; koniec elementów?
+	mov	eax,	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type]
+	cmp	eax,	STATIC_EMPTY
+	je	.ready	; tak
+
+	; element typu "draw"?
+	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_draw
+	je	.leave	; tak, brak obłsugi
+
+	; przejdź do procedury obsługi elementu
+	call	qword [rbx + rax * STATIC_QWORD_SIZE_byte]
+
+.leave:
+	; przesuń wskaźnik na następny element
+	add	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+
+	; kontyuuj
+	jmp	.loop
+
+.ready:
+	; przywróć oryginalne rejestry
+	pop	r10
+	pop	r9
+	pop	r8
+	pop	rsi
 	pop	rbx
 	pop	rax
 

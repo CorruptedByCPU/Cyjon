@@ -2,7 +2,7 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
-SERVICE_DESU_OBJECT_NAME_length				equ	8
+SERVICE_DESU_OBJECT_NAME_length				equ	23
 
 SERVICE_DESU_OBJECT_FLAG_visible			equ	1 << 0	; obiekt widoczny
 SERVICE_DESU_OBJECT_FLAG_flush				equ	1 << 1	; obiekt został zaktualizowany
@@ -45,6 +45,8 @@ struc	SERVICE_DESU_STRUCTURE_OBJECT_EXTRA
 	.size						resb	8
 	.flags						resb	8
 	.id						resb	8
+	.length						resb	1
+	.name						resb	SERVICE_DESU_OBJECT_NAME_length
 	;--- dane specyficzne dla Desu
 	.pid						resb	8
 	.SIZE:

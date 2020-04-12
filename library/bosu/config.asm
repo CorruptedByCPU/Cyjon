@@ -2,6 +2,7 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
+LIBRARY_BOSU_WINDOW_NAME_length			equ	23
 LIBRARY_BOSU_WINDOW_BACKGROUND_color		equ	0x00151515
 
 ;-------------------------------------------------------------------------------
@@ -53,6 +54,8 @@ struc	LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA
 	.size					resb	8
 	.flags					resb	8
 	.id					resb	8
+	.length					resb	1
+	.name					resb	LIBRARY_BOSU_WINDOW_NAME_length
 	;--- dane specyficzne dla Bosu
 	.scanline				resb	8
 	.SIZE:
@@ -82,6 +85,7 @@ struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON
 	.element				resb	LIBRARY_BOSU_STRUCTURE_ELEMENT.SIZE
 	.length					resb	1
 	.string:
+	.SIZE:
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_DRAW

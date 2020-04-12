@@ -8,6 +8,10 @@ service_cero_init:
 	cmp	byte [service_desu_semaphore],	STATIC_FALSE
 	je	service_cero_init	; nie, czekaj
 
+	; zachowaj własny numer PID
+	call	kernel_task_active_pid
+	mov	qword [service_cero_pid],	rax
+
 	;-----------------------------------------------------------------------
 	; skonfiguruj przestrzeń roboczą
 	;-----------------------------------------------------------------------
