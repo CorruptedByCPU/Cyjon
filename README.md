@@ -19,10 +19,10 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 	WIDTH=640
 	HEIGHT=480
 
-	nasm -f bin software/init.asm		-o build/init
-	nasm -f bin software/shell.asm		-o build/shell
-	nasm -f bin software/hello.asm		-o build/hello
-	nasm -f bin software/free.asm		-o build/free
+	# nasm -f bin software/init.asm		-o build/init
+	# nasm -f bin software/shell.asm		-o build/shell
+	# nasm -f bin software/hello.asm		-o build/hello
+	# nasm -f bin software/free.asm		-o build/free
 	nasm -f bin software/console.asm	-o build/console
 
 	nasm -f bin kernel/init/boot.asm	-o build/boot
@@ -39,10 +39,10 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 	set WIDTH=640
 	set HEIGHT=480
 
-	nasm -f bin software/init.asm		-o build/init
-	nasm -f bin software/shell.asm		-o build/shell
-	nasm -f bin software/hello.asm		-o build/hello
-	nasm -f bin software/free.asm		-o build/free
+	rem nasm -f bin software/init.asm		-o build/init
+	rem nasm -f bin software/shell.asm		-o build/shell
+	rem nasm -f bin software/hello.asm		-o build/hello
+	rem nasm -f bin software/free.asm		-o build/free
 	nasm -f bin software/console.asm	-o build/console
 
 	nasm -f bin kernel/init/boot.asm	-o build/boot
