@@ -14,6 +14,9 @@ service_desu_event:
 	push	r10
 	push	r11
 
+	; sprawdź stan bufora klawiatury
+	call	service_desu_keyboard
+
 	;-----------------------------------------------------------------------
 	; pobierz pozycje wskaźnika myszy
 	mov	r8d,	dword [driver_ps2_mouse_x]
@@ -39,9 +42,9 @@ service_desu_event:
 	; zapamiętaj ten stan
 	mov	byte [service_desu_mouse_button_left_semaphore],	STATIC_TRUE
 
-	; jest już wybrany obiekt aktywny?
-	cmp	qword [service_desu_object_selected_pointer],	STATIC_EMPTY
-	jne	.no_mouse_button_left_action	; tak, zignoruj przytrzymanie lewego klawisza myszki na innym obiekcie
+	; ; jest już wybrany obiekt aktywny?
+	; cmp	qword [service_desu_object_selected_pointer],	STATIC_EMPTY
+	; jne	.no_mouse_button_left_action	; tak, zignoruj przytrzymanie lewego klawisza myszki na innym obiekcie
 
 	; sprawdź, który obiekt znajduje się pod wskaźnikiem kursora
  	call	service_desu_object_find
@@ -52,7 +55,7 @@ service_desu_event:
 
 	; wyślij komunikat do procesu "naciśnięcie lewego klawisza myszki"
 	mov	cl,	SERVICE_DESU_IPC_MOUSE_BUTTON_LEFT_press
-	call	service_desu_ipc
+	call	service_desu_ipc_mouse
 
 	; obiekt powinien zachować swoją warstwę?
 	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_fixed_z
@@ -92,7 +95,7 @@ service_desu_event:
 
 .no_mouse_button_left_action_release_selected:
 	; usuń informacje o aktywnym obiekcie
-	mov	qword [service_desu_object_selected_pointer],	STATIC_EMPTY
+	; mov	qword [service_desu_object_selected_pointer],	STATIC_EMPTY
 
 .no_mouse_button_left_release:
 	;-----------------------------------------------------------------------
@@ -116,7 +119,7 @@ service_desu_event:
 
 	; wyślij komunikat do procesu "naciśnięcie prawego klawisza myszki"
 	mov	cl,	SERVICE_DESU_IPC_MOUSE_BUTTON_RIGHT_press
-	call	service_desu_ipc
+	call	service_desu_ipc_mouse
 
 .no_mouse_button_right_action:
 	; puszczono prawy przycisk myszki?

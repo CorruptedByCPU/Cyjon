@@ -16,17 +16,6 @@ SERVICE_DESU_OBJECT_FLAG_arbiter			equ	1 << 6	; nadobiekt
 SERVICE_DESU_FILL_LIST_limit				equ	(KERNEL_PAGE_SIZE_byte / SERVICE_DESU_STRUCTURE_FILL.SIZE) - 0x01
 SERVICE_DESU_ZONE_LIST_limit				equ	(KERNEL_PAGE_SIZE_byte / SERVICE_DESU_STRUCTURE_ZONE.SIZE) - 0x01
 
-SERVICE_DESU_IPC_MOUSE_BUTTON_LEFT_press		equ	0
-SERVICE_DESU_IPC_MOUSE_BUTTON_RIGHT_press		equ	1
-
-struc	SERVICE_DESU_STRUCTURE_IPC
-	.type						resb	1
-	.reserved					resb	7
-	.id						resb	8
-	.value0						resb	8
-	.value1						resb	8
-endstruc
-
 struc	SERVICE_DESU_STRUCTURE_FIELD
 	.x						resb	8
 	.y						resb	8

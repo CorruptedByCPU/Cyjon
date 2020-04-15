@@ -2,7 +2,12 @@
 ; Copyright (C) by Blackend.dev
 ;===============================================================================
 
-align	STATIC_QWORD_SIZE_byte,	db	STATIC_NOTHING
+align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
+
+console_ipc_data:
+	times KERNEL_IPC_STRUCTURE.SIZE	db	STATIC_EMPTY
+
+align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
 ;===============================================================================
 console_window			dq	STATIC_EMPTY	; pozycja na osi X

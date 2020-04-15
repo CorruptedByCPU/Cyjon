@@ -10,6 +10,7 @@ service_desu_object_arbiter_semaphore			db	STATIC_FALSE
 service_desu_fill_semaphore				db	STATIC_FALSE
 service_desu_zone_semaphore				db	STATIC_FALSE
 
+service_desu_keyboard_alt_left_semaphore		db	STATIC_FALSE
 service_desu_mouse_button_left_semaphore		db	STATIC_FALSE
 service_desu_mouse_button_right_semaphore		db	STATIC_FALSE
 

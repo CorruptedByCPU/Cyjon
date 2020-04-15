@@ -15,10 +15,6 @@ kernel_service:
 	cmp	al,	KERNEL_SERVICE_VIDEO
 	je	.video	 ; tak
 
-	; obsługa klawiatury?
-	cmp	al,	KERNEL_SERVICE_KEYBOARD
-	je	.keyboard	; tak
-
 	; obsługa wirtualnego systemu plików?
 	cmp	al,	KERNEL_SERVICE_VFS
 	je	.vfs	; tak
@@ -36,9 +32,8 @@ kernel_service:
 	pushf
 	pop	rax
 
-	; zwróć flagi do procesu (usuń które nie biorą udziału w komunikacji)
-	and	ax,	KERNEL_TASK_EFLAGS_cf | KERNEL_TASK_EFLAGS_zf
-	or	word [rsp + KERNEL_TASK_STRUCTURE_IRETQ.eflags + STATIC_QWORD_SIZE_byte],	ax
+	; zwróć flagi do procesu
+	mov	qword [rsp + KERNEL_TASK_STRUCTURE_IRETQ.eflags + STATIC_QWORD_SIZE_byte],	rax
 
 	; przywróć oryginalny rejestr
 	pop	rax
@@ -63,6 +58,14 @@ kernel_service:
 	; przydzielić przestrzeń pamięci?
 	cmp	ax,	KERNEL_SERVICE_PROCESS_memory_alloc
 	je	.process_memory_alloc	; tak
+
+	; odebrać komunikat przeznaczony dla procesu?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
+	je	.process_ipc_receive	; tak
+
+	; zwrócić PID procesu?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_pid
+	je	.process_pid
 
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
@@ -162,6 +165,31 @@ kernel_service:
 	; koniec obsługi opcji
 	jmp	kernel_service.end
 
+;-------------------------------------------------------------------------------
+; wejście:
+;	rdi - wskaźnik miejsca przeznaczenia komunikatu
+; wyjście:
+;	Flaga CF, jeśli brak komunikatu
+.process_ipc_receive:
+	; pobierz komunikat przeznaczony dla procesu
+	call	kernel_ipc_receive
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;-------------------------------------------------------------------------------
+; wyjście:
+;	rax - pid procesu
+.process_pid:
+	; pobierz PID procesu
+	call	kernel_task_active_pid
+
+	; zwróć do procesu
+	mov	qword [rsp],	rax
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
 ;===============================================================================
 .video:
 	; zwrócić informacje o ekranie?
@@ -182,23 +210,6 @@ kernel_service:
 
 	; koniec obsługi podprocedury
 	jmp	kernel_service.end
-
-;===============================================================================
-.keyboard:
-	; pobrać kod klawisza z bufora?
-	cmp	ax,	KERNEL_SERVICE_KEYBOARD_key
-	jne	kernel_service.error	; koniec obsługi podprocedury
-
-	; pobierz kod klawisza z bufora
-	call	driver_ps2_keyboard_read
-
-	; zwróć kod ASCII znaku do procesu
-	mov	word [rsp],	ax
-
-	; koniec obsługi podprocedury
-	jmp	kernel_service.end
-
-	macro_debug	"kernel_service"
 
 ;===============================================================================
 .vfs:

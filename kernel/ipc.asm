@@ -7,17 +7,6 @@ KERNEL_IPC_ENTRY_limit		equ	(KERNEL_IPC_SIZE_page_default << KERNEL_PAGE_SIZE_sh
 
 KERNEL_IPC_TTL_default		equ	DRIVER_RTC_Hz / 10	; ~100ms
 
-struc	KERNEL_IPC_STRUCTURE
-	.ttl			resb	8
-	.pid_source		resb	8
-	.pid_destination	resb	8
-	.data:
-	.size			resb	8
-	.pointer		resb	8
-	.other			resb	24
-	.SIZE:
-endstruc
-
 kernel_ipc_semaphore		db	STATIC_FALSE
 kernel_ipc_base_address		dq	STATIC_EMPTY
 kernel_ipc_entry_count		dq	STATIC_EMPTY
@@ -158,8 +147,7 @@ kernel_ipc_receive:
 	je	.empty	; nie
 
 	; pobierz PID procesu wywołującego
-	call	kernel_task_active
-	mov	rax,	qword [rdi + KERNEL_TASK_STRUCTURE.pid]
+	call	kernel_task_active_pid
 
 	; ilość dostępnych wpisów na liście
 	mov	rcx,	KERNEL_IPC_ENTRY_limit
