@@ -31,11 +31,6 @@
 	%include	"kernel/init/long_mode.asm"
 
 	;-----------------------------------------------------------------------
-	; domyślny komunikat błędu
-	;-----------------------------------------------------------------------
-	%include	"kernel/init/panic.asm"
-
-	;-----------------------------------------------------------------------
 	; zmienne - wykorzystywane podczas inicjalizacji środowiska jądra systemu
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/data.asm"
@@ -57,6 +52,11 @@
 	%include	"kernel/init/apic.asm"
 
 kernel_init:
+	;-----------------------------------------------------------------------
+	; inicjalizuj port COM1 (stdlog)
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/serial.asm"
+
 	;-----------------------------------------------------------------------
 	; inicjalizacja przestrzeni trybu tekstowego
 	;-----------------------------------------------------------------------
@@ -126,11 +126,6 @@ kernel_init:
 	; dodaj do kolejki zadań zestaw usług zarządzających środowiskiem jądra systemu
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/services.asm"
-
-	;-----------------------------------------------------------------------
-	; inicjalizuj port COM1
-	;-----------------------------------------------------------------------
-	%include	"kernel/init/serial.asm"
 
 	;-----------------------------------------------------------------------
 	; konfiguruj wew. przerwanie lokalnego kontrolera APIC (przełączanie zadań w kolejce)

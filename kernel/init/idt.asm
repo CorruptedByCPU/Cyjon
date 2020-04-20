@@ -10,7 +10,7 @@ endstruc
 kernel_init_idt:
 	; zarezerwuj przestrzeń na Tablicę Deskryptorów Przerwań
 	call	kernel_memory_alloc_page
-	jc	kernel_init_panic_low_memory
+	jc	kernel_panic_memory
 
 	; wyczyść tablicę IDT i zachowaj jej adres
 	call	kernel_page_drain

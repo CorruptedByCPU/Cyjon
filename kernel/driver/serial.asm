@@ -59,39 +59,33 @@ driver_serial:
 
 ;===============================================================================
 ; wejście:
-;	rbp - wskaźnik do danych zakończony terminatorem
+;	rsi - wskaźnik do danych zakończony terminatorem
 driver_serial_send:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rdx
-	push	rbp
+	push	rsi
 
-	; ustaw numer portu
+	; numer portu wyjściowego
 	mov	dx,	DRIVER_SERIAL_PORT_COM1 + DRIVER_SERIAL_STRUCTURE_REGISTERS.data_or_divisor_low
 
 .loop:
-	; koniec danych?
-	cmp	byte [rbp],	STATIC_ASCII_TERMINATOR
-	je	.end	; tak
+	; pobierz znak z ciągu
+	lodsb
+	jz	.end	; koniec ciągu
 
 	; odczekaj na gotowość kontrolera
 	call	driver_serial_ready
 
-	; pobierz znak
-	mov	al,	byte [rbp]
-
-	; wyślij znak
+	; wyślij znak na port
 	out	dx,	al
-
-	; przesuń wskaźnik na następny znak z ciągu
-	inc	rbp
 
 	; wyświetl pozostałe dane ciągu
 	jmp	.loop
 
 .end:
 	; przywróć oryginalne rejestry
-	pop	rbp
+	pop	rsi
 	pop	rdx
 	pop	rax
 

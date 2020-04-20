@@ -5,7 +5,7 @@
 kernel_init_page:
 	; przygotuj miejsce na tablicę PML4 jądra systemu
 	call	kernel_memory_alloc_page
-	jc	kernel_init_panic_low_memory
+	jc	kernel_panic_memory
 
 	; wyczyść wszystkie wpisy w tablicy PML4 i zapamiętaj jej adres
 	call	kernel_page_drain
@@ -21,14 +21,14 @@ kernel_init_page:
 	mov	rcx,	qword [kernel_page_total_count]	; rozmiar przestrzeni w stronach
 	mov	r11,	rdi	; miejsce docelowe tablicy PML4 jądra systemu
 	call	kernel_page_map_physical	; opisz 1:1
-	jc	kernel_init_panic_low_memory
+	jc	kernel_panic_memory
 
 	; utwórz stos/"stos kontekstu" dla jądra systemu na końcu pierwszej połowy przestrzeni pamięci logicznej
 	; jądro systemu otrzyma pierwszą połowę przestrzeni pamięci logicznej
 	mov	rax,	KERNEL_STACK_address
 	mov	ecx,	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	call	kernel_page_map_logical
-	jc	kernel_init_panic_low_memory
+	jc	kernel_panic_memory
 
 	; https://forum.osdev.org/viewtopic.php?f=1&t=29034
 	; https://wiki.osdev.org/Paging
@@ -43,7 +43,7 @@ kernel_init_page:
 	mov	rcx,	qword [kernel_video_size_byte]
 	call	library_page_from_size
 	call	kernel_page_map_physical
-	jc	kernel_init_panic_low_memory
+	jc	kernel_panic_memory
 
 	; mapuj przestrzeń pamięci fizycznej tablicy APIC
 	mov	rax,	qword [kernel_apic_base_address]
@@ -51,20 +51,20 @@ kernel_init_page:
 	mov	ecx,	dword [kernel_apic_size]	; rozmiar przestrzeni w Bajtach
 	call	library_page_from_size
 	call	kernel_page_map_physical
-	jc	kernel_init_panic_low_memory
+	jc	kernel_panic_memory
 
 	; mapuj przestrzeń pamięci fizycznej tablicy I/O APIC
 	mov	eax,	dword [kernel_io_apic_base_address]
 	mov	ecx,	KERNEL_PAGE_SIZE_byte >> KERNEL_PAGE_SIZE_shift
 	call	kernel_page_map_physical
-	jc	kernel_init_panic_low_memory
+	jc	kernel_panic_memory
 
 	; mapuj przestrzeń pamięci kodu inicjalizującego procesory logiczne
 	mov	eax,	0x8000	; 0x0000:0x8000
 	mov	ecx,	kernel_init_boot_file_end - kernel_init_boot_file
 	call	library_page_from_size
 	call	kernel_page_map_physical
-	jc	kernel_init_panic_low_memory
+	jc	kernel_panic_memory
 
 	; przeładuj stronicowanie na własne/nowo utworzone
 	mov	rax,	rdi

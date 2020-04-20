@@ -16,7 +16,7 @@ kernel_init_task:
 
 	; zarezerwuj przestrzeń o podanym rozmiarze
 	call	kernel_memory_alloc
-	jc	kernel_init_panic_low_memory
+	jc	kernel_panic_memory
 
 	; zachowaj adres listy aktywnych zadań
 	mov	qword [kernel_task_active_list],	rdi
@@ -27,7 +27,7 @@ kernel_init_task:
 	;-----------------------------------------------------------------------
 	; przygotuj przestrzeń pod kolejkę zadań
 	call	kernel_memory_alloc_page
-	jc	kernel_init_panic_low_memory
+	jc	kernel_panic_memory
 
 	; wyczyść kolejkę zadań
 	call	kernel_page_drain

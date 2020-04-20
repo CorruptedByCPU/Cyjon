@@ -3,26 +3,16 @@
 ;===============================================================================
 
 ;===============================================================================
+kernel_panic_memory:
+	; komunikat błędu
+	mov	rsi,	kernel_init_string_error_memory_low
+
+;===============================================================================
 ; wejście:
-;	ecx - rozmiar ciągu w znakach
-;	rsi - wskaźnik do ciągu
+;	rbp - wskaźnik do ciągu znaków, zakończony terminatorem
 kernel_panic:
-	; kolor komunikatu: jasno-czerwony
-	mov	ah,	0x0C
-
-	; ustaw wskaźnik na początek przestrzeni pamięci karty graficznej trybu tekstowego
-	mov	edi,	0x000B8000
-
-.loop:
-	; pobierz znak z ciągu
-	lodsb
-
-	; wyświetl
-	stosw
-
-	; koniec ciągu?
-	dec	ecx
-	jnz	.loop	; nie, wyświetl resztę
+	; wypisz komunikat na porcie COM1
+	call	driver_serial_send
 
 	; zatrzymaj dalsze wykonywanie kodu
 	jmp	$

@@ -126,9 +126,8 @@ kernel_init_acpi:
 	cmp	esi,	0x000FFFFF
 	jb	.rsdp_search	; nie
 
-	; nie znaleziono nagłówka RSDP/XSDP
-	mov	ecx,	kernel_init_string_error_acpi_end - kernel_init_string_error_acpi
-	mov	rsi,	kernel_init_string_error_acpi
+	; komunikat błędu
+	mov	rsi,	kernel_init_string_error_acpi_header
 
 .error:
 	; wyświetl komunikat
@@ -186,9 +185,8 @@ kernel_init_acpi:
 	mov	r8b,	STATIC_FALSE
 
 .standard:
-	; ustaw komunikat błędu: uszkodzona tablica ACPI
-	mov	ecx,	kernel_init_string_error_acpi_corrupted_end - kernel_init_string_error_acpi_corrupted
-	mov	rsi,	kernel_init_string_error_acpi_corrupted
+	; komunikat błędu
+	mov	rsi,	kernel_init_string_error_acpi
 
 	; sprawdź sygnaturę tablicy RSDT
 	cmp	dword [rdi + ACPI_STRUCTURE_RSDT_or_XSDT.signature],	"RSDT"
@@ -254,16 +252,14 @@ kernel_init_acpi:
 	; koniec przetwarzania tablic
 
 .summary:
-	; ustaw komunikat błędu: nie znaleziono tablicy APIC
-	mov	ecx,	kernel_init_string_error_apic_end - kernel_init_string_error_apic
+	; komunikat błędu
 	mov	rsi,	kernel_init_string_error_apic
 
 	; przetworzono choć jedną tablicę APIC?
 	cmp	byte [kernel_apic_count],	STATIC_EMPTY
 	je	.error	; nie, wyświetl komunikat błędu
 
-	; ustaw komunikat błędu: nie znaleziono tablicy I/O APIC
-	mov	ecx,	kernel_init_string_error_ioapic_end - kernel_init_string_error_ioapic
+	; komunikat błędu
 	mov	rsi,	kernel_init_string_error_ioapic
 
 	; przetworzono choć jedną tablicę I/O APIC?

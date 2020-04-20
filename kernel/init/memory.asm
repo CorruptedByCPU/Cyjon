@@ -16,9 +16,8 @@ endstruc
 ; wejście:
 ;	ebx - wskaźnik do nagłówka Multiboot
 kernel_init_memory:
-	; ustaw komunikat błędu
-	mov	ecx,	kernel_init_string_error_memory_end - kernel_init_string_error_memory
-	mov	rsi,	kernel_init_string_error_memory
+	; komunikat błędu
+	mov	rsi,	kernel_init_string_error_memory_header
 
 	; nagłówek udostępnia mapę pamięci BIOSu?
 	bt	dword [ebx + MULTIBOOT_HEADER.flags],	KERNEL_INIT_MEMORY_MULTIBOOT_FLAG_memory_map
@@ -40,8 +39,7 @@ kernel_init_memory:
 	sub	ecx,	KERNEL_INIT_MEMORY_MULTIBOOT_STRUCTURE_MEMORY_MAP.SIZE
 	jnz	.search	; nie
 
-	; ustaw komunikat błędu: uszkodzona tablica mapy pamięci
-	mov	ecx,	kernel_init_string_error_memory_end - kernel_init_string_error_memory
+	; komunikat błędu
 	mov	rsi,	kernel_init_string_error_memory
 	call	kernel_panic
 

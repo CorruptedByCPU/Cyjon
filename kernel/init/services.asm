@@ -16,7 +16,7 @@ kernel_init_services:
 .loop:
 	; zarezerwuj miejsce pod tablicę PML4 usługi
 	call	kernel_memory_alloc_page
-	jc	kernel_init_panic_low_memory
+	jc	kernel_panic_memory
 
 	; usuń wszystkie wpisy z tablicy
 	call	kernel_page_drain

@@ -19,10 +19,7 @@ kernel_init_storage:
 	; maksymalna ilość urządzeń IDE
 	mov	cl,	0x04
 
-	; ustaw wskaźnik na opis urządzenia
-	mov	rsi,	kernel_init_string_storage_ide_hd
-
-	; wyświetl wszystkie dostępne nośniki danych
+	; zarejestruj wszystkie dostępne nośniki danych
 	mov	rdi,	driver_ide_devices
 
 .ide_loop:

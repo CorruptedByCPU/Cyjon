@@ -20,7 +20,7 @@ endstruc
 kernel_init_gdt:
 	; zarezerwuj przestrzeń dla Globalnej Tablicy Deskryptorów
 	call	kernel_memory_alloc_page
-	jc	kernel_init_panic_low_memory
+	jc	kernel_panic_memory
 
 	; wyczyść tablicę GDT i zachowaj jej adres
 	call	kernel_page_drain

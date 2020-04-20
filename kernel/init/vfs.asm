@@ -14,7 +14,7 @@ endstruc
 kernel_init_vfs:
 	; przygotuj miejsce na tablice supłów
 	call	kernel_memory_alloc_page
-	jc	kernel_init_panic_low_memory	; brak wystarczającej ilości pamięci RAM
+	jc	kernel_panic_memory
 
 	; wyczyść przestrzeń i zachowa wskaźnik katalogu głównego
 	call	kernel_page_drain

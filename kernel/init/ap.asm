@@ -82,7 +82,7 @@
 
 	; przygotuj przestrzeń na tablicę PML4 procesora logicznego
 	call	kernel_memory_alloc_page
-	jc	kernel_init_panic_low_memory
+	jc	kernel_panic_memory
 
 	; wyczyść tablicę PML4
 	call	kernel_page_drain

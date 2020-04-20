@@ -9,6 +9,9 @@ kernel_init_video:
 	; zachowaj oryginalny rejestr
 	push	rbx
 
+	; komunikat błędu
+	mov	rsi,	kernel_init_string_error_video_header
+
 	; nagłówek udostępnia mapę pamięci BIOSu?
 	bt	dword [ebx + MULTIBOOT_HEADER.flags],	KERNEL_INIT_MEMORY_MULTIBOOT_FLAG_video
 	jnc	kernel_panic	; błąd krytyczny
