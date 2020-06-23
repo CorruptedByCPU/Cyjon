@@ -1,11 +1,8 @@
 ;===============================================================================
-; Copyright (C) by Blackend.dev
+; Copyright (C) by vLock.dev
 ;===============================================================================
 
-KERNEL_INIT_MEMORY_MULTIBOOT_FLAG_memory_map	equ	6
-
-struc	KERNEL_INIT_MEMORY_MULTIBOOT_STRUCTURE_MEMORY_MAP
-	.size		resb	4
+struc	KERNEL_INIT_MEMORY_STRUCTURE_MEMORY_MAP
 	.address	resb	8
 	.limit		resb	8
 	.type		resb	4
@@ -14,30 +11,18 @@ endstruc
 
 ;===============================================================================
 ; wejście:
-;	ebx - wskaźnik do nagłówka Multiboot
+;	ebx - wskaźnik do tablicy mapy pamieci
 kernel_init_memory:
-	; komunikat błędu
-	mov	rsi,	kernel_init_string_error_memory_header
-
-	; nagłówek udostępnia mapę pamięci BIOSu?
-	bt	dword [ebx + MULTIBOOT_HEADER.flags],	KERNEL_INIT_MEMORY_MULTIBOOT_FLAG_memory_map
-	jnc	kernel_panic	; błąd krytyczny
-
-	; pobierz rozmiar i adres tablicy mapy pamięci z nagłówka Multiboot
-	mov	ecx,	dword [ebx + MULTIBOOT_HEADER.mmap_length]
-	mov	ebx,	dword [ebx + MULTIBOOT_HEADER.mmap_addr]
-
-.search:
 	; odszukaj przestrzeń pamięci rozpoczynającą się od adresu KERNEL_BASE_address
-	cmp	qword [ebx + KERNEL_INIT_MEMORY_MULTIBOOT_STRUCTURE_MEMORY_MAP.address],	KERNEL_BASE_address
+	cmp	qword [ebx + KERNEL_INIT_MEMORY_STRUCTURE_MEMORY_MAP.address],	KERNEL_BASE_address
 	je	.found	; odnaleziono
 
 	; następny wpis z tablicy mapy pamięci
-	add	ebx,	KERNEL_INIT_MEMORY_MULTIBOOT_STRUCTURE_MEMORY_MAP.SIZE
+	add	ebx,	KERNEL_INIT_MEMORY_STRUCTURE_MEMORY_MAP.SIZE
 
-	; koniec wpisów tablicy?
-	sub	ecx,	KERNEL_INIT_MEMORY_MULTIBOOT_STRUCTURE_MEMORY_MAP.SIZE
-	jnz	.search	; nie
+	; koniec wpisów?
+	cmp	qword [ebx],	STATIC_EMPTY
+	jne	kernel_init_memory	; nie
 
 	; komunikat błędu
 	mov	rsi,	kernel_init_string_error_memory
@@ -45,7 +30,7 @@ kernel_init_memory:
 
 .found:
 	; pobierz i zamień rozmiar przestrzeni na ilość stron
-	mov	rcx,	qword [rbx + KERNEL_INIT_MEMORY_MULTIBOOT_STRUCTURE_MEMORY_MAP.limit]
+	mov	rcx,	qword [rbx + KERNEL_INIT_MEMORY_STRUCTURE_MEMORY_MAP.limit]
 	shr	rcx,	STATIC_DIVIDE_BY_PAGE_shift	; resztę z dzielenia porzucamy (niepełna strona jest bezużyteczna)
 
 	; zachowaj informację o ilości dostępnych stron (całkowitej i aktualnej)

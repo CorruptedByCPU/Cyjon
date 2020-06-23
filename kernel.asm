@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by Blackend.dev
+; Copyright (C) by vLock.dev
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
@@ -12,8 +12,8 @@
 	%include	"kernel/macro/apic.asm"
 	;-----------------------------------------------------------------------
 
-; 32 bitowy kod inicjalizacyjny jądra systemu
-[BITS 32]
+; 64 bitowy kod inicjalizacyjny jądra systemu
+[BITS 64]
 
 ; położenie kodu jądra systemu w pamięci fizycznej
 [ORG KERNEL_BASE_address]
@@ -87,5 +87,8 @@ kernel:
 	%include	"library/string_compare.asm"
 	%include	"library/string_cut.asm"
 	;-----------------------------------------------------------------------
+
+; wyrównaj kod jądra systemu do pełnej strony
+align	KERNEL_PAGE_SIZE_byte
 
 kernel_end:

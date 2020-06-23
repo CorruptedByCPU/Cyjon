@@ -1,12 +1,10 @@
 ;===============================================================================
-; Copyright (C) by Blackend.dev
+; Copyright (C) by vLock.dev
 ;===============================================================================
 
 kernel_init_string_name				db	KERNEL_name
 kernel_init_string_name_end:
 
-kernel_init_string_error_video_header		db	"Error: No graphic mode header in multiboot table.", STATIC_ASCII_TERMINATOR
-kernel_init_string_error_memory_header		db	"Error: No memory map header in multiboot table.", STATIC_ASCII_TERMINATOR
 kernel_init_string_error_memory			db	"Error: Memory map damaged.", STATIC_ASCII_TERMINATOR
 kernel_init_string_error_memory_low		db	"Error: Not enough memory.", STATIC_ASCII_TERMINATOR
 kernel_init_string_error_acpi_header		db	"Error: RSDP/XSDP not found.", STATIC_ASCII_TERMINATOR

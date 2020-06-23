@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by Blackend.dev
+; Copyright (C) by vLock.dev
 ;===============================================================================
 
 service_desu_string_error_memory_low	db	"DESU: no enough memory."

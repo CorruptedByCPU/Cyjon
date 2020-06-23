@@ -1,50 +1,21 @@
 ;===============================================================================
-; Copyright (C) by Blackend.dev
+; Copyright (C) by vLock.dev
 ;===============================================================================
-
-	;-----------------------------------------------------------------------
-	; wszystkie procedury inicjalizacyjne zostały zaprojektowane z myślą
-	; o trybie 64 bitowym procesora, do tej pory Cyjon nie był kompatybilny
-	; z programem rozruchowym GRUB, zatem aby tą kompatybilność uzyskać
-	; najniższym kosztem, przełączam od razu procesor w tryb 64 bitowy
-	;
-	; program rozruchowy "Zero" zwraca już taki sam nagłówek Multiboot
-	; oraz przekazuje procesor w trybie 32 bitowym do jądra systemu
-	;
-	; kod który przełącza procesor w tryb 64 bitowy, został zapożyczony
-	; z programu rozruchowego "Zero" (bez modyfikacji)
-	;-----------------------------------------------------------------------
 
 	; procesor logiczny?
 	cmp	byte [kernel_init_smp_semaphore],	STATIC_FALSE
-	je	.entry	; nie
+	je	kernel_init	; nie
 
-	;-----------------------------------------------------------------------
-	; AP - inicjalizacja procesora logicznego
-	;-----------------------------------------------------------------------
-	%include	"kernel/init/ap.asm"
-
-.entry:
-	;-----------------------------------------------------------------------
-	; przełącz procesor w tryb 64 bitowy
-	;-----------------------------------------------------------------------
-	%include	"kernel/init/long_mode.asm"
+	; ;-----------------------------------------------------------------------
+	; ; AP - inicjalizacja procesora logicznego
+	; ;-----------------------------------------------------------------------
+	; %include	"kernel/init/ap.asm"
 
 	;-----------------------------------------------------------------------
 	; zmienne - wykorzystywane podczas inicjalizacji środowiska jądra systemu
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/data.asm"
 	;-----------------------------------------------------------------------
-
-	;-----------------------------------------------------------------------
-	; multiboot - nagłówek dla programu rozruchowego GRUB
-	;-----------------------------------------------------------------------
-	%include	"kernel/init/multiboot.asm"
-
-;===============================================================================
-; 64 bitowy kod jądra systemu ==================================================
-;===============================================================================
-[BITS 64]
 
 	;-----------------------------------------------------------------------
 	; procdura inicjalizująca kontroler APIC
@@ -140,19 +111,19 @@ kernel_init:
 
 	; za chwilę wywołana zostanie procedura kolejki zadań!
 
-	;-----------------------------------------------------------------------
-	; SMP - uruchom pozostałe procesory logiczne
-	;-----------------------------------------------------------------------
-	%include	"kernel/init/smp.asm"
-
-.wait:
-	; pobierz ilość działających procesorów logicznych
-	mov	al,	byte [kernel_init_ap_count]
-	inc	al	; procesor BSP nie jest liczony jako logiczny
-
-	; wszystkie procesory logiczne zostały zainicjowane?
-	cmp	al,	byte [kernel_apic_count]
-	jne	.wait	; nie, czekaj
+; 	;-----------------------------------------------------------------------
+; 	; SMP - uruchom pozostałe procesory logiczne
+; 	;-----------------------------------------------------------------------
+; 	%include	"kernel/init/smp.asm"
+;
+; .wait:
+; 	; pobierz ilość działających procesorów logicznych
+; 	mov	al,	byte [kernel_init_ap_count]
+; 	inc	al	; procesor BSP nie jest liczony jako logiczny
+;
+; 	; wszystkie procesory logiczne zostały zainicjowane?
+; 	cmp	al,	byte [kernel_apic_count]
+; 	jne	.wait	; nie, czekaj
 
 	;-----------------------------------------------------------------------
 	; INICJALIZACJA ZAKOŃCZONA

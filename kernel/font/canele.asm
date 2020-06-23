@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by Blackend.dev
+; Copyright (C) by vLock.dev
 ;===============================================================================
 ; Font: Canele (https://addy-dclxvi.github.io/post/bitmap-fonts/)
 ; Migrated via:

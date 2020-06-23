@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by Blackend.dev
+; Copyright (C) by vLock.dev
 ;===============================================================================
 
 DRIVER_IDE_CHANNEL_PRIMARY				equ	0x01F0
@@ -176,7 +176,7 @@ driver_ide_init_drive:
 	mov	eax,	dword [rdi + DRIVER_IDE_IDENTIFY_max_lba_extended]
 	mov	qword [rcx + DRIVER_IDE_STRUCTURE_DEVICE.size_sectors],	rax
 
-	; zarejestrtowano nośnik danych
+	; zarejestrowano nośnik danych
 	inc	byte [driver_ide_devices_count]
 
 .end:

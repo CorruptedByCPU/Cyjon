@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by Blackend.dev
+; Copyright (C) by vLock.dev
 ;===============================================================================
 
 ; kopiowanie przestrzeni z RSI do RDI w fragmentach po 256 Bajtów
