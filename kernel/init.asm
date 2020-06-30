@@ -9,7 +9,7 @@
 	; ;-----------------------------------------------------------------------
 	; ; AP - inicjalizacja procesora logicznego
 	; ;-----------------------------------------------------------------------
-	; %include	"kernel/init/ap.asm"
+	%include	"kernel/init/ap.asm"
 
 	;-----------------------------------------------------------------------
 	; zmienne - wykorzystywane podczas inicjalizacji środowiska jądra systemu
@@ -110,8 +110,6 @@ kernel_init:
 	mov	dword [rsi + KERNEL_APIC_EOI_register],	STATIC_EMPTY
 
 	; za chwilę wywołana zostanie procedura kolejki zadań!
-
-	xchg	bx,bx
 
 	;-----------------------------------------------------------------------
 	; SMP - uruchom pozostałe procesory logiczne
