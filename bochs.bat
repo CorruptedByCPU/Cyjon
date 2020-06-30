@@ -1,1 +1,1 @@
-..\bochs\bochsdbg.exe -f bochsrc.bxrc -q
+..\bochs\bochsdbg.exe -f bochsrc-windows.bxrc -q

@@ -4,7 +4,8 @@ set HEIGHT=480
 
 ..\nasm -f bin software/console.asm	-o build/console
 
-..\nasm -f bin kernel.asm			-o build/kernel
+..\nasm -f bin kernel/init/boot.asm	-o build/boot
+..\nasm -f bin kernel.asm		-o build/kernel
 FOR /F "usebackq" %%A IN ('build/kernel') DO set KERNEL_SIZE=%%~zA
 
 ..\nasm -f bin zero.asm			-o build/zero		-dKERNEL_FILE_SIZE_bytes=%KERNEL_SIZE% -dSELECTED_VIDEO_WIDTH_pixel=%WIDTH% -dSELECTED_VIDEO_HEIGHT_pixel=%HEIGHT%

@@ -7,50 +7,22 @@
 	; w tym momencie stos jest niedostępny!
 
 	;-----------------------------------------------------------------------
-	; przełącz procesor w tryb 64 bitowy
+	; GDT
 	;-----------------------------------------------------------------------
 
 	; załaduj Globalną Tablicę Deskryptorów
 	lgdt	[kernel_gdt_header]
 
-	; włącz bity NX/PAE, PGE oraz OSFXSR w rejestrze CR4
-	mov	eax,	1010100000b	; NX (bit 5) - blokada wykonania kodu w stronie lub obsługa pamięci fizycznej do 64 GiB
-	mov	cr4,	eax		; PGE (bit 7) - obsługa stronicowania
-					; OSFXSR (bit 9) - obsługa rejestrów XMM0-15
+	;-----------------------------------------------------------------------
+	; TSS
+	;-----------------------------------------------------------------------
 
-	; ustaw tymczasowo wskaźnik na tablice stronicowania procesora BSP
-	mov	eax,	dword [kernel_page_pml4_address]
-	mov	cr3,	eax
-
-	; włącz w rejestrze EFER MSR tryb LME (bit 9)
-	mov	ecx,	0xC0000080	; adres EFER MSR
-	rdmsr
-	or	eax,	100000000b
-	wrmsr
-
-	; włącz bity PE i PG w rejestrze cr0
-	mov	eax,	cr0
-	or	eax,	0x80000001	; PE (bit 0) - wyłącz tryb rzeczywisty,
-	mov	cr0,	eax		; PG (bit 31) - współdzielenie tablic stronicowania
-
-	; skocz do 64 bitowego kodu inicjalizującego
-	jmp	0x0008:.long_mode
-
-;===============================================================================
-; 64 bitowy kod inicjalizujący =================================================
-;===============================================================================
-[BITS 64]
-
-.long_mode:
 	; pobierz identyfikator procesora logicznego
 	mov	rax,	qword [kernel_apic_base_address]
 	mov	dword [rax + KERNEL_APIC_TP_register],	STATIC_EMPTY
 	mov	eax,	dword [rax + KERNEL_APIC_ID_register]
 	shr	eax,	24	; przesuń bity z 24..31 do 0..7
 
-	;-----------------------------------------------------------------------
-	; TSS
-	;-----------------------------------------------------------------------
 	; załaduj deskryptor Task State Segment dla danego procesora logicznego
 	shl	eax,	STATIC_MULTIPLE_BY_16_shift	; oblicz prdesunięcie w tablicy GDT dla selektora TSS
 	add	ax,	word [kernel_gdt_tss_bsp_selector]	; koryguj prdesunięcie względem deskryptora procesora BSP
@@ -76,6 +48,10 @@
 	;-----------------------------------------------------------------------
 	; Page
 	;-----------------------------------------------------------------------
+
+	; ustaw tymczasowo wskaźnik na tablice stronicowania procesora BSP
+	mov	rax,	qword [kernel_page_pml4_address]
+	mov	cr3,	rax
 
 	; ustaw tymczasowy wskaźnik szczytu stosu dla procesora logicznego
 	mov	rsp,	KERNEL_STACK_TEMPORARY_pointer

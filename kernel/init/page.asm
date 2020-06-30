@@ -59,13 +59,6 @@ kernel_init_page:
 	call	kernel_page_map_physical
 	jc	kernel_panic_memory
 
-	; mapuj przestrzeń pamięci kodu inicjalizującego procesory logiczne
-	mov	eax,	0x8000	; 0x0000:0x8000
-	mov	ecx,	kernel_init_boot_file_end - kernel_init_boot_file
-	call	library_page_from_size
-	call	kernel_page_map_physical
-	jc	kernel_panic_memory
-
 	; przeładuj stronicowanie na własne/nowo utworzone
 	mov	rax,	rdi
 	mov	cr3,	rax

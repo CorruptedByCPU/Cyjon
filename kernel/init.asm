@@ -9,7 +9,7 @@
 	; ;-----------------------------------------------------------------------
 	; ; AP - inicjalizacja procesora logicznego
 	; ;-----------------------------------------------------------------------
-	; %include	"kernel/init/ap.asm"
+	%include	"kernel/init/ap.asm"
 
 	;-----------------------------------------------------------------------
 	; zmienne - wykorzystywane podczas inicjalizacji środowiska jądra systemu
@@ -111,19 +111,19 @@ kernel_init:
 
 	; za chwilę wywołana zostanie procedura kolejki zadań!
 
-; 	;-----------------------------------------------------------------------
-; 	; SMP - uruchom pozostałe procesory logiczne
-; 	;-----------------------------------------------------------------------
-; 	%include	"kernel/init/smp.asm"
-;
-; .wait:
-; 	; pobierz ilość działających procesorów logicznych
-; 	mov	al,	byte [kernel_init_ap_count]
-; 	inc	al	; procesor BSP nie jest liczony jako logiczny
-;
-; 	; wszystkie procesory logiczne zostały zainicjowane?
-; 	cmp	al,	byte [kernel_apic_count]
-; 	jne	.wait	; nie, czekaj
+	;-----------------------------------------------------------------------
+	; SMP - uruchom pozostałe procesory logiczne
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/smp.asm"
+
+.wait:
+	; pobierz ilość działających procesorów logicznych
+	mov	al,	byte [kernel_init_ap_count]
+	inc	al	; procesor BSP nie jest liczony jako logiczny
+
+	; wszystkie procesory logiczne zostały zainicjowane?
+	cmp	al,	byte [kernel_apic_count]
+	jne	.wait	; nie, czekaj
 
 	;-----------------------------------------------------------------------
 	; INICJALIZACJA ZAKOŃCZONA
