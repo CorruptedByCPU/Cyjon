@@ -59,7 +59,7 @@ zero_long_mode:
 	mov	cr4,	eax		; PGE (bit 7) - obsługa stronicowania
 					; OSFXSR (bit 9) - obsługa rejestrów XMM0-15
 
-	; załaduj do CR3 adres fizyczny tablicy PML4 jądra systemu
+	; załaduj do CR3 adres fizyczny tablicy PML4 programu rozruchowego
 	mov	eax,	ZERO_LONG_MODE_PML4_address
 	mov	cr3,	eax
 

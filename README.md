@@ -4,6 +4,12 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 
 ![screenshot](https://raw.githubusercontent.com/blackend/cyjon/master/gui.png)
 
+### Software:
+
+  - Qemu 5.0.0 or Bochs 2.6.11 (no SMP support on MS/Windows)
+  - Nasm 2.15.1
+  - Atom (with package https://atom.io/packages/language-assembly) or your own IDE ;)
+
 ### Requirements:
 
   - 8 MiB of RAM
