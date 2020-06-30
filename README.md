@@ -6,7 +6,7 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 
 ### Requirements:
 
-  - 8 MiB of RAM (1 MiB after 0x00100000)
+  - 8 MiB of RAM
   - keyboard and mouse at PS2 port
 
 ### Optional:
@@ -35,3 +35,7 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 
 	# 8 MiB RAM, 2 logical CPUs, no network, hard disk connected to IDE controller
 	qemu-system-x86_64 -hda file=build/disk.raw -m 8 -smp 2 -rtc base=localtime
+
+### My production environment.
+
+![screenshot](https://raw.githubusercontent.com/blackend/cyjon/master/environment.png)

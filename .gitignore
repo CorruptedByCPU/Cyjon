@@ -1,10 +1,8 @@
 *.dll
 *.ini
-*.bxrc
 *.cfg
 *.exe
 *.lock
-*.bat
 *.pdf
 *.txt
 *.log
