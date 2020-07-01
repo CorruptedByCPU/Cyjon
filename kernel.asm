@@ -65,6 +65,7 @@ kernel:
 	%include	"kernel/vfs.asm"
 	%include	"kernel/exec.asm"
 	%include	"kernel/service.asm"
+	%include	"kernel/stream.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/ps2.asm"
