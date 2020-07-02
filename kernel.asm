@@ -24,16 +24,6 @@ init:
 	;-----------------------------------------------------------------------
 	%include	"kernel/init.asm"
 
-; wyrównaj pozycję kodu do pełnej strony
-align	KERNEL_PAGE_SIZE_byte,	db	STATIC_NOTHING
-
-clean:
-	; zwolnij przestrzeń zajętą przez procedury inicjalizacyjne
-	mov	ecx,	clean - $$
-	mov	rdi,	KERNEL_BASE_address
-	call	library_page_from_size	; zamień rozmiar przestrzeni na strony
-	call	kernel_memory_release
-
 kernel:
 	; pobierz wskaźnik do aktualnego zadania (jądro) w kolejce
 	call	kernel_task_active

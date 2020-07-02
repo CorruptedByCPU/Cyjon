@@ -132,5 +132,12 @@ kernel_init:
 	; poinformuj o zakończeniu inicjalizacji
 	mov	byte [kernel_init_semaphore],	STATIC_FALSE
 
-	; usuń środowisko inicjalizacyjne
-	jmp	clean
+; wyrównaj pozycję kodu do pełnej strony
+align	KERNEL_PAGE_SIZE_byte,	db	STATIC_NOTHING
+
+.clean:
+	; zwolnij przestrzeń zajętą przez procedury inicjalizacyjne
+	mov	ecx,	.clean - $$
+	mov	rdi,	KERNEL_BASE_address
+	call	library_page_from_size	; zamień rozmiar przestrzeni na strony
+	call	kernel_memory_release

@@ -282,15 +282,17 @@ kernel_task_add:
 	mov	rax,	KERNEL_STACK_pointer - (STATIC_QWORD_SIZE_byte * 0x14)
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.rsp],	rax
 
-	; pobierz katalog roboczy rodzica
+	; pobierz katalog roboczy i PID rodzica
 	call	kernel_task_active
 	mov	rax,	qword [rdi + KERNEL_TASK_STRUCTURE.knot]
+	mov	rcx,	qword [rdi + KERNEL_TASK_STRUCTURE.pid]
 
 	; przywróć wskaźnik pozycji zadania w kolejce
 	pop	rdi
 
-	; ustaw katalog roboczy procesu na podstawie rodzica
+	; ustaw katalog roboczy procesu na podstawie rodzica i jego PID
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.knot],	rax
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.parent],	rcx
 
 	; pobierz unikalny numer PID
 	call	kernel_task_pid_get
