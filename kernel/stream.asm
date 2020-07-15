@@ -9,6 +9,8 @@ struc	KERNEL_STREAM_STRUCTURE_ENTRY
 	.SIZE:
 endstruc
 
+kernel_stream_address	dq	STATIC_EMPTY
+
 ;===============================================================================
 ; wyjście:
 ;	rbx - identyfikator potoku

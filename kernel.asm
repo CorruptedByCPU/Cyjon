@@ -80,6 +80,6 @@ kernel:
 	;-----------------------------------------------------------------------
 
 ; wyrównaj kod jądra systemu do pełnej strony
-align	KERNEL_PAGE_SIZE_byte
+align	STATIC_PAGE_SIZE_byte
 
 kernel_end:

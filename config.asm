@@ -10,10 +10,10 @@
 ;===============================================================================
 ; PAGE
 ;===============================================================================
-KERNEL_PAGE_mask					equ	0xF000
+STATIC_PAGE_mask					equ	0xF000
 
-KERNEL_PAGE_SIZE_byte					equ	0x1000
-KERNEL_PAGE_SIZE_shift					equ	12
+STATIC_PAGE_SIZE_byte					equ	0x1000
+STATIC_PAGE_SIZE_shift					equ	12
 
 ;===============================================================================
 ; SOFTWARE
@@ -42,7 +42,7 @@ STATIC_MULTIPLE_BY_16_shift				equ	4
 STATIC_MULTIPLE_BY_32_shift				equ	5
 STATIC_MULTIPLE_BY_64_shift				equ	6
 STATIC_MULTIPLE_BY_512_shift				equ	9
-STATIC_MULTIPLE_BY_PAGE_shift				equ	KERNEL_PAGE_SIZE_shift
+STATIC_MULTIPLE_BY_PAGE_shift				equ	STATIC_PAGE_SIZE_shift
 
 STATIC_DIVIDE_BY_2_shift				equ	1
 STATIC_DIVIDE_BY_4_shift				equ	2
@@ -53,7 +53,7 @@ STATIC_DIVIDE_BY_16_shift				equ	4
 STATIC_DIVIDE_BY_32_shift				equ	5
 STATIC_DIVIDE_BY_256_shift				equ	8
 STATIC_DIVIDE_BY_1024_shift				equ	10
-STATIC_DIVIDE_BY_PAGE_shift				equ	KERNEL_PAGE_SIZE_shift
+STATIC_DIVIDE_BY_PAGE_shift				equ	STATIC_PAGE_SIZE_shift
 
 STATIC_MOVE_AL_HALF_TO_HIGH_shift			equ	4	; 00001111b => 11110000b
 STATIC_MOVE_AL_TO_HIGH_shift				equ	8
@@ -153,7 +153,7 @@ STATIC_COLOR_yellow					equ	0x00FFFF55
 STATIC_COLOR_white					equ	0x00FFFFFF
 
 struc	STATIC_STRUCTURE_BLOCK
-	.data						resb	KERNEL_PAGE_SIZE_byte - STATIC_QWORD_SIZE_byte
+	.data						resb	STATIC_PAGE_SIZE_byte - STATIC_QWORD_SIZE_byte
 	.link						resb	8
 	.SIZE:
 endstruc

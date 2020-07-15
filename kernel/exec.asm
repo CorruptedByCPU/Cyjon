@@ -53,16 +53,16 @@ kernel_exec:
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod przestrzeń kodu procesu
 	mov	rax,	KERNEL_MEMORY_HIGH_VIRTUAL_address
-	mov	bx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user
+	mov	bx,	kernel_page_FLAG_available | kernel_page_FLAG_write | kernel_page_FLAG_user
 	mov	rcx,	r12
 	call	kernel_page_map_logical
 	jc	.error
 
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod binarną mapę pamięci procesu
-	shl	r12,	KERNEL_PAGE_SIZE_shift
+	shl	r12,	STATIC_PAGE_SIZE_shift
 	add	rax,	r12	; za przestrzenią kodu procesu
-	and	bx,	~KERNEL_PAGE_FLAG_user	; dostęp tylko od strony jądra systemu
+	and	bx,	~kernel_page_FLAG_user	; dostęp tylko od strony jądra systemu
 	mov	rcx,	KERNEL_MEMORY_MAP_SIZE_page
 	call	kernel_page_map_logical
 
@@ -71,33 +71,33 @@ kernel_exec:
 
 	; pobierz adres fizyczny strony przeznaczonej na binarną mapę pamięci procesu
 	mov	rdi,	qword [r8]
-	and	di,	KERNEL_PAGE_mask	; usuń flagi z adresu strony
+	and	di,	STATIC_PAGE_mask	; usuń flagi z adresu strony
 	push	rdi	; zachowaj
 
 	; wyczyść binarną mapę pamięci procesu
 	mov	rax,	STATIC_MAX_unsigned
-	mov	ecx,	(KERNEL_MEMORY_MAP_SIZE_page << KERNEL_PAGE_SIZE_shift) >> STATIC_DIVIDE_BY_QWORD_shift
+	mov	ecx,	(KERNEL_MEMORY_MAP_SIZE_page << STATIC_PAGE_SIZE_shift) >> STATIC_DIVIDE_BY_QWORD_shift
 	rep	stosq
 
 	; oznacz w binarnej mapie pamięci procesu przestrzeń zajętą przez kod i binarną mapę
 	pop	rsi
 	mov	rcx,	r12
-	shr	rcx,	KERNEL_PAGE_SIZE_shift
+	shr	rcx,	STATIC_PAGE_SIZE_shift
 	add	rcx,	KERNEL_MEMORY_MAP_SIZE_page
 	call	kernel_memory_secure
 
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod stos procesu
-	mov	rax,	(KERNEL_MEMORY_HIGH_VIRTUAL_address << STATIC_MULTIPLE_BY_2_shift) - KERNEL_PAGE_SIZE_byte
-	or	bx,	KERNEL_PAGE_FLAG_user
-	mov	rcx,	KERNEL_PAGE_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
+	mov	rax,	(KERNEL_MEMORY_HIGH_VIRTUAL_address << STATIC_MULTIPLE_BY_2_shift) - STATIC_PAGE_SIZE_byte
+	or	bx,	kernel_page_FLAG_user
+	mov	rcx,	STATIC_PAGE_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	call	kernel_page_map_logical
 	jc	.error
 
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod stos kontekstu (należy do jądra systemu)
 	mov	rax,	KERNEL_STACK_address
-	mov	rbx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
+	mov	rbx,	kernel_page_FLAG_available | kernel_page_FLAG_write
 	mov	rcx,	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	call	kernel_page_map_logical
 	jc	.error
@@ -109,8 +109,8 @@ kernel_exec:
 
 	; odstaw na początek stosu kontekstu zadania, spreparowane dane powrotu z przerwania sprzętowego "kernel_task"
 	mov	rdi,	qword [r8]
-	and	di,	KERNEL_PAGE_mask	; usuń flagi rekordu tablicy PML1
-	add	rdi,	KERNEL_PAGE_SIZE_byte - ( STATIC_QWORD_SIZE_byte * 0x05 )	; odłóż 5 rejestrów
+	and	di,	STATIC_PAGE_mask	; usuń flagi rekordu tablicy PML1
+	add	rdi,	STATIC_PAGE_SIZE_byte - ( STATIC_QWORD_SIZE_byte * 0x05 )	; odłóż 5 rejestrów
 
 	; RIP
 	mov	rax,	KERNEL_MEMORY_HIGH_REAL_address
@@ -158,7 +158,7 @@ kernel_exec:
 	; uzupełnij wpis o adres binarnej mapy pamięci procesu i jej rozmiar
 	add	r13,	qword [kernel_memory_high_mask]
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.map],	r13
-	mov	qword [rdi + KERNEL_TASK_STRUCTURE.map_size],	(KERNEL_MEMORY_MAP_SIZE_page << KERNEL_PAGE_SIZE_shift) << STATIC_MULTIPLE_BY_8_shift
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.map_size],	(KERNEL_MEMORY_MAP_SIZE_page << STATIC_PAGE_SIZE_shift) << STATIC_MULTIPLE_BY_8_shift
 
 	; oznacz proces jako gotowy do przetwarzania
 	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active

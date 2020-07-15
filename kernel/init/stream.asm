@@ -9,3 +9,6 @@ kernel_init_stream:
 
 	; zachowaj adres tablicy potoków
 	mov	qword [kernel_stream_address],	rdi
+
+	; koniec tablicy zapętl
+	mov	qword [rdi + STATIC_STRUCTURE_BLOCK.link],	rdi

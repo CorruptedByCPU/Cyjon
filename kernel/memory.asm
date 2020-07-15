@@ -222,7 +222,7 @@ kernel_memory_release_page:
 	; przelicz adres strony na numer bitu
 	mov	rax,	rdi
 	sub	rax,	KERNEL_BASE_address
-	shr	rax,	KERNEL_PAGE_SIZE_shift
+	shr	rax,	STATIC_PAGE_SIZE_shift
 
 	; oblicz prdesunięcie względem początku binarnej mapy pamięci
 	mov	rcx,	64
@@ -265,7 +265,7 @@ kernel_memory_release:
 	call	kernel_memory_release_page
 
 	; przesuń wskaźnik na następną stronę
-	add	rdi,	KERNEL_PAGE_SIZE_byte
+	add	rdi,	STATIC_PAGE_SIZE_byte
 
 	; pozostały strony do zwolnienia?
 	dec	rcx
@@ -304,7 +304,7 @@ kernel_memory_release_foreign:
 
 	;-----------------------------------------------------------------------
 	; oblicz numer wpisu w tablicy PML4 na podstawie otrzymanego adresu fizycznego/logicznego
-	mov	rcx,	KERNEL_PAGE_PML3_SIZE_byte
+	mov	rcx,	kernel_page_PML3_SIZE_byte
 	xor	rdx,	rdx	; wyczyść starszą część
 	div	rcx
 
@@ -325,7 +325,7 @@ kernel_memory_release_foreign:
 	;-----------------------------------------------------------------------
 	; oblicz numer wpisu w tablicy PML3 na podstawie pozostałego adresu fizycznego/logicznego
 	mov	rax,	rdx	; przywróć resztę z dzielenia
-	mov	rcx,	KERNEL_PAGE_PML2_SIZE_byte
+	mov	rcx,	kernel_page_PML2_SIZE_byte
 	xor	rdx,	rdx	; wyczyść starszą część
 	div	rcx
 
@@ -346,7 +346,7 @@ kernel_memory_release_foreign:
 	;-----------------------------------------------------------------------
 	; oblicz numer wpisu w tablicy PML2 na podstawie pozostałego adresu fizycznego/logicznego
 	mov	rax,	rdx	; przywróć resztę z dzielenia
-	mov	rcx,	KERNEL_PAGE_PML1_SIZE_byte
+	mov	rcx,	kernel_page_PML1_SIZE_byte
 	xor	rdx,	rdx	; wyczyść starszą część
 	div	rcx
 
@@ -367,7 +367,7 @@ kernel_memory_release_foreign:
 	;-----------------------------------------------------------------------
 	; oblicz numer wpisu w tablicy PML1 na podstawie pozostałego adresu fizycznego/logicznego
 	mov	rax,	rdx	; przywróć resztę z dzielenia
-	mov	rcx,	KERNEL_PAGE_SIZE_byte
+	mov	rcx,	STATIC_PAGE_SIZE_byte
 	xor	rdx,	rdx	; wyczyść starszą część
 	div	rcx
 
@@ -392,7 +392,7 @@ kernel_memory_release_foreign:
 
 	; zwolnij przestrzeń
 	mov	rdi,	qword [r8]
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 	call	kernel_memory_release_page
 
 	; zwolnij wpis w tablicy PML1
@@ -407,13 +407,13 @@ kernel_memory_release_foreign:
 	inc	r12
 
 	; koniec tablicy PML1
-	cmp	r12,	KERNEL_PAGE_RECORDS_amount
+	cmp	r12,	kernel_page_RECORDS_amount
 	jne	.pml1	; nie
 
 .pml2_entry:
 	; aktualna tablica PML1 jest pusta?
 	mov	rdi,	qword [r9]
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 	call	kernel_page_empty
 	jnz	.pml2	; nie
 
@@ -432,7 +432,7 @@ kernel_memory_release_foreign:
 	inc	r13
 
 	; koniec tablicy PML2?
-	cmp	r13,	KERNEL_PAGE_RECORDS_amount
+	cmp	r13,	kernel_page_RECORDS_amount
 	je	.pml3_entry	; tak
 
 .pml2_record:
@@ -455,7 +455,7 @@ kernel_memory_release_foreign:
 .pml3_entry:
 	; aktualna tablica PML2 jest pusta?
 	mov	rdi,	qword [r10]
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 	call	kernel_page_empty
 	jnz	.pml3	; nie
 
@@ -474,7 +474,7 @@ kernel_memory_release_foreign:
 	inc	r14
 
 	; koniec tablicy PML3?
-	cmp	r14,	KERNEL_PAGE_RECORDS_amount
+	cmp	r14,	kernel_page_RECORDS_amount
 	je	.pml4_entry	; tak
 
 .pml3_record:
@@ -497,7 +497,7 @@ kernel_memory_release_foreign:
 .pml4_entry:
 	; aktualna tablica PML3 jest pusta?
 	mov	rdi,	qword [r11]
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 	call	kernel_page_empty
 	jnz	.pml4	; nie
 
@@ -516,7 +516,7 @@ kernel_memory_release_foreign:
 	inc	r15
 
 	; koniec tablicy PML4?
-	cmp	r15,	KERNEL_PAGE_RECORDS_amount
+	cmp	r15,	kernel_page_RECORDS_amount
 	je	.pml5	; tak... że jak?
 
 	; pobierz adres tablicy PML3
@@ -625,12 +625,12 @@ kernel_memory_mark:
 
 .pml1:
 	; koniec rekordów w tablicy PML1?
-	cmp	r12,	KERNEL_PAGE_RECORDS_amount
+	cmp	r12,	kernel_page_RECORDS_amount
 	jb	.entry	; nie
 
 .pml2:
 	; koniec rekordów w tablicy PML2?
-	cmp	r13,	KERNEL_PAGE_RECORDS_amount
+	cmp	r13,	kernel_page_RECORDS_amount
 	jnb	.pml3	; tak
 
 	; pobierz następny rekord w tablicy PML2
@@ -638,7 +638,7 @@ kernel_memory_mark:
 	mov	r8,	qword [r9]
 
 	; usuń flagi z adresu tablicy PML3
-	and	r8w,	KERNEL_PAGE_mask
+	and	r8w,	STATIC_PAGE_mask
 
 	; ilość wpisów w tablicy PML1
 	xor	r12,	r12
@@ -648,7 +648,7 @@ kernel_memory_mark:
 
 .pml3:
 	; koniec rekordów w tablicy PML3?
-	cmp	r14,	KERNEL_PAGE_RECORDS_amount
+	cmp	r14,	kernel_page_RECORDS_amount
 	jnb	.pml4	; tak
 
 	; pobierz następny rekord w tablicy PML3
@@ -656,7 +656,7 @@ kernel_memory_mark:
 	mov	r9,	qword [r10]
 
 	; usuń flagi z adresu tablicy PML3
-	and	r9w,	KERNEL_PAGE_mask
+	and	r9w,	STATIC_PAGE_mask
 
 	; ilość wpisów w tablicy PML2
 	xor	r13,	r13
@@ -666,7 +666,7 @@ kernel_memory_mark:
 
 .pml4:
 	; koniec rekordów w tablicy PML4?
-	cmp	r15,	KERNEL_PAGE_RECORDS_amount
+	cmp	r15,	kernel_page_RECORDS_amount
 	jnb	.error	; tak
 
 	; pobierz następny rekord w tablicy PML4
@@ -674,7 +674,7 @@ kernel_memory_mark:
 	mov	r10,	qword [r10]
 
 	; usuń flagi z adresu tablicy PML3
-	and	r10w,	KERNEL_PAGE_mask
+	and	r10w,	STATIC_PAGE_mask
 
 	; ilość wpisów w tablicy PML3
 	xor	r14,	r14
@@ -684,7 +684,7 @@ kernel_memory_mark:
 
 .entry:
 	; udostępnij stronę dla procesu
-	or	word [r8],	KERNEL_PAGE_FLAG_user
+	or	word [r8],	kernel_page_FLAG_user
 
 	; przesuń adres do następnego mapowanej przestrzeni
 	add	r8,	STATIC_QWORD_SIZE_byte

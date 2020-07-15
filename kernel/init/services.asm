@@ -23,15 +23,15 @@ kernel_init_services:
 
 	; mapuj przestrzeń pod stos usługi
 	mov	rax,	KERNEL_STACK_address
-	mov	rbx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
+	mov	rbx,	kernel_page_FLAG_available | kernel_page_FLAG_write
 	mov	rcx,	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	mov	r11,	rdi
 	call	kernel_page_map_logical
 
 	; odstaw na szczyt stosu usługi, spreparowane dane powrotu z przerwania sprzętowego
 	mov	rdi,	qword [r8]	; pobierz z wiersza tablicy PML1 adres początku przestrzeni stosu
-	and	di,	KERNEL_PAGE_mask	; usuń flagi przestrzeni
-	add	rdi,	KERNEL_PAGE_SIZE_byte - ( STATIC_QWORD_SIZE_byte * 0x05 )	; odłóż 5 rejestrów
+	and	di,	STATIC_PAGE_mask	; usuń flagi przestrzeni
+	add	rdi,	STATIC_PAGE_SIZE_byte - ( STATIC_QWORD_SIZE_byte * 0x05 )	; odłóż 5 rejestrów
 
 	; RIP
 	mov	rax,	qword [rsi + KERNEL_INIT_STRUCTURE_SERVICE.pointer]	; wskaźnik wejścia do usługi

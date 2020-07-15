@@ -138,7 +138,7 @@ kernel_init:
 	mov	byte [kernel_init_semaphore],	STATIC_FALSE
 
 ; wyrównaj pozycję kodu do pełnej strony
-align	KERNEL_PAGE_SIZE_byte,	db	STATIC_NOTHING
+align	STATIC_PAGE_SIZE_byte,	db	STATIC_NOTHING
 
 .clean:
 	; zwolnij przestrzeń zajętą przez procedury inicjalizacyjne

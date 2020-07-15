@@ -404,7 +404,7 @@ driver_nic_i82540em:
 
 	; mapuj przestrzeń kontrolera do tablic stronicowania jądra systemu
 	mov	rax,	qword [driver_nic_i82540em_mmio_base_address]
-	mov	rbx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
+	mov	rbx,	kernel_page_FLAG_available | kernel_page_FLAG_write
 	mov	rcx,	32	; dokumentacja, strona: 88/410, tabelka: 4-2 // The memory register space is 128K bytes. //
 	mov	r11,	cr3
 	call	kernel_page_map_physical

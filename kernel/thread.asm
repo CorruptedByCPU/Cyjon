@@ -25,15 +25,15 @@ kernel_thread:
 
 	; utwórz nowy stos kontekstu dla wątku
 	mov	rax,	KERNEL_STACK_address
-	mov	ebx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
+	mov	ebx,	kernel_page_FLAG_available | kernel_page_FLAG_write
 	mov	ecx,	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	mov	r11,	rdi
 	call	kernel_page_map_logical
 
 	; odstaw na początek stosu kontekstu zadania, spreparowane dane powrotu z przerwania sprzętowego "kernel_task"
 	mov	rdi,	qword [r8]
-	and	di,	KERNEL_PAGE_mask	; usuń flagi rekordu tablicy PML1
-	add	rdi,	KERNEL_PAGE_SIZE_byte - ( STATIC_QWORD_SIZE_byte * 0x05 )	; odłóż 5 rejestrów
+	and	di,	STATIC_PAGE_mask	; usuń flagi rekordu tablicy PML1
+	add	rdi,	STATIC_PAGE_SIZE_byte - ( STATIC_QWORD_SIZE_byte * 0x05 )	; odłóż 5 rejestrów
 
 	; RIP
 	mov	rax,	qword [rsp + STATIC_QWORD_SIZE_byte * 0x02]

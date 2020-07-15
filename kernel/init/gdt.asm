@@ -47,7 +47,7 @@ kernel_init_gdt:
 	stosq	; zapisz
 
 	; zachowaj adres pośredni pierwszego deskryptora TSS
-	and	di,	~KERNEL_PAGE_mask
+	and	di,	~STATIC_PAGE_mask
 	mov	word [kernel_gdt_tss_bsp_selector],	di
 
 	; utwórz N deskryptorów TSS dla procesorów logicznych

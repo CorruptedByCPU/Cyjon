@@ -17,11 +17,11 @@ service_tresher:
 	movzx	ecx,	word [rsi + KERNEL_TASK_STRUCTURE.stack]
 
 	; koryguj pozycję wskaźnika
-	shl	rcx,	KERNEL_PAGE_SIZE_shift
+	shl	rcx,	STATIC_PAGE_SIZE_shift
 	sub	rax,	rcx
 
 	; zwolnij przestrzeń stosu kontekstu wątku
-	shr	rcx,	KERNEL_PAGE_SIZE_shift
+	shr	rcx,	STATIC_PAGE_SIZE_shift
 	call	kernel_memory_release_foreign
 
 	; proces był wątkiem?
@@ -82,7 +82,7 @@ service_tresher_search:
 	jnz	.next	; tak
 
 	; pobierz adres następnego bloku kolejki zadań
-	and	si,	KERNEL_PAGE_mask
+	and	si,	STATIC_PAGE_mask
 	mov	rsi,	qword [rsi + STATIC_STRUCTURE_BLOCK.link]
 	jmp	.restart
 

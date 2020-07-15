@@ -142,7 +142,7 @@ kernel_task:
 
 	; przelicz adres pośredni zadania na numer zadania w kolejce
 	movzx	eax,	di
-	and	ax,	~KERNEL_PAGE_mask
+	and	ax,	~STATIC_PAGE_mask
 	mov	rcx,	KERNEL_TASK_STRUCTURE.SIZE
 	xor	edx,	edx
 	div	rcx
@@ -161,7 +161,7 @@ kernel_task:
 
 .block:
 	; załaduj następny blok kolejki
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 	mov	rdi,	qword [rdi + STATIC_STRUCTURE_BLOCK.link]
 
 .ap_entry:
@@ -374,7 +374,7 @@ kernel_task_queue:
 	jnz	.next
 
 	; zachowaj wskaźnik początku ostatniego bloku kolejki zadań
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 	mov	rsi,	rdi
 
 	; pobierz adres następnego bloku kolejki
@@ -492,7 +492,7 @@ kernel_task_pid_check:
 	jnz	.next
 
 	; pobierz adres następnego bloku kolejki
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 	mov	rdi,	qword [rdi + STATIC_STRUCTURE_BLOCK.link]
 
 	; powróciliśmy na początek kolejki?
