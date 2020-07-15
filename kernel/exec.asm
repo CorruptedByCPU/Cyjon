@@ -2,8 +2,12 @@
 ; Copyright (C) by vLock.dev
 ;===============================================================================
 
+KERNEL_EXEC_FLAG_accept_childrens	equ	00000001b	; przyjmuj na standardowe wejście strumienie od procesów potomnych
+KERNEL_EXEC_FLAG_forward_out		equ	00000010b	; przekieruj wyjście rodzica na wejście procesu potomnego
+
 ;===============================================================================
 ; wejście:
+;	rbx - flagi
 ;	rcx - ilość znaków reprezentujących nazwę uruchamianego programu
 ;	rsi - wskaźnik do nazwy programu
 ;	rdi - wskaźnik do supła pliku
@@ -13,7 +17,6 @@
 ;	rcx - pid nowego procesu
 kernel_exec:
 	; zachowaj oryginalne rejestry
-	push	rbx
 	push	rdx
 	push	rsi
 	push	rbp
@@ -22,6 +25,7 @@ kernel_exec:
 	push	r12
 	push	r13
 	push	rax
+	push	rbx
 	push	rcx
 	push	rdi
 
@@ -175,12 +179,13 @@ kernel_exec:
 
 .error:
 	; zwróć kod błędu
-	mov	qword [rsp + STATIC_QWORD_SIZE_byte * 0x03],	rax
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte * 0x04],	rax
 
 .end:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rcx
+	pop	rbx
 	pop	rax
 	pop	r13
 	pop	r12
@@ -189,7 +194,6 @@ kernel_exec:
 	pop	rbp
 	pop	rsi
 	pop	rdx
-	pop	rbx
 
 	; powrót z procedury
 	ret
