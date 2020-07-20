@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 shell_string_prompt_with_new_line	db	STATIC_ASCII_NEW_LINE

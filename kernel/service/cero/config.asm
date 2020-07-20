@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 SERVICE_CERO_WINDOW_count			equ	3	; ilość okien utworzonych przez Cero

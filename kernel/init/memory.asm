@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 struc	KERNEL_INIT_MEMORY_STRUCTURE_MEMORY_MAP

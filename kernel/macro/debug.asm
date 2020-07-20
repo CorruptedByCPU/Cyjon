@@ -1,8 +1,8 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
-%MACRO	macro_debug	1
+%macro	macro_debug	1
 %ifdef	DEBUG
 	jmp	%%skip
 
@@ -10,4 +10,4 @@
 
 %%skip:
 %endif
-%ENDMACRO
+%endmacro

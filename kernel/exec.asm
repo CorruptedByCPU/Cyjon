@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 KERNEL_EXEC_FLAG_accept_childrens	equ	00000001b	; przyjmuj na standardowe wejście strumienie od procesów potomnych

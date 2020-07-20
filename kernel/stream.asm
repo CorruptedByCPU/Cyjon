@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 KERNEL_STREAM_FLAG_in_use	equ	00000001b	; dane w potoku są aktualnie przetwarzane

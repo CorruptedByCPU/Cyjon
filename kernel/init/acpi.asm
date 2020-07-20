@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 ACPI_MADT_ENTRY_lapic			equ	0x00
@@ -59,8 +59,6 @@ struc	ACPI_STRUCTURE_MADT_entry
 	.type				resb	1
 	.length				resb	1
 endstruc
-
-
 
 struc	ACPI_STRUCTURE_MADT_APIC
 	.type				resb	1

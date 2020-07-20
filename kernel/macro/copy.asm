@@ -1,9 +1,9 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 ; kopiowanie przestrzeni z RSI do RDI w fragmentach po 256 Bajtów
-%MACRO	macro_copy	0
+%macro	macro_copy	0
 	; instrukcje SSE wymagają adresu wyrównanego do DWORD/QWORD
 	align	STATIC_DWORD_SIZE_byte
 
@@ -49,4 +49,4 @@
 	movntdq	[rdi + 0xD0],	xmm13
 	movntdq	[rdi + 0xE0],	xmm14
 	movntdq	[rdi + 0xF0],	xmm15
-%ENDMACRO
+%endmacro

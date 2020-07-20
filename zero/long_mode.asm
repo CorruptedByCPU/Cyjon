@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 ZERO_LONG_MODE_PML4_address		equ	0xA000	; adres fizyczny
