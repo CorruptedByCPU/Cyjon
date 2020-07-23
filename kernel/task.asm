@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 KERNEL_TASK_EFLAGS_if			equ	000000000000001000000000b
@@ -30,11 +30,14 @@ struc	KERNEL_TASK_STRUCTURE
 	.rsp				resb	8	; ostatni znany wskaźnik szczytu stosu kontekstu procesu
 	.cpu				resb	8	; identyfikator procesora logicznego, obsługującego w danym czasie proces
 	.pid				resb	8	; identyfikator procesu
+	.parent				resb	8	; identyfikator procesu rodzica
 	.time				resb	8	; czas uruchomienia procesu względem czasu życia jądra systemu
 	.knot				resb	8	; wskaźnik do supła katalogu roboczego procesu
 	.map				resb	8	; wskaźnik do przestrzeni binarnej mapy pamięci procesu
 	.map_size			resb	8	; rozmiar przestrzeni binarnej mapy pamięci procesu w bitach
 	.flags				resb	2	; flagi stanu procesu
+	.in				resb	8	; stdin
+	.out				resb	8	; stdout
 	.stack				resb	2	; rozmiar przestrzeni stosu w stronach
 	.length				resb	1	; ilość znaków w nazwie procesu
 	.name				resb	255	; nazwa procesu
@@ -139,7 +142,7 @@ kernel_task:
 
 	; przelicz adres pośredni zadania na numer zadania w kolejce
 	movzx	eax,	di
-	and	ax,	~KERNEL_PAGE_mask
+	and	ax,	~STATIC_PAGE_mask
 	mov	rcx,	KERNEL_TASK_STRUCTURE.SIZE
 	xor	edx,	edx
 	div	rcx
@@ -158,7 +161,7 @@ kernel_task:
 
 .block:
 	; załaduj następny blok kolejki
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 	mov	rdi,	qword [rdi + STATIC_STRUCTURE_BLOCK.link]
 
 .ap_entry:
@@ -279,15 +282,17 @@ kernel_task_add:
 	mov	rax,	KERNEL_STACK_pointer - (STATIC_QWORD_SIZE_byte * 0x14)
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.rsp],	rax
 
-	; pobierz katalog roboczy rodzica
+	; pobierz katalog roboczy i PID rodzica
 	call	kernel_task_active
 	mov	rax,	qword [rdi + KERNEL_TASK_STRUCTURE.knot]
+	mov	rcx,	qword [rdi + KERNEL_TASK_STRUCTURE.pid]
 
 	; przywróć wskaźnik pozycji zadania w kolejce
 	pop	rdi
 
-	; ustaw katalog roboczy procesu na podstawie rodzica
+	; ustaw katalog roboczy procesu na podstawie rodzica i jego PID
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.knot],	rax
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.parent],	rcx
 
 	; pobierz unikalny numer PID
 	call	kernel_task_pid_get
@@ -369,7 +374,7 @@ kernel_task_queue:
 	jnz	.next
 
 	; zachowaj wskaźnik początku ostatniego bloku kolejki zadań
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 	mov	rsi,	rdi
 
 	; pobierz adres następnego bloku kolejki
@@ -487,7 +492,7 @@ kernel_task_pid_check:
 	jnz	.next
 
 	; pobierz adres następnego bloku kolejki
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 	mov	rdi,	qword [rdi + STATIC_STRUCTURE_BLOCK.link]
 
 	; powróciliśmy na początek kolejki?

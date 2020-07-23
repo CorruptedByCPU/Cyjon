@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
@@ -106,7 +106,7 @@ service_network_tcp_psh:
 	rep	movsb
 
 	; wyczyść pozostałą przestrzeń ramki
-	mov	rcx,	KERNEL_PAGE_SIZE_byte
+	mov	rcx,	STATIC_PAGE_SIZE_byte
 	sub	rcx,	qword [rsp]
 	rep	stosb
 
@@ -274,7 +274,7 @@ service_network_tcp_find:
 	shl	bl,	STATIC_MULTIPLE_BY_4_shift
 
 	; przeszukaj stos TCP
-	mov	rcx,	(SERVICE_NETWORK_STACK_SIZE_page << KERNEL_PAGE_SIZE_shift) / SERVICE_NETWORK_STRUCTURE_TCP_STACK.SIZE
+	mov	rcx,	(SERVICE_NETWORK_STACK_SIZE_page << STATIC_PAGE_SIZE_shift) / SERVICE_NETWORK_STRUCTURE_TCP_STACK.SIZE
 	mov	rdi,	qword [service_network_stack_address]
 
 .loop:
@@ -346,7 +346,7 @@ service_network_tcp_syn:
 	push	rdi
 
 	; przeszukaj stos TCP
-	mov	rcx,	(SERVICE_NETWORK_STACK_SIZE_page << KERNEL_PAGE_SIZE_shift) / SERVICE_NETWORK_STRUCTURE_TCP_STACK.SIZE
+	mov	rcx,	(SERVICE_NETWORK_STACK_SIZE_page << STATIC_PAGE_SIZE_shift) / SERVICE_NETWORK_STRUCTURE_TCP_STACK.SIZE
 	mov	rdi,	qword [service_network_stack_address]
 
 .search:

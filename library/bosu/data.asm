@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 align	STATIC_QWORD_SIZE_byte,	db	STATIC_NOTHING

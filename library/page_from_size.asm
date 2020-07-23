@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 ;===============================================================================
@@ -12,14 +12,14 @@ library_page_from_size:
 	push	rcx
 
 	; usuń młodszą część rozmiaru
-	and	cx,	KERNEL_PAGE_mask
+	and	cx,	STATIC_PAGE_mask
 
 	; sprawdź czy rozmiar jednakowy
 	cmp	rcx,	qword [rsp]
 	je	.ready	; jeśli tak, koniec
 
 	; przesuń rozmiar o jedną stronę do przodu
-	add	rcx,	KERNEL_PAGE_SIZE_byte
+	add	rcx,	STATIC_PAGE_SIZE_byte
 
 .ready:
 	; zamień na strony

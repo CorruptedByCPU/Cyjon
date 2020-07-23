@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 SERVICE_DESU_OBJECT_NAME_length				equ	23
@@ -13,8 +13,8 @@ SERVICE_DESU_OBJECT_FLAG_fragile			equ	1 << 4	; obiekt ukrywany przy wystąpieni
 SERVICE_DESU_OBJECT_FLAG_pointer			equ	1 << 5	; obiekt typu "kursor"
 SERVICE_DESU_OBJECT_FLAG_arbiter			equ	1 << 6	; nadobiekt
 
-SERVICE_DESU_FILL_LIST_limit				equ	(KERNEL_PAGE_SIZE_byte / SERVICE_DESU_STRUCTURE_FILL.SIZE) - 0x01
-SERVICE_DESU_ZONE_LIST_limit				equ	(KERNEL_PAGE_SIZE_byte / SERVICE_DESU_STRUCTURE_ZONE.SIZE) - 0x01
+SERVICE_DESU_FILL_LIST_limit				equ	(STATIC_PAGE_SIZE_byte / SERVICE_DESU_STRUCTURE_FILL.SIZE) - 0x01
+SERVICE_DESU_ZONE_LIST_limit				equ	(STATIC_PAGE_SIZE_byte / SERVICE_DESU_STRUCTURE_ZONE.SIZE) - 0x01
 
 struc	SERVICE_DESU_STRUCTURE_FIELD
 	.x						resb	8

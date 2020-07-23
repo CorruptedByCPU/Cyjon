@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 ;===============================================================================
@@ -131,7 +131,7 @@ kernel_service:
 	; mapuj przestrzeń
 	mov	rax,	rdi
 	sub	rax,	qword [kernel_memory_high_mask]	; zamień na adres bezpośredni
-	mov	bx,	KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_available
+	mov	bx,	kernel_page_FLAG_write | kernel_page_FLAG_user | kernel_page_FLAG_available
 	mov	r11,	cr3
 	call	kernel_page_map_logical
 	jnc	.process_memory_alloc_ready	; przydzielono
@@ -396,7 +396,7 @@ kernel_service_memory_release:
 	; przelicz adres strony na numer bitu
 	mov	rax,	rdi
 	sub	rax,	qword [kernel_memory_real_address]
-	shr	rax,	KERNEL_PAGE_SIZE_shift
+	shr	rax,	STATIC_PAGE_SIZE_shift
 
 	; oblicz prdesunięcie względem początku binarnej mapy pamięci
 	mov	rcx,	64

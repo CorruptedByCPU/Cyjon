@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 KERNEL_VFS_FILE_TYPE_socket				equ	01000000b
@@ -511,7 +511,7 @@ kernel_vfs_file_find:
 	loop	.loop
 
 	; skończyły się rekordy z danego bloku, pobierz adres następnego bloku danych katalogu głównego
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 	mov	rdi,	qword [rdi + STATIC_STRUCTURE_BLOCK.link]
 	test	rdi,	rdi	; koniec bloków danych?
 	jnz	.prepare	; przeszukaj następny blok danych katalogu
@@ -574,7 +574,7 @@ kernel_vfs_knot_prepare:
 	loop	.loop
 
 	; skończyły się rekordy z danego bloku, pobierz adres następnego bloku danych katalogu głównego
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 	mov	rdi,	qword [rdi + STATIC_STRUCTURE_BLOCK.link]
 	test	rdi,	rdi	; koniec bloków danych?
 	jnz	.prepare	; przeszukaj następny blok danych katalogu
@@ -715,7 +715,7 @@ kernel_vfs_file_write:
 	rep	movsb
 
 	; zwolnij pozostałe bloki danych pliku
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 	mov	rdi,	qword [rdi + STATIC_STRUCTURE_BLOCK.link]
 
 .remove:
@@ -970,7 +970,7 @@ kernel_vfs_file_read:
 	rep	movsb
 
 	; pobierz następny blok danych pliku
-	and	si,	KERNEL_PAGE_mask
+	and	si,	STATIC_PAGE_mask
 	mov	rsi,	qword [rsi + STATIC_STRUCTURE_BLOCK.link]
 
 	; koniec danych pliku?

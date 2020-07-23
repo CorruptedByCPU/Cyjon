@@ -1,15 +1,15 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 %define	SERVICE_HTTP_version	"0"
 %define	SERVICE_HTTP_revision	"8"
 
-%MACRO	service_http_macro_foot	0
+%macro	service_http_macro_foot	0
 	db	"<hr />", STATIC_ASCII_NEW_LINE
 	db	"Cyjon v", KERNEL_version, ".", KERNEL_revision, " (HTTP Service v", SERVICE_HTTP_version, ".", SERVICE_HTTP_revision, ")"
 	db	"<style>* { font: 12px/150% 'Courier New', 'DejaVu Sans Mono', Monospace, Verdana; color: #F5F5F5; } body { background-color: #282922; }</style>", STATIC_ASCII_NEW_LINE
-%ENDMACRO
+%endmacro
 
 service_http_ipc_message:
 	times	KERNEL_IPC_STRUCTURE.SIZE	db	STATIC_EMPTY

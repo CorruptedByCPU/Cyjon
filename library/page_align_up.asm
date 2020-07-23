@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 ;===============================================================================
@@ -12,14 +12,14 @@ library_page_align_up:
 	push	rdi
 
 	; usuń młodszą część adresu
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 
 	; sprawdź czy adres jest identyczny z zmienną lokalną
 	cmp	rdi,	qword [rsp]
 	je	.end	; jeśli tak, koniec
 
 	; przesuń adres o jedną ramkę do przodu
-	add	rdi,	KERNEL_PAGE_SIZE_byte
+	add	rdi,	STATIC_PAGE_SIZE_byte
 
 .end:
 	; usuń zmienną lokalną

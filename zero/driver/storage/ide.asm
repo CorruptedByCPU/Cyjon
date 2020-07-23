@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 DRIVER_IDE_CHANNEL_PRIMARY				equ	0x01F0
@@ -77,9 +77,9 @@ DRIVER_IDE_ERROR_bad_block				equ	10000000b
 
 struc	DRIVER_IDE_STRUCTURE_DEVICE
       .size_sectors					resb	8
-      .channel					resb	2
+      .channel						resb	2
       .drive						resb	1
-      .reserved					resb	5
+      .reserved						resb	5
       .SIZE:
 endstruc
 

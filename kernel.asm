@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
@@ -13,26 +13,16 @@
 	;-----------------------------------------------------------------------
 
 ; 64 bitowy kod inicjalizacyjny jądra systemu
-[BITS 64]
+[bits 64]
 
 ; położenie kodu jądra systemu w pamięci fizycznej
-[ORG KERNEL_BASE_address]
+[org KERNEL_BASE_address]
 
 init:
 	;-----------------------------------------------------------------------
 	; Init - inicjalizacja środowiska pracy jądra systemu
 	;-----------------------------------------------------------------------
 	%include	"kernel/init.asm"
-
-; wyrównaj pozycję kodu do pełnej strony
-align	KERNEL_PAGE_SIZE_byte,	db	STATIC_NOTHING
-
-clean:
-	; zwolnij przestrzeń zajętą przez procedury inicjalizacyjne
-	mov	ecx,	clean - $$
-	mov	rdi,	KERNEL_BASE_address
-	call	library_page_from_size	; zamień rozmiar przestrzeni na strony
-	call	kernel_memory_release
 
 kernel:
 	; pobierz wskaźnik do aktualnego zadania (jądro) w kolejce
@@ -65,6 +55,7 @@ kernel:
 	%include	"kernel/vfs.asm"
 	%include	"kernel/exec.asm"
 	%include	"kernel/service.asm"
+	%include	"kernel/stream.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/ps2.asm"
@@ -89,6 +80,6 @@ kernel:
 	;-----------------------------------------------------------------------
 
 ; wyrównaj kod jądra systemu do pełnej strony
-align	KERNEL_PAGE_SIZE_byte
+align	STATIC_PAGE_SIZE_byte
 
 kernel_end:

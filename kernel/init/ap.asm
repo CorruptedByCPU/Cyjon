@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 ;===============================================================================
@@ -68,7 +68,7 @@
 
 	; przygotuj osobny stos/kontekstu dla procesora logicznego
 	mov	rax,	KERNEL_STACK_address
-	mov	ebx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
+	mov	ebx,	kernel_page_FLAG_available | kernel_page_FLAG_write
 	mov	ecx,	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	mov	r11,	rdi	; dodaj wpis do PML4 procesora logicznego
 	xor	ebp,	ebp	; brak stron zarezerwowanych na ten cel

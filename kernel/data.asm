@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 ;===============================================================================
@@ -15,7 +15,7 @@ kernel_init_exec_end:
 ;===============================================================================
 ; wyrównaj pozycję nagłówka do pełnego adresu
 align	STATIC_QWORD_SIZE_byte,				db	STATIC_NOTHING
-kernel_gdt_header					dw	KERNEL_PAGE_SIZE_byte
+kernel_gdt_header					dw	STATIC_PAGE_SIZE_byte
 							dq	STATIC_EMPTY
 
 ; wyrównaj miejsca wskaźników do pełnego adresu
@@ -37,7 +37,7 @@ kernel_gdt_tss_table_end:
 ; wyrównaj pozycję nagłówka do pełnego adresu
 align	STATIC_QWORD_SIZE_byte,				db	STATIC_NOTHING
 kernel_idt_header:
-							dw	KERNEL_PAGE_SIZE_byte
+							dw	STATIC_PAGE_SIZE_byte
 							dq	STATIC_EMPTY
 
 macro_debug	"kernel_data"

@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 ;===============================================================================
@@ -10,7 +10,7 @@ kernel_init_smp:
 
 	; mapuj przestrzeń pamięci kodu inicjalizującego procesory logiczne
 	mov	eax,	0x7000	; 0x0000:0x7000
-	mov	bx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
+	mov	bx,	kernel_page_FLAG_available | kernel_page_FLAG_write
 	mov	ecx,	kernel_init_boot_file_end - kernel_init_boot_file
 	mov	r11,	qword [kernel_page_pml4_address]
 	call	library_page_from_size

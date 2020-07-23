@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 kernel_init_page:
@@ -17,7 +17,7 @@ kernel_init_page:
 	; mapuj w tablicach stronicowania przestrzeń pamięci fizycznej RAM opisanej w binarnej mapie pamięci
 	mov	eax,	KERNEL_BASE_address	; początek przestrzeni
 	; oznacz przestrzeń jako dostępną i modyfikowalną dla jądra systemu
-	mov	bx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
+	mov	bx,	kernel_page_FLAG_available | kernel_page_FLAG_write
 	mov	rcx,	qword [kernel_page_total_count]	; rozmiar przestrzeni w stronach
 	mov	r11,	rdi	; miejsce docelowe tablicy PML4 jądra systemu
 	call	kernel_page_map_physical	; opisz 1:1
@@ -39,7 +39,7 @@ kernel_init_page:
 	;
 	; mapuj przestrzeń pamięci fizycznej karty graficznej
 	mov	rax,	qword [kernel_video_base_address]
-	or	bx,	KERNEL_PAGE_FLAG_write_through | KERNEL_PAGE_FLAG_cache_disable
+	or	bx,	kernel_page_FLAG_write_through | kernel_page_FLAG_cache_disable
 	mov	rcx,	qword [kernel_video_size_byte]
 	call	library_page_from_size
 	call	kernel_page_map_physical
@@ -47,7 +47,7 @@ kernel_init_page:
 
 	; mapuj przestrzeń pamięci fizycznej tablicy APIC
 	mov	rax,	qword [kernel_apic_base_address]
-	mov	bx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
+	mov	bx,	kernel_page_FLAG_available | kernel_page_FLAG_write
 	mov	ecx,	dword [kernel_apic_size]	; rozmiar przestrzeni w Bajtach
 	call	library_page_from_size
 	call	kernel_page_map_physical
@@ -55,7 +55,7 @@ kernel_init_page:
 
 	; mapuj przestrzeń pamięci fizycznej tablicy I/O APIC
 	mov	eax,	dword [kernel_io_apic_base_address]
-	mov	ecx,	KERNEL_PAGE_SIZE_byte >> KERNEL_PAGE_SIZE_shift
+	mov	ecx,	STATIC_PAGE_SIZE_byte >> STATIC_PAGE_SIZE_shift
 	call	kernel_page_map_physical
 	jc	kernel_panic_memory
 

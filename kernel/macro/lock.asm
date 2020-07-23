@@ -1,8 +1,8 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
-%MACRO	macro_lock	2
+%macro	macro_lock	2
 	push	rax
 
 .1:	; zamknij dostęp do %1
@@ -12,4 +12,4 @@
 	jz	.1	; spróbuj raz jeszcze
 
 	pop	rax
-%ENDMACRO
+%endmacro

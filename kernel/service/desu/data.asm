@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 service_desu_semaphore					db	STATIC_FALSE
@@ -25,7 +25,7 @@ service_desu_object_privileged_pid			dq	STATIC_EMPTY
 service_desu_object_list_address			dq	STATIC_EMPTY
 servide_desu_object_list_size_page			dq	1
 service_desu_object_list_records			dq	STATIC_EMPTY
-service_desu_object_list_records_free			dq	KERNEL_PAGE_SIZE_byte / (SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE)
+service_desu_object_list_records_free			dq	STATIC_PAGE_SIZE_byte / (SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE)
 service_desu_object_list_modify_time			dq	STATIC_EMPTY
 
 service_desu_fill_list_address				dq	STATIC_EMPTY

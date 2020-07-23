@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 	; procesor logiczny?
@@ -37,6 +37,11 @@ kernel_init:
 	; utworzenie binarnej mapy pamięci i oznaczenie w niej jądra systemu
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/memory.asm"
+
+	;-----------------------------------------------------------------------
+	; utwórz tablicę potoków
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/stream.asm"
 
 	;-----------------------------------------------------------------------
 	; przetworzenie tablic ACPI
@@ -132,5 +137,12 @@ kernel_init:
 	; poinformuj o zakończeniu inicjalizacji
 	mov	byte [kernel_init_semaphore],	STATIC_FALSE
 
-	; usuń środowisko inicjalizacyjne
-	jmp	clean
+; wyrównaj pozycję kodu do pełnej strony
+align	STATIC_PAGE_SIZE_byte,	db	STATIC_NOTHING
+
+.clean:
+	; zwolnij przestrzeń zajętą przez procedury inicjalizacyjne
+	mov	ecx,	.clean - $$
+	mov	rdi,	KERNEL_BASE_address
+	call	library_page_from_size	; zamień rozmiar przestrzeni na strony
+	call	kernel_memory_release

@@ -1,5 +1,5 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 free_string_table	db	STATIC_COLOR_ASCII_GRAY, "        total         used          free          paged", STATIC_ASCII_NEW_LINE

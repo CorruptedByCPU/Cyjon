@@ -1,9 +1,9 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
 KERNEL_IPC_SIZE_page_default	equ	1
-KERNEL_IPC_ENTRY_limit		equ	(KERNEL_IPC_SIZE_page_default << KERNEL_PAGE_SIZE_shift) / KERNEL_IPC_STRUCTURE.SIZE
+KERNEL_IPC_ENTRY_limit		equ	(KERNEL_IPC_SIZE_page_default << STATIC_PAGE_SIZE_shift) / KERNEL_IPC_STRUCTURE.SIZE
 
 KERNEL_IPC_TTL_default		equ	DRIVER_RTC_Hz / 10	; ~100ms
 

@@ -1,20 +1,20 @@
 ;===============================================================================
-; Copyright (C) by vLock.dev
+; Copyright (C) by blackdev.org
 ;===============================================================================
 
-KERNEL_PAGE_FLAG_available	equ	0x01
-KERNEL_PAGE_FLAG_write		equ	0x02
-KERNEL_PAGE_FLAG_user		equ	0x04
-KERNEL_PAGE_FLAG_write_through	equ	0x08
-KERNEL_PAGE_FLAG_cache_disable	equ	0x10
-KERNEL_PAGE_FLAG_length		equ	0x80
+kernel_page_FLAG_available	equ	0x01
+kernel_page_FLAG_write		equ	0x02
+kernel_page_FLAG_user		equ	0x04
+kernel_page_FLAG_write_through	equ	0x08
+kernel_page_FLAG_cache_disable	equ	0x10
+kernel_page_FLAG_length		equ	0x80
 
-KERNEL_PAGE_RECORDS_amount	equ	512
+kernel_page_RECORDS_amount	equ	512
 
-KERNEL_PAGE_PML4_SIZE_byte	equ	KERNEL_PAGE_RECORDS_amount * KERNEL_PAGE_PML3_SIZE_byte
-KERNEL_PAGE_PML3_SIZE_byte	equ	KERNEL_PAGE_RECORDS_amount * KERNEL_PAGE_PML2_SIZE_byte
-KERNEL_PAGE_PML2_SIZE_byte	equ	KERNEL_PAGE_RECORDS_amount * KERNEL_PAGE_PML1_SIZE_byte
-KERNEL_PAGE_PML1_SIZE_byte	equ	KERNEL_PAGE_RECORDS_amount * KERNEL_PAGE_SIZE_byte
+kernel_page_PML4_SIZE_byte	equ	kernel_page_RECORDS_amount * kernel_page_PML3_SIZE_byte
+kernel_page_PML3_SIZE_byte	equ	kernel_page_RECORDS_amount * kernel_page_PML2_SIZE_byte
+kernel_page_PML2_SIZE_byte	equ	kernel_page_RECORDS_amount * kernel_page_PML1_SIZE_byte
+kernel_page_PML1_SIZE_byte	equ	kernel_page_RECORDS_amount * STATIC_PAGE_SIZE_byte
 
 kernel_page_pml4_address	dq	STATIC_EMPTY
 
@@ -37,7 +37,7 @@ kernel_page_empty:
 	xor	eax,	eax
 
 	; ilość rekordów do sprawdzenia
-	mov	ecx,	KERNEL_PAGE_RECORDS_amount - 0x01
+	mov	ecx,	kernel_page_RECORDS_amount - 0x01
 
 .loop:
 	; pobierz zawartość rekordu
@@ -65,7 +65,7 @@ kernel_page_drain:
 	push	rcx
 
 	; rozmiar strony w Bajtach
-	mov	rcx,	KERNEL_PAGE_SIZE_byte
+	mov	rcx,	STATIC_PAGE_SIZE_byte
 	call	.proceed
 
 	; przywróć oryginalne rejestry
@@ -85,7 +85,7 @@ kernel_page_drain:
 	; wyczyść przestrzeń
 	xor	rax,	rax
 	shr	rcx,	STATIC_DIVIDE_BY_8_shift	; po 8 Bajtów na raz
-	and	di,	KERNEL_PAGE_mask	; wyrównaj adres przestrzeni w dół (failsafe)
+	and	di,	STATIC_PAGE_mask	; wyrównaj adres przestrzeni w dół (failsafe)
 	rep	stosq
 
 	; przywróć orygialne rejestry
@@ -106,7 +106,7 @@ kernel_page_drain_few:
 	push	rcx
 
 	; oblicz rozmiar przestrzeni do wyczyszczenia
-	shl	rcx,	KERNEL_PAGE_SIZE_shift
+	shl	rcx,	STATIC_PAGE_SIZE_shift
 	call	kernel_page_drain.proceed
 
 	; przywróć oryginalne rejestry
@@ -151,7 +151,7 @@ kernel_page_map_physical:
 
 .row:
 	; sprawdź czy skończyły się rekordy w tablicy PML1
-	cmp	r12,	KERNEL_PAGE_RECORDS_amount
+	cmp	r12,	kernel_page_RECORDS_amount
 	jb	.exist	; nie
 
 	; utwórz nową tablicę stronicowania PML1
@@ -162,7 +162,7 @@ kernel_page_map_physical:
 	stosq
 
 	; przesuń adres do następnego mapowanej przestrzeni
-	add	rax,	KERNEL_PAGE_SIZE_byte
+	add	rax,	STATIC_PAGE_SIZE_byte
 
 	; ustaw numer następnego wiersza w tablicy PML1
 	inc	r12
@@ -231,7 +231,7 @@ kernel_page_map_logical:
 
 .record:
 	; sprawdź czy skończyły się rekordy w tablicy PML1
-	cmp	r12,	KERNEL_PAGE_RECORDS_amount
+	cmp	r12,	kernel_page_RECORDS_amount
 	jb	.exists	; istnieją rekordy
 
 	; utwórz nową tablicę stronicowania PML1
@@ -329,7 +329,7 @@ kernel_page_prepare:
 	push	rax
 
 	; oblicz numer rekordu w tablicy PML4 na podstawie otrzymanego adresu fizycznego/logicznego
-	mov	rcx,	KERNEL_PAGE_PML3_SIZE_byte
+	mov	rcx,	kernel_page_PML3_SIZE_byte
 	xor	rdx,	rdx	; wyczyść starszą część
 	div	rcx
 
@@ -379,7 +379,7 @@ kernel_page_prepare:
 
 	; oblicz numer rekordu w tablicy PML4 na podstawie otrzymanego adresu fizycznego/logicznego
 	mov	rax,	rdx	; przywróć resztę z dzielenia
-	mov	rcx,	KERNEL_PAGE_PML2_SIZE_byte
+	mov	rcx,	kernel_page_PML2_SIZE_byte
 	xor	rdx,	rdx	; wyczyść starszą część
 	div	rcx
 
@@ -429,7 +429,7 @@ kernel_page_prepare:
 
 	; oblicz numer rekordu w tablicy PML2 na podstawie otrzymanego adresu fizycznego/logicznego
 	mov	rax,	rdx	; przywróć resztę z dzielenia
-	mov	rcx,	KERNEL_PAGE_PML1_SIZE_byte
+	mov	rcx,	kernel_page_PML1_SIZE_byte
 	xor	rdx,	rdx	; wyczyść starszą część
 	div	rcx
 
@@ -479,7 +479,7 @@ kernel_page_prepare:
 
 	; oblicz numer rekordu w tablicy PML1 na podstawie otrzymanego adresu fizycznego/logicznego
 	mov	rax,	rdx	; przywróć resztę z dzielenia
-	mov	rcx,	KERNEL_PAGE_SIZE_byte
+	mov	rcx,	STATIC_PAGE_SIZE_byte
 	xor	rdx,	rdx	; wyczyść starszą część
 	div	rcx
 
@@ -540,7 +540,7 @@ kernel_page_prepare:
 ;	procedura zmniejsza licznik stron zarezerwowanych w binarnej mapie pamięci!
 kernel_page_pml1:
 	; sprawdź czy tablica PML2 jest pełna
-	cmp	r13,	KERNEL_PAGE_RECORDS_amount
+	cmp	r13,	kernel_page_RECORDS_amount
 	je	.pml3	; jeśli tak, utwórz nową tablicę PML2
 
 	; sprawdź czy kolejny w kolejce rekord tablicy PML2 posiada adres tablicy PML1
@@ -572,7 +572,7 @@ kernel_page_pml1:
 
 .pml2_continue:
 	; usuń właściwości rekordu tablicy PML2
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 
 	; zwróć adres pierwszego rekordu w tablicy PML1
 	mov	r8,	rdi
@@ -589,7 +589,7 @@ kernel_page_pml1:
 
 .pml3:
 	; sprawdź czy tablica PML3 jest pełna
-	cmp	r14,	KERNEL_PAGE_RECORDS_amount
+	cmp	r14,	kernel_page_RECORDS_amount
 	je	.pml4	; jeśli tak, utwórz nową tablicę PML3
 
 	; sprawdź czy kolejny w kolejce rekord tablicy PML3 posiada adres tablicy PML2
@@ -621,7 +621,7 @@ kernel_page_pml1:
 
 .pml3_continue:
 	; usuń właściwości rekordu tablicy PML3
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 
 	; zwróć adres pierwszego rekordu w tablicy PML2
 	mov	r9,	rdi
@@ -638,7 +638,7 @@ kernel_page_pml1:
 
 .pml4:
 	; sprawdź czy tablica PML4 jest pełna
-	cmp	r15,	KERNEL_PAGE_RECORDS_amount
+	cmp	r15,	kernel_page_RECORDS_amount
 	je	.error	; jeśli tak, utwórz nową tablicę PML5..., że jak?!
 
 	; sprawdź czy kolejny w kolejce rekord tablicy PML4 posiada adres tablicy PML3
@@ -670,7 +670,7 @@ kernel_page_pml1:
 
 .pml4_continue:
 	; usuń właściwości rekordu tablicy PML4
-	and	di,	KERNEL_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 
 	; zwróć adres pierwszego rekordu w tablicy PML3
 	mov	r10,	rdi
@@ -724,7 +724,7 @@ kernel_page_merge:
 	dec	rbx
 
 	; ilość rekordów na jedną tablicę
-	mov	rcx,	KERNEL_PAGE_RECORDS_amount
+	mov	rcx,	kernel_page_RECORDS_amount
 
 .loop:
 	; sprawdź czy rekord źródłowy istnieje
@@ -751,7 +751,7 @@ kernel_page_merge:
 
 	; ustaw flagi nowej tablicy
 	mov	rax,	rdi
-	or	ax,	KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_available
+	or	ax,	kernel_page_FLAG_user | kernel_page_FLAG_write | kernel_page_FLAG_available
 
 	; dołącz do tablic stronicowania
 	pop	rdi
@@ -778,8 +778,8 @@ kernel_page_merge:
 	jz	.the_same	; tak
 
 	; usuń właściwości rekordów
-	and	si,	KERNEL_PAGE_mask
-	and	di,	KERNEL_PAGE_mask
+	and	si,	STATIC_PAGE_mask
+	and	di,	STATIC_PAGE_mask
 
 	; połącz zawartość tablic
 	call	.inner
