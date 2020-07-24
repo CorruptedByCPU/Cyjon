@@ -71,6 +71,11 @@ kernel_service:
 	jmp	kernel_service.error
 
 ;-------------------------------------------------------------------------------
+; wejście:
+;	rcx - ilość znaków w ścieżce do pliku
+;	rsi - wskaźnik do ciągu znaków reprezentujących ścieżkę do pliku
+; wyjście:
+;	rcx - PID uruchomionego procesu
 .process_run:
 	; zachowaj oryginalne rejestry
 	push	rsi
@@ -90,6 +95,17 @@ kernel_service:
 
 	; zwróć identyfikator uruchomionego procesu
 	mov	qword [rsp],	rcx
+
+	; dołącz potok wejścia procesu
+	call	kernel_stream
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.in],	rsi
+
+	; dołącz potok wyjścia procesu
+	call	kernel_stream
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.out],	rsi
+
+	; oznacz proces jako gotowy do przetwarzania
+	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active
 
 .process_run_end:
 	; przywróć oryginalne rejestry

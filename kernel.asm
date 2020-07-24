@@ -28,8 +28,8 @@ kernel:
 	; pobierz wskaźnik do aktualnego zadania (jądro) w kolejce
 	call	kernel_task_active
 
-	; zwolnij wpis
-	mov	word [rdi + KERNEL_TASK_STRUCTURE.flags],	STATIC_EMPTY
+	; wyłącz proces z obiegu
+	and	word [rdi + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_active
 
 	; czekaj na wywłaszczenie
 	jmp	$
