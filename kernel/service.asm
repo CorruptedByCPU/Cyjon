@@ -93,6 +93,8 @@ kernel_service:
 	; uruchom program
 	call	kernel_exec
 
+	xchg	bx,bx
+
 	; zwróć identyfikator uruchomionego procesu
 	mov	qword [rsp],	rcx
 

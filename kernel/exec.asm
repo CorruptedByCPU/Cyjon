@@ -7,7 +7,6 @@ KERNEL_EXEC_FLAG_forward_out		equ	00000010b	; przekieruj wyjście rodzica na wej
 
 ;===============================================================================
 ; wejście:
-;	rbx - flagi
 ;	rcx - ilość znaków reprezentujących nazwę uruchamianego programu
 ;	rsi - wskaźnik do nazwy programu
 ;	rdi - wskaźnik do supła pliku
@@ -154,7 +153,6 @@ kernel_exec:
 	;-----------------------------------------------------------------------
 
 	; wstaw proces do kolejki zadań
-	xor	bx,	bx	; brak dodatkowych flag
 	movzx	ecx,	byte [rsi + KERNEL_VFS_STRUCTURE_KNOT.length]
 	add	rsi,	KERNEL_VFS_STRUCTURE_KNOT.name
 	call	kernel_task_add

@@ -253,7 +253,6 @@ kernel_task:
 
 ;===============================================================================
 ; wejście:
-;	bx - flagi zadania
 ;	cl - ilość znaków w nazwie procesu
 ;	rsi - wskaźni do nazwy procesu
 ;	r11 - adres tablicy PML4 zadania
@@ -306,9 +305,6 @@ kernel_task_add:
 	; zachowaj w wpisie zadania, czas jego uruchomienia
 	mov	rax,	qword [driver_rtc_microtime]
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.time],	rax
-
-	; aktualizuj flagi zadania
-	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	bx
 
 	; domyślny rozmiar stosu
 	mov	word [rdi + KERNEL_TASK_STRUCTURE.stack],	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
