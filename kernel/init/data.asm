@@ -51,10 +51,10 @@ kernel_init_vfs_directory_structure:
 						db	STATIC_EMPTY
 
 kernel_init_vfs_files:
-						; dq	kernel_init_vfs_file_shell
-						; dq	kernel_init_vfs_file_shell_end - kernel_init_vfs_file_shell
-						; db	10
-						; db	"/bin/shell"
+						dq	kernel_init_vfs_file_shell
+						dq	kernel_init_vfs_file_shell_end - kernel_init_vfs_file_shell
+						db	10
+						db	"/bin/shell"
 						;
 						; dq	kernel_init_vfs_file_hello
 						; dq	kernel_init_vfs_file_hello_end - kernel_init_vfs_file_hello
@@ -74,8 +74,8 @@ kernel_init_vfs_files:
 						; koniec listy plików
 						dq	STATIC_EMPTY
 
-; kernel_init_vfs_file_shell			incbin	"build/shell"
-; kernel_init_vfs_file_shell_end:
+kernel_init_vfs_file_shell			incbin	"build/shell"
+kernel_init_vfs_file_shell_end:
 ; kernel_init_vfs_file_hello			incbin	"build/hello"
 ; kernel_init_vfs_file_hello_end:
 ; kernel_init_vfs_file_free			incbin	"build/free"

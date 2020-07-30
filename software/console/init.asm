@@ -42,3 +42,13 @@
 	mov	al,	SERVICE_DESU_WINDOW_update
 	or	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
 	int	SERVICE_DESU_IRQ
+
+	; uruchom powłokę systemu
+	mov	ax,	KERNEL_SERVICE_PROCESS_run
+	mov	bl,	KERNEL_SERVICE_PROCESS_RUN_FLAG_out_to_in_parent
+	mov	ecx,	console_shell_file_end - console_shell_file
+	mov	rsi,	console_shell_file
+	int	KERNEL_SERVICE
+
+	; zachowaj PID powłoki
+	mov	qword [console_shell_pid],	rcx
