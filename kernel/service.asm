@@ -67,6 +67,10 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_PROCESS_ipc_send
 	je	.process_ipc_send	; tak
 
+	; wysłać komunikat do rodzica?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_ipc_send_to_parent
+	je	.process_ipc_send_parent	; tak
+
 	; zwrócić PID procesu?
 	cmp	ax,	KERNEL_SERVICE_PROCESS_pid
 	je	.process_pid
@@ -226,6 +230,29 @@ kernel_service:
 ; wyjście:
 ;	Flaga CF - jeśli kolejka przepełniona
 .process_ipc_send:
+	; wyślij komunikat do procesu
+	call	kernel_ipc_insert
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;===============================================================================
+; wejście:
+;	ecx - rozmiar przestrzeni w Bajtach lub jeśli wartość pusta, 40 Bajtów z pozycji wskaźnika RSI
+;	rsi - wskaźnik do przestrzeni danych
+; wyjście:
+;	Flaga CF - jeśli kolejka przepełniona
+.process_ipc_send_parent:
+	; zachowaj oryginalne rejestry
+	push	rdi
+
+	; pobierz PID procesu rodzica
+	call	kernel_task_active
+	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.parent]
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+
 	; wyślij komunikat do procesu
 	call	kernel_ipc_insert
 

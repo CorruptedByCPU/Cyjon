@@ -21,14 +21,24 @@
 
 ;===============================================================================
 shell:
-; 	; domyślnie, znak zachęty od nowej linii
-; 	mov	ecx,	shell_string_prompt_end - shell_string_prompt_with_new_line
-; 	mov	rsi,	shell_string_prompt_with_new_line
-;
-; 	; pobierz pozycję wirtualnego kursora
-; 	mov	ax,	KERNEL_SERVICE_VIDEO_cursor
-; 	int	KERNEL_SERVICE
-;
+ 	; wyślij do rodzica zapytanie o właściwości przestrzeni znakowej
+	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_send_to_parent
+	mov	rdi,	shell_ipc_data
+	mov	byte [rdi + KERNEL_IPC_STRUCTURE.data],	KERNEL_IPC_TYPE_GRAPHICS
+ 	int	KERNEL_SERVICE
+
+.answer:
+	; odbierz odpowiedź
+	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
+	int	KERNEL_SERVICE
+	jc	.answer	; brak odpowiedzi
+
+	jmp	$
+
+	; domyślnie, znak zachęty od nowej linii
+ 	mov	ecx,	shell_string_prompt_end - shell_string_prompt_with_new_line
+ 	mov	rsi,	shell_string_prompt_with_new_line
+
 ; 	; kursor znajduje się w pierwszej kolumnie?
 ; 	cmp	ebx,	STATIC_EMPTY
 ; 	jne	.prompt	; nie
@@ -82,12 +92,12 @@ shell:
 ; 	; przetwórz polecenie
 ; 	jmp	shell_prompt
 ;
-; 	;-----------------------------------------------------------------------
-; 	%include	"software/shell/data.asm"
+	;-----------------------------------------------------------------------
+	%include	"software/shell/data.asm"
 ; 	%include	"software/shell/prompt.asm"
-; 	;-----------------------------------------------------------------------
+	;-----------------------------------------------------------------------
 ; 	%include	"library/input.asm"
 ; 	%include	"library/string_trim.asm"
 ; 	%include	"library/string_word_next.asm"
 ; 	%include	"library/string_compare.asm"
-; 	;-----------------------------------------------------------------------
+	;-----------------------------------------------------------------------
