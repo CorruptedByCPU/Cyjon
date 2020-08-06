@@ -63,6 +63,14 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
 	je	.process_ipc_receive	; tak
 
+	; wysłać komunikat do innego procesu?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_ipc_send
+	je	.process_ipc_send	; tak
+
+	; wysłać komunikat do rodzica?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_ipc_send_to_parent
+	je	.process_ipc_send_parent	; tak
+
 	; zwrócić PID procesu?
 	cmp	ax,	KERNEL_SERVICE_PROCESS_pid
 	je	.process_pid
@@ -71,6 +79,12 @@ kernel_service:
 	jmp	kernel_service.error
 
 ;-------------------------------------------------------------------------------
+; wejście:
+;	bl - zachowanie potoku procesu
+;	rcx - ilość znaków w ścieżce do pliku
+;	rsi - wskaźnik do ciągu znaków reprezentujących ścieżkę do pliku
+; wyjście:
+;	rcx - PID uruchomionego procesu
 .process_run:
 	; zachowaj oryginalne rejestry
 	push	rsi
@@ -90,6 +104,37 @@ kernel_service:
 
 	; zwróć identyfikator uruchomionego procesu
 	mov	qword [rsp],	rcx
+
+	; utwórz potok wejścia procesu
+	call	kernel_stream
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.in],	rsi
+
+	; przygotuj potok wyjścia procesu
+	call	kernel_stream
+
+	; przekierować wyjście dziecka na wejście rodzica?
+	test	bl,	KERNEL_SERVICE_PROCESS_RUN_FLAG_out_to_in_parent
+	jz	.no_out_to_in_parent	; nie
+
+	; zwolnij przygotowany potok
+	call	kernel_stream_release
+
+	; zachowaj wskaźnik struktury procesu
+	push	rdi
+
+	; pobierz identyfikator potoku wejścia rodzica
+	call	kernel_task_active
+	mov	rsi,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
+
+	; przywróć wskaźnik struktury procesu
+	pop	rdi
+
+.no_out_to_in_parent:
+	; załaduj identyfikator potoku na wyjście procesu
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.out],	rsi
+
+	; oznacz proces jako gotowy do przetwarzania
+	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active
 
 .process_run_end:
 	; przywróć oryginalne rejestry
@@ -173,6 +218,43 @@ kernel_service:
 .process_ipc_receive:
 	; pobierz komunikat przeznaczony dla procesu
 	call	kernel_ipc_receive
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;===============================================================================
+; wejście:
+;	rbx - PID procesu docelowego
+;	ecx - rozmiar przestrzeni w Bajtach lub jeśli wartość pusta, 40 Bajtów z pozycji wskaźnika RSI
+;	rsi - wskaźnik do przestrzeni danych
+; wyjście:
+;	Flaga CF - jeśli kolejka przepełniona
+.process_ipc_send:
+	; wyślij komunikat do procesu
+	call	kernel_ipc_insert
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;===============================================================================
+; wejście:
+;	ecx - rozmiar przestrzeni w Bajtach lub jeśli wartość pusta, 40 Bajtów z pozycji wskaźnika RSI
+;	rsi - wskaźnik do przestrzeni danych
+; wyjście:
+;	Flaga CF - jeśli kolejka przepełniona
+.process_ipc_send_parent:
+	; zachowaj oryginalne rejestry
+	push	rdi
+
+	; pobierz PID procesu rodzica
+	call	kernel_task_active
+	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.parent]
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+
+	; wyślij komunikat do procesu
+	call	kernel_ipc_insert
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end

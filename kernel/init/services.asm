@@ -65,11 +65,13 @@ kernel_init_services:
 	pop	rsi
 
 	; dodaj usługę do kolejki zadań
-	mov	bx,	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_service | KERNEL_TASK_FLAG_secured
 	movzx	ecx,	byte [rsi + KERNEL_INIT_STRUCTURE_SERVICE.length]
 	add	rsi,	KERNEL_INIT_STRUCTURE_SERVICE.name
 	push	rcx	; zapamiętaj ilość znaków w nazwie procesu
 	call	kernel_task_add
+
+	; oznacz zadanie jako aktywne i usługa
+	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_service
 
 	; koniec tablicy?
 	pop	rcx	; przywróć ilość znaków nazwie procesu

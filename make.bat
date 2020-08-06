@@ -3,6 +3,7 @@ set WIDTH=640
 set HEIGHT=480
 
 ..\nasm -f bin software/console.asm	-o build/console
+..\nasm -f bin software/shell.asm	-o build/shell
 
 ..\nasm -f bin kernel/init/boot.asm	-o build/boot
 ..\nasm -f bin kernel.asm		-o build/kernel

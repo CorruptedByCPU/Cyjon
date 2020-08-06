@@ -23,12 +23,13 @@ kernel_stream_out_default	dq	STATIC_EMPTY
 
 ;===============================================================================
 ; wyjście:
+;	Flaga CF, jeśli brak miejsca
 ;	rsi - identyfikator potoku
 kernel_stream:
 	; zachowaj oryginalne rejestry
 	push	rcx
-	push	rsi
 	push	rdi
+	push	rsi
 
 	; początek tablicy potoków
 	mov	rsi,	qword [kernel_stream_address]
@@ -112,9 +113,29 @@ kernel_stream:
 	mov	byte [kernel_stream_semaphore],	STATIC_FALSE
 
 	; przywróć oryginalne rejestry
-	pop	rdi
 	pop	rsi
+	pop	rdi
 	pop	rcx
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rsi - identyfikator potoku
+kernel_stream_release:
+	; zachowaj oryginalne rejestry
+	push	rdi
+
+	; zwolnij przestrzeń potoku
+	mov	rdi,	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.address]
+	call	kernel_memory_release_page
+
+	; zwolnij wpis w tablicy potoków
+	mov	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.address],	STATIC_EMPTY
+
+	; przywróć oryginalne rejestry
+	pop	rdi
 
 	; powrót z procedury
 	ret

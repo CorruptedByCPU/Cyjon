@@ -3,22 +3,22 @@
 ;===============================================================================
 
 ;===============================================================================
-service_cero_ipc_desu:
+kernel_gui_ipc_desu:
 	; pobierz identyfikator okna i koordynary wskaźnika kursora
-	mov	rax,	qword [rdi + KERNEL_IPC_STRUCTURE.data + SERVICE_DESU_STRUCTURE_IPC.id]
-	mov	r8,	qword [rdi + KERNEL_IPC_STRUCTURE.data + SERVICE_DESU_STRUCTURE_IPC.value0]
-	mov	r9,	qword [rdi + KERNEL_IPC_STRUCTURE.data + SERVICE_DESU_STRUCTURE_IPC.value1]
+	mov	rax,	qword [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.id]
+	mov	r8,	qword [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
+	mov	r9,	qword [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value1]
 
 	; naciśnięcie prawego klawisza myszki?
-	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + SERVICE_DESU_STRUCTURE_IPC.type],	SERVICE_DESU_IPC_MOUSE_BUTTON_RIGHT_press
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.type],	KERNEL_WM_IPC_MOUSE_BUTTON_RIGHT_press
 	je	.right_mouse_button	; tak
 
 	; akcja dotyczy okna "menu"?
-	cmp	rax,	qword [service_cero_window_menu + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.id]
+	cmp	rax,	qword [kernel_gui_window_menu + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.id]
 	jne	.end	; nie
 
 	; sprawdź, którego elementu okna dotyczny akcja
-	mov	rsi,	service_cero_window_menu
+	mov	rsi,	kernel_gui_window_menu
 	call	library_bosu_element
 	jc	.end	; brak akcji
 
@@ -36,21 +36,21 @@ service_cero_ipc_desu:
 
 .right_mouse_button:
 	; akcja dotyczy okna "taskbar"?
-	cmp	rax,	qword [service_cero_window_taskbar + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.id]
+	cmp	rax,	qword [kernel_gui_window_taskbar + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.id]
 	je	.end	; tak, brak akcji cdn.
 
 	; akcja dotyczy okna "background"?
-	cmp	rax,	qword [service_cero_window_workbench + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.id]
+	cmp	rax,	qword [kernel_gui_window_workbench + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.id]
 	jne	.end	; nie
 
 	; koryguj pozycje okna "menu"
-	mov	rbx,	qword [service_cero_window_menu + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.id]
-	call	service_desu_object_by_id
+	mov	rbx,	qword [kernel_gui_window_menu + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.id]
+	call	kernel_wm_object_by_id
 
 	; czy pozycja wskaźnika kursora pozwala na wyświetlenie okna "menu"?
 	mov	rax,	r8
 	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
-	cmp	rax,	qword [service_cero_window_workbench + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	cmp	rax,	qword [kernel_gui_window_workbench + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
 	jl	.y	; tak na osi X
 
 	; wyświetl okno "menu" po lewej stronie wskaźnika kursora
@@ -60,11 +60,11 @@ service_cero_ipc_desu:
 	; czy pozycja wskaźnika kursora pozwala na wyświetlenie okna "menu"? (uwzględniając wysokość okna "taskbar")
 	mov	rax,	r9
 	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
-	cmp	rax,	qword [service_cero_window_taskbar + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
+	cmp	rax,	qword [kernel_gui_window_taskbar + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
 	jl	.visible	; tak na osi Y
 
 	; wyświetl okno "menu" nad oknem "taskbar"
-	mov	r9,	qword [service_cero_window_taskbar + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
+	mov	r9,	qword [kernel_gui_window_taskbar + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
 	sub	r9,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
 	dec	r9	; zachowaj 1 piksel odstępu między oknami "menu" i "taskbar" (rzecz gustu)
 

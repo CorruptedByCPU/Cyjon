@@ -4,7 +4,7 @@
 
 %define	KERNEL_name					"Cyjon"
 %define	KERNEL_version					"0"
-%define	KERNEL_revision					"1215"
+%define	KERNEL_revision					"1235"
 %define	KERNEL_architecture				"x86_64"
 
 KERNEL_BASE_address					equ	0x0000000000100000
@@ -40,6 +40,11 @@ KERNEL_SERVICE_PROCESS_check				equ	0x0200 + KERNEL_SERVICE_PROCESS
 KERNEL_SERVICE_PROCESS_memory_alloc			equ	0x0300 + KERNEL_SERVICE_PROCESS
 KERNEL_SERVICE_PROCESS_ipc_receive			equ	0x0400 + KERNEL_SERVICE_PROCESS
 KERNEL_SERVICE_PROCESS_pid				equ	0x0500 + KERNEL_SERVICE_PROCESS
+KERNEL_SERVICE_PROCESS_ipc_send				equ	0x0600 + KERNEL_SERVICE_PROCESS
+KERNEL_SERVICE_PROCESS_ipc_send_to_parent		equ	0x0700 + KERNEL_SERVICE_PROCESS
+
+KERNEL_SERVICE_PROCESS_RUN_FLAG_default			equ	KERNEL_SERVICE_PROCESS_RUN_FLAG_out_to_in_parent
+KERNEL_SERVICE_PROCESS_RUN_FLAG_out_to_in_parent	equ	00000001b
 
 KERNEL_SERVICE_VIDEO					equ	0x0001
 KERNEL_SERVICE_VIDEO_properties				equ	0x0000 + KERNEL_SERVICE_VIDEO
@@ -64,6 +69,10 @@ struc	KERNEL_IPC_STRUCTURE
 	.SIZE:
 endstruc
 
+KERNEL_IPC_TYPE_KEYBOARD	equ	0x00
+KERNEL_IPC_TYPE_MOUSE		equ	0x01
+KERNEL_IPC_TYPE_GRAPHICS	equ	0x03
+
 ;===============================================================================
 ; ERROR
 ;===============================================================================
@@ -72,11 +81,11 @@ KERNEL_ERROR_memory_low					equ	0x0001
 ;===============================================================================
 ; DESU
 ;===============================================================================
-SERVICE_DESU_IPC_KEYBOARD				equ	0
-SERVICE_DESU_IPC_MOUSE_BUTTON_LEFT_press		equ	1
-SERVICE_DESU_IPC_MOUSE_BUTTON_RIGHT_press		equ	2
+KERNEL_WM_IPC_KEYBOARD				equ	0
+KERNEL_WM_IPC_MOUSE_BUTTON_LEFT_press		equ	1
+KERNEL_WM_IPC_MOUSE_BUTTON_RIGHT_press		equ	2
 
-struc	SERVICE_DESU_STRUCTURE_IPC
+struc	KERNEL_WM_STRUCTURE_IPC
 	.type						resb	1
 	.reserved					resb	7
 	.id						resb	8

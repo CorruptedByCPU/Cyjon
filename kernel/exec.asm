@@ -7,7 +7,6 @@ KERNEL_EXEC_FLAG_forward_out		equ	00000010b	; przekieruj wyjście rodzica na wej
 
 ;===============================================================================
 ; wejście:
-;	rbx - flagi
 ;	rcx - ilość znaków reprezentujących nazwę uruchamianego programu
 ;	rsi - wskaźnik do nazwy programu
 ;	rdi - wskaźnik do supła pliku
@@ -15,6 +14,7 @@ KERNEL_EXEC_FLAG_forward_out		equ	00000010b	; przekieruj wyjście rodzica na wej
 ;	Flaga CF - wystąpił błąd
 ;	rax - kod błędu, jeśli Flaga CF podniesiona
 ;	rcx - pid nowego procesu
+;	rdi - wskaźnik do struktury zadania
 kernel_exec:
 	; zachowaj oryginalne rejestry
 	push	rdx
@@ -153,7 +153,6 @@ kernel_exec:
 	;-----------------------------------------------------------------------
 
 	; wstaw proces do kolejki zadań
-	xor	bx,	bx	; brak dodatkowych flag
 	movzx	ecx,	byte [rsi + KERNEL_VFS_STRUCTURE_KNOT.length]
 	add	rsi,	KERNEL_VFS_STRUCTURE_KNOT.name
 	call	kernel_task_add
@@ -164,15 +163,15 @@ kernel_exec:
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.map],	r13
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.map_size],	(KERNEL_MEMORY_MAP_SIZE_page << STATIC_PAGE_SIZE_shift) << STATIC_MULTIPLE_BY_8_shift
 
-	; oznacz proces jako gotowy do przetwarzania
-	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active
-
 	; zwolnij niewykrzystane, zarezerwowane strony
 	add	qword [kernel_page_free_count],	rbp
 	sub	qword [kernel_page_reserved_count],	rbp
 
 	; zwróć numer PID utworzonego zadania
 	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rcx
+
+	; zwróć wskaźnik do struktury zadania
+	mov	qword [rsp],	rdi
 
 	; koniec obsługi procedury
 	jmp	.end

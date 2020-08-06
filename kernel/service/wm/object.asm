@@ -8,28 +8,28 @@
 ; wyjście:
 ;	Flaga CF, jeśli nie znaleziono
 ;	rsi - wskaźnik do obiektu na liście
-service_desu_object_by_id:
+kernel_wm_object_by_id:
 	; zachowaj oryginalne rejestry
 	push	rcx
 	push	rsi
 
 	; na liście znajdują się obiekty?
-	cmp	qword [service_desu_object_list_records],	STATIC_EMPTY
+	cmp	qword [kernel_wm_object_list_records],	STATIC_EMPTY
 	je	.error	; nie
 
 	; ilość obiektów na liście
-	mov	rcx,	qword [service_desu_object_list_records]
+	mov	rcx,	qword [kernel_wm_object_list_records]
 
 	; pobierz wskaźnik początku listy obiektów
-	mov	rsi,	qword [service_desu_object_list_address]
+	mov	rsi,	qword [kernel_wm_object_list_address]
 
 .loop:
 	; poszukiwany identyfikator?
-	cmp	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id],	rbx
+	cmp	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id],	rbx
 	je	.found	; tak
 
 	; przesuń wskaźnik na następny obiekt
-	add	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
 
 	; koniec obiektów?
 	dec	rcx
@@ -55,14 +55,14 @@ service_desu_object_by_id:
 	ret
 
 	; informacja dla Bochs
-	macro_debug	"service_desu_object_by_id"
+	macro_debug	"kernel_wm_object_by_id"
 
 ;===============================================================================+
 ; wejście:
 ;	rsi - wskaźnik do obiektu
 ; wyjście:
 ;	rsi - wskaźnik do rekordu na liście
-service_desu_object_insert:
+kernel_wm_object_insert:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rdx
@@ -71,18 +71,18 @@ service_desu_object_insert:
 	push	rsi
 
 	; zablokuj dostęp do modyfikacji listy obiektów
-	macro_lock	service_desu_object_semaphore,	0
+	macro_lock	kernel_wm_object_semaphore,	0
 
 	; brak miejsca?
-	cmp	qword [service_desu_object_list_records_free],	STATIC_EMPTY
+	cmp	qword [kernel_wm_object_list_records_free],	STATIC_EMPTY
 	je	.end	; tak
 
 	; ustaw wskaźnik na listę obiektów
-	mov	rdi,	qword [service_desu_object_list_address]
+	mov	rdi,	qword [kernel_wm_object_list_address]
 
 	; oblicz pozycję względną za ostatnim obiektem na liście
-	mov	rax,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
-	mul	qword [service_desu_object_list_records]
+	mov	rax,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
+	mul	qword [kernel_wm_object_list_records]
 
 	; koryguj pozycje wskaźnika
 	add	rdi,	rax
@@ -91,15 +91,15 @@ service_desu_object_insert:
 	mov	qword [rsp],	rdi
 
 	; rejestrowany obiekt będzie arbitrem?
-	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_arbiter
+	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_arbiter
 	jz	.insert	; nie
 
 	; nie pozwól na zarejestrowanie kolejnego arbitra
-	cmp	byte [service_desu_object_arbiter_semaphore],	STATIC_FALSE
+	cmp	byte [kernel_wm_object_arbiter_semaphore],	STATIC_FALSE
 	jne	.insert	; istnieje już, zignoruj
 
 	; zablokuj dostęp do arbitra
-	mov	byte [service_desu_object_arbiter_semaphore],	STATIC_TRUE
+	mov	byte [kernel_wm_object_arbiter_semaphore],	STATIC_TRUE
 
 .insert:
 	; zachowaj wskaźniki do obiektów
@@ -107,11 +107,11 @@ service_desu_object_insert:
 	push	rdi
 
 	; załaduj na koniec listy
-	mov	rcx,	(SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE) >> STATIC_DIVIDE_BY_QWORD_shift
+	mov	rcx,	(KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE) >> STATIC_DIVIDE_BY_QWORD_shift
 	rep	movsq
 
 	; ilość obiektów na liście
-	inc	qword [service_desu_object_list_records]
+	inc	qword [kernel_wm_object_list_records]
 
 	; przywróć wskaźniki do obiektów
 	pop	rdi
@@ -119,15 +119,15 @@ service_desu_object_insert:
 
 	; pobierz PID procesu właściciela okna
 	call	kernel_task_active_pid
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.pid],	rax
+	mov	qword [rdi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid],	rax
 
 	; zachowaj czas ostatniej modyfikacji listy
 	mov	rax,	qword [driver_rtc_microtime]
-	mov	qword [service_desu_object_list_modify_time],	rax
+	mov	qword [kernel_wm_object_list_modify_time],	rax
 
 .end:
 	; zwolnij dostęp do modyfikacji listy obiektów
-	mov	byte [service_desu_object_semaphore],	STATIC_FALSE
+	mov	byte [kernel_wm_object_semaphore],	STATIC_FALSE
 
 	; przywróć oryginalne rejestry
 	pop	rsi
@@ -139,48 +139,48 @@ service_desu_object_insert:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_object_insert"
+	macro_debug	"kernel_wm_object_insert"
 
 ;===============================================================================
-service_desu_object:
+kernel_wm_object:
 	; zachowaj oryginalne rejestry
 	push	rbx
 	push	rsi
 
 	; ilość obiektów na liście
-	mov	rbx,	qword [service_desu_object_list_records]
+	mov	rbx,	qword [kernel_wm_object_list_records]
 
 	; ustaw wskaźnik na początek listy obiektów
-	mov	rsi,	qword [service_desu_object_list_address]
+	mov	rsi,	qword [kernel_wm_object_list_address]
 
 .loop:
 	; obiekt widoczny?
-	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_visible
+	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
 	jz	.next	; nie
 
 	; obiekt aktualizował swoją zawartość?
-	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
+	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 	jz	.next	; nie
 
 	; przetwórz strefę
-	call	service_desu_zone_insert_by_object
+	call	kernel_wm_zone_insert_by_object
 
 	; wyłącz flagę aktualizacji obiektu
-	and	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	~SERVICE_DESU_OBJECT_FLAG_flush
+	and	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_flush
 
 	; wymuś aktualizacje obiektu kursora
-	or	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
+	or	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
 .next:
 	; przesuń wskaźnik na następny obiekt
-	add	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
 
 	; pozostały obiekty do sprawdzenia?
 	dec	rbx
 	jnz	.loop	; tak
 
 	; przetwórz strefy
-	call	service_desu_zone
+	call	kernel_wm_zone
 
 .end:
 	; przywróć oryginalne rejestry
@@ -190,28 +190,28 @@ service_desu_object:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_object"
+	macro_debug	"kernel_wm_object"
 
 ;===============================================================================
 ; wyjście:
 ;	rcx - nowy identyfikator
-service_desu_object_id_get:
+kernel_wm_object_id_get:
 	; zablokuj dostęp do procedury
-	macro_lock	service_desu_object_id_semaphore,	0
+	macro_lock	kernel_wm_object_id_semaphore,	0
 
 	; pobierz wolny identyfikator
-	mov	rcx,	qword [service_desu_object_id]
+	mov	rcx,	qword [kernel_wm_object_id]
 
 	; przygotuj następny
-	inc	qword [service_desu_object_id]
+	inc	qword [kernel_wm_object_id]
 
 	; zwolnij dostęp do procedury
-	mov	byte [service_desu_object_id_semaphore],	STATIC_FALSE
+	mov	byte [kernel_wm_object_id_semaphore],	STATIC_FALSE
 
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_object_id_get"
+	macro_debug	"kernel_wm_object_id_get"
 
 ;===============================================================================
 ; wejście:
@@ -219,7 +219,7 @@ service_desu_object_id_get:
 ;	r9w - pozycja kursora na osi Y
 ; wyjście:
 ;	rsi - wskaźnik do obiektu znajdującego się pod współrzędnymi kursora
-service_desu_object_find:
+kernel_wm_object_find:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rcx
@@ -227,46 +227,46 @@ service_desu_object_find:
 	push	rsi
 
 	; na liście znajdują się obiekty?
-	cmp	qword [service_desu_object_list_records],	STATIC_EMPTY
+	cmp	qword [kernel_wm_object_list_records],	STATIC_EMPTY
 	je	.error	; nie
 
 	; ilość obiektów na liście
-	mov	rcx,	qword [service_desu_object_list_records]
+	mov	rcx,	qword [kernel_wm_object_list_records]
 
 	; oblicz adres względny za ostatnim rekordem listy obiektów
-	mov	rax,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+	mov	rax,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
 	mul	rcx
 
 	; ustaw wskaźnik na adres bezwzględny początku listy obiektów
-	mov	rsi,	qword [service_desu_object_list_address]
+	mov	rsi,	qword [kernel_wm_object_list_address]
 	add	rsi,	rax	; przesuń wskaźnik na koniec
 
 .next:
 	; cofnij wskaźnik na poprzedni obiekt
-	sub	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+	sub	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
 
 	; obiekt widoczny?
-	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_visible
+	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
 	jz	.fail	; nie
 
 	;-----------------------------------------------------------------------
 	; wskaźnik w przestrzeni obiektu względem lewej krawędzi?
-	cmp	r8,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
+	cmp	r8,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
 	jl	.fail	; nie
 
 	; wskaźnik w przestrzeni obiektu względem górnej krawędzi?
-	cmp	r9,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
+	cmp	r9,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
 	jl	.fail	; nie
 
 	; wskaźnik w przestrzeni obiektu względem prawej krawędzi?
-	mov	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
-	add	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
+	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	add	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
 	cmp	r8,	rax
 	jge	.fail	; nie
 
 	; wskaźnik w przestrzeni obiektu względem dolnej krawędzi?
-	mov	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
-	add	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height]
+	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	add	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
 	cmp	r9,	rax
 	jge	.fail	; nie
 	;-----------------------------------------------------------------------
@@ -299,80 +299,80 @@ service_desu_object_find:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_object_find"
+	macro_debug	"kernel_wm_object_find"
 
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do obiektu
 ; wyjście:
 ;	rsi - nowy wskaźnik do obiektu
-service_desu_object_up:
+kernel_wm_object_up:
 	; przesunięcie obiektu na liście, nie jest równoznaczne z jego modyfikacją
-	push	qword [service_desu_object_list_modify_time]
+	push	qword [kernel_wm_object_list_modify_time]
 
 	; zachowaj wskaźnik do aktualnego obiektu
 	push	rsi
 
 	; dodaj kopię obiektu na listę
-	call	service_desu_object_insert
+	call	kernel_wm_object_insert
 
 	; koryguj PID właścieciela
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.pid],	rax
+	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid],	rax
 
 	; zwróć nowy wskaźnik do obiektu
 	xchg	rsi,	qword [rsp]
 
 	; usuń stary obiekt z listy
-	call	service_desu_object_remove
+	call	kernel_wm_object_remove
 
 	; zwróć wskaźni do nowego obiektu
 	pop	rsi
 
 	; koryguj pozycje
-	sub	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+	sub	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
 
 	; przywróć oryginalny czas ostatniej modyfikacji listy obiektów
-	pop	qword [service_desu_object_list_modify_time]
+	pop	qword [kernel_wm_object_list_modify_time]
 
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_object_up"
+	macro_debug	"kernel_wm_object_up"
 
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik rekordu do usunięcia
-service_desu_object_remove:
+kernel_wm_object_remove:
 	; zachowaj oryginalne rejestry
 	push	rcx
 	push	rsi
 	push	rdi
 
 	; zablokuj dostęp do modyfikacji listy obiektów
-	macro_lock	service_desu_object_semaphore,	0
+	macro_lock	kernel_wm_object_semaphore,	0
 
 	; ustaw wskaźnik źródłowy i docelowy
 	mov	rdi,	rsi
-	add	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
 
 .loop:
 	; kopiuj następny rekord w miejsce aktualnego
-	mov	rcx,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+	mov	rcx,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
 	rep	movsb
 
 	; pozostały inne rekordy do prdesunięcia?
-	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width],	STATIC_EMPTY
+	cmp	qword [rdi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width],	STATIC_EMPTY
 	jne	.loop	; tak
 
 	; ilość rekordów na liście
-	dec	qword [service_desu_object_list_records]
+	dec	qword [kernel_wm_object_list_records]
 
 	; zachowaj czas ostatniej modyfikacji listy
 	mov	rcx,	qword [driver_rtc_microtime]
-	mov	qword [service_desu_object_list_modify_time],	rcx
+	mov	qword [kernel_wm_object_list_modify_time],	rcx
 
 	; zwolnij dostęp do modyfikacji listy obiektów
-	mov	byte [service_desu_object_semaphore],	STATIC_FALSE
+	mov	byte [kernel_wm_object_semaphore],	STATIC_FALSE
 
 	; przywróć oryginalne rejestry
 	pop	rdi
@@ -382,13 +382,13 @@ service_desu_object_remove:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_object_remove"
+	macro_debug	"kernel_wm_object_remove"
 
 ;===============================================================================
 ; wejście:
 ;	r14 - delta osi X
 ;	r15 - delta osi Y
-service_desu_object_move:
+kernel_wm_object_move:
 	; zachowaj oryginalne rejestry
 	push	rbx
 	push	rsi
@@ -403,20 +403,20 @@ service_desu_object_move:
 	push	r15
 
 	; pobierz wskaźnik domyślnego obiektu wypełniającego strefę
-	mov	rbx,	qword [service_desu_object_list_address]
+	mov	rbx,	qword [kernel_wm_object_list_address]
 
 	; ustaw wskaźnik na wybrany obiekt
-	mov	rsi,	qword [service_desu_object_selected_pointer]
+	mov	rsi,	qword [kernel_wm_object_selected_pointer]
 
 	; obiekt można przemieszczać?
-	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_fixed_xy
+	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_fixed_xy
 	jnz	.end	; nie
 
 	; pobierz właściwości obiektu
-	mov	r8,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
-	mov	r9,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
-	mov	r10,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
-	mov	r11,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height]
+	mov	r8,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	mov	r9,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	mov	r10,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	mov	r11,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
 
 	; ustaw zmienne lokalne
 	mov	r12,	r8
@@ -427,7 +427,7 @@ service_desu_object_move:
 	jz	.y	; tak
 
 	; aktualizuj pozycję obiektu na osi X
-	add	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r14
+	add	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x],	r14
 
 	; przesunięcie na osi X jest dodatnie?
 	cmp	r14,	STATIC_EMPTY
@@ -437,7 +437,7 @@ service_desu_object_move:
 	mov	r10,	r14
 	; zarejestruj
 	mov	rdi,	rbx
-	call	service_desu_zone_insert_by_register
+	call	kernel_wm_zone_insert_by_register
 
 	; koryguj pozycję strefy na osi X
 	add	r8,	r14
@@ -456,7 +456,7 @@ service_desu_object_move:
 	mov	r10,	r14
 	; zarejestruj
 	mov	rdi,	rbx
-	call	service_desu_zone_insert_by_register
+	call	kernel_wm_zone_insert_by_register
 
 	; koryguj pozycję strefy na osi X
 	mov	r8,	r12
@@ -476,7 +476,7 @@ service_desu_object_move:
 	jz	.ready	; tak
 
 	; aktualizuj pozycję obiektu na osi Y
-	add	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r15
+	add	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y],	r15
 
 	; przesunięcie na osi Y jest dodatnie?
 	cmp	r15,	STATIC_EMPTY
@@ -486,7 +486,7 @@ service_desu_object_move:
 	mov	r11,	r15
 	; zarejestruj
 	mov	rdi,	rbx
-	call	service_desu_zone_insert_by_register
+	call	kernel_wm_zone_insert_by_register
 
 	; koryguj pozycję strefy na osi Y
 	add	r9,	r15
@@ -505,7 +505,7 @@ service_desu_object_move:
 	mov	r11,	r15
 	; zarejestruj
 	mov	rdi,	rbx
-	call	service_desu_zone_insert_by_register
+	call	kernel_wm_zone_insert_by_register
 
 	; koryguj pozycję strefy na osi Y
 	mov	r9,	r12
@@ -517,7 +517,7 @@ service_desu_object_move:
 
 .ready:
 	; wyświetl ponownie zawartość obiektu
-	or	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
+	or	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
 .end:
 	; przywróć oryginalne rejestry
@@ -536,39 +536,39 @@ service_desu_object_move:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_object_move"
+	macro_debug	"kernel_wm_object_move"
 
 ;===============================================================================
-service_desu_object_hide:
+kernel_wm_object_hide:
 	; zachowaj oryginalne rejestry
 	push	rbx
 	push	rcx
 	push	rsi
 
 	; ilość obiektów na liście
-	mov	rcx,	qword [service_desu_object_list_records]
+	mov	rcx,	qword [kernel_wm_object_list_records]
 
 	; ustaw wskaźnik na początek listy obiektów
-	mov	rsi,	qword [service_desu_object_list_address]
+	mov	rsi,	qword [kernel_wm_object_list_address]
 
 .loop:
 	; obiekt widoczny?
-	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_visible
+	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
 	jz	.next	; nie
 
 	; obiekt "kruchy"?
-	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_fragile
+	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_fragile
 	jz	.next	; nie
 
 	; wyłącz flagę "widoczny"
-	and	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	~SERVICE_DESU_OBJECT_FLAG_visible
+	and	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_visible
 
 	; dodaj strefę do przetworzenia
-	call	service_desu_zone_insert_by_object
+	call	kernel_wm_zone_insert_by_object
 
 .next:
 	; przesuń wskaźnik na następny obiekt
-	add	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
 
 	; pozostały obiekty do sprawdzenia?
 	dec	rcx
@@ -583,37 +583,37 @@ service_desu_object_hide:
 	; powrót z podprocedury
 	ret
 
-	macro_debug	"service_desu_object_hide"
+	macro_debug	"kernel_wm_object_hide"
 
 ;===============================================================================
 ; wyjście:
 ;	rcx - nowy identyfikator
-service_desu_object_id_new:
+kernel_wm_object_id_new:
 	; zablokuj dostęp do procedury
-	macro_lock	service_desu_object_id_semaphore,	0
+	macro_lock	kernel_wm_object_id_semaphore,	0
 
 	; pobierz wolny identyfikator
-	mov	rcx,	qword [service_desu_object_id]
+	mov	rcx,	qword [kernel_wm_object_id]
 
 	; przygotuj następny
-	inc	qword [service_desu_object_id]
+	inc	qword [kernel_wm_object_id]
 
 	; zwolnij dostęp do procedury
-	mov	byte [service_desu_object_id_semaphore],	STATIC_FALSE
+	mov	byte [kernel_wm_object_id_semaphore],	STATIC_FALSE
 
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_object_id"
+	macro_debug	"kernel_wm_object_id"
 
 ; ;===============================================================================
-; service_desu_object_lock:
+; kernel_wm_object_lock:
 ; 	; zablokuj dostęp do modyfikacji listy obiektów
-; 	macro_lock	service_desu_object_semaphore, 0
+; 	macro_lock	kernel_wm_object_semaphore, 0
 ;
 ; .wait:
 ; 	; czekaj, aż wszystkie procedury przestaną korzystać z listy obietków
-; 	test	byte [service_desu_object_lock_level],	STATIC_EMPTY
+; 	test	byte [kernel_wm_object_lock_level],	STATIC_EMPTY
 ; 	jnz	.wait
 ;
 ; 	; powrót z procedury
@@ -628,28 +628,28 @@ service_desu_object_id_new:
 ; ; wyjście:
 ; ;	Flaga CF, jeśli nie znaleziono
 ; ;	rdi - wskaźnik do obiektu na liście
-; service_desu_object_find_by_id:
+; kernel_wm_object_find_by_id:
 ; 	; zachowaj oryginalne rejestry
 ; 	push	rcx
 ; 	push	rdi
 ;
 ; 	; na liście znajdują się obiekty?
-; 	cmp	qword [service_desu_object_list_records],	STATIC_EMPTY
+; 	cmp	qword [kernel_wm_object_list_records],	STATIC_EMPTY
 ; 	je	.error	; nie
 ;
 ; 	; ilość obiektów na liście
-; 	mov	rcx,	qword [service_desu_object_list_records]
+; 	mov	rcx,	qword [kernel_wm_object_list_records]
 ;
 ; 	; pobierz wskaźnik początku listy obiektów
-; 	mov	rdi,	qword [service_desu_object_list_address]
+; 	mov	rdi,	qword [kernel_wm_object_list_address]
 ;
 ; .loop:
 ; 	; poszukiwany identyfikator?
-; 	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.id],	rbx
+; 	cmp	qword [rdi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id],	rbx
 ; 	je	.found	; tak
 ;
 ; 	; przesuń wskaźnik na następny obiekt
-; 	add	rdi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+; 	add	rdi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
 ;
 ; 	; koniec obiektów?
 ; 	dec	rcx
@@ -680,20 +680,20 @@ service_desu_object_id_new:
 ; ;~ ;===============================================================================
 ; ;~ ; wejście:
 ; ;~ ;	rsi - wskaźnik rekordu do usunięcia
-; ;~ service_desu_object_delete:
+; ;~ kernel_wm_object_delete:
 ; 	;~ ; zachowaj oryginalne rejestry
 ; 	;~ push	rcx
 ; 	;~ push	rdi
 ;
 ; 	;~ ; pobierz rozmiar przestrzeni obiektu i zamień na strony
-; 	;~ mov	rcx,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.size]
+; 	;~ mov	rcx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size]
 ; 	;~ call	library_page_from_byte
 ;
 ; 	;~ ; pobierz wskaźnik do przestrzeni obiektu
-; 	;~ mov	rdi,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.address]
+; 	;~ mov	rdi,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.address]
 ;
 ; 	;~ ; usuń obiekt z listy
-; 	;~ call	service_desu_object_remove
+; 	;~ call	kernel_wm_object_remove
 ;
 ; 	;~ ; usuń obiekt z przestrzeni pamięci
 ; 	;~ call	kernel_page_release_few

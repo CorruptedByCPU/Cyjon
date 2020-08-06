@@ -9,37 +9,37 @@
 ;	r9 - pozycja na osi Y
 ;	r10 - szerokość strefy
 ;	r11 - wysokość strefy
-service_desu_fill_insert_by_register:
+kernel_wm_fill_insert_by_register:
 	; zachowaj oryginalne rejestry
 	push	rcx
 	push	rdi
 
 	; maksymalna ilość miejsc na liście
-	mov	ecx,	SERVICE_DESU_FILL_LIST_limit
+	mov	ecx,	KERNEL_WM_FILL_LIST_limit
 
 	; ustaw wskaźnik na listy
-	mov	rdi,	qword [service_desu_fill_list_address]
+	mov	rdi,	qword [kernel_wm_fill_list_address]
 
 .loop:
 	; wolne miejsce?
-	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.object],	STATIC_EMPTY
+	cmp	qword [rdi + KERNEL_WM_STRUCTURE_FILL.object],	STATIC_EMPTY
 	jne	.next	; nie
 
 	; dodaj do listy nową strefę
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r8
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r9
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.width],	r10
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.height],	r11
+	mov	qword [rdi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.x],	r8
+	mov	qword [rdi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.y],	r9
+	mov	qword [rdi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.width],	r10
+	mov	qword [rdi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.height],	r11
 
 	; oraz jej obiekt zależny
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.object],	rsi
+	mov	qword [rdi + KERNEL_WM_STRUCTURE_FILL.object],	rsi
 
 	; zrealizowano
 	jmp	.end
 
 .next:
 	; przesuń wskaźnik na następny wpis
-	add	rdi,	SERVICE_DESU_STRUCTURE_FILL.SIZE
+	add	rdi,	KERNEL_WM_STRUCTURE_FILL.SIZE
 
 	; koniec wpisów
 	dec	rcx
@@ -57,12 +57,12 @@ service_desu_fill_insert_by_register:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_fill_insert_by_register"
+	macro_debug	"kernel_wm_fill_insert_by_register"
 
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do obiektu
-service_desu_fill_insert_by_object:
+kernel_wm_fill_insert_by_object:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rcx
@@ -70,14 +70,14 @@ service_desu_fill_insert_by_object:
 	push	rsi
 
 	; maksymalna ilość miejsc na liście
-	mov	ecx,	SERVICE_DESU_FILL_LIST_limit
+	mov	ecx,	KERNEL_WM_FILL_LIST_limit
 
 	; ustaw wskaźnik na listy
-	mov	rdi,	qword [service_desu_fill_list_address]
+	mov	rdi,	qword [kernel_wm_fill_list_address]
 
 .loop:
 	; wolne miejsce?
-	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_FILL.object],	STATIC_EMPTY
+	cmp	qword [rdi + KERNEL_WM_STRUCTURE_FILL.object],	STATIC_EMPTY
 	jne	.next	; nie
 
 	; wstaw właściwości wypełnienia
@@ -95,7 +95,7 @@ service_desu_fill_insert_by_object:
 
 .next:
 	; przesuń wskaźnik na następny wpis
-	add	rdi,	SERVICE_DESU_STRUCTURE_FILL.SIZE
+	add	rdi,	KERNEL_WM_STRUCTURE_FILL.SIZE
 
 	; koniec wpisów
 	dec	rcx
@@ -115,10 +115,10 @@ service_desu_fill_insert_by_object:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_fill_insert_by_object"
+	macro_debug	"kernel_wm_fill_insert_by_object"
 
 ;===============================================================================
-service_desu_fill:
+kernel_wm_fill:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rcx
@@ -135,14 +135,14 @@ service_desu_fill:
 	push	r15
 
 	; maksymalna ilość miejsc na liście
-	mov	ecx,	SERVICE_DESU_FILL_LIST_limit
+	mov	ecx,	KERNEL_WM_FILL_LIST_limit
 
 	; ustaw wskaźnik na listę wypełnień
-	mov	rsi,	qword [service_desu_fill_list_address]
+	mov	rsi,	qword [kernel_wm_fill_list_address]
 
 .loop:
 	; pusta pozycja?
-	cmp	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.object],	STATIC_EMPTY
+	cmp	qword [rsi + KERNEL_WM_STRUCTURE_FILL.object],	STATIC_EMPTY
 	je	.next	; tak
 
 	; zachowaj wskaźnik i rozmiar listy
@@ -152,10 +152,10 @@ service_desu_fill:
 	;-----------------------------------------------------------------------
 	; pobierz właściwości wypełnienia
 	;-----------------------------------------------------------------------
-	mov	r8,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.x]
-	mov	r9,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.y]
-	mov	r10,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.width]
-	mov	r11,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.field + SERVICE_DESU_STRUCTURE_FIELD.height]
+	mov	r8,	qword [rsi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	mov	r9,	qword [rsi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	mov	r10,	qword [rsi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	mov	r11,	qword [rsi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.height]
 
 	; opisana strefa znajduje się na ujemnej osi X?
 	bt	r8,	STATIC_QWORD_BIT_sign
@@ -210,7 +210,7 @@ service_desu_fill:
 	;-----------------------------------------------------------------------
 
 	; pobierz wskaźnik do obiektu wypełniającego
-	mov	rsi,	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.object]
+	mov	rsi,	qword [rsi + KERNEL_WM_STRUCTURE_FILL.object]
 
 	;-----------------------------------------------------------------------
 	; scanlines
@@ -218,10 +218,10 @@ service_desu_fill:
 	mov	r12,	r10
 	shl	r12,	KERNEL_VIDEO_DEPTH_shift
 	; r13 - scanline obiektu w Bajtach
-	mov	r13,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
+	mov	r13,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
 	shl	r13,	KERNEL_VIDEO_DEPTH_shift
 	; r14 - scanline bufora w Bajtach
-	mov	r14,	qword [service_desu_object_framebuffer + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
+	mov	r14,	qword [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
 	shl	r14,	KERNEL_VIDEO_DEPTH_shift
 
 	; wylicz wskaźnik początku wypełnienia w przestrzeni bufora
@@ -237,13 +237,13 @@ service_desu_fill:
 
 	; wskaźnik bezpośredni do przestrzeni wypełnienia w buforze
 	add	rdi,	rax
-	add	rdi,	qword [service_desu_object_framebuffer + SERVICE_DESU_STRUCTURE_OBJECT.address]
+	add	rdi,	qword [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.address]
 
 	; korekta pozycji wypełnienia względem obiektu
 	; -----------------------------------------------------------------------
-	sub	r8,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
+	sub	r8,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
 	js	.overflow	; obiekt wypełniający poza obszarem fragmentu
-	sub	r9,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
+	sub	r9,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
 	js	.overflow	; obietk wypełniający poza obszarem fragmentu
 
 	; wylicz wskaźnik początku wypełnienia w przestrzeni obiektu
@@ -257,7 +257,7 @@ service_desu_fill:
 	shl	r8,	KERNEL_VIDEO_DEPTH_shift
 
 	; przelicz na wskaźnik bezwzględny
-	mov	rsi,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.address]
+	mov	rsi,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.address]
 	add	rsi,	rax
 	add	rsi,	r8
 
@@ -288,8 +288,8 @@ service_desu_fill:
 .overflow:
 	; przetwórz ponownie fragment jako strefę
 	mov	rsi,	qword [rsp]
-	call	service_desu_zone_insert_by_object
-	call	service_desu_zone
+	call	kernel_wm_zone_insert_by_object
+	call	kernel_wm_zone
 
 	; pomiń fragment
 	jmp	.leave
@@ -330,7 +330,7 @@ service_desu_fill:
 	jnz	.row	; tak
 
 	; zawartość bufora uległa modyfikacji
-	or	qword [service_desu_object_framebuffer + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
+	or	qword [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
 .leave:
 	; przywróć wskaźnik i rozmiar listy
@@ -338,11 +338,11 @@ service_desu_fill:
 	pop	rcx
 
 	; zwolnij wypełnienie na liście
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_FILL.object],	STATIC_EMPTY
+	mov	qword [rsi + KERNEL_WM_STRUCTURE_FILL.object],	STATIC_EMPTY
 
 .next:
 	; przesuń wskaźnik na następne wypełnienie
-	add	rsi,	SERVICE_DESU_STRUCTURE_FILL.SIZE
+	add	rsi,	KERNEL_WM_STRUCTURE_FILL.SIZE
 
 	; następny wpis na liście?
 	dec	rcx
@@ -367,4 +367,4 @@ service_desu_fill:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_fill"
+	macro_debug	"kernel_wm_fill"

@@ -3,17 +3,13 @@
 ;===============================================================================
 
 ;===============================================================================
-service_desu_sleep:
-	; brak obiektów na liście?
-	cmp	qword [service_desu_object_list_records],	STATIC_EMPTY
-	je	.end	; tak
+console_transfer:
+	; wyślij komunikat do powłoki
+	mov	rax,	KERNEL_SERVICE_PROCESS_ipc_send
+	mov	rbx,	qword [console_shell_pid]
+	xor	ecx,	ecx	; domyślny rozmiar komunikatu
+	mov	rsi,	console_ipc_data
+	int	KERNEL_SERVICE
 
-	; kontynuuj oczekiwanie
-	jmp	service_desu_sleep
-
-.end:
-	; powrót zprocedury
+	; powrót z procedury
 	ret
-
-	; informacja dla Bochs
-	macro_debug	"service DESU sleep"
