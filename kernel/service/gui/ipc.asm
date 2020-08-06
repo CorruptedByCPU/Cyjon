@@ -21,7 +21,7 @@ kernel_gui_ipc:
 	cmp	qword [rdi + KERNEL_IPC_STRUCTURE.pid_source],	rax
 	jne	.no_desu	; nie, zignoruj
 
-	call	kernel_gui_ipc_desu
+	call	kernel_gui_ipc_wm
 
 .no_desu:
 
@@ -39,5 +39,5 @@ kernel_gui_ipc:
 	macro_debug	"kernel_gui_ipc"
 
 	;-----------------------------------------------------------------------
-	%include	"kernel/service/gui/ipc/desu.asm"
+	%include	"kernel/service/gui/ipc/wm.asm"
 	;-----------------------------------------------------------------------

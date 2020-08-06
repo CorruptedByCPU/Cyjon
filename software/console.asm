@@ -30,7 +30,7 @@ console:
 	jc	.loop	; brak wiadomości
 
 	; otrzymano klawisz od klawiatury?
-	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.type],	KERNEL_WM_IPC_KEYBOARD
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
 	jne	.loop	; nie, zignoruj komunikat
 
 	; prześlij komunikat do powłoki

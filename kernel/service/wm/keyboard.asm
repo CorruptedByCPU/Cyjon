@@ -19,7 +19,6 @@ kernel_wm_keyboard:
 	jz	.leave	; tak, zignoruj klawisz
 
 	; wyślij do procesu będącego właścicielem obiektu informacje o klawiaturze
-	mov	cl,	KERNEL_WM_IPC_KEYBOARD
 	call	kernel_wm_ipc_keyboard
 
 .leave:

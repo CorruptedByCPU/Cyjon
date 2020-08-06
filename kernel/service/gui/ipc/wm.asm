@@ -3,14 +3,14 @@
 ;===============================================================================
 
 ;===============================================================================
-kernel_gui_ipc_desu:
+kernel_gui_ipc_wm:
 	; pobierz identyfikator okna i koordynary wskaźnika kursora
 	mov	rax,	qword [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.id]
 	mov	r8,	qword [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
 	mov	r9,	qword [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value1]
 
 	; naciśnięcie prawego klawisza myszki?
-	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.type],	KERNEL_WM_IPC_MOUSE_BUTTON_RIGHT_press
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.action],	KERNEL_WM_IPC_MOUSE_btn_right_press
 	je	.right_mouse_button	; tak
 
 	; akcja dotyczy okna "menu"?
