@@ -54,7 +54,7 @@ kernel_wm_event:
 	mov	qword [kernel_wm_object_selected_pointer],	rsi
 
 	; wyślij komunikat do procesu "naciśnięcie lewego klawisza myszki"
-	mov	cl,	KERNEL_WM_IPC_MOUSE_BUTTON_LEFT_press
+	mov	cl,	KERNEL_WM_IPC_MOUSE_btn_left_press
 	call	kernel_wm_ipc_mouse
 
 	; obiekt powinien zachować swoją warstwę?
@@ -118,7 +118,7 @@ kernel_wm_event:
 	call	kernel_wm_object_hide
 
 	; wyślij komunikat do procesu "naciśnięcie prawego klawisza myszki"
-	mov	cl,	KERNEL_WM_IPC_MOUSE_BUTTON_RIGHT_press
+	mov	cl,	KERNEL_WM_IPC_MOUSE_btn_right_press
 	call	kernel_wm_ipc_mouse
 
 .no_mouse_button_right_action:

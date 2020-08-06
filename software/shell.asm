@@ -9,6 +9,8 @@
 	%include	"kernel/config.asm"
 	%include	"software/shell/config.asm"
 	;-----------------------------------------------------------------------
+	%include	"software/console/header.inc"
+	;-----------------------------------------------------------------------
 
 ; 64 bitowy kod programu
 [bits 64]
@@ -24,7 +26,8 @@ shell:
  	; wyślij do rodzica zapytanie o właściwości przestrzeni znakowej
 	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_send_to_parent
 	mov	rsi,	shell_ipc_data
-	mov	byte [rsi + KERNEL_IPC_STRUCTURE.data],	KERNEL_IPC_TYPE_GRAPHICS
+	mov	byte [rsi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_GRAPHICS
+	mov	byte [rsi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.flags],	CONSOLE_IPC_FLAG_properties
  	int	KERNEL_SERVICE
 
 .answer:
@@ -34,21 +37,23 @@ shell:
 	int	KERNEL_SERVICE
 	jc	.answer	; brak odpowiedzi
 
-	jmp	$
+	xchg	bx,bx
 
 	; domyślnie, znak zachęty od nowej linii
  	mov	ecx,	shell_string_prompt_end - shell_string_prompt_with_new_line
  	mov	rsi,	shell_string_prompt_with_new_line
 
-; 	; kursor znajduje się w pierwszej kolumnie?
-; 	cmp	ebx,	STATIC_EMPTY
-; 	jne	.prompt	; nie
-;
-; 	; znak zachęty bez nowej linii
-; 	mov	ecx,	shell_string_prompt_end - shell_string_prompt
-; 	mov	rsi,	shell_string_prompt
-;
-; .prompt:
+	; kursor znajduje się w pierwszej kolumnie?
+	cmp	dword [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.cursor + CONSOLE_STRUCTURE_CURSOR.x],	STATIC_EMPTY
+	jne	.prompt	; nie
+
+	; znak zachęty bez nowej linii
+	mov	ecx,	shell_string_prompt_end - shell_string_prompt
+	mov	rsi,	shell_string_prompt
+
+.prompt:
+	jmp	$
+
 ; 	; wyświetl znak zachęty
 ; 	mov	ax,	KERNEL_SERVICE_VIDEO_string
 ; 	int	KERNEL_SERVICE

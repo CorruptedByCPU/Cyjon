@@ -4,7 +4,7 @@
 
 %define	KERNEL_name					"Cyjon"
 %define	KERNEL_version					"0"
-%define	KERNEL_revision					"1235"
+%define	KERNEL_revision					"1239"
 %define	KERNEL_architecture				"x86_64"
 
 KERNEL_BASE_address					equ	0x0000000000100000
@@ -59,19 +59,22 @@ KERNEL_SERVICE_SYSTEM_memory				equ	0x0000 + KERNEL_SERVICE_SYSTEM
 ; IPC
 ;===============================================================================
 struc	KERNEL_IPC_STRUCTURE
-	.ttl			resb	8
-	.pid_source		resb	8
-	.pid_destination	resb	8
+	.ttl						resb	8
+	.pid_source					resb	8
+	.pid_destination				resb	8
+	.type						resb	1
+	.reserved					resb	7
 	.data:
-	.size			resb	8
-	.pointer		resb	8
-	.other			resb	24
+	.size						resb	8
+	.pointer					resb	8
+	.other						resb	32
 	.SIZE:
 endstruc
 
-KERNEL_IPC_TYPE_KEYBOARD	equ	0x00
-KERNEL_IPC_TYPE_MOUSE		equ	0x01
-KERNEL_IPC_TYPE_GRAPHICS	equ	0x03
+KERNEL_IPC_TYPE_KEYBOARD				equ	0x00	; komunikat zawiera dane: klawiatury
+KERNEL_IPC_TYPE_MOUSE					equ	0x01	; komunikat zawiera dane: myszka
+KERNEL_IPC_TYPE_GRAPHICS				equ	0x02	; komunikat zawiera dane: ekran
+KERNEL_IPC_TYPE_INTERNAL				equ	0x03	; komunikat zawiera dane: rodzic <> dziecko/wątek
 
 ;===============================================================================
 ; ERROR
@@ -79,14 +82,20 @@ KERNEL_IPC_TYPE_GRAPHICS	equ	0x03
 KERNEL_ERROR_memory_low					equ	0x0001
 
 ;===============================================================================
-; DESU
+; WM
 ;===============================================================================
-KERNEL_WM_IPC_KEYBOARD				equ	0
-KERNEL_WM_IPC_MOUSE_BUTTON_LEFT_press		equ	1
-KERNEL_WM_IPC_MOUSE_BUTTON_RIGHT_press		equ	2
+KERNEL_WM_IRQ						equ	0x41
+
+KERNEL_WM_WINDOW_create					equ	0x00
+KERNEL_WM_WINDOW_update					equ	0x01
+
+KERNEL_WM_IPC_MOUSE_btn_left_press			equ	0
+KERNEL_WM_IPC_MOUSE_btn_left_release			equ	1
+KERNEL_WM_IPC_MOUSE_btn_right_press			equ	2
+KERNEL_WM_IPC_MOUSE_btn_right_release			equ	3
 
 struc	KERNEL_WM_STRUCTURE_IPC
-	.type						resb	1
+	.action						resb	1
 	.reserved					resb	7
 	.id						resb	8
 	.value0						resb	8

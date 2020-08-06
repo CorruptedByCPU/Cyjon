@@ -5,7 +5,11 @@
 	;-----------------------------------------------------------------------
 	; stałe, zmienne, globalne, struktury, obiekty
 	;-----------------------------------------------------------------------
+	%include	"kernel/config.asm"
+	%include	"config.asm"	; globalne
+	;-----------------------------------------------------------------------
 	%include	"software/console/config.asm"
+	%include	"software/console/header.inc"
 	;-----------------------------------------------------------------------
 
 ; 64 bitowy kod programu
@@ -29,10 +33,23 @@ console:
 	int	KERNEL_SERVICE
 	jc	.loop	; brak wiadomości
 
-	; otrzymano klawisz od klawiatury?
-	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.type],	KERNEL_WM_IPC_KEYBOARD
-	jne	.loop	; nie, zignoruj komunikat
+	; komunikat typu: klawiatura?
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
+	je	.transfer	; tak
 
+	; komunikat typu: ekran?
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_GRAPHICS
+	jne	.loop	; nie, zignoruj
+
+	; zwróć szerokość i wysokość przestrzeni tekstowej w znakach
+	mov	qword [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.width],	CONSOLE_WINDOW_WIDTH_char
+	mov	qword [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.height],	CONSOLE_WINDOW_HEIGHT_char
+
+	; pozycję kurosra w przestrzeni konsolie
+	mov	rax,	qword [console_terminal_table + LIBRARY_TERMINAL_STRUCTURE.cursor]
+	mov	qword [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.cursor],	rax
+
+.transfer:
 	; prześlij komunikat do powłoki
 	call	console_transfer
 

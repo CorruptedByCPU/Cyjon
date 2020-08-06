@@ -21,13 +21,6 @@ STATIC_PAGE_SIZE_shift					equ	12
 SOFTWARE_base_address					equ	KERNEL_MEMORY_HIGH_REAL_address
 
 ;===============================================================================
-; SERVICE
-;===============================================================================
-KERNEL_WM_IRQ					equ	0x41
-KERNEL_WM_WINDOW_create				equ	0x00
-KERNEL_WM_WINDOW_update				equ	0x01
-
-;===============================================================================
 ; STAŁE OGÓLNEGO PRZEZNACZENIA
 ;===============================================================================
 STATIC_REPLACE_AL_WITH_HIGH_shift			equ	8
