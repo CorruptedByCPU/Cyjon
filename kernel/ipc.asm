@@ -103,6 +103,7 @@ kernel_ipc_insert:
 
 	; załaduj treść wiadomości
 	mov	ecx,	KERNEL_IPC_STRUCTURE.SIZE - KERNEL_IPC_STRUCTURE.data
+	add	rsi,	KERNEL_IPC_STRUCTURE.data
 	add	rdi,	KERNEL_IPC_STRUCTURE.data
 	rep	movsb
 

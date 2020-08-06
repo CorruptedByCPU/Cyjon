@@ -5,7 +5,11 @@
 	;-----------------------------------------------------------------------
 	; stałe, zmienne, globalne, struktury, obiekty
 	;-----------------------------------------------------------------------
+	%include	"kernel/config.asm"
+	%include	"config.asm"	; globalne
+	;-----------------------------------------------------------------------
 	%include	"software/console/config.asm"
+	%include	"software/console/header.inc"
 	;-----------------------------------------------------------------------
 
 ; 64 bitowy kod programu
@@ -37,9 +41,13 @@ console:
 	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_GRAPHICS
 	jne	.loop	; nie, zignoruj
 
-	xchg	bx,bx
+	; zwróć szerokość i wysokość przestrzeni tekstowej w znakach
+	mov	qword [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.width],	CONSOLE_WINDOW_WIDTH_char
+	mov	qword [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.height],	CONSOLE_WINDOW_HEIGHT_char
 
-	nop
+	; pozycję kurosra w przestrzeni konsolie
+	mov	rax,	qword [console_terminal_table + LIBRARY_TERMINAL_STRUCTURE.cursor]
+	mov	qword [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.cursor],	rax
 
 .transfer:
 	; prześlij komunikat do powłoki
