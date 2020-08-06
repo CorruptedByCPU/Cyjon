@@ -23,13 +23,14 @@
 shell:
  	; wyślij do rodzica zapytanie o właściwości przestrzeni znakowej
 	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_send_to_parent
-	mov	rdi,	shell_ipc_data
-	mov	byte [rdi + KERNEL_IPC_STRUCTURE.data],	KERNEL_IPC_TYPE_GRAPHICS
+	mov	rsi,	shell_ipc_data
+	mov	byte [rsi + KERNEL_IPC_STRUCTURE.data],	KERNEL_IPC_TYPE_GRAPHICS
  	int	KERNEL_SERVICE
 
 .answer:
 	; odbierz odpowiedź
 	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
+	mov	rdi,	rsi
 	int	KERNEL_SERVICE
 	jc	.answer	; brak odpowiedzi
 
