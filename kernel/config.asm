@@ -71,10 +71,10 @@ struc	KERNEL_IPC_STRUCTURE
 	.SIZE:
 endstruc
 
-KERNEL_IPC_TYPE_KEYBOARD				equ	0x00
-KERNEL_IPC_TYPE_MOUSE					equ	0x01
-KERNEL_IPC_TYPE_GRAPHICS				equ	0x02
-KERNEL_IPC_TYPE_PRIVATE					equ	0x03
+KERNEL_IPC_TYPE_KEYBOARD				equ	0x00	; komunikat zawiera dane: klawiatury
+KERNEL_IPC_TYPE_MOUSE					equ	0x01	; komunikat zawiera dane: myszka
+KERNEL_IPC_TYPE_GRAPHICS				equ	0x02	; komunikat zawiera dane: ekran
+KERNEL_IPC_TYPE_INTERNAL				equ	0x03	; komunikat zawiera dane: rodzic <> dziecko/wątek
 
 ;===============================================================================
 ; ERROR
