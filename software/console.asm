@@ -29,10 +29,19 @@ console:
 	int	KERNEL_SERVICE
 	jc	.loop	; brak wiadomości
 
-	; otrzymano klawisz od klawiatury?
+	; komunikat typu: klawiatura?
 	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
-	jne	.loop	; nie, zignoruj komunikat
+	je	.transfer	; tak
 
+	; komunikat typu: ekran?
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_GRAPHICS
+	jne	.loop	; nie, zignoruj
+
+	xchg	bx,bx
+
+	nop
+
+.transfer:
 	; prześlij komunikat do powłoki
 	call	console_transfer
 

@@ -77,6 +77,10 @@ kernel_ipc_insert:
 	; ustaw PID odbiorcy
 	mov	qword [rdi + KERNEL_IPC_STRUCTURE.pid_destination],	rbx
 
+	; typ wiadomości
+	mov	bl,	byte [rsi + KERNEL_IPC_STRUCTURE.type]
+	mov	byte [rdi + KERNEL_IPC_STRUCTURE.type],	bl
+
 	; przywróć oryginalny rejestr
 	mov	rcx,	qword [rsp]
 

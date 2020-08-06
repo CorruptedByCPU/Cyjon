@@ -24,7 +24,7 @@ shell:
  	; wyślij do rodzica zapytanie o właściwości przestrzeni znakowej
 	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_send_to_parent
 	mov	rsi,	shell_ipc_data
-	mov	byte [rsi + KERNEL_IPC_STRUCTURE.data],	KERNEL_IPC_TYPE_GRAPHICS
+	mov	byte [rsi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_GRAPHICS
  	int	KERNEL_SERVICE
 
 .answer:
