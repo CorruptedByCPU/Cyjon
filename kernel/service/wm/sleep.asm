@@ -3,13 +3,13 @@
 ;===============================================================================
 
 ;===============================================================================
-service_desu_sleep:
+kernel_wm_sleep:
 	; brak obiektów na liście?
-	cmp	qword [service_desu_object_list_records],	STATIC_EMPTY
+	cmp	qword [kernel_wm_object_list_records],	STATIC_EMPTY
 	je	.end	; tak
 
 	; kontynuuj oczekiwanie
-	jmp	service_desu_sleep
+	jmp	kernel_wm_sleep
 
 .end:
 	; powrót zprocedury

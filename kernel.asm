@@ -68,8 +68,8 @@ kernel:
 	%include	"kernel/service/http.asm"
 	%include	"kernel/service/tx.asm"
 	%include	"kernel/service/network.asm"
-	%include	"kernel/service/desu.asm"
-	%include	"kernel/service/cero.asm"
+	%include	"kernel/service/wm.asm"
+	%include	"kernel/service/gui.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/color.asm"
 	%include	"library/integer_to_string.asm"

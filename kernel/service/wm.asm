@@ -5,53 +5,53 @@
 	;-----------------------------------------------------------------------
 	; stałe, zmienne, globalne, struktury, obiekty
 	;-----------------------------------------------------------------------
-	%include	"kernel/service/desu/config.asm"
+	%include	"kernel/service/wm/config.asm"
 	;-----------------------------------------------------------------------
 
-service_desu:
+kernel_wm:
 	;-----------------------------------------------------------------------
 	; inicjalizacja środowiska produkcyjnego
 	;-----------------------------------------------------------------------
-	%include	"kernel/service/desu/init.asm"
+	%include	"kernel/service/wm/init.asm"
 
 .loop:
 	;-----------------------------------------------------------------------
 	; sprawdź, które obiekty aktualizowały ostatnio swoją zawartość
 	;-----------------------------------------------------------------------
-	call	service_desu_object
+	call	kernel_wm_object
 
 	;-----------------------------------------------------------------------
 	; sprawdź zdarzenia od myszki i klawiatury
 	;-----------------------------------------------------------------------
-	call	service_desu_event
+	call	kernel_wm_event
 
 	;-----------------------------------------------------------------------
 	; przetwórz wszystkie zarejestrowane strefy
 	;-----------------------------------------------------------------------
-	call	service_desu_zone
+	call	kernel_wm_zone
 
 	;-----------------------------------------------------------------------
 	; wypełnij wszystkie zarejestrowane fragmenty
 	;-----------------------------------------------------------------------
-	call	service_desu_fill
+	call	kernel_wm_fill
 
 	;-----------------------------------------------------------------------
 	; sprawdź położenie i stan kursora
 	;-----------------------------------------------------------------------
-	call	service_desu_cursor
+	call	kernel_wm_cursor
 
 	; powróć do głównej pętli
 	jmp	.loop
 
 	;-----------------------------------------------------------------------
-	%include	"kernel/service/desu/data.asm"
-	%include	"kernel/service/desu/zone.asm"
-	%include	"kernel/service/desu/cursor.asm"
-	%include	"kernel/service/desu/object.asm"
-	%include	"kernel/service/desu/fill.asm"
-	%include	"kernel/service/desu/event.asm"
-	%include	"kernel/service/desu/service.asm"
-	%include	"kernel/service/desu/ipc.asm"
-	%include	"kernel/service/desu/keyboard.asm"
+	%include	"kernel/service/wm/data.asm"
+	%include	"kernel/service/wm/zone.asm"
+	%include	"kernel/service/wm/cursor.asm"
+	%include	"kernel/service/wm/object.asm"
+	%include	"kernel/service/wm/fill.asm"
+	%include	"kernel/service/wm/event.asm"
+	%include	"kernel/service/wm/service.asm"
+	%include	"kernel/service/wm/ipc.asm"
+	%include	"kernel/service/wm/keyboard.asm"
 	;-----------------------------------------------------------------------
-service_desu_end:
+kernel_wm_end:

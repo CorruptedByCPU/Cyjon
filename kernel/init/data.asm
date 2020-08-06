@@ -28,12 +28,12 @@ kernel_init_services_list:
 						dq	service_tresher
 						db	7
 						db	"tresher"
-						dq	service_desu
-						db	4
-						db	"desu"
-						dq	service_cero
-						db	4
-						db	"cero"
+						dq	kernel_wm
+						db	2
+						db	"wm"
+						dq	kernel_gui
+						db	3
+						db	"gui"
 						; dq	service_tx
 						; dq	service_network
 						; dq	service_http

@@ -2,23 +2,23 @@
 ; Copyright (C) by blackdev.org
 ;===============================================================================
 
-service_cero_pid			dq	STATIC_EMPTY
+kernel_gui_pid			dq	STATIC_EMPTY
 
-service_cero_clock_last_state		dq	STATIC_EMPTY
-service_cero_clock_colon		db	STATIC_ASCII_SPACE
+kernel_gui_clock_last_state		dq	STATIC_EMPTY
+kernel_gui_clock_colon		db	STATIC_ASCII_SPACE
 
-service_cero_event_console_file		db	"/bin/console"
-service_cero_event_console_file_end:
+kernel_gui_event_console_file		db	"/bin/console"
+kernel_gui_event_console_file_end:
 
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
-service_cero_ipc_data:
+kernel_gui_ipc_data:
 	times KERNEL_IPC_STRUCTURE.SIZE	db	STATIC_EMPTY
 
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
 ;===============================================================================
-service_cero_window_workbench		dq	0	; pozycja na osi X
+kernel_gui_window_workbench		dq	0	; pozycja na osi X
 					dq	0	; pozycja na osi Y
 					dq	STATIC_EMPTY	; szerokość okna
 					dq	STATIC_EMPTY	; wysokość okna
@@ -27,23 +27,23 @@ service_cero_window_workbench		dq	0	; pozycja na osi X
 					dq	LIBRARY_BOSU_WINDOW_FLAG_fixed_xy | LIBRARY_BOSU_WINDOW_FLAG_fixed_z | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
 					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
 					db	16
-					db	"cero - workbench       "
+					db	"gui - workbench        "
 					dq	STATIC_EMPTY
 
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
 ;===============================================================================
-service_cero_window_taskbar_modify_time	dq	STATIC_EMPTY
-service_cero_window_taskbar		dq	0	; pozycja na osi X
+kernel_gui_window_taskbar_modify_time	dq	STATIC_EMPTY
+kernel_gui_window_taskbar		dq	0	; pozycja na osi X
 					dq	STATIC_EMPTY	; pozycja na osi Y
 					dq	STATIC_EMPTY	; szerokość okna
-					dq	SERVICE_CERO_WINDOW_TASKBAR_HEIGHT_pixel	; wysokość okna
+					dq	KERNEL_GUI_WINDOW_TASKBAR_HEIGHT_pixel	; wysokość okna
 					dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
 					dq	LIBRARY_BOSU_WINDOW_FLAG_fixed_xy | LIBRARY_BOSU_WINDOW_FLAG_fixed_z | LIBRARY_BOSU_WINDOW_FLAG_arbiter | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush | LIBRARY_BOSU_WINDOW_FLAG_unregistered
 					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
 					db	14
-					db	"cero - taskbar         "
+					db	"gui - taskbar          "
 					dq	STATIC_EMPTY	; szerokość okna w Bajtach
 .elements:				;---------------------------------------
 					; element "łańcuch 0"
@@ -69,12 +69,12 @@ service_cero_window_taskbar		dq	0	; pozycja na osi X
 					; koniec elementów okna
 					;---------------------------------------
 					dd	STATIC_EMPTY
-service_cero_window_taskbar_end:
+kernel_gui_window_taskbar_end:
 
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
 ;===============================================================================
-service_cero_window_menu		dq	160	; pozycja na osi X względem wskaźnika kursora
+kernel_gui_window_menu		dq	160	; pozycja na osi X względem wskaźnika kursora
 					dq	80	; pozycja na osi Y względem wskaźnika kursora
 					dq	STATIC_EMPTY	; szerokość okna względem zawartości elementów
 					dq	STATIC_EMPTY	; wysokość okna względem zawartości elementów
@@ -83,7 +83,7 @@ service_cero_window_menu		dq	160	; pozycja na osi X względem wskaźnika kursora
 					dq	LIBRARY_BOSU_WINDOW_FLAG_fragile | LIBRARY_BOSU_WINDOW_FLAG_unregistered
 					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
 					db	11
-					db	"cero - menu            "
+					db	"gui - menu             "
 					dq	STATIC_EMPTY	; szerokosć okna w Bajtach
 .elements:				;---------------------------------------
 					; element "nagłówek"
@@ -106,11 +106,11 @@ service_cero_window_menu		dq	160	; pozycja na osi X względem wskaźnika kursora
 					dq	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel	; pozycja na osi Y względem przestrzeni danych okna
 					dq	((.element_label_0_end - .element_label_0_string) * LIBRARY_FONT_WIDTH_pixel)	; szerokość elementu
 					dq	LIBRARY_FONT_HEIGHT_pixel	; wysokość elementu
-					dq	service_cero_event_console
+					dq	kernel_gui_event_console
 					db	.element_label_0_end - .element_label_0_string
 .element_label_0_string:		db	" Console "
 .element_label_0_end:			;---------------------------------------
 					; koniec elementów okna
 					;---------------------------------------
 					dd	STATIC_EMPTY
-service_cero_window_menu_end:
+kernel_gui_window_menu_end:

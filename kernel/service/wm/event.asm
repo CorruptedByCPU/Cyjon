@@ -3,7 +3,7 @@
 ;===============================================================================
 
 ;===============================================================================
-service_desu_event:
+kernel_wm_event:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rbx
@@ -15,7 +15,7 @@ service_desu_event:
 	push	r11
 
 	; sprawdź stan bufora klawiatury
-	call	service_desu_keyboard
+	call	kernel_wm_keyboard
 
 	;-----------------------------------------------------------------------
 	; pobierz pozycje wskaźnika myszy
@@ -24,11 +24,11 @@ service_desu_event:
 
 	; delta osi X
 	mov	r14,	r8
-	sub	r14,	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
+	sub	r14,	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
 
 	; delta osi Y
 	mov	r15,	r9
-	sub	r15,	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
+	sub	r15,	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
 
 	;-----------------------------------------------------------------------
 	; naciśnięto lewy przycisk myszki?
@@ -36,37 +36,37 @@ service_desu_event:
 	jnc	.no_mouse_button_left_action	; nie
 
 	; lewy przycisk myszki był już naciśnięty?
-	cmp	byte [service_desu_mouse_button_left_semaphore],	STATIC_TRUE
+	cmp	byte [kernel_wm_mouse_button_left_semaphore],	STATIC_TRUE
 	je	.no_mouse_button_left_action	; tak, zignoruj
 
 	; zapamiętaj ten stan
-	mov	byte [service_desu_mouse_button_left_semaphore],	STATIC_TRUE
+	mov	byte [kernel_wm_mouse_button_left_semaphore],	STATIC_TRUE
 
 	; ; jest już wybrany obiekt aktywny?
-	; cmp	qword [service_desu_object_selected_pointer],	STATIC_EMPTY
+	; cmp	qword [kernel_wm_object_selected_pointer],	STATIC_EMPTY
 	; jne	.no_mouse_button_left_action	; tak, zignoruj przytrzymanie lewego klawisza myszki na innym obiekcie
 
 	; sprawdź, który obiekt znajduje się pod wskaźnikiem kursora
- 	call	service_desu_object_find
+ 	call	kernel_wm_object_find
 	jc	.no_mouse_button_left_action	; brak obiektu
 
 	; ustaw obiekt jako aktywny
-	mov	qword [service_desu_object_selected_pointer],	rsi
+	mov	qword [kernel_wm_object_selected_pointer],	rsi
 
 	; wyślij komunikat do procesu "naciśnięcie lewego klawisza myszki"
-	mov	cl,	SERVICE_DESU_IPC_MOUSE_BUTTON_LEFT_press
-	call	service_desu_ipc_mouse
+	mov	cl,	KERNEL_WM_IPC_MOUSE_BUTTON_LEFT_press
+	call	kernel_wm_ipc_mouse
 
 	; obiekt powinien zachować swoją warstwę?
-	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_fixed_z
+	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_fixed_z
 	jnz	.fixed_z	; tak
 
 	; przesuń obiekt na koniec listy
-	mov	rax,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.pid]
-	call	service_desu_object_up
+	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid]
+	call	kernel_wm_object_up
 
 	; aktualizuj wskaźnik obiektu aktywnego
-	mov	qword [service_desu_object_selected_pointer],	rsi
+	mov	qword [kernel_wm_object_selected_pointer],	rsi
 
 	; tutaj można by się pokusić o sprawdzenie, który fragment obiektu nie jest widoczny
 	; zamiast przerysowywać cały... todo
@@ -75,14 +75,14 @@ service_desu_event:
 	; szybciej przerysujemy cały, niż znajdziemy fragmenty niewidoczne
 
 	; wyświetl ponownie zawartość obiektu
-	or	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
+	or	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
 	; wyświetl ponownie zawartość obiektu kursora (przysłoniony przez obiekt)
-	or	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
+	or	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
 .fixed_z:
 	; ukryj obiekty z flagą "kruchy"
-	call	service_desu_object_hide
+	call	kernel_wm_object_hide
 
 .no_mouse_button_left_action:
 	; puszczono lewy przycisk myszki?
@@ -91,11 +91,11 @@ service_desu_event:
 
 .no_mouse_button_left_action_release:
 	; usuń stan
-	mov	byte [service_desu_mouse_button_left_semaphore],	STATIC_FALSE
+	mov	byte [kernel_wm_mouse_button_left_semaphore],	STATIC_FALSE
 
 .no_mouse_button_left_action_release_selected:
 	; usuń informacje o aktywnym obiekcie
-	; mov	qword [service_desu_object_selected_pointer],	STATIC_EMPTY
+	; mov	qword [kernel_wm_object_selected_pointer],	STATIC_EMPTY
 
 .no_mouse_button_left_release:
 	;-----------------------------------------------------------------------
@@ -104,22 +104,22 @@ service_desu_event:
 	jnc	.no_mouse_button_right_action	; nie
 
 	; prawy przycisk myszki był już naciśnięty?
-	cmp	byte [service_desu_mouse_button_right_semaphore],	STATIC_TRUE
+	cmp	byte [kernel_wm_mouse_button_right_semaphore],	STATIC_TRUE
 	je	.no_mouse_button_right_action	; tak, zignoruj
 
 	; zapamiętaj ten stan
-	mov	byte [service_desu_mouse_button_right_semaphore],	STATIC_TRUE
+	mov	byte [kernel_wm_mouse_button_right_semaphore],	STATIC_TRUE
 
 	; sprawdź, który obiekt znajduje się pod wskaźnikiem kursora
- 	call	service_desu_object_find
+ 	call	kernel_wm_object_find
 	jc	.no_mouse_button_right_action	; brak obiektu pod wskaźnikiem
 
 	; ukryj "kruche" obiekty
-	call	service_desu_object_hide
+	call	kernel_wm_object_hide
 
 	; wyślij komunikat do procesu "naciśnięcie prawego klawisza myszki"
-	mov	cl,	SERVICE_DESU_IPC_MOUSE_BUTTON_RIGHT_press
-	call	service_desu_ipc_mouse
+	mov	cl,	KERNEL_WM_IPC_MOUSE_BUTTON_RIGHT_press
+	call	kernel_wm_ipc_mouse
 
 .no_mouse_button_right_action:
 	; puszczono prawy przycisk myszki?
@@ -127,7 +127,7 @@ service_desu_event:
 	jc	.no_mouse_button_right_release	; nie
 
 	; usuń ten stan
-	mov	byte [service_desu_mouse_button_right_semaphore],	STATIC_FALSE
+	mov	byte [kernel_wm_mouse_button_right_semaphore],	STATIC_FALSE
 
 .no_mouse_button_right_release:
 	; przesunięcie wskaźnika kursora na osi X
@@ -140,28 +140,28 @@ service_desu_event:
 
 .move:
 	; przetwórz strefę zajętą przez obiekt kursora
-	mov	rsi,	service_desu_object_cursor
-	call	service_desu_zone_insert_by_object
+	mov	rsi,	kernel_wm_object_cursor
+	call	kernel_wm_zone_insert_by_object
 
 	; aktualizuj specyfikacje obiektu kursora
-	add	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r14
-	add	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r15
+	add	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x],	r14
+	add	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y],	r15
 
 	; obiekt kursora został zaaktualizowany
-	or	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
+	or	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
 	;-----------------------------------------------------------------------
 
 	; jeśli wraz z przyciśniętym lewym klawiszem myszki
-	cmp	byte [service_desu_mouse_button_left_semaphore],	STATIC_FALSE
+	cmp	byte [kernel_wm_mouse_button_left_semaphore],	STATIC_FALSE
 	je	.end	; niestety, nie
 
 	; został wybrany obiekt aktywny/widoczny
-	cmp	qword [service_desu_object_selected_pointer],	STATIC_EMPTY
+	cmp	qword [kernel_wm_object_selected_pointer],	STATIC_EMPTY
 	je	.end	; też nie
 
 	; przemieść obiekt wraz z wskaźnikiem kursora
-	call	service_desu_object_move
+	call	kernel_wm_object_move
 
 .end:
 	; przywróć oryginalne rejestry
@@ -177,4 +177,4 @@ service_desu_event:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_event"
+	macro_debug	"kernel_wm_event"

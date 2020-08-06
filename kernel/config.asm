@@ -81,11 +81,11 @@ KERNEL_ERROR_memory_low					equ	0x0001
 ;===============================================================================
 ; DESU
 ;===============================================================================
-SERVICE_DESU_IPC_KEYBOARD				equ	0
-SERVICE_DESU_IPC_MOUSE_BUTTON_LEFT_press		equ	1
-SERVICE_DESU_IPC_MOUSE_BUTTON_RIGHT_press		equ	2
+KERNEL_WM_IPC_KEYBOARD				equ	0
+KERNEL_WM_IPC_MOUSE_BUTTON_LEFT_press		equ	1
+KERNEL_WM_IPC_MOUSE_BUTTON_RIGHT_press		equ	2
 
-struc	SERVICE_DESU_STRUCTURE_IPC
+struc	KERNEL_WM_STRUCTURE_IPC
 	.type						resb	1
 	.reserved					resb	7
 	.id						resb	8

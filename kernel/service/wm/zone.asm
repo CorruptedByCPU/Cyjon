@@ -7,7 +7,7 @@
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do obiektu
-service_desu_zone_insert_by_object:
+kernel_wm_zone_insert_by_object:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rdx
@@ -15,10 +15,10 @@ service_desu_zone_insert_by_object:
 	push	rsi
 
 	; zablokuj dostęp do modyfikacji listy stref
-	macro_lock	service_desu_zone_semaphore,	0
+	macro_lock	kernel_wm_zone_semaphore,	0
 
 	; lista stref jest pełna?
-	cmp	qword [service_desu_zone_list_records],	SERVICE_DESU_ZONE_LIST_limit
+	cmp	qword [kernel_wm_zone_list_records],	KERNEL_WM_ZONE_LIST_limit
 	jb	.insert	; nie
 
 	xchg	bx,bx
@@ -26,11 +26,11 @@ service_desu_zone_insert_by_object:
 
 .insert:
 	; wskaźnik pośredni na koniec listy stref
-	mov	eax,	SERVICE_DESU_STRUCTURE_ZONE.SIZE
-	mul	qword [service_desu_zone_list_records]	; pozycja za ostatnią strefą listy
+	mov	eax,	KERNEL_WM_STRUCTURE_ZONE.SIZE
+	mul	qword [kernel_wm_zone_list_records]	; pozycja za ostatnią strefą listy
 
 	; wskaźnik bezpośredni końca listy stref
-	mov	rdi,	qword [service_desu_zone_list_address]
+	mov	rdi,	qword [kernel_wm_zone_list_address]
 	add	rdi,	rax
 
 	; wstaw właściwości strefy
@@ -44,10 +44,10 @@ service_desu_zone_insert_by_object:
 	mov	qword [rdi],	rax
 
 	; ilość stref na liście
-	inc	qword [service_desu_zone_list_records]
+	inc	qword [kernel_wm_zone_list_records]
 
 	; odblokuj listę stref do modyfikacji
-	mov	byte [service_desu_zone_semaphore],	STATIC_FALSE
+	mov	byte [kernel_wm_zone_semaphore],	STATIC_FALSE
 
 	; przywróć oryginalne rejestry
 	pop	rsi
@@ -58,7 +58,7 @@ service_desu_zone_insert_by_object:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_zone_insert_by_object"
+	macro_debug	"kernel_wm_zone_insert_by_object"
 
 ;===============================================================================
 ; wejście:
@@ -69,7 +69,7 @@ service_desu_zone_insert_by_object:
 ;	r11 - wysokość strefy
 ; wyjście:
 ;	rdi - nowa pozycja, jeśli zoptymalizowano listę stref
-service_desu_zone_insert_by_register:
+kernel_wm_zone_insert_by_register:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rdx
@@ -77,10 +77,10 @@ service_desu_zone_insert_by_register:
 	push	rdi
 
 	; zablokuj dostęp do modyfikacji listy stref
-	macro_lock	service_desu_zone_semaphore,	0
+	macro_lock	kernel_wm_zone_semaphore,	0
 
 	; lista stref jest pełna?
-	cmp	qword [service_desu_zone_list_records],	SERVICE_DESU_ZONE_LIST_limit
+	cmp	qword [kernel_wm_zone_list_records],	KERNEL_WM_ZONE_LIST_limit
 	jb	.insert	; nie
 
 	xchg	bx,bx
@@ -88,27 +88,27 @@ service_desu_zone_insert_by_register:
 
 .insert:
 	; wskaźnik pośredni na koniec listy stref
-	mov	eax,	SERVICE_DESU_STRUCTURE_ZONE.SIZE
-	mul	qword [service_desu_zone_list_records]	; pozycja za ostatnią strefą listy
+	mov	eax,	KERNEL_WM_STRUCTURE_ZONE.SIZE
+	mul	qword [kernel_wm_zone_list_records]	; pozycja za ostatnią strefą listy
 
 	; wskaźnik bezpośredni końca listy stref
-	mov	rsi,	qword [service_desu_zone_list_address]
+	mov	rsi,	qword [kernel_wm_zone_list_address]
 	add	rsi,	rax
 
 	; dodaj do listy nową strefę
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_ZONE.field + SERVICE_DESU_STRUCTURE_FIELD.x],	r8
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_ZONE.field + SERVICE_DESU_STRUCTURE_FIELD.y],	r9
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_ZONE.field + SERVICE_DESU_STRUCTURE_FIELD.width],	r10
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_ZONE.field + SERVICE_DESU_STRUCTURE_FIELD.height],	r11
+	mov	qword [rsi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.x],	r8
+	mov	qword [rsi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.y],	r9
+	mov	qword [rsi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.width],	r10
+	mov	qword [rsi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.height],	r11
 
 	; oraz jej obiekt zależny
-	mov	qword [rsi + SERVICE_DESU_STRUCTURE_ZONE.object],	rdi
+	mov	qword [rsi + KERNEL_WM_STRUCTURE_ZONE.object],	rdi
 
 	; ilość stref na liście
-	inc	qword [service_desu_zone_list_records]
+	inc	qword [kernel_wm_zone_list_records]
 
 	; odblokuj listę stref do modyfikacji
-	mov	byte [service_desu_zone_semaphore],	STATIC_FALSE
+	mov	byte [kernel_wm_zone_semaphore],	STATIC_FALSE
 
 	; przywróć oryginalne rejestry
 	pop	rdi
@@ -119,10 +119,10 @@ service_desu_zone_insert_by_register:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_zone_insert_by_register"
+	macro_debug	"kernel_wm_zone_insert_by_register"
 
 ;===============================================================================
-service_desu_zone:
+kernel_wm_zone:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rdx
@@ -138,25 +138,25 @@ service_desu_zone:
 	push	r15
 
 	; brak stref na liście?
-	cmp	qword [service_desu_zone_list_records],	STATIC_EMPTY
+	cmp	qword [kernel_wm_zone_list_records],	STATIC_EMPTY
 	je	.end	; tak
 
 	; ustaw wskaźnik na pierwszą opisaną strefę na liście
-	mov	rdi,	qword [service_desu_zone_list_address]
+	mov	rdi,	qword [kernel_wm_zone_list_address]
 
 	; rozpocznij przetwarzanie
 	jmp	.entry
 
 .loop:
 	; zwolnij strefę z listy
-	mov	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.object],	STATIC_EMPTY
+	mov	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.object],	STATIC_EMPTY
 
 	; przesuń wskaźnik na pierwszą/następną strefę do przetworzenia
-	add	rdi,	SERVICE_DESU_STRUCTURE_ZONE.SIZE
+	add	rdi,	KERNEL_WM_STRUCTURE_ZONE.SIZE
 
 .entry:
 	; brak strefy do przetworzenia?
-	cmp	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.object],	STATIC_EMPTY
+	cmp	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.object],	STATIC_EMPTY
 	je	.end	; tak
 
 	;-----------------------------------------------------------------------
@@ -164,14 +164,14 @@ service_desu_zone:
 	;-----------------------------------------------------------------------
 
 	; lewa krawędź na osi X
-	mov	r8,	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.field + SERVICE_DESU_STRUCTURE_FIELD.x]
+	mov	r8,	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.x]
 	; górna krawędź na osi Y
-	mov	r9,	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.field + SERVICE_DESU_STRUCTURE_FIELD.y]
+	mov	r9,	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.y]
 	; prawa krawędź na osi X
-	mov	r10,	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.field + SERVICE_DESU_STRUCTURE_FIELD.width]
+	mov	r10,	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.width]
 	add	r10,	r8
 	; dolna krawędź na osi Y
-	mov	r11,	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.field + SERVICE_DESU_STRUCTURE_FIELD.height]
+	mov	r11,	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.height]
 	add	r11,	r9
 
 	; opisana strefa znajduje się w przestrzeni "ekranu"?
@@ -194,40 +194,40 @@ service_desu_zone:
 	;-----------------------------------------------------------------------
 
 	; wskaźnik pośredni na koniec listy obiektów
-	mov	eax,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
-	mul	qword [service_desu_object_list_records]	; pozycja za ostatnim obiektem listy
+	mov	eax,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
+	mul	qword [kernel_wm_object_list_records]	; pozycja za ostatnim obiektem listy
 
 	; wskaźnik bezpośredni końca listy obiektów
-	mov	rsi,	qword [service_desu_object_list_address]
+	mov	rsi,	qword [kernel_wm_object_list_address]
 	add	rsi,	rax
 
 .object:
 	; ustaw wskaźnik na rozpatrywany obiekt
-	sub	rsi,	SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.SIZE
+	sub	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
 
 	; rozpatrywany obiekt jest pierwszy na liście?
-	cmp	rsi,	qword [service_desu_object_list_address]
+	cmp	rsi,	qword [kernel_wm_object_list_address]
 	je	.fill	; tak
 
 	; obiekt widoczny?
-	test	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_visible
+	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
 	jz	.object	; nie
 
 	; wystąpiła interferencja z obiektem przetwarzanym? (samym sobą)
-	cmp	rsi,	qword [rdi + SERVICE_DESU_STRUCTURE_ZONE.object]
+	cmp	rsi,	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.object]
 	je	.fill	; tak
 
 	; pobierz współrzędne obiektu
 
 	; lewa krawędź na oxi X
-	mov	r12,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.x]
+	mov	r12,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
 	; górna krawędź na osi Y
-	mov	r13,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.y]
+	mov	r13,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
 	; prawa krawędź na osi X
-	mov	r14,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.width]
+	mov	r14,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
 	add	r14,	r12
 	; dolna krawędź na osi Y
-	mov	r15,	qword [rsi + SERVICE_DESU_STRUCTURE_OBJECT.field + SERVICE_DESU_STRUCTURE_FIELD.height]
+	mov	r15,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
 	add	r15,	r13
 
 	;--------------------------------
@@ -270,7 +270,7 @@ service_desu_zone:
 	sub	r11,	r9
 
 	; odłóż na listę stref
-	call	service_desu_zone_insert_by_register
+	call	kernel_wm_zone_insert_by_register
 
 	; przywróć oryginalną pozycję prawej krawędzi strefy
 	pop	r10
@@ -299,7 +299,7 @@ service_desu_zone:
 	sub	r11,	r9
 
 	; odłóż na listę stref
-	call	service_desu_zone_insert_by_register
+	call	kernel_wm_zone_insert_by_register
 
 	; przywróć oryginalną pozycję prawej krawędzi strefy
 	pop	r11
@@ -331,7 +331,7 @@ service_desu_zone:
 	mov	r8,	r14
 
 	; odłóż na listę stref
-	call	service_desu_zone_insert_by_register
+	call	kernel_wm_zone_insert_by_register
 
 	; przywróć oryginalną pozycję lewej krawędzi strefy
 	pop	r8
@@ -361,7 +361,7 @@ service_desu_zone:
 	mov	r9,	r15
 
 	; odłóż na listę stref
-	call	service_desu_zone_insert_by_register
+	call	kernel_wm_zone_insert_by_register
 
 	; przywróć oryginalną pozycję lewej krawędzi strefy
 	pop	r9
@@ -377,14 +377,14 @@ service_desu_zone:
 	cmp	r10,	STATIC_EMPTY
 	jle	.loop
 
-	call	service_desu_fill_insert_by_register
+	call	kernel_wm_fill_insert_by_register
 
 	; kontynuuj
 	jmp	.loop
 
 .end:
 	; wszystkie strefy na liście zostały przetworzone
-	mov	qword [service_desu_zone_list_records],	STATIC_EMPTY
+	mov	qword [kernel_wm_zone_list_records],	STATIC_EMPTY
 
 	; przywróć oryginalne rejestry
 	pop	r15
@@ -403,4 +403,4 @@ service_desu_zone:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_zone"
+	macro_debug	"kernel_wm_zone"

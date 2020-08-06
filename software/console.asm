@@ -30,14 +30,14 @@ console:
 	jc	.loop	; brak wiadomości
 
 	; otrzymano klawisz od klawiatury?
-	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + SERVICE_DESU_STRUCTURE_IPC.type],	SERVICE_DESU_IPC_KEYBOARD
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.type],	KERNEL_WM_IPC_KEYBOARD
 	jne	.loop	; nie, zignoruj komunikat
 
 	; prześlij komunikat do powłoki
 	call	console_transfer
 
 	; ; pobierz kod ASCII klawisza
-	; mov	rax,	qword [rdi + KERNEL_IPC_STRUCTURE.data + SERVICE_DESU_STRUCTURE_IPC.value0]
+	; mov	rax,	qword [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
 
 	; ; wartość ASCII klawisza możliwa do wyświetlenia?
 	; cmp	rax,	STATIC_ASCII_SPACE
@@ -50,9 +50,9 @@ console:
 	; call	library_terminal_char
 	;
 	; ; aktualizuj zawartość okna
-	; mov	al,	SERVICE_DESU_WINDOW_update
+	; mov	al,	KERNEL_WM_WINDOW_update
 	; or	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
-	; int	SERVICE_DESU_IRQ
+	; int	KERNEL_WM_IRQ
 
 	; zatrzymaj dalsze wykonywanie kodu
 	jmp	.loop

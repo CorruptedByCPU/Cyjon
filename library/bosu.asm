@@ -43,8 +43,8 @@ library_bosu:
 	jnz	.unregistered	; nie
 
 	; utwórz okno
-	mov	al,	SERVICE_DESU_WINDOW_create
-	int	SERVICE_DESU_IRQ
+	mov	al,	KERNEL_WM_WINDOW_create
+	int	KERNEL_WM_IRQ
 
 	; zwróć wskaźnik/identyfikator zarejestrowanego okna
 	mov	qword [rsp],	rcx

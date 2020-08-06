@@ -3,7 +3,7 @@
 ;===============================================================================
 
 ;===============================================================================
-service_cero_event_console:
+kernel_gui_event_console:
 	; zachowaj oryginalne rejestry
 	push	rbx
 	push	rcx
@@ -12,8 +12,8 @@ service_cero_event_console:
 	; uruchom program "Console"
 	mov	ax,	KERNEL_SERVICE_PROCESS_run
 	mov	ebx,	KERNEL_SERVICE_PROCESS_RUN_FLAG_default
-	mov	ecx,	service_cero_event_console_file_end - service_cero_event_console_file
-	mov	rsi,	service_cero_event_console_file
+	mov	ecx,	kernel_gui_event_console_file_end - kernel_gui_event_console_file
+	mov	rsi,	kernel_gui_event_console_file
 	int	KERNEL_SERVICE
 
 	; przywróć oryginalne rejestry

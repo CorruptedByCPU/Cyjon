@@ -39,9 +39,9 @@
 	call	library_terminal
 
 	; wyświetl okno
-	mov	al,	SERVICE_DESU_WINDOW_update
+	mov	al,	KERNEL_WM_WINDOW_update
 	or	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
-	int	SERVICE_DESU_IRQ
+	int	KERNEL_WM_IRQ
 
 	; uruchom powłokę systemu
 	mov	ax,	KERNEL_SERVICE_PROCESS_run

@@ -3,23 +3,23 @@
 ;===============================================================================
 
 ;===============================================================================
-service_desu_cursor:
+kernel_wm_cursor:
 	; zachowaj oryginalne rejestry
 	push	rsi
 
 	;-----------------------------------------------------------------------
 	; wyświetlić nową zawartość macierzy kursora?
 	;-----------------------------------------------------------------------
-	test	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	SERVICE_DESU_OBJECT_FLAG_flush
+	test	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 	jz	.no	; nie
 
 	; zarejestruj strefę kursora
-	mov	rsi,	service_desu_object_cursor
-	call	service_desu_fill_insert_by_object
-	call	service_desu_fill
+	mov	rsi,	kernel_wm_object_cursor
+	call	kernel_wm_fill_insert_by_object
+	call	kernel_wm_fill
 
 	; obiekt kursora został wyświetlony
-	and	qword [service_desu_object_cursor + SERVICE_DESU_STRUCTURE_OBJECT.SIZE + SERVICE_DESU_STRUCTURE_OBJECT_EXTRA.flags],	~SERVICE_DESU_OBJECT_FLAG_flush
+	and	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_flush
 
 .no:
 	; przywróć oryginalne rejestry
@@ -28,4 +28,4 @@ service_desu_cursor:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_desu_cursor"
+	macro_debug	"kernel_wm_cursor"

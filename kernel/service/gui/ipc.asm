@@ -3,7 +3,7 @@
 ;===============================================================================
 
 ;===============================================================================
-service_cero_ipc:
+kernel_gui_ipc:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rsi
@@ -12,16 +12,16 @@ service_cero_ipc:
 	push	r9
 
 	; pobierz wiadomość
-	mov	rdi,	service_cero_ipc_data
+	mov	rdi,	kernel_gui_ipc_data
 	call	kernel_ipc_receive
 	jc	.end	; brak wiadomości
 
 	; wiadomość od menedżera okien?
-	mov	rax,	qword [service_desu_pid]
+	mov	rax,	qword [kernel_wm_pid]
 	cmp	qword [rdi + KERNEL_IPC_STRUCTURE.pid_source],	rax
 	jne	.no_desu	; nie, zignoruj
 
-	call	service_cero_ipc_desu
+	call	kernel_gui_ipc_desu
 
 .no_desu:
 
@@ -36,8 +36,8 @@ service_cero_ipc:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_cero_ipc"
+	macro_debug	"kernel_gui_ipc"
 
 	;-----------------------------------------------------------------------
-	%include	"kernel/service/cero/ipc/desu.asm"
+	%include	"kernel/service/gui/ipc/desu.asm"
 	;-----------------------------------------------------------------------
