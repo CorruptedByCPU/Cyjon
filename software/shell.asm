@@ -37,8 +37,6 @@ shell:
 	int	KERNEL_SERVICE
 	jc	.answer	; brak odpowiedzi
 
-	xchg	bx,bx
-
 	; domyślnie, znak zachęty od nowej linii
  	mov	ecx,	shell_string_prompt_end - shell_string_prompt_with_new_line
  	mov	rsi,	shell_string_prompt_with_new_line
@@ -52,13 +50,13 @@ shell:
 	mov	rsi,	shell_string_prompt
 
 .prompt:
+ 	; wyświetl znak zachęty
+ 	mov	ax,	KERNEL_SERVICE_PROCESS_out
+ 	int	KERNEL_SERVICE
+
 	jmp	$
 
-; 	; wyświetl znak zachęty
-; 	mov	ax,	KERNEL_SERVICE_VIDEO_string
-; 	int	KERNEL_SERVICE
-;
-; .restart:
+ ; .restart:
 ; 	; zawartość bufora: pusty
 ; 	xor	ebx,	ebx
 ;

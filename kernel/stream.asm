@@ -157,5 +157,7 @@ kernel_stream_in:
 ;	rcx - ilość danych do przesłania
 ;	rsi - wskaźnik źródłowy danych
 kernel_stream_out:
+	xchg	bx,bx
+
 	; powrót z procedury
 	ret

@@ -11,10 +11,6 @@ kernel_service:
 	cmp	al,	KERNEL_SERVICE_PROCESS
 	je	.process	; tak
 
-	; obsługa przestrzeni konsoli?
-	cmp	al,	KERNEL_SERVICE_VIDEO
-	je	.video	 ; tak
-
 	; obsługa wirtualnego systemu plików?
 	cmp	al,	KERNEL_SERVICE_VFS
 	je	.vfs	; tak
@@ -73,7 +69,11 @@ kernel_service:
 
 	; zwrócić PID procesu?
 	cmp	ax,	KERNEL_SERVICE_PROCESS_pid
-	je	.process_pid
+	je	.process_pid	; tak
+
+	; przesłać ciąg znaków na standardowe wyjście?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_out
+	je	.process_out	; tak
 
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
@@ -222,7 +222,7 @@ kernel_service:
 	; koniec obsługi opcji
 	jmp	kernel_service.end
 
-;===============================================================================
+;-------------------------------------------------------------------------------
 ; wejście:
 ;	rbx - PID procesu docelowego
 ;	ecx - rozmiar przestrzeni w Bajtach lub jeśli wartość pusta, 40 Bajtów z pozycji wskaźnika RSI
@@ -236,7 +236,7 @@ kernel_service:
 	; koniec obsługi opcji
 	jmp	kernel_service.end
 
-;===============================================================================
+;-------------------------------------------------------------------------------
 ; wejście:
 ;	ecx - rozmiar przestrzeni w Bajtach lub jeśli wartość pusta, 40 Bajtów z pozycji wskaźnika RSI
 ;	rsi - wskaźnik do przestrzeni danych
@@ -272,25 +272,27 @@ kernel_service:
 	; koniec obsługi opcji
 	jmp	kernel_service.end
 
-;===============================================================================
-.video:
-	; zwrócić informacje o ekranie?
-	cmp	ax,	KERNEL_SERVICE_VIDEO_properties
-	je	.video_properties	; tak
-
-	; koniec obsługi podprocedury
-	jmp	kernel_service.error
-
 ;-------------------------------------------------------------------------------
-.video_properties:
-	; szerokość i wysokość ekranu w pikselach
-	mov	r8,	qword [kernel_video_width_pixel]
-	mov	r9,	qword [kernel_video_height_pixel]
+; wejście:
+;	rcx - rozmiar ciągu w Bajtach
+;	rsi - wskaźnik do ciągu znaków
+.process_out:
+	; zachowaj oryginalne rejestry
+	push	rbx
+	push	rdi
 
-	; rozmiar przestrzeni danych ekranu w Bajtach
-	mov	r10,	qword [kernel_video_size_byte]
+	; pobierz identyfikator potoku wyjścia procesu
+	call	kernel_task_active
+	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
 
-	; koniec obsługi podprocedury
+	; wyślij ciąg znaków na standardowe wyjście
+	call	kernel_stream_out
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rbx
+
+	; koniec obsługi opcji
 	jmp	kernel_service.end
 
 ;===============================================================================
