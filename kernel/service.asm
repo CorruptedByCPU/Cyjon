@@ -281,6 +281,10 @@ kernel_service:
 	push	rbx
 	push	rdi
 
+	; brak ciągu dla potoku?
+	test	rcx,	rcx
+	jz	.process_out_end	 ; tak
+
 	; pobierz identyfikator potoku wyjścia procesu
 	call	kernel_task_active
 	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
@@ -288,6 +292,7 @@ kernel_service:
 	; wyślij ciąg znaków na standardowe wyjście
 	call	kernel_stream_out
 
+.process_out_end:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rbx

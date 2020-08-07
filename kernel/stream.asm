@@ -162,13 +162,18 @@ kernel_stream_in:
 kernel_stream_out:
 	; zachowaj oryginalne rejestry
 	push	rax
+	push	rsi
+	push	rdi
+	push	rcx
 
 .try:
 	; zablokuj dostęp do potoku
 	macro_lock	rbx, KERNEL_STREAM_STRUCTURE_ENTRY.semaphore
 
+	; pobierz wskaźnik końca danych potoku
+	mov	ax,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end]
+
 	; w potoku jest wolna przestrzeń?
-	movzx	eax,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end]
 	cmp	ax,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.start]
 	jne	.entry	; tak
 
@@ -185,10 +190,24 @@ kernel_stream_out:
 .entry:
 	xchg	bx,bx
 
+	; ustaw wskaźnik docelowy przestrzeń potoku
+	mov	rdi,	qword [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.address]
 
+	;-----------------------------------------------------------------------
+
+.save:
+	; zawinąć przestrzeń danych potoku?
+	cmp	ax,	STATIC_PAGE_SIZE_byte
+	je	.roll
 
 .end:
+	; odblokuj dostęp do potoku
+	mov	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.semaphore],	STATIC_FALSE
+
 	; przywróć oryginalne rejestry
+	pop	rcx
+	pop	rdi
+	pop	rsi
 	pop	rax
 
 	; powrót z procedury
