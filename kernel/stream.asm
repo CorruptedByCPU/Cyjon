@@ -2,16 +2,16 @@
 ; Copyright (C) by blackdev.org
 ;===============================================================================
 
-KERNEL_STREAM_FLAG_in_use	equ	00000001b	; dane w potoku są aktualnie przetwarzane
-KERNEL_STREAM_FLAG_data		equ	00000010b	; istnieją dane w potoku
+KERNEL_STREAM_FLAG_data		equ	00000001b	; istnieją dane w potoku
 
 struc	KERNEL_STREAM_STRUCTURE_ENTRY
+	.address		resb	8
 	.data:
 	.start			resb	2
 	.end			resb	2
-	.address		resb	8
+	.reserved		resb	2
 	.flags			resb	1
-	.reserved		resb	3
+	.semaphore		resb	1
 	.SIZE:
 endstruc
 
@@ -96,14 +96,17 @@ kernel_stream:
 	; wyczyść przestrzeń potoku
 	call	kernel_page_drain
 
-	; zresetuj flagi stanu potoku
-	mov	byte [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	STATIC_EMPTY
+	; zachowaj adres przestrzeni potoku
+	mov	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.address],	rdi
 
 	; wyczyść wskaźniki początku końca danych w potoku
 	mov	dword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.data],	STATIC_EMPTY
 
-	; zachowaj adres przestrzeni potoku
-	mov	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.address],	rdi
+	; zresetuj flagi stanu potoku
+	mov	byte [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	STATIC_EMPTY
+
+	; odblokuj dostęp do potoku
+	mov	byte [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.semaphore],	STATIC_FALSE
 
 	; zwróć "identyfikator" potoku
 	mov	qword [rsp],	rsi
@@ -157,7 +160,36 @@ kernel_stream_in:
 ;	rcx - ilość danych do przesłania
 ;	rsi - wskaźnik źródłowy danych
 kernel_stream_out:
+	; zachowaj oryginalne rejestry
+	push	rax
+
+.try:
+	; zablokuj dostęp do potoku
+	macro_lock	rbx, KERNEL_STREAM_STRUCTURE_ENTRY.semaphore
+
+	; w potoku jest wolna przestrzeń?
+	movzx	eax,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end]
+	cmp	ax,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.start]
+	jne	.entry	; tak
+
+	; istnieją dane w potoku?
+	test	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
+	jz	.entry	; nie
+
+	; odblokuj dostęp do potoku
+	mov	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.semaphore],	STATIC_FALSE
+
+	; spróbuj raz jeszcze
+	jmp	.try
+
+.entry:
 	xchg	bx,bx
+
+
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rax
 
 	; powrót z procedury
 	ret
