@@ -152,6 +152,75 @@ kernel_stream_release:
 ; wyjście:
 ;	rcx - ilość danych przesłanych
 kernel_stream_in:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rdx
+	push	rsi
+	push	rdi
+	push	rcx
+
+.retry:
+	; zablokuj dostęp do potoku
+	macro_lock	rbx, KERNEL_STREAM_STRUCTURE_ENTRY.semaphore
+
+	; pobierz aktualny wskaźnik początku danych strumienia
+	movzx	edx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.start]
+
+	; ustaw wskaźnik docelowy w przestrzeni strumienia
+	mov	rsi,	qword [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.address]
+
+	; w strumieniu znajdują się dane?
+	test	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
+	jz	.end	; nie
+
+	; zresetuj ilość przesłanych danych do procesu
+	xor	ecx,	ecx
+
+	; 
+
+.load:
+	; ostatni przesłany znak to semafor?
+	cmp	al,	STATIC_ASCII_NEW_LINE
+	je	.close	; tak, zakończ przetwarzanie strumienia
+
+	; pobierz wartość z ciągu
+	mov	al,	byte [rsi + rdx]
+
+	; załaduj do bufora programu
+	stosb
+
+	; ilość przesłanych danych w Bajtach
+	inc	rcx
+
+	; przesuń wskaźnik początku danych strumienia na następną pozycję
+	inc	dx
+
+	; koniec przestrzeni strumienia?
+	cmp	dx,	STATIC_PAGE_SIZE_byte
+	jne	.continue	; nie
+
+	; ustaw wskaźnik końca przestrzeni danych strumienia na początek
+	xor	dx,	dx
+
+.continue:
+	; koniec danych w strumieniu?
+	cmp	dx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end]
+	jne	.load	; nie
+
+.close:
+	; zachowaj aktualną pozycję
+
+.end:
+	; odblokuj dostęp do potoku
+	mov	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.semaphore],	STATIC_FALSE
+
+	; przywróć oryginalne rejestry
+	pop	rcx
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rax
+
 	; powrót z procedury
 	ret
 
@@ -190,7 +259,7 @@ kernel_stream_out:
 	; zachowaj aktualny wskaźnik końca danych strumienia
 	mov	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end],	dx
 
-	; ponieś flagę pełny w strumieniu
+	; podnieś flagę pełny w strumieniu
 	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_full
 
 	; odblokuj dostęp do potoku
@@ -216,6 +285,9 @@ kernel_stream_out:
 	; ustaw wskaźnik końca przestrzeni danych strumienia na początek
 	xor	dx,	dx
 
+	; podnieś flagę dane w strumieniu
+	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
+
 .continue:
 	; koniec ciągu danych?
 	dec	rcx
@@ -224,7 +296,7 @@ kernel_stream_out:
 	; zachowaj aktualny wskaźnik końca danych strumienia
 	mov	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end],	dx
 
-	; ponieś flagę danych w strumieniu
+	; podnieś flagę danych w strumieniu
 	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
 
 .end:

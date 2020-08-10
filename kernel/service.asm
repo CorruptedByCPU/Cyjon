@@ -75,6 +75,10 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_PROCESS_out
 	je	.process_out	; tak
 
+	; pobrać ciąg znaków z standardowego wejście?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_in
+	je	.process_in	; tak
+
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
 
@@ -157,14 +161,19 @@ kernel_service:
 	jmp	kernel_service.end
 
 ;-------------------------------------------------------------------------------
+; wejście:
+;	rcx - rozmiar przestrzeni do zaalokowania
+; wyjście:
+;	Flaga CF - jeśli brak miejsca
+;	rdi - wskaźnik do zaalokowanej przestrzeni
 .process_memory_alloc:
 	; zachowaj oryginalne rejestry
-	push	rax
 	push	rbx
 	push	rcx
-	push	rdi
 	push	r8
 	push	r11
+	push	rax
+	push	rdi
 
 	; zamień rozmiar przestrzeni na strony
 	call	library_page_from_size
@@ -293,6 +302,30 @@ kernel_service:
 	call	kernel_stream_out
 
 .process_out_end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rbx
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;-------------------------------------------------------------------------------
+; wejście:
+;	rdi - wskaźnik do przestrzeni bufora
+; wyjście:
+;	rcx - ilość przesłanych danych
+.process_in:
+	; zachowaj oryginalne rejestry
+	push	rbx
+	push	rdi
+
+	; pobierz identyfikator potoku wejścia procesu
+	call	kernel_task_active
+	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
+
+	; wyślij ciąg znaków na standardowe wyjście
+	call	kernel_stream_in
+
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rbx

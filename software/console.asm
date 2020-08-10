@@ -53,14 +53,11 @@ console:
 	; prześlij komunikat do powłoki
 	call	console_transfer
 
-	; ; pobierz kod ASCII klawisza
-	; mov	rax,	qword [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
+	; pobierz znak z strumienia
+	mov	ax,	KERNEL_SERVICE_PROCESS_in
+	mov	rdi,	qword [console_cache_address]
+	int	KERNEL_SERVICE
 
-	; ; wartość ASCII klawisza możliwa do wyświetlenia?
-	; cmp	rax,	STATIC_ASCII_SPACE
-	; jb	.loop	; nie, zignoruj klawisz
-	; cmp	rax,	STATIC_ASCII_DELETE
-	; jae	.loop	; nie, zignoruj klawisz
 	;
 	; ; wyświetl znak w polu terminala
 	; mov	ecx,	1	; 1 raz

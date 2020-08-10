@@ -6,6 +6,9 @@ console_shell_file			db	"/bin/shell"
 console_shell_file_end:
 
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
+console_cache_address			dq	STATIC_EMPTY
+
+align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 console_shell_pid			dq	STATIC_EMPTY
 
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING

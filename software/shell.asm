@@ -50,6 +50,10 @@ shell:
 	mov	rsi,	shell_string_prompt
 
 .prompt:
+	; debug
+	mov	rsi,	shell
+	mov	rcx,	0x1002
+
  	; wyświetl znak zachęty
  	mov	ax,	KERNEL_SERVICE_PROCESS_out
  	int	KERNEL_SERVICE
