@@ -3,6 +3,7 @@
 ;===============================================================================
 
 KERNEL_STREAM_FLAG_data		equ	00000001b	; istnieją dane w potoku
+KERNEL_STREAM_FLAG_full		equ	00000010b	; w strumieniu nie ma miejsca
 
 struc	KERNEL_STREAM_STRUCTURE_ENTRY
 	.address		resb	8
@@ -162,43 +163,69 @@ kernel_stream_in:
 kernel_stream_out:
 	; zachowaj oryginalne rejestry
 	push	rax
+	push	rdx
 	push	rsi
 	push	rdi
 	push	rcx
 
-.try:
+.retry:
 	; zablokuj dostęp do potoku
 	macro_lock	rbx, KERNEL_STREAM_STRUCTURE_ENTRY.semaphore
 
-	; pobierz wskaźnik końca danych potoku
-	mov	ax,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end]
+	; pobierz aktualny wskaźnik końca danych strumienia
+	movzx	edx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end]
 
+	; ustaw wskaźnik docelowy w przestrzeni strumienia
+	mov	rdi,	qword [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.address]
+
+.next:
 	; w potoku jest wolna przestrzeń?
-	cmp	ax,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.start]
-	jne	.entry	; tak
+	cmp	dx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.start]
+	jne	.insert	; tak
 
-	; istnieją dane w potoku?
+	; w strumieniu znajdują się dane?
 	test	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
-	jz	.entry	; nie
+	jz	.insert	; nie
+
+	; zachowaj aktualny wskaźnik końca danych strumienia
+	mov	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end],	dx
+
+	; ponieś flagę pełny w strumieniu
+	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_full
 
 	; odblokuj dostęp do potoku
 	mov	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.semaphore],	STATIC_FALSE
 
 	; spróbuj raz jeszcze
-	jmp	.try
+	jmp	.retry
 
-.entry:
-	xchg	bx,bx
+.insert:
+	; pobierz wartość z ciągu
+	lodsb
 
-	; ustaw wskaźnik docelowy przestrzeń potoku
-	mov	rdi,	qword [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.address]
+	; zachowaj w strumieniu
+	mov	byte [rdi + rdx],	al
 
-	;-----------------------------------------------------------------------
+	; przesuń wskaźnik końca danych strumienia na następną pozycję
+	inc	dx
 
-.save:
-	; zawinąć przestrzeń danych potoku?
-	cmp	ax,	STATIC_PAGE_SIZE_byte
-	je	.roll
+	; koniec przestrzeni strumienia?
+	cmp	dx,	STATIC_PAGE_SIZE_byte
+	jne	.continue	; nie
+
+	; ustaw wskaźnik końca przestrzeni danych strumienia na początek
+	xor	dx,	dx
+
+.continue:
+	; koniec ciągu danych?
+	dec	rcx
+	jnz	.next	; nie, kontynuuj
+
+	; zachowaj aktualny wskaźnik końca danych strumienia
+	mov	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end],	dx
+
+	; ponieś flagę danych w strumieniu
+	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
 
 .end:
 	; odblokuj dostęp do potoku
@@ -208,6 +235,7 @@ kernel_stream_out:
 	pop	rcx
 	pop	rdi
 	pop	rsi
+	pop	rdx
 	pop	rax
 
 	; powrót z procedury
