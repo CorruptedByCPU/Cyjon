@@ -324,10 +324,10 @@ kernel_service:
 	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
 
 	; wyślij ciąg znaków na standardowe wyjście
+	pop	rdi	; przywróć adres docelowy bufora procesu
 	call	kernel_stream_in
 
-	; przywróć oryginalne rejestry
-	pop	rdi
+	; przywróć oryginalny rejestr
 	pop	rbx
 
 	; koniec obsługi opcji

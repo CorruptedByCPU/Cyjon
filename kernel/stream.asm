@@ -146,21 +146,22 @@ kernel_stream_release:
 
 ;===============================================================================
 ; wejście:
-;	rbx - identyfikator potoku
+;	rbx - identyfikator strumienia
 ;	rcx - rozmiar bufora docelowego
 ;	rdi - wskaźnik docelowy danych
 ; wyjście:
-;	rcx - ilość danych przesłanych
+;	rcx - ilość przesłanych danych
 kernel_stream_in:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rdx
 	push	rsi
 	push	rdi
+	push	r8
 	push	rcx
 
 .retry:
-	; zablokuj dostęp do potoku
+	; zablokuj dostęp do strumienia
 	macro_lock	rbx, KERNEL_STREAM_STRUCTURE_ENTRY.semaphore
 
 	; pobierz aktualny wskaźnik początku danych strumienia
@@ -173,24 +174,22 @@ kernel_stream_in:
 	test	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
 	jz	.end	; nie
 
-	; zresetuj ilość przesłanych danych do procesu
-	xor	ecx,	ecx
+	; zresetuj akumulator
+	xor	al,	al
 
-	; 
+	; zresetuj ilość przesłanych danych do procesu
+	xor	r8,	r8
 
 .load:
 	; ostatni przesłany znak to semafor?
 	cmp	al,	STATIC_ASCII_NEW_LINE
 	je	.close	; tak, zakończ przetwarzanie strumienia
 
-	; pobierz wartość z ciągu
+	; pobierz wartość z strumienia
 	mov	al,	byte [rsi + rdx]
 
-	; załaduj do bufora programu
+	; załaduj do bufora procesu
 	stosb
-
-	; ilość przesłanych danych w Bajtach
-	inc	rcx
 
 	; przesuń wskaźnik początku danych strumienia na następną pozycję
 	inc	dx
@@ -203,12 +202,30 @@ kernel_stream_in:
 	xor	dx,	dx
 
 .continue:
+	; ilość przesłanych danych do bufora procesu
+	inc	r8
+
+	; przesłano wymaganą ilość?
+	dec	rcx
+	jz	.close	; tak
+
 	; koniec danych w strumieniu?
 	cmp	dx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end]
 	jne	.load	; nie
 
 .close:
-	; zachowaj aktualną pozycję
+	; zachowaj aktualną pozycję początku strumienia
+	mov	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.start],	dx
+
+	; przestrzeń strumienia jest pusta?
+	cmp	dx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end]
+	jne	.end	; nie
+
+	; wyłącz flagę dane oraz pełny
+	and	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	~KERNEL_STREAM_FLAG_data & ~KERNEL_STREAM_FLAG_full
+
+	; zwróć ilość przesnałych danych
+	mov	qword [rsp],	r8
 
 .end:
 	; odblokuj dostęp do potoku
@@ -216,6 +233,7 @@ kernel_stream_in:
 
 	; przywróć oryginalne rejestry
 	pop	rcx
+	pop	r8
 	pop	rdi
 	pop	rsi
 	pop	rdx

@@ -31,7 +31,7 @@ console:
 	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
 	mov	rdi,	console_ipc_data
 	int	KERNEL_SERVICE
-	jc	.loop	; brak wiadomości
+	jc	.input	; brak wiadomości
 
 	; komunikat typu: klawiatura?
 	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
@@ -39,7 +39,7 @@ console:
 
 	; komunikat typu: ekran?
 	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_GRAPHICS
-	jne	.loop	; nie, zignoruj
+	jne	.input	; nie, zignoruj
 
 	; zwróć szerokość i wysokość przestrzeni tekstowej w znakach
 	mov	qword [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.width],	CONSOLE_WINDOW_WIDTH_char
@@ -53,20 +53,52 @@ console:
 	; prześlij komunikat do powłoki
 	call	console_transfer
 
+.input:
 	; pobierz znak z strumienia
 	mov	ax,	KERNEL_SERVICE_PROCESS_in
+	mov	ecx,	STATIC_EMPTY	; pobierz pierwszą linię lub całą zawartość
 	mov	rdi,	qword [console_cache_address]
 	int	KERNEL_SERVICE
 
-	;
-	; ; wyświetl znak w polu terminala
-	; mov	ecx,	1	; 1 raz
-	; call	library_terminal_char
-	;
-	; ; aktualizuj zawartość okna
-	; mov	al,	KERNEL_WM_WINDOW_update
-	; or	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
-	; int	KERNEL_WM_IRQ
+	mov	rsi,	rdi
+
+.parse:
+	; koniec ciągu?
+	test	rcx,	rcx
+	jz	.flush	; tak
+
+	; pierwszy znak należy do sekwencji?
+	cmp	byte [rsi],	STATIC_ASCII_BACKSLASH
+	jne	.char	; nie
+
+	; przetworzono sekwencje?
+	; call	console_sequence
+	; jnc	.parse	; tak
+
+.char:
+	; pobierz znak z ciągu
+	lodsb
+
+	; zachowaj licznik
+	push	rcx
+
+	; wyświetl znak
+	mov	ecx,	1
+	call	library_terminal_char
+
+	; przywróć licznik
+	pop	rcx
+
+	; wyświetlić pozostałe znaki z ciągu?
+	dec	rcx
+	jnz	.parse	; tak
+
+.flush:
+	; aktualizuj zawartość okna
+	mov	al,	KERNEL_WM_WINDOW_update
+	mov	rsi,	console_window
+	or	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
+	int	KERNEL_WM_IRQ
 
 	; zatrzymaj dalsze wykonywanie kodu
 	jmp	.loop
