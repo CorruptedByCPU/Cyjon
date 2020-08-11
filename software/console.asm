@@ -54,11 +54,12 @@ console:
 	call	console_transfer
 
 .input:
-	; pobierz znak z strumienia
+	; pobierz ciąg z strumienia
 	mov	ax,	KERNEL_SERVICE_PROCESS_in
 	mov	ecx,	STATIC_EMPTY	; pobierz pierwszą linię lub całą zawartość
 	mov	rdi,	qword [console_cache_address]
 	int	KERNEL_SERVICE
+	jz	.loop	; brak danych
 
 	; wyświetl zawartość
 	xor	eax,	eax

@@ -44,7 +44,7 @@ console_window					dq	STATIC_EMPTY	; pozycja na osi X
 						dq	LIBRARY_BOSU_WINDOW_FLAG_header | LIBRARY_BOSU_WINDOW_FLAG_border
 						dq	STATIC_EMPTY	; identyfikator okna (uzupełnia Bosu)
 						db	7
-						db	"Console"
+						db	"Console                "
 						dq	STATIC_EMPTY	; szerokość okna w Bajtach (uzupełnia Bosu)
 .elements:					;---------------------------------------
 						; element "nagłówek"

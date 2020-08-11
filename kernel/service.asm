@@ -313,6 +313,7 @@ kernel_service:
 ; wejście:
 ;	rdi - wskaźnik do przestrzeni bufora
 ; wyjście:
+;	Flaga ZF - jeśli brak danych
 ;	rcx - ilość przesłanych danych
 .process_in:
 	; zachowaj oryginalne rejestry
@@ -326,6 +327,9 @@ kernel_service:
 	; wyślij ciąg znaków na standardowe wyjście
 	pop	rdi	; przywróć adres docelowy bufora procesu
 	call	kernel_stream_in
+
+	; brak danych?
+	test	rcx,	rcx
 
 	; przywróć oryginalny rejestr
 	pop	rbx
