@@ -60,6 +60,8 @@ console:
 	mov	rdi,	qword [console_cache_address]
 	int	KERNEL_SERVICE
 
+	; wyświetl zawartość
+	xor	eax,	eax
 	mov	rsi,	rdi
 
 .parse:
@@ -72,8 +74,8 @@ console:
 	jne	.char	; nie
 
 	; przetworzono sekwencje?
-	; call	console_sequence
-	; jnc	.parse	; tak
+	call	console_sequence
+	jnc	.parse	; tak
 
 .char:
 	; pobierz znak z ciągu
@@ -106,9 +108,11 @@ console:
 	;-----------------------------------------------------------------------
 	%include	"software/console/data.asm"
 	%include	"software/console/transfer.asm"
+	%include	"software/console/sequence.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"
 	%include	"library/font.asm"
 	%include	"library/page_from_size.asm"
+	%include	"library/string_compare.asm"
 	%include	"library/terminal.asm"
 	;-----------------------------------------------------------------------
