@@ -56,6 +56,7 @@ kernel:
 	%include	"kernel/exec.asm"
 	%include	"kernel/service.asm"
 	%include	"kernel/stream.asm"
+	%include	"kernel/sleep.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/ps2.asm"

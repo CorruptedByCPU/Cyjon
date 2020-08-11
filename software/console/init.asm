@@ -2,6 +2,14 @@
 ; Copyright (C) by blackdev.org
 ;===============================================================================
 
+	; przygotuj przestrzeń pod dane przychodzące z standardowego wejścia
+	mov	ax,	KERNEL_SERVICE_PROCESS_memory_alloc
+	mov	ecx,	STATIC_PAGE_SIZE_byte
+	int	KERNEL_SERVICE
+
+	; zachowaj adres bufora
+	mov	qword [console_cache_address],	rdi
+
 	; utwórz okno
 	mov	rsi,	console_window
 	call	library_bosu

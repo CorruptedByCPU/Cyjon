@@ -2,16 +2,17 @@
 ; Copyright (C) by blackdev.org
 ;===============================================================================
 
-KERNEL_STREAM_FLAG_in_use	equ	00000001b	; dane w potoku są aktualnie przetwarzane
-KERNEL_STREAM_FLAG_data		equ	00000010b	; istnieją dane w potoku
+KERNEL_STREAM_FLAG_data		equ	00000001b	; istnieją dane w potoku
+KERNEL_STREAM_FLAG_full		equ	00000010b	; w strumieniu nie ma miejsca
 
 struc	KERNEL_STREAM_STRUCTURE_ENTRY
+	.address		resb	8
 	.data:
 	.start			resb	2
 	.end			resb	2
-	.address		resb	8
+	.reserved		resb	2
 	.flags			resb	1
-	.reserved		resb	3
+	.semaphore		resb	1
 	.SIZE:
 endstruc
 
@@ -96,14 +97,17 @@ kernel_stream:
 	; wyczyść przestrzeń potoku
 	call	kernel_page_drain
 
-	; zresetuj flagi stanu potoku
-	mov	byte [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	STATIC_EMPTY
+	; zachowaj adres przestrzeni potoku
+	mov	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.address],	rdi
 
 	; wyczyść wskaźniki początku końca danych w potoku
 	mov	dword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.data],	STATIC_EMPTY
 
-	; zachowaj adres przestrzeni potoku
-	mov	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.address],	rdi
+	; zresetuj flagi stanu potoku
+	mov	byte [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	STATIC_EMPTY
+
+	; odblokuj dostęp do potoku
+	mov	byte [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.semaphore],	STATIC_FALSE
 
 	; zwróć "identyfikator" potoku
 	mov	qword [rsp],	rsi
@@ -142,12 +146,99 @@ kernel_stream_release:
 
 ;===============================================================================
 ; wejście:
-;	rbx - identyfikator potoku
+;	rbx - identyfikator strumienia
 ;	rcx - rozmiar bufora docelowego
 ;	rdi - wskaźnik docelowy danych
 ; wyjście:
-;	rcx - ilość danych przesłanych
+;	rcx - ilość przesłanych danych
 kernel_stream_in:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rdx
+	push	rsi
+	push	rdi
+	push	r8
+	push	rcx
+
+.retry:
+	; zablokuj dostęp do strumienia
+	macro_lock	rbx, KERNEL_STREAM_STRUCTURE_ENTRY.semaphore
+
+	; pobierz aktualny wskaźnik początku danych strumienia
+	movzx	edx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.start]
+
+	; ustaw wskaźnik docelowy w przestrzeni strumienia
+	mov	rsi,	qword [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.address]
+
+	; w strumieniu znajdują się dane?
+	test	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
+	jz	.end	; nie
+
+	; zresetuj akumulator
+	xor	al,	al
+
+	; zresetuj ilość przesłanych danych do procesu
+	xor	r8,	r8
+
+.load:
+	; ostatni przesłany znak to semafor?
+	cmp	al,	STATIC_ASCII_NEW_LINE
+	je	.close	; tak, zakończ przetwarzanie strumienia
+
+	; pobierz wartość z strumienia
+	mov	al,	byte [rsi + rdx]
+
+	; załaduj do bufora procesu
+	stosb
+
+	; przesuń wskaźnik początku danych strumienia na następną pozycję
+	inc	dx
+
+	; koniec przestrzeni strumienia?
+	cmp	dx,	STATIC_PAGE_SIZE_byte
+	jne	.continue	; nie
+
+	; ustaw wskaźnik końca przestrzeni danych strumienia na początek
+	xor	dx,	dx
+
+.continue:
+	; ilość przesłanych danych do bufora procesu
+	inc	r8
+
+	; przesłano wymaganą ilość?
+	dec	rcx
+	jz	.close	; tak
+
+	; koniec danych w strumieniu?
+	cmp	dx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end]
+	jne	.load	; nie
+
+.close:
+	; zachowaj aktualną pozycję początku strumienia
+	mov	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.start],	dx
+
+	; przestrzeń strumienia jest pusta?
+	cmp	dx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end]
+	jne	.end	; nie
+
+	; wyłącz flagę dane oraz pełny
+	and	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	~KERNEL_STREAM_FLAG_data & ~KERNEL_STREAM_FLAG_full
+
+	; zwróć ilość przesnałych danych
+	mov	qword [rsp],	r8
+
+.end:
+	; odblokuj dostęp do potoku
+	mov	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.semaphore],	STATIC_FALSE
+
+	; przywróć oryginalne rejestry
+	pop	rcx
+	pop	r8
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rax
+
 	; powrót z procedury
 	ret
 
@@ -157,7 +248,85 @@ kernel_stream_in:
 ;	rcx - ilość danych do przesłania
 ;	rsi - wskaźnik źródłowy danych
 kernel_stream_out:
-	xchg	bx,bx
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rdx
+	push	rsi
+	push	rdi
+	push	rcx
+
+.retry:
+	; zablokuj dostęp do potoku
+	macro_lock	rbx, KERNEL_STREAM_STRUCTURE_ENTRY.semaphore
+
+	; pobierz aktualny wskaźnik końca danych strumienia
+	movzx	edx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end]
+
+	; ustaw wskaźnik docelowy w przestrzeni strumienia
+	mov	rdi,	qword [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.address]
+
+.next:
+	; w potoku jest wolna przestrzeń?
+	cmp	dx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.start]
+	jne	.insert	; tak
+
+	; w strumieniu znajdują się dane?
+	test	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
+	jz	.insert	; nie
+
+	; zachowaj aktualny wskaźnik końca danych strumienia
+	mov	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end],	dx
+
+	; podnieś flagę pełny w strumieniu
+	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_full
+
+	; odblokuj dostęp do potoku
+	mov	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.semaphore],	STATIC_FALSE
+
+	; spróbuj raz jeszcze
+	jmp	.retry
+
+.insert:
+	; pobierz wartość z ciągu
+	lodsb
+
+	; zachowaj w strumieniu
+	mov	byte [rdi + rdx],	al
+
+	; przesuń wskaźnik końca danych strumienia na następną pozycję
+	inc	dx
+
+	; koniec przestrzeni strumienia?
+	cmp	dx,	STATIC_PAGE_SIZE_byte
+	jne	.continue	; nie
+
+	; ustaw wskaźnik końca przestrzeni danych strumienia na początek
+	xor	dx,	dx
+
+	; podnieś flagę dane w strumieniu
+	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
+
+.continue:
+	; koniec ciągu danych?
+	dec	rcx
+	jnz	.next	; nie, kontynuuj
+
+	; zachowaj aktualny wskaźnik końca danych strumienia
+	mov	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end],	dx
+
+	; podnieś flagę danych w strumieniu
+	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
+
+.end:
+	; odblokuj dostęp do potoku
+	mov	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.semaphore],	STATIC_FALSE
+
+	; przywróć oryginalne rejestry
+	pop	rcx
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rax
 
 	; powrót z procedury
 	ret

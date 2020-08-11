@@ -28,19 +28,10 @@ kernel_ipc_insert:
 	call	kernel_task_active
 	mov	rdx,	qword [rdi + KERNEL_TASK_STRUCTURE.pid]
 
+.retry:
 	; uzyskaj dostęp do listy komunikatów
 	macro_lock	kernel_ipc_semaphore, 0
 
-.wait:
-	; brak miejsca na liście?
-	cmp	qword [kernel_ipc_entry_count],	KERNEL_IPC_ENTRY_limit
-	jne	.reload	; czekaj na zwolnienie przynajmniej jednego miejsca
-
-	; przepełniono, debug
-	xchg	bx,bx
-	jmp	$
-
-.reload:
 	; pobierz aktualny czas systemu
 	mov	rax,	qword [driver_rtc_microtime]
 
@@ -62,13 +53,11 @@ kernel_ipc_insert:
 	dec	rcx
 	jnz	.loop	; tak
 
-	; brak miejsca na liście komunikatów
+	; zwolnij dostęp do listy komunikatów
+	mov	byte [kernel_ipc_semaphore],	STATIC_FALSE
 
-	; flaga, błąd
-	stc
-
-	; koniec procedury
-	jmp	.error
+	; sprawdź raz jeszcze
+	jmp	.retry
 
 .found:
 	; ustaw PID nadawcy
@@ -118,7 +107,6 @@ kernel_ipc_insert:
 	add	rax,	KERNEL_IPC_TTL_default
 	mov	qword [rdi + KERNEL_IPC_STRUCTURE.ttl],	rax
 
-.error:
 	; zwolnij dostęp
 	mov	byte [kernel_ipc_semaphore],	STATIC_FALSE
 
