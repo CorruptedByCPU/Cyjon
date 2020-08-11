@@ -60,7 +60,3 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 
 	# 8 MiB RAM, 2 logical CPUs, no network, hard disk connected to IDE controller
 	qemu-system-x86_64 -hda file=build/disk.raw -m 8 -smp 2 -rtc base=localtime
-
-### My production environment.
-
-![screenshot](https://raw.githubusercontent.com/blackend/cyjon/master/environment.png)
