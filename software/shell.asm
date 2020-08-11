@@ -50,26 +50,26 @@ shell:
 	mov	rsi,	shell_string_prompt
 
 .prompt:
- 	; wyświetl znak zachęty
+	; wyświetl znak zachęty
  	mov	ax,	KERNEL_SERVICE_PROCESS_out
  	int	KERNEL_SERVICE
 
-	jmp	$
+.restart:
+	; zawartość bufora: pusty
+	xor	ebx,	ebx
 
- ; .restart:
-; 	; zawartość bufora: pusty
-; 	xor	ebx,	ebx
-;
-; 	; maksymalny rozmiar bufora
-; 	mov	ecx,	SHELL_CACHE_SIZE_byte
-;
-; 	; ustaw wskaźnik na początek bufora
-; 	mov	rsi,	shell_cache
-;
-; 	; pobierz polecenie
-; 	call	library_input
-; 	jc	shell	; bufor pusty lub przerwano wprowadzanie
-;
+	; maksymalny rozmiar bufora
+	mov	ecx,	SHELL_CACHE_SIZE_byte
+
+	; ustaw wskaźnik na początek bufora
+	mov	rsi,	shell_cache
+
+.continue:
+	; pobierz polecenie
+	call	library_input
+	jz	shell	; bufor pusty lub przerwano wprowadzanie
+	jc	.exception	; otrzymano wiadomość
+
 ; 	; usuń białe znaki z początku i końca bufora
 ; 	call	library_string_trim
 ; 	jc	shell	; bufor pusty lub przerwano wprowadzanie
@@ -95,7 +95,13 @@ shell:
 ;
 ; 	; przetwórz polecenie
 ; 	jmp	shell_prompt
-;
+
+	; debug
+	jmp	.restart
+
+.exception:
+	jmp	.continue
+
 	;-----------------------------------------------------------------------
 	%include	"software/shell/data.asm"
 ; 	%include	"software/shell/prompt.asm"

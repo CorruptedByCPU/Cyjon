@@ -4,12 +4,12 @@
 
 ;===============================================================================
 ; wejście:
-;	rbx - ilość znaków w buforze
-;	rcx - maksymalna ilość znaków w buforze
-;	rsi - wskaźnik do początku bufora
+;	rcx - ilość znaków w buforze
+;	rsi - wskaźnik do przestrzeni
 ;	r8 - wskaźnik do struktury terminala
 ; wyjście:
-;	Falga CF - użytkownik przerwał wprowadzanie (np. klawisz ESC) lub bufor pusty
+;	Flaga CF -
+;	Flaga ZF - użytkownik przerwał wprowadzanie (np. klawisz ESC) lub bufor pusty
 ;	rcx - ilość znaków w buforze
 library_input:
 	; zachowaj oryginalne rejestry
