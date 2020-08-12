@@ -401,9 +401,6 @@ kernel_task_queue:
 .error:
 	; brak wolnego miejsca w kolejce
 
-	; zwolnij zmienną lokalną
-	add	rsp,	STATIC_QWORD_SIZE_byte
-
 	; flaga, błąd
 	stc
 
