@@ -80,7 +80,7 @@ kernel_wm_ipc_keyboard:
 	mov	qword [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.id],	rdx
 
 	; wyślij informacje o kodzie klawisza
-	mov	qword [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	rax
+	mov	word [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	ax
 
 	; wyślij komunikat
 	xor	ecx,	ecx	; standardowy rozmiar komunikatu pod adresem w rejestrze RSI

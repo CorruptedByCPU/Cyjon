@@ -2,6 +2,7 @@
 ; Copyright (C) by blackdev.org
 ;===============================================================================
 
-%define SHELL_VERSION		"0.56"
-
-SHELL_CACHE_SIZE_byte	equ	128
+;===============================================================================
+shell_event:
+	; powrót z procedury
+	ret

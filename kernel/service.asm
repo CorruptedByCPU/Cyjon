@@ -79,6 +79,10 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_PROCESS_in
 	je	.process_in	; tak
 
+	; przesłać jeden Bajt na standardowe wyjście?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_out_byte
+	je	.process_out_byte	; tak
+
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
 
@@ -332,6 +336,37 @@ kernel_service:
 	test	rcx,	rcx
 
 	; przywróć oryginalny rejestr
+	pop	rbx
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;-------------------------------------------------------------------------------
+; wejście:
+;	dl - wartość
+.process_out_byte:
+	; zachowaj oryginalne rejestry
+	push	rbx
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; pobierz identyfikator potoku wyjścia procesu
+	call	kernel_task_active
+	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
+
+	; wyślij wartość na standardowe wyjście
+	push	rdx
+	mov	ecx,	STATIC_BYTE_SIZE_byte
+	mov	rsi,	rsp
+	call	kernel_stream_out
+	pop	rdx
+
+.process_out_byte_end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rcx
 	pop	rbx
 
 	; koniec obsługi opcji

@@ -37,39 +37,43 @@ shell:
 	int	KERNEL_SERVICE
 	jc	.answer	; brak odpowiedzi
 
-	; domyślnie, znak zachęty od nowej linii
- 	mov	ecx,	shell_string_prompt_end - shell_string_prompt_with_new_line
- 	mov	rsi,	shell_string_prompt_with_new_line
+	; domyślnie, znak zachęty bez nowej linii
+ 	mov	ecx,	shell_string_prompt_end - shell_string_prompt
+ 	mov	rsi,	shell_string_prompt
 
 	; kursor znajduje się w pierwszej kolumnie?
 	cmp	dword [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.cursor + CONSOLE_STRUCTURE_CURSOR.x],	STATIC_EMPTY
-	jne	.prompt	; nie
+	je	.prompt	; nie
 
-	; znak zachęty bez nowej linii
-	mov	ecx,	shell_string_prompt_end - shell_string_prompt
-	mov	rsi,	shell_string_prompt
+	; znak zachęty od nowej linii
+	inc	rcx
+	dec	rsi
 
 .prompt:
- 	; wyświetl znak zachęty
+	; wyświetl znak zachęty
  	mov	ax,	KERNEL_SERVICE_PROCESS_out
  	int	KERNEL_SERVICE
 
-	jmp	$
+.restart:
+	; zawartość bufora: pusty
+	xor	ebx,	ebx
 
- ; .restart:
-; 	; zawartość bufora: pusty
-; 	xor	ebx,	ebx
-;
-; 	; maksymalny rozmiar bufora
-; 	mov	ecx,	SHELL_CACHE_SIZE_byte
-;
-; 	; ustaw wskaźnik na początek bufora
-; 	mov	rsi,	shell_cache
-;
-; 	; pobierz polecenie
-; 	call	library_input
-; 	jc	shell	; bufor pusty lub przerwano wprowadzanie
-;
+	; maksymalny rozmiar bufora
+	mov	ecx,	SHELL_CACHE_SIZE_byte
+
+	; ustaw wskaźnik na początek bufora
+	mov	rsi,	shell_cache
+
+.continue:
+	; pobierz polecenie
+	mov	rbx,	SHELL_CACHE_SIZE_byte
+	xor	ecx,	ecx	; bufor pusty
+	mov	rdx,	shell_event
+	mov	rsi,	shell_cache
+	mov	rdi,	shell_ipc_data
+	call	library_input
+	jc	shell	; bufor pusty lub przerwano wprowadzanie
+
 ; 	; usuń białe znaki z początku i końca bufora
 ; 	call	library_string_trim
 ; 	jc	shell	; bufor pusty lub przerwano wprowadzanie
@@ -95,12 +99,16 @@ shell:
 ;
 ; 	; przetwórz polecenie
 ; 	jmp	shell_prompt
-;
+
+	; debug
+	jmp	shell
+
 	;-----------------------------------------------------------------------
 	%include	"software/shell/data.asm"
 ; 	%include	"software/shell/prompt.asm"
+	%include	"software/shell/event.asm"
 	;-----------------------------------------------------------------------
-; 	%include	"library/input.asm"
+	%include	"library/input.asm"
 ; 	%include	"library/string_trim.asm"
 ; 	%include	"library/string_word_next.asm"
 ; 	%include	"library/string_compare.asm"
