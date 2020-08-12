@@ -20,6 +20,19 @@ console_sequence:
 	mov	rcx,	STATIC_ASCII_SEQUENCE_length
 
 	;-----------------------------------------------------------------------
+	; czyszczenie przestrzeni terminala?
+	mov	rdi,	console_string_sequence_terminal_clear
+	call	library_string_compare
+	jc	.no_clear	; nie
+
+	; wyczyść przestrzeń terminala
+	call	library_terminal_drain
+
+	; kontynuuj
+	jmp	.found
+
+.no_clear:
+	;-----------------------------------------------------------------------
 	; czarny?
 	mov	rdi,	console_string_sequence_color_black
 	call	library_string_compare
