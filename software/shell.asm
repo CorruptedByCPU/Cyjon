@@ -66,9 +66,13 @@ shell:
 
 .continue:
 	; pobierz polecenie
+	mov	rbx,	SHELL_CACHE_SIZE_byte
+	xor	ecx,	ecx	; bufor pusty
+	mov	rdx,	shell_event
+	mov	rsi,	shell_cache
+	mov	rdi,	shell_ipc_data
 	call	library_input
-	jz	shell	; bufor pusty lub przerwano wprowadzanie
-	jc	.exception	; otrzymano wiadomość
+	jc	shell	; bufor pusty lub przerwano wprowadzanie
 
 ; 	; usuń białe znaki z początku i końca bufora
 ; 	call	library_string_trim
@@ -105,8 +109,9 @@ shell:
 	;-----------------------------------------------------------------------
 	%include	"software/shell/data.asm"
 ; 	%include	"software/shell/prompt.asm"
+	%include	"software/shell/event.asm"
 	;-----------------------------------------------------------------------
-; 	%include	"library/input.asm"
+	%include	"library/input.asm"
 ; 	%include	"library/string_trim.asm"
 ; 	%include	"library/string_word_next.asm"
 ; 	%include	"library/string_compare.asm"

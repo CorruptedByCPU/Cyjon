@@ -4,114 +4,119 @@
 
 ;===============================================================================
 ; wejście:
+;	rbx - rozmiar bufora
 ;	rcx - ilość znaków w buforze
-;	rsi - wskaźnik do przestrzeni
-;	r8 - wskaźnik do struktury terminala
+;	rdx - procedura obsługi wyjątku
+;	rsi - wskaźnik przestrzeni bufora
+;	rdi - wskaźnik przestrzeni IPC
 ; wyjście:
-;	Flaga CF -
-;	Flaga ZF - użytkownik przerwał wprowadzanie (np. klawisz ESC) lub bufor pusty
-;	rcx - ilość znaków w buforze
+;	Flaga CF - użytkownik przerwał wprowadzanie (np. klawisz ESC) lub bufor pusty
+;	rcx - ilość znaków w ciągu
+;	rsi - wskaźnik do bufora
 library_input:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rbx
-	push	rsi
+	push	rdx
 	push	rcx
 
+	; wyświetlić zawartość bufora?
+	test	rcx,	rcx
+	jz	.entry	; nie
+
+	; wyświetl zawartość bufora
+	mov	ax,	KERNEL_SERVICE_PROCESS_out
+	int	KERNEL_SERVICE
+
+.entry:
 	; wyczyść akumulator
 	xor	eax,	eax
 
-	; wyświetlić zawartość bufora?
-	cmp	rbx,	STATIC_EMPTY
-	je	.loop	; nie
-
-	; wyświetl zawartość bufora
-	mov	rcx,	rbx
-	call	library_terminal_string
-
-	; przywróć maksymalny rozmiar bufora
-	mov	rcx,	qword [rsp]
-
-	; zmiejsz rozmiar o zawartość
-	sub	rcx,	rbx
-
-	; przesuń wskaźnik bufora na koniec
-	add	rsi,	rbx
+	; ilość wolnego miejsca w buforze
+	sub	rbx,	rcx
 
 .loop:
-	; pobierz znak z bufora klawiatury
-	mov	ax,	KERNEL_SERVICE_KEYBOARD_key
+	; pobierz komunikat "znak z bufora klawiatury"
+	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
 	int	KERNEL_SERVICE
-	jz	.loop
+	jc	.loop	; brak komunikatu
+
+	; komunikat typu: klawiatura?
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
+	je	.keyboard	; tak
+
+	; obsłuż komunikat
+	call	qword [rdx]
+
+	; kontynuuj
+	jmp	.loop
+
+.keyboard:
+	; pobierz kod klawisza
+	mov	dx,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
 
 	; klawisz typu Backspace?
-	cmp	ax,	STATIC_ASCII_BACKSPACE
+	cmp	dx,	STATIC_ASCII_BACKSPACE
 	je	.key_backspace
 
 	; klawisz typu Enter?
-	cmp	ax,	STATIC_ASCII_ENTER
+	cmp	dx,	STATIC_ASCII_ENTER
 	je	.key_enter
 
 	; klawisz typu ESC?
-	cmp	ax,	STATIC_ASCII_ESCAPE
+	cmp	dx,	STATIC_ASCII_ESCAPE
 	je	.empty	; zakończ libliotekę
 
 	; znak dozwolony?
 
 	; sprawdź czy pobrany znak jest możliwy do wyświetlenia
-	cmp	ax,	STATIC_ASCII_SPACE
+	cmp	dx,	STATIC_ASCII_SPACE
 	jb	.loop	; nie, zignoruj
-	cmp	ax,	STATIC_ASCII_TILDE
+	cmp	dx,	STATIC_ASCII_TILDE
 	ja	.loop	; nie, zignoruj
 
 	; bufor pełny?
-	cmp	rcx,	STATIC_EMPTY
-	je	.loop	; tak
+	test	rbx,	rbx
+	jz	.loop	; tak
 
 	; zachowaj znak w buforze
-	mov	byte [rsi + rbx],	al
-
-	; ilość znaków w buforze
-	inc	rbx
+	mov	byte [rsi + rcx],	dl
 
 	; pozostałe miejsce w buforze
-	dec	rcx
+	dec	rbx
+
+	; ilość znaków w buforze
+	inc	rcx
 
 .print:
-	; zachowaj rozmiar bufora
-	push	rcx
-
-	; wyświetl znak z bufora na ekran
-	mov	ecx,	1	; jedna kopia
-	call	library_terminal_char
-
-	; przywróć rozmiar bufora
-	pop	rcx
+	; wyświetl znak na terminal
+	mov	ax,	KERNEL_SERVICE_PROCESS_out_byte
+	int	KERNEL_SERVICE
 
 	; kontynuuj
 	jmp	.loop
 
 .key_backspace:
 	; bufor pusty?
-	test	rbx,	rbx
+	test	rcx,	rcx
 	jz	.loop	; tak
 
 	; ilość znaków w buforze
-	dec	rbx
+	dec	rcx
 
 	; rozmiar dostępnego bufora
-	inc	rcx
+	inc	rbx
 
 	; wyświetl klawisz backspace
 	jmp	.print
 
 .key_enter:
 	; bufor pusty?
-	test	rbx,	rbx
+	test	rcx,	rcx
 	jz	.empty	; tak
 
 	; zwróć ilość znaków w buforze
-	mov	qword [rsp],	rbx
+	mov	qword [rsp],	rcx
 
 	; flaga, sukces
 	clc
@@ -126,9 +131,9 @@ library_input:
 .end:
 	; przywróć oryginalne rejestry
 	pop	rcx
-	pop	rsi
+	pop	rdx
 	pop	rbx
 	pop	rax
 
-	; powrót z liblioteki
+	; powrót z biblioteki
 	ret
