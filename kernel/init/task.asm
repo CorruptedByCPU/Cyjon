@@ -19,6 +19,7 @@ kernel_init_task:
 	jc	kernel_panic_memory
 
 	; zachowaj adres listy aktywnych zadań
+	call	kernel_page_drain_few	; wyczyść przestrzeń
 	mov	qword [kernel_task_active_list],	rdi
 
 	; ustaw wskaźnik na początek listy aktywnych zadań

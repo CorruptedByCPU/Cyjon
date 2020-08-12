@@ -150,8 +150,8 @@ kernel_service:
 	pop	rdi
 	pop	rsi
 
-	; zwróć kod błędu
-	mov	qword [rsp],	rax
+	; ; zwróć kod błędu
+	; mov	qword [rsp],	rax
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
