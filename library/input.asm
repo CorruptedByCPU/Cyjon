@@ -46,7 +46,7 @@ library_input:
 	je	.keyboard	; tak
 
 	; obsłuż komunikat
-	call	qword [rdx]
+	call	qword [rsp + STATIC_QWORD_SIZE_byte]
 
 	; kontynuuj
 	jmp	.loop
