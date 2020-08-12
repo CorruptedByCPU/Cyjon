@@ -2,11 +2,11 @@
 ; Copyright (C) by blackdev.org
 ;===============================================================================
 
-CONSOLE_IPC_FLAG_properties	equ	00000000b
-CONSOLE_IPC_FLAG_cursor_set	equ	00000001b
+CONSOLE_IPC_COMMAND_properties	equ	0x00
+CONSOLE_IPC_COMMAND_cursor_set	equ	0x01
 
 struc	CONSOLE_STRUCTURE_IPC
-	.flags			resb	1
+	.command		resb	1
 	.reserved		resb	7
 	.width			resb	8
 	.height			resb	8

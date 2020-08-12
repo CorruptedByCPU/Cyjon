@@ -41,6 +41,16 @@ console:
 	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_GRAPHICS
 	jne	.input	; nie, zignoruj
 
+	; zwrócić właściwości terminala?
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.command],		CONSOLE_IPC_COMMAND_properties
+	je	.properties	; tak
+
+	; brak obsługi innych poleceń
+
+	; kontynuuj
+	jmp	.input
+
+.properties:
 	; zwróć szerokość i wysokość przestrzeni tekstowej w znakach
 	mov	qword [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.width],	CONSOLE_WINDOW_WIDTH_char
 	mov	qword [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.height],	CONSOLE_WINDOW_HEIGHT_char
