@@ -37,17 +37,17 @@ shell:
 	int	KERNEL_SERVICE
 	jc	.answer	; brak odpowiedzi
 
-	; domyślnie, znak zachęty od nowej linii
- 	mov	ecx,	shell_string_prompt_end - shell_string_prompt_with_new_line
- 	mov	rsi,	shell_string_prompt_with_new_line
+	; domyślnie, znak zachęty bez nowej linii
+ 	mov	ecx,	shell_string_prompt_end - shell_string_prompt
+ 	mov	rsi,	shell_string_prompt
 
 	; kursor znajduje się w pierwszej kolumnie?
 	cmp	dword [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.cursor + CONSOLE_STRUCTURE_CURSOR.x],	STATIC_EMPTY
-	jne	.prompt	; nie
+	je	.prompt	; nie
 
-	; znak zachęty bez nowej linii
-	mov	ecx,	shell_string_prompt_end - shell_string_prompt
-	mov	rsi,	shell_string_prompt
+	; znak zachęty od nowej linii
+	inc	rcx
+	dec	rsi
 
 .prompt:
 	; wyświetl znak zachęty
@@ -101,10 +101,7 @@ shell:
 ; 	jmp	shell_prompt
 
 	; debug
-	jmp	.restart
-
-.exception:
-	jmp	.continue
+	jmp	shell
 
 	;-----------------------------------------------------------------------
 	%include	"software/shell/data.asm"

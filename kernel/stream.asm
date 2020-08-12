@@ -217,15 +217,15 @@ kernel_stream_in:
 	; zachowaj aktualną pozycję początku strumienia
 	mov	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.start],	dx
 
+	; zwróć ilość przesnałych danych
+	mov	qword [rsp],	r8
+
 	; przestrzeń strumienia jest pusta?
 	cmp	dx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end]
 	jne	.end	; nie
 
 	; wyłącz flagę dane oraz pełny
 	and	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	~KERNEL_STREAM_FLAG_data & ~KERNEL_STREAM_FLAG_full
-
-	; zwróć ilość przesnałych danych
-	mov	qword [rsp],	r8
 
 .end:
 	; odblokuj dostęp do potoku
