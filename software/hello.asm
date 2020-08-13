@@ -22,7 +22,7 @@
 hello:
 	; wyświetl powitanie
 	mov	ax,	KERNEL_SERVICE_PROCESS_out
-	mov	ecx,	hello_string_end - hello_string
+	mov	cl,	hello_string_end - hello_string
 	mov	rsi,	hello_string
 	int	KERNEL_SERVICE
 

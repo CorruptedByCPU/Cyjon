@@ -88,7 +88,7 @@ kernel_service:
 
 ;-------------------------------------------------------------------------------
 ; wejście:
-;	bl - zachowanie potoku procesu
+;	bl - zachowanie strumienia procesu
 ;	rcx - ilość znaków w ścieżce do pliku
 ;	rsi - wskaźnik do ciągu znaków reprezentujących ścieżkę do pliku
 ; wyjście:
@@ -117,12 +117,30 @@ kernel_service:
 	call	kernel_stream
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.in],	rsi
 
+	; użyć tego samego strumienia wyjścia co rodzic?
+	test	bl,	KERNEL_SERVICE_PROCESS_RUN_FLAG_copy_out_of_parent
+	jz	.process_run_no_copy_out_to_parent	; nie
+
+	; zachowaj wskaźnik struktury procesu
+	push	rdi
+
+	; pobierz identyfikator potoku wyjścia rodzica
+	call	kernel_task_active
+	mov	rsi,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
+
+	; przywróć wskaźnik struktury procesu
+	pop	rdi
+
+	; kontynuuj
+	jmp	.process_run_ready
+
+.process_run_no_copy_out_to_parent:
 	; przygotuj potok wyjścia procesu
 	call	kernel_stream
 
 	; przekierować wyjście dziecka na wejście rodzica?
 	test	bl,	KERNEL_SERVICE_PROCESS_RUN_FLAG_out_to_in_parent
-	jz	.no_out_to_in_parent	; nie
+	jz	.process_run_ready	; nie
 
 	; zwolnij przygotowany potok
 	call	kernel_stream_release
@@ -137,7 +155,7 @@ kernel_service:
 	; przywróć wskaźnik struktury procesu
 	pop	rdi
 
-.no_out_to_in_parent:
+.process_run_ready:
 	; załaduj identyfikator potoku na wyjście procesu
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.out],	rsi
 
