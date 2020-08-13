@@ -17,6 +17,10 @@ kernel_wm_irq:
 	; wyłącz Direction Flag
 	cld
 
+	; zlikwidować obiekt?
+	cmp	al,	KERNEL_WM_WINDOW_close
+	je	.window_close	; tak
+
 	; zarejestrować nowy obiekt?
 	cmp	al,	KERNEL_WM_WINDOW_create
 	je	.window_create	; tak
@@ -45,6 +49,48 @@ kernel_wm_irq:
 	iretq
 
 	macro_debug	"kernel_wm_irq"
+
+;-------------------------------------------------------------------------------
+; wejście:
+;	rsi - wskaźnik do struktury okna
+.window_close:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rsi
+
+	; odszukaj obiekt o danym identyfikatorze
+	mov	rbx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id]
+	call	kernel_wm_object_by_id
+
+	; pobierz PID procesu
+	call	kernel_task_active_pid
+
+	; obiekt należy do procesu?
+	cmp	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid]
+	jne	.window_close_error	; nie
+
+	; usuń obiekt z listy
+	call	kernel_wm_object_delete
+
+	; koniec procedury
+	jmp	.window_close_end
+
+.window_close_error:
+	; flaga, błąd
+	stc
+
+.window_close_end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rbx
+	pop	rax
+
+	; koniec obsługi opcji
+	jmp	kernel_wm_irq.end
+
+	macro_debug	"kernel_wm_irq.window_close"
+
 
 ;-------------------------------------------------------------------------------
 ; wejście:

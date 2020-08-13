@@ -79,6 +79,7 @@ struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL
 	.element				resb	LIBRARY_BOSU_STRUCTURE_ELEMENT.SIZE
 	.length					resb	1
 	.string:
+	.SIZE:
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON

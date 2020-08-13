@@ -23,3 +23,5 @@ kernel_gui_event_console:
 
 	; powrót z procedury obsługi akcji
 	ret
+
+	macro_debug	"kernel_gui_event_console"

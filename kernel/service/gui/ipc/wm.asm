@@ -79,3 +79,5 @@ kernel_gui_ipc_wm:
 .end:
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_gui_ipc_wm"

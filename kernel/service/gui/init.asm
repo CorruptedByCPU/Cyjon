@@ -123,3 +123,5 @@ kernel_gui_init:
 	; zachowaj informacje o ostatniej modyfikacji listy okien
 	mov	rax,	qword [kernel_wm_object_list_modify_time]
 	mov	qword [kernel_gui_window_taskbar_modify_time],	rax
+
+	macro_debug	"kernel_gui_init"

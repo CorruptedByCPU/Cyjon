@@ -4,7 +4,7 @@
 
 %define	KERNEL_name					"Cyjon"
 %define	KERNEL_version					"0"
-%define	KERNEL_revision					"1250"
+%define	KERNEL_revision					"1251"
 %define	KERNEL_architecture				"x86_64"
 
 KERNEL_BASE_address					equ	0x0000000000100000
@@ -86,8 +86,9 @@ KERNEL_ERROR_memory_low					equ	0x0001
 ;===============================================================================
 KERNEL_WM_IRQ						equ	0x41
 
-KERNEL_WM_WINDOW_create					equ	0x00
-KERNEL_WM_WINDOW_update					equ	0x01
+KERNEL_WM_WINDOW_close					equ	0x00
+KERNEL_WM_WINDOW_create					equ	0x01
+KERNEL_WM_WINDOW_update					equ	0x02
 
 KERNEL_WM_IPC_MOUSE_btn_left_press			equ	0
 KERNEL_WM_IPC_MOUSE_btn_left_release			equ	1

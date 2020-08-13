@@ -72,6 +72,23 @@ library_bosu:
 
 ;===============================================================================
 ; wejście:
+;	rsi - wskaźnik do właściwości okna
+library_bosu_close:
+	; zachowaj oryginalne rejestry
+	push	rax
+
+	; zamknij okno
+	mov	ax,	KERNEL_WM_WINDOW_close
+	int	KERNEL_WM_IRQ
+
+	; przywróć oryginalne rejestry
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
 ;	rsi - wskaźnik do struktury okna
 ; wyjście:
 ;	r8 - minimalna szerokość okna na podstawie zawartych elementów
