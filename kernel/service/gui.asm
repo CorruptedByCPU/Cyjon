@@ -37,3 +37,5 @@ kernel_gui:
 	%include	"library/bosu.asm"
 	%include	"library/font.asm"
 	;-----------------------------------------------------------------------
+
+	macro_debug	"kernel_gui"

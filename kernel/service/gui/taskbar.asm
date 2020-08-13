@@ -65,10 +65,16 @@ kernel_gui_taskbar:
 	mov	rax,	qword [kernel_gui_window_taskbar + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
 	sub	rax,	qword [kernel_gui_window_taskbar.element_label_clock + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
 	mov	rcx,	qword [kernel_wm_object_list_records]
-	sub	rcx,	KERNEL_GUI_WINDOW_count
 	xor	edx,	edx
+
+	; ilość otwartych okien, nienależących do GUI
+	sub	rcx,	KERNEL_GUI_WINDOW_count
+	jz	.max	; brak otwartych okien
+
+	; wylicz szerokość elementu
 	div	rcx
 
+.max:
 	; zachowaj szerokość elementu
 	mov	rbx,	rax
 
@@ -80,6 +86,10 @@ kernel_gui_taskbar:
 
 	; sprawdź wszystkie okna od początku listy
 	mov	rsi,	qword [kernel_wm_object_list_address]
+
+	; brak elementów do wygenerowania?
+	test	rcx,	rcx
+	jz	.empty	; tak
 
 .loop:
 	; koniec listy okien?
@@ -129,6 +139,23 @@ kernel_gui_taskbar:
 	; kontynuuj
 	jmp	.loop
 
+.empty:
+	; wyczyść przestrzeń za pomocą pustej etykiety
+	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	LIBRARY_BOSU_ELEMENT_TYPE_label
+	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.SIZE
+	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	rdx
+	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	STATIC_EMPTY
+	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	rbx
+	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height],	KERNEL_GUI_WINDOW_TASKBAR_HEIGHT_pixel
+	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	STATIC_EMPTY	; brak akcji
+	;-----------------------------------------------------------------------
+	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.length],	0x01
+	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.string],	STATIC_ASCII_SPACE
+	add	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	0x01
+
+	; przesuń wskaźnik przestrzeni łańcucha za utworzony element
+	add	rdi,	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+
 .ready:
 	; aktualizuj rozmiar przestrzeni łańcucha
 	pop	qword [kernel_gui_window_taskbar.element_chain_0 + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.size]
@@ -160,3 +187,5 @@ kernel_gui_taskbar:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_gui_taskbar"

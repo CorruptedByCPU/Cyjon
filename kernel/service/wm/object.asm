@@ -154,6 +154,10 @@ kernel_wm_object:
 	mov	rsi,	qword [kernel_wm_object_list_address]
 
 .loop:
+	; przerysować zawartość pod obiektem?
+	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
+	jnz	.redraw	; tak
+
 	; obiekt widoczny?
 	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
 	jz	.next	; nie
@@ -162,11 +166,12 @@ kernel_wm_object:
 	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 	jz	.next	; nie
 
+.redraw:
 	; przetwórz strefę
 	call	kernel_wm_zone_insert_by_object
 
-	; wyłącz flagę aktualizacji obiektu
-	and	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_flush
+	; wyłącz flagę aktualizacji obiektu lub przerysowania zawartości pod obiektem
+	and	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_flush & ~KERNEL_WM_OBJECT_FLAG_undraw
 
 	; wymuś aktualizacje obiektu kursora
 	or	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
@@ -607,22 +612,6 @@ kernel_wm_object_id_new:
 	macro_debug	"kernel_wm_object_id"
 
 ; ;===============================================================================
-; kernel_wm_object_lock:
-; 	; zablokuj dostęp do modyfikacji listy obiektów
-; 	macro_lock	kernel_wm_object_semaphore, 0
-;
-; .wait:
-; 	; czekaj, aż wszystkie procedury przestaną korzystać z listy obietków
-; 	test	byte [kernel_wm_object_lock_level],	STATIC_EMPTY
-; 	jnz	.wait
-;
-; 	; powrót z procedury
-; 	ret
-;
-; 	; informacja dla Bochs
-; 	macro_debug	"service desu object list lock"
-
-; ;===============================================================================
 ; ; wejście:
 ; ;	rbx - identyfikator okna
 ; ; wyjście:
@@ -676,34 +665,41 @@ kernel_wm_object_id_new:
 ;
 ; 	; informacja dla Bochs
 ; 	macro_debug	"service desu object find by id"
-;
-; ;~ ;===============================================================================
-; ;~ ; wejście:
-; ;~ ;	rsi - wskaźnik rekordu do usunięcia
-; ;~ kernel_wm_object_delete:
-; 	;~ ; zachowaj oryginalne rejestry
-; 	;~ push	rcx
-; 	;~ push	rdi
-;
-; 	;~ ; pobierz rozmiar przestrzeni obiektu i zamień na strony
-; 	;~ mov	rcx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size]
-; 	;~ call	library_page_from_byte
-;
-; 	;~ ; pobierz wskaźnik do przestrzeni obiektu
-; 	;~ mov	rdi,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.address]
-;
-; 	;~ ; usuń obiekt z listy
-; 	;~ call	kernel_wm_object_remove
-;
-; 	;~ ; usuń obiekt z przestrzeni pamięci
-; 	;~ call	kernel_page_release_few
-;
-; 	;~ ; przywróć oryginalne rejestry
-; 	;~ pop	rdi
-; 	;~ pop	rcx
-;
-; 	;~ ; powrót z procedury
-; 	;~ ret
-;
-; 	; informacja dla Bochs
-; 	macro_debug	"service desu object delete"
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik rekordu do usunięcia
+kernel_wm_object_delete:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rdi
+
+	; pobierz rozmiar przestrzeni obiektu i zamień na strony
+	mov	rcx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size]
+	call	library_page_from_size
+
+	; pobierz wskaźnik do przestrzeni obiektu
+	mov	rdi,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.address]
+
+	; usuń obiekt z przestrzeni pamięci
+	call	kernel_memory_release
+
+	; przerysuj przestrzeń pod obiektem
+	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_visible | KERNEL_WM_OBJECT_FLAG_undraw
+
+.wait:
+	; przestrzeń pod obiektem została przerysowana?
+	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
+	jnz	.wait	; nie, czekaj
+
+	; usuń obiekt z listy
+	call	kernel_wm_object_remove
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rcx
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"kernel_wm_object_delete"

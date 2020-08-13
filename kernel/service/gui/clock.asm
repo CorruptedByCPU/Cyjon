@@ -72,3 +72,5 @@ kernel_gui_clock:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_gui_clock"

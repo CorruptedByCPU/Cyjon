@@ -27,6 +27,21 @@ console:
 	%include	"software/console/init.asm"
 
 .loop:
+	; proces powłoki jest uruchomiony?
+	mov	ax,	KERNEL_SERVICE_PROCESS_check
+	mov	rcx,	qword [console_shell_pid]
+	int	KERNEL_SERVICE
+	jnc	.exist	; tak
+
+	; zamknij okno
+	mov	rsi,	console_window
+	call	library_bosu_close
+
+	; zakończ działanie konsoli
+	xor	ax,	ax
+	int	KERNEL_SERVICE
+
+.exist:
 	; pobierz wiadomość
 	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
 	mov	rdi,	console_ipc_data
