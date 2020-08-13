@@ -55,11 +55,11 @@ kernel_init_vfs_files:
 						dq	kernel_init_vfs_file_shell_end - kernel_init_vfs_file_shell
 						db	10
 						db	"/bin/shell"
-						;
-						; dq	kernel_init_vfs_file_hello
-						; dq	kernel_init_vfs_file_hello_end - kernel_init_vfs_file_hello
-						; db	10
-						; db	"/bin/hello"
+
+						dq	kernel_init_vfs_file_hello
+						dq	kernel_init_vfs_file_hello_end - kernel_init_vfs_file_hello
+						db	10
+						db	"/bin/hello"
 						;
 						; dq	kernel_init_vfs_file_free
 						; dq	kernel_init_vfs_file_free_end - kernel_init_vfs_file_free
@@ -76,8 +76,8 @@ kernel_init_vfs_files:
 
 kernel_init_vfs_file_shell			incbin	"build/shell"
 kernel_init_vfs_file_shell_end:
-; kernel_init_vfs_file_hello			incbin	"build/hello"
-; kernel_init_vfs_file_hello_end:
+kernel_init_vfs_file_hello			incbin	"build/hello"
+kernel_init_vfs_file_hello_end:
 ; kernel_init_vfs_file_free			incbin	"build/free"
 ; kernel_init_vfs_file_free_end:
 kernel_init_vfs_file_console			incbin	"build/console"

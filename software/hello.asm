@@ -10,18 +10,18 @@
 	;-----------------------------------------------------------------------
 
 ; 64 bitowy kod programu
-[BITS 64]
+[bits 64]
 
 ; adresowanie względne
-[DEFAULT REL]
+[default rel]
 
 ; położenie kodu programu w pamięci logicznej
-[ORG SOFTWARE_base_address]
+[org SOFTWARE_base_address]
 
 ;===============================================================================
 hello:
 	; wyświetl powitanie
-	mov	ax,	KERNEL_SERVICE_VIDEO_string
+	mov	ax,	KERNEL_SERVICE_PROCESS_out
 	mov	ecx,	hello_string_end - hello_string
 	mov	rsi,	hello_string
 	int	KERNEL_SERVICE
