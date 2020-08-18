@@ -43,10 +43,13 @@
 
 	; utwórz urządzenie znakowe
 	mov	ax,	KERNEL_SERVICE_VFS_touch
-	mov	dl,	KERNEL_VFS_FILE_TYPE_character_device
 	add	ecx,	console_device_file_id - console_device_file
+	mov	dl,	KERNEL_VFS_FILE_TYPE_character_device
 	mov	rsi,	console_device_file
 	int	KERNEL_SERVICE
+
+	; zachowaj ilość znaków w ścieżce do pliku
+	mov	byte [console_device_file_name_length],	cl
 
 	; uruchom powłokę systemu
 	mov	ax,	KERNEL_SERVICE_PROCESS_run
