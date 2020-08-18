@@ -2,13 +2,6 @@
 ; Copyright (C) by blackdev.org
 ;===============================================================================
 
-KERNEL_VFS_FILE_TYPE_socket				equ	01000000b
-KERNEL_VFS_FILE_TYPE_symbolic_link			equ	00100000b
-KERNEL_VFS_FILE_TYPE_regular_file			equ	00010000b
-KERNEL_VFS_FILE_TYPE_block_device			equ	00001000b
-KERNEL_VFS_FILE_TYPE_directory				equ	00000100b
-KERNEL_VFS_FILE_TYPE_character_device			equ	00000010b
-KERNEL_VFS_FILE_TYPE_fifo				equ	00000001b
 KERNEL_VFS_FILE_TYPE_character_device_bit		equ	1
 KERNEL_VFS_FILE_TYPE_directory_bit			equ	2
 KERNEL_VFS_FILE_TYPE_block_device_bit			equ	3
@@ -55,13 +48,22 @@ endstruc
 
 ; struktura supła w drzewie katalogu głównego
 struc	KERNEL_VFS_STRUCTURE_KNOT
-	.id_or_data					resb	8
+	.data						resb	8
 	.size						resb	8
 	.type						resb	1
 	.flags						resb	2
 	.time_modified					resb	8
 	.length						resb	1
 	.name						resb	255
+	.metadata					resb	32
+	.SIZE:
+endstruc
+
+struc	KERNEL_VFS_STRUCTURE_META_CHARACTER_DEVICE
+	.width						resb	8
+	.height						resb	8
+	.start						resb	8
+	.end						resb	8
 	.SIZE:
 endstruc
 
@@ -71,6 +73,13 @@ kernel_vfs_magicknot					dq	STATIC_EMPTY
 
 kernel_vfs_string_directory_local			db	"."
 kernel_vfs_string_directory_local_end:
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do meta danych
+kernel_vfs_metadata_update:
+	; powrót z procedury
+	ret
 
 ;===============================================================================
 ; wejście:
@@ -85,10 +94,10 @@ kernel_vfs_dir_symlinks:
 	; utwórz dowiązanie symboliczne do siebie samego "."
 
 	; pobierz adres pierwszego bloku danych
-	mov	rbx,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.id_or_data]
+	mov	rbx,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.data]
 
 	; wskaźnik docelowy dowiązania symbolicznego
-	mov	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.id_or_data],	rdi
+	mov	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.data],	rdi
 
 	; rozmiar: 0 Bajtów
 
@@ -117,7 +126,7 @@ kernel_vfs_dir_symlinks:
 	add	rbx,	KERNEL_VFS_STRUCTURE_KNOT.SIZE
 
 	; wskaźnik docelowy dowiązania symbolicznego
-	mov	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.id_or_data],	rsi
+	mov	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.data],	rsi
 
 	; rozmiar: 0 Bajtów
 
@@ -270,7 +279,7 @@ kernel_vfs_path_resolve:
 	jnc	.no_link	; nie
 
 	; przeładuj wskaźnik
-	mov	rdi,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.id_or_data]
+	mov	rdi,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.data]
 
 .no_link:
 	; kod błędu, to nie jest katalog
@@ -344,7 +353,6 @@ kernel_vfs_path_resolve:
 
 ;===============================================================================
 ; wejście:
-;	rbx - specyfikacja do urządzenia, jesli typ pliku to block device
 ;	rcx - ilość znaków w nazwie pliku
 ;	dl - typ pliku
 ;	rsi - wskaźnik do nazwy pliku
@@ -389,21 +397,10 @@ kernel_vfs_file_touch:
 	; zachowaj wskaźnik do rekordu supła
 	mov	rax,	rdi
 
-	; katalog?
+	; typ pliku: katalog?
 	cmp	dl,	KERNEL_VFS_FILE_TYPE_directory
-	je	.directory	; tak
+	jne	.no_directory	; nie
 
-	; urządzenie blokowe?
-	cmp	dl,	KERNEL_VFS_FILE_TYPE_block_device
-	jne	.regular_file	; nie
-
-	; zachowaj wskaźnik do specyfikacji urządzenia
-	mov	qword [rax + KERNEL_VFS_STRUCTURE_KNOT.id_or_data],	rbx
-
-	; kontynuuj
-	jmp	.regular_file
-
-.directory:
 	; przygotuj blok danych dla nowego klatalogu
 	call	kernel_memory_alloc_page
 	jc	.end	; brak miejsca w przestrzeni pamięci
@@ -412,10 +409,10 @@ kernel_vfs_file_touch:
 	call	kernel_page_drain
 
 	; aktualizuj rekord supła
-	mov	qword [rax + KERNEL_VFS_STRUCTURE_KNOT.id_or_data],	rdi	; pierwszy blok danych pliku
+	mov	qword [rax + KERNEL_VFS_STRUCTURE_KNOT.data],	rdi	; pierwszy blok danych pliku
 	mov	qword [rax + KERNEL_VFS_STRUCTURE_KNOT.size],	1	; rozmiar 1 blok
 
-.regular_file:
+.no_directory:
 	; ilość znaków w nazwie pliku
 	mov	byte [rax + KERNEL_VFS_STRUCTURE_KNOT.length],	cl
 
@@ -474,7 +471,7 @@ kernel_vfs_file_find:
 	mov	rax,	rcx
 
 	; ustaw wskaźnik na pierwszy blok danych katalogu
-	mov	rdi,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.id_or_data]
+	mov	rdi,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.data]
 
 .prepare:
 	; ilość supłów na blok
@@ -556,7 +553,7 @@ kernel_vfs_knot_prepare:
 	macro_lock	kernel_vfs_semaphore, 0
 
 	; ustaw wskaźnik na pierwszy blok danych katalogu
-	mov	rdi,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.id_or_data]
+	mov	rdi,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.data]
 
 .prepare:
 	; ilość supłów na blok
@@ -635,7 +632,7 @@ kernel_vfs_file_write:
 	mov	rbx,	rdi
 
 	; plik zawiera jakikolwiek blok danych?
-	cmp	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.id_or_data],	STATIC_EMPTY
+	cmp	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.data],	STATIC_EMPTY
 	jne	.exist	; tak
 
 	; przygotuj przestrzeń pod blok danych
@@ -646,14 +643,14 @@ kernel_vfs_file_write:
 	call	kernel_page_drain
 
 	; podłącz blok danych do pliku
-	mov	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.id_or_data],	rdi
+	mov	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.data],	rdi
 
 .exist:
 	; zapisz do pliku N pierwszych danych bloku
 	mov	rdx,	qword [rsp + STATIC_QWORD_SIZE_byte]
 
 	; pobierz pierwszy blok danych pliku
-	mov	rdi,	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.id_or_data]
+	mov	rdi,	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.data]
 
 	; wszystkie dane zmieszczą się w pierwszym bloku danych?
 	cmp	rcx,	STATIC_STRUCTURE_BLOCK.link
@@ -785,7 +782,7 @@ kernel_vfs_file_append:
 	mov	rbx,	rdi
 
 	; plik zawiera jakikolwiek blok danych?
-	cmp	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.id_or_data],	STATIC_EMPTY
+	cmp	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.data],	STATIC_EMPTY
 	jne	.exist	; tak
 
 	; kod błędu, brak wolnego miejsca
@@ -799,11 +796,11 @@ kernel_vfs_file_append:
 	call	kernel_page_drain
 
 	; podłącz blok danych do pliku
-	mov	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.id_or_data],	rdi
+	mov	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.data],	rdi
 
 .exist:
 	; pobierz ostatni blok danych pliku
-	mov	rdi,	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.id_or_data]
+	mov	rdi,	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.data]
 
 .last_one:
 	; jest to ostatni blok danych pliku?
@@ -927,7 +924,7 @@ kernel_vfs_file_read:
 	jnc	.file	; nie
 
 	; pobierz prawidłowy supeł pliku
-	mov	rsi,	qword [rsi + KERNEL_VFS_STRUCTURE_KNOT.id_or_data]
+	mov	rsi,	qword [rsi + KERNEL_VFS_STRUCTURE_KNOT.data]
 
 	; sprawdź raz jeszcze
 	jmp	.symbolic_link
@@ -949,7 +946,7 @@ kernel_vfs_file_read:
 	push	rax
 
 	; pobierz pierwszy blok danych pliku
-	mov	rsi,	qword [rsi + KERNEL_VFS_STRUCTURE_KNOT.id_or_data]
+	mov	rsi,	qword [rsi + KERNEL_VFS_STRUCTURE_KNOT.data]
 
 .loop:
 	; domyślny rozmiar bloku odczytanych
