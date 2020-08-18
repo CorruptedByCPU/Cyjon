@@ -11,14 +11,15 @@
 ;	rdi - wskaźnik docelowy ciągu
 ; wyjście:
 ;	Flaga CF, jeśli niepoprawna podstawa
+;	rcx - ilość przetworzonych cyfr
 library_integer_to_string:
 	; zachowaj oryginalne rejestry
 	push	rax
-	push	rcx
 	push	rdx
 	push	rdi
 	push	rbp
 	push	r9
+	push	rcx
 
 	; system liczbowy obsługiwany?
 	cmp	rbx,	2
@@ -55,7 +56,7 @@ library_integer_to_string:
 
 	; uzupełnić prefiks?
 	cmp	rcx,	STATIC_EMPTY
-	jle	.return	; nie
+	jle	.init	; nie
 
 .prefix:
 	; uzupełnij wartość o prefiks
@@ -64,6 +65,10 @@ library_integer_to_string:
 	; uzupełniać dalej?
 	dec	rcx
 	jnz	.prefix	; tak
+
+.init:
+	; ilość przetworzonych cyfr
+	xor	ecx,	ecx
 
 .return:
 	; pozostały cyfry do wyświetlenia?
@@ -84,6 +89,9 @@ library_integer_to_string:
 	; zwróć cyfrę
 	stosb
 
+	; przetworzona cyfra
+	inc	rcx
+
 	; kontynuuj
 	jmp	.return
 
@@ -92,12 +100,15 @@ library_integer_to_string:
 	stc
 
 .end:
+	; zwróć informacje o ilości przetworzonych cyfr
+	mov	qword [rsp],	rcx
+
 	; przywróć oryginalne rejestry
+	pop	rcx
 	pop	r9
 	pop	rbp
 	pop	rdi
 	pop	rdx
-	pop	rcx
 	pop	rax
 
 	; powrót z procedury

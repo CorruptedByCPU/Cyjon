@@ -3,10 +3,12 @@
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
-	; stałe, zmienne, globalne, struktury, obiekty
+	; stałe, zmienne, globalne, struktury, obiekty, nagłówki
+	;-----------------------------------------------------------------------
+	%include	"config.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/config.asm"
-	%include	"config.asm"	; globalne
+	%include	"kernel/header/vfs.inc"
 	;-----------------------------------------------------------------------
 	%include	"software/console/config.asm"
 	%include	"software/console/header.inc"
@@ -137,6 +139,7 @@ console:
 	%include	"software/console/sequence.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"
+	%include	"library/integer_to_string.asm"
 	%include	"library/font.asm"
 	%include	"library/page_from_size.asm"
 	%include	"library/string_compare.asm"

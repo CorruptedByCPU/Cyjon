@@ -31,6 +31,23 @@
 	or	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
 	int	KERNEL_WM_IRQ
 
+	; pobierz swój PID
+	mov	ax,	KERNEL_SERVICE_PROCESS_pid
+	int	KERNEL_SERVICE
+
+	; dopisz numer PID do nazwy urządzenia
+	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
+	xor	ecx,	ecx	; bez prefiksu
+	mov	rdi,	console_device_file_id
+	call	library_integer_to_string
+
+	; utwórz urządzenie znakowe
+	mov	ax,	KERNEL_SERVICE_VFS_touch
+	mov	dl,	KERNEL_VFS_FILE_TYPE_character_device
+	add	ecx,	console_device_file_id - console_device_file
+	mov	rsi,	console_device_file
+	int	KERNEL_SERVICE
+
 	; uruchom powłokę systemu
 	mov	ax,	KERNEL_SERVICE_PROCESS_run
 	mov	bl,	KERNEL_SERVICE_PROCESS_RUN_FLAG_out_to_in_parent

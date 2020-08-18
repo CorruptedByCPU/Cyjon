@@ -4,7 +4,7 @@
 
 %define	KERNEL_name					"Cyjon"
 %define	KERNEL_version					"0"
-%define	KERNEL_revision					"1253"
+%define	KERNEL_revision					"1254"
 %define	KERNEL_architecture				"x86_64"
 
 KERNEL_BASE_address					equ	0x0000000000100000
@@ -52,6 +52,7 @@ KERNEL_SERVICE_PROCESS_RUN_FLAG_copy_out_of_parent	equ	00000010b
 
 KERNEL_SERVICE_VFS					equ	0x0003
 KERNEL_SERVICE_VFS_exist				equ	0x0000 + KERNEL_SERVICE_VFS
+KERNEL_SERVICE_VFS_touch				equ	0x0001 + KERNEL_SERVICE_VFS
 
 KERNEL_SERVICE_SYSTEM					equ	0x0004
 KERNEL_SERVICE_SYSTEM_memory				equ	0x0000 + KERNEL_SERVICE_SYSTEM
