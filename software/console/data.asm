@@ -8,6 +8,8 @@ console_shell_file_end:
 console_device_file				db	"/dev/console-"
 console_device_file_id:				db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 
+console_device_file_name_length			db	STATIC_EMPTY
+
 console_string_sequence_terminal_clear		db	STATIC_ASCII_SEQUENCE_TERMINAL_CLEAR
 console_string_sequence_color_black		db	STATIC_ASCII_SEQUENCE_COLOR_BLACK
 console_string_sequence_color_blue		db	STATIC_ASCII_SEQUENCE_COLOR_BLUE

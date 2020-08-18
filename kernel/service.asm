@@ -394,8 +394,47 @@ kernel_service:
 .vfs:
 	; sprawdzić poprawność ścieżki?
 	cmp	ax,	KERNEL_SERVICE_VFS_exist
-	jne	kernel_service.error	; plik nie istnieje
+	je	.vfs_exist	; tak
 
+	; utworzyć pusty plik?
+	cmp	ax,	KERNEL_SERVICE_VFS_touch
+	je	.vfs_touch	; tak
+
+	; brak obsługi podprocedury
+	jmp	kernel_service.error
+
+;-------------------------------------------------------------------------------
+; wejście:
+;	rcx - ilość znaków w ścieżce do pliku
+;	dl - typ pliku
+;	rsi - wskaźnik do ścieżki
+.vfs_touch:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rdi
+
+	; rozwiąż ścieżkę do pliku
+	call	kernel_vfs_path_resolve
+	jc	.vfs_touch_error	; błąd, niepoprawna ścieżka
+
+	; utwórz pusty plik
+	call	kernel_vfs_file_touch
+	jnc	.vfa_touch_end
+
+.vfs_touch_error:
+	; nie udało się utworzyć pliku
+	stc
+
+.vfa_touch_end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rax
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;-------------------------------------------------------------------------------
+.vfs_exist:
 	; kod błędu, brak
 	xor	eax,	eax
 
