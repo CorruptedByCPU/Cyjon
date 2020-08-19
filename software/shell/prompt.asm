@@ -47,7 +47,7 @@ shell_prompt:
 	jc	.no_clear	; nie
 
 	; wyślij sekwencje czyszczenia ekranu
-	mov	ax,	KERNEL_SERVICE_PROCESS_out
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
 	mov	ecx,	STATIC_ASCII_SEQUENCE_length
 	mov	rsi,	shell_string_sequence_terminal_clear
 	int	KERNEL_SERVICE
@@ -80,7 +80,7 @@ shell_prompt:
 	jc	.error	; brak programu lub niepoprawna ścieżka
 
 	; każdy nowo uruchamiony progam ma prawo do nowej linii
-	mov	ax,	KERNEL_SERVICE_PROCESS_out_byte
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_byte
 	mov	dx,	STATIC_ASCII_NEW_LINE
 	int	KERNEL_SERVICE
 
@@ -105,7 +105,7 @@ shell_prompt:
 
 .error:
 	; wyświetl komunikat
-	mov	ax,	KERNEL_SERVICE_PROCESS_out
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
 	mov	ecx,	shell_command_unknown_end - shell_command_unknown
 	mov	rsi,	shell_command_unknown
 	int	KERNEL_SERVICE

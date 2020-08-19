@@ -53,7 +53,7 @@ shell:
 
 .prompt:
 	; wyświetl znak zachęty
- 	mov	ax,	KERNEL_SERVICE_PROCESS_out
+ 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
  	int	KERNEL_SERVICE
 
 .restart:

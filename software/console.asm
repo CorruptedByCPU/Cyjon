@@ -82,7 +82,7 @@ console:
 
 .input:
 	; pobierz ciąg z strumienia
-	mov	ax,	KERNEL_SERVICE_PROCESS_in
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_in
 	mov	ecx,	STATIC_EMPTY	; pobierz pierwszą linię lub całą zawartość
 	mov	rdi,	qword [console_cache_address]
 	int	KERNEL_SERVICE

@@ -5,11 +5,6 @@
 console_shell_file				db	"/bin/shell"
 console_shell_file_end:
 
-console_device_file				db	"/dev/console-"
-console_device_file_id:				db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-
-console_device_file_name_length			db	STATIC_EMPTY
-
 console_string_sequence_terminal_clear		db	STATIC_ASCII_SEQUENCE_TERMINAL_CLEAR
 console_string_sequence_color_black		db	STATIC_ASCII_SEQUENCE_COLOR_BLACK
 console_string_sequence_color_blue		db	STATIC_ASCII_SEQUENCE_COLOR_BLUE
@@ -38,6 +33,12 @@ console_shell_pid				dq	STATIC_EMPTY
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 console_ipc_data:
 	times KERNEL_IPC_STRUCTURE.SIZE		db	STATIC_EMPTY
+
+align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
+console_meta:					dw	CONSOLE_WINDOW_WIDTH_char
+						dw	CONSOLE_WINDOW_HEIGHT_char
+						dw	STATIC_EMPTY
+						dw	STATIC_EMPTY
 
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 ;===============================================================================

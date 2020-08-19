@@ -72,16 +72,20 @@ kernel_service:
 	je	.process_pid	; tak
 
 	; przesłać ciąg znaków na standardowe wyjście?
-	cmp	ax,	KERNEL_SERVICE_PROCESS_out
-	je	.process_out	; tak
+	cmp	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	je	.process_stream_out	; tak
 
 	; pobrać ciąg znaków z standardowego wejście?
-	cmp	ax,	KERNEL_SERVICE_PROCESS_in
-	je	.process_in	; tak
+	cmp	ax,	KERNEL_SERVICE_PROCESS_stream_in
+	je	.process_stream_in	; tak
 
 	; przesłać jeden Bajt na standardowe wyjście?
-	cmp	ax,	KERNEL_SERVICE_PROCESS_out_byte
-	je	.process_out_byte	; tak
+	cmp	ax,	KERNEL_SERVICE_PROCESS_stream_out_byte
+	je	.process_stream_out_byte	; tak
+
+	; przetworzyć meta dane strumienia?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_stream_meta
+	je	.process_stream_meta	; tak
 
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
@@ -307,14 +311,14 @@ kernel_service:
 ; wejście:
 ;	rcx - rozmiar ciągu w Bajtach
 ;	rsi - wskaźnik do ciągu znaków
-.process_out:
+.process_stream_out:
 	; zachowaj oryginalne rejestry
 	push	rbx
 	push	rdi
 
 	; brak ciągu dla potoku?
 	test	rcx,	rcx
-	jz	.process_out_end	 ; tak
+	jz	.process_stream_out_end	 ; tak
 
 	; pobierz identyfikator potoku wyjścia procesu
 	call	kernel_task_active
@@ -323,7 +327,7 @@ kernel_service:
 	; wyślij ciąg znaków na standardowe wyjście
 	call	kernel_stream_out
 
-.process_out_end:
+.process_stream_out_end:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rbx
@@ -337,7 +341,7 @@ kernel_service:
 ; wyjście:
 ;	Flaga ZF - jeśli brak danych
 ;	rcx - ilość przesłanych danych
-.process_in:
+.process_stream_in:
 	; zachowaj oryginalne rejestry
 	push	rbx
 	push	rdi
@@ -362,7 +366,7 @@ kernel_service:
 ;-------------------------------------------------------------------------------
 ; wejście:
 ;	dl - wartość
-.process_out_byte:
+.process_stream_out_byte:
 	; zachowaj oryginalne rejestry
 	push	rbx
 	push	rcx
@@ -380,7 +384,69 @@ kernel_service:
 	call	kernel_stream_out
 	pop	rdx
 
-.process_out_byte_end:
+.process_stream_out_byte_end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rcx
+	pop	rbx
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;===============================================================================
+; wejście:
+;	bl - odczyt lub zapis
+;	rcx - ilość danych w Bajtach
+;	rsi - wskaźnik źródłowy danych
+;	lub
+;	rdi - wskaźnik docelowy danych
+.process_stream_meta:
+	; zachowaj oryginalne rejestry
+	push	rbx
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; rozmiar danych większy od przestrzeni meta?
+	cmp	rcx,	KERNEL_STREAM_META_SIZE_byte
+	ja	.process_stream_meta_error	; tak, błąd
+
+	; zapisać dane?
+	cmp	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_out_set
+	jne	.process_stream_meta_read	; nie
+
+	; pobierz identyfikator strumienia wejścia procesu
+	call	kernel_task_active
+	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
+
+	; zapisz dane do meta strumienia
+	mov	rdi,	rbx
+	add	rdi,	KERNEL_STREAM_STRUCTURE_ENTRY.meta
+	rep	movsb
+
+	; koniec procedury
+	jmp	.process_stream_meta_end
+
+.process_stream_meta_read:
+	; pobierz identyfikator strumienia wejścia procesu
+	call	kernel_task_active
+	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
+
+	; wyślij do procesu meta dane
+	mov	rsi,	rbx
+	add	rsi,	KERNEL_STREAM_STRUCTURE_ENTRY.meta
+	mov	rdi,	qword [rsp]
+	rep	movsb
+
+	; koniec procedury
+	jmp	.process_stream_meta_end
+
+.process_stream_meta_error:
+	; Flaga CF, jeśli błąd
+	stc
+
+.process_stream_meta_end:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rsi
