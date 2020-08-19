@@ -2,8 +2,10 @@
 ; Copyright (C) by blackdev.org
 ;===============================================================================
 
-KERNEL_STREAM_FLAG_data		equ	00000001b	; istnieją dane w potoku
+KERNEL_STREAM_FLAG_data		equ	00000001b	; istnieją dane w strumieniu
 KERNEL_STREAM_FLAG_full		equ	00000010b	; w strumieniu nie ma miejsca
+
+KERNEL_STREAM_META_SIZE_byte	equ	0x08
 
 struc	KERNEL_STREAM_STRUCTURE_ENTRY
 	.address		resb	8
@@ -13,6 +15,7 @@ struc	KERNEL_STREAM_STRUCTURE_ENTRY
 	.reserved		resb	2
 	.flags			resb	1
 	.semaphore		resb	1
+	.meta			resb	KERNEL_STREAM_META_SIZE_byte
 	.SIZE:
 endstruc
 
@@ -25,43 +28,43 @@ kernel_stream_out_default	dq	STATIC_EMPTY
 ;===============================================================================
 ; wyjście:
 ;	Flaga CF, jeśli brak miejsca
-;	rsi - identyfikator potoku
+;	rsi - identyfikator strumienia
 kernel_stream:
 	; zachowaj oryginalne rejestry
 	push	rcx
 	push	rdi
 	push	rsi
 
-	; początek tablicy potoków
+	; początek tablicy strumieni
 	mov	rsi,	qword [kernel_stream_address]
 
-	; zablokuj dostęp do modyfikacji tablicy potoków
+	; zablokuj dostęp do modyfikacji tablicy strumieni
 	macro_lock	kernel_stream_semaphore, 0
 
 .reload:
-	; rozmiar fragmentu tablicy w potokach
+	; ilość strumieni w tablicy
 	mov	rcx,	( STATIC_PAGE_SIZE_byte / KERNEL_STREAM_STRUCTURE_ENTRY.SIZE) - 0x01
 
 .search:
-	; wolny potok?
+	; strumień wolny?
 	cmp	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.address],	STATIC_EMPTY
 	je	.found	; tak
 
-	; przesuń wskaźnik na następny potok w tablicy
+	; przesuń wskaźnik na następny strumień w tablicy
 	add	rsi,	KERNEL_STREAM_STRUCTURE_ENTRY.SIZE
 
-	; koniec fragmentu tablicy potoków?
+	; koniec strumieni w tablicy?
 	dec	rcx
 	jnz	.search	; nie
 
-	; zachowaj adres aktualnego fragmentu tablicy potoków
+	; zachowaj adres aktualnej częśći tablicy strumieni
 	and	si,	STATIC_PAGE_mask
 	mov	rcx,	rsi
 
-	; pobierz adres następnego fragmentu tablicy
+	; pobierz adres następnej części tablicy
 	mov	rsi,	qword [rsi + STATIC_STRUCTURE_BLOCK.link]
 
-	; całkowity koniec tablicy potoków?
+	; całkowity koniec tablicy strumieni?
 	cmp	rsi,	qword [kernel_stream_address]
 	jne	.search	; nie
 
@@ -72,48 +75,48 @@ kernel_stream:
 	; wyczyść przestrzeń
 	call	kernel_page_drain
 
-	; podłącz przestrzeń pod tablicę potoków
+	; podłącz przestrzeń pod tablicę strumieni
 	mov	qword [rcx + STATIC_STRUCTURE_BLOCK.link],	rdi
 
-	; ustaw wskaźnik następnego fragmentu tablicy na początek
+	; ustaw wskaźnik następnej częśći tablicy na początek
 	mov	qword [rdi + STATIC_STRUCTURE_BLOCK.link],	rsi
 
-	; kontynuuj w nowym fragmencie tablicy
+	; kontynuuj w nowej części tablicy
 	mov	rsi,	rdi
 	jmp	.reload
 
 .error:
-	; flaga, nie znaleziono wolnego potoku
+	; flaga, nie znaleziono wolnego strumienia
 	stc
 
 	; koniec procedury
 	jmp	.end
 
 .found:
-	; przygotuj przestrzeń pod potok
+	; przygotuj przestrzeń pod strumień
 	call	kernel_memory_alloc_page
 	jc	.error	; brak wolnej przestrzeni
 
-	; wyczyść przestrzeń potoku
+	; wyczyść przestrzeń strumienia
 	call	kernel_page_drain
 
-	; zachowaj adres przestrzeni potoku
+	; zachowaj adres przestrzeni strumienia
 	mov	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.address],	rdi
 
-	; wyczyść wskaźniki początku końca danych w potoku
+	; wyczyść wskaźniki początku końca danych w strumieniu
 	mov	dword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.data],	STATIC_EMPTY
 
-	; zresetuj flagi stanu potoku
+	; zresetuj flagi stanu strumienia
 	mov	byte [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	STATIC_EMPTY
 
-	; odblokuj dostęp do potoku
+	; odblokuj dostęp do strumienia
 	mov	byte [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.semaphore],	STATIC_FALSE
 
-	; zwróć "identyfikator" potoku
+	; zwróć "identyfikator" strumienia
 	mov	qword [rsp],	rsi
 
 .end:
-	; odblokuj dostęp do modyfikacji tablicy potoków
+	; odblokuj dostęp do modyfikacji tablicy strumieni
 	mov	byte [kernel_stream_semaphore],	STATIC_FALSE
 
 	; przywróć oryginalne rejestry
@@ -126,16 +129,16 @@ kernel_stream:
 
 ;===============================================================================
 ; wejście:
-;	rsi - identyfikator potoku
+;	rsi - identyfikator strumienia
 kernel_stream_release:
 	; zachowaj oryginalne rejestry
 	push	rdi
 
-	; zwolnij przestrzeń potoku
+	; zwolnij przestrzeń strumienia
 	mov	rdi,	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.address]
 	call	kernel_memory_release_page
 
-	; zwolnij wpis w tablicy potoków
+	; zwolnij wpis w tablicy strumieni
 	mov	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.address],	STATIC_EMPTY
 
 	; przywróć oryginalne rejestry

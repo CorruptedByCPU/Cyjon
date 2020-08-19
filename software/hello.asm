@@ -21,7 +21,7 @@
 ;===============================================================================
 hello:
 	; wyświetl powitanie
-	mov	ax,	KERNEL_SERVICE_PROCESS_out
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
 	mov	cl,	hello_string_end - hello_string
 	mov	rsi,	hello_string
 	int	KERNEL_SERVICE

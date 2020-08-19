@@ -25,7 +25,7 @@ library_input:
 	jz	.entry	; nie
 
 	; wyświetl zawartość bufora
-	mov	ax,	KERNEL_SERVICE_PROCESS_out
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
 	int	KERNEL_SERVICE
 
 .entry:
@@ -90,7 +90,7 @@ library_input:
 
 .print:
 	; wyświetl znak na terminal
-	mov	ax,	KERNEL_SERVICE_PROCESS_out_byte
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_byte
 	int	KERNEL_SERVICE
 
 	; kontynuuj
