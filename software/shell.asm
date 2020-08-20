@@ -6,10 +6,15 @@
 	; stałe, zmienne, globalne, struktury, obiekty, makra
 	;-----------------------------------------------------------------------
 	%include	"config.asm"
+	;-----------------------------------------------------------------------
 	%include	"kernel/config.asm"
-	%include	"software/shell/config.asm"
+	%include	"kernel/header/stream.inc"
+	%include	"kernel/header/service.inc"
+	%include	"kernel/header/ipc.inc"
 	;-----------------------------------------------------------------------
 	%include	"software/console/header.inc"
+	;-----------------------------------------------------------------------
+	%include	"software/shell/config.asm"
 	;-----------------------------------------------------------------------
 
 ; 64 bitowy kod programu
@@ -23,27 +28,19 @@
 
 ;===============================================================================
 shell:
- 	; wyślij do rodzica zapytanie o właściwości przestrzeni znakowej
-	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_send_to_parent
-	xor	ecx,	ecx	; standardowy rozmiar komunikatu
-	mov	rsi,	shell_ipc_data
-	mov	byte [rsi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_GRAPHICS
-	mov	byte [rsi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.command],	CONSOLE_IPC_COMMAND_properties
- 	int	KERNEL_SERVICE
-
-.answer:
-	; odbierz odpowiedź
-	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
-	mov	rdi,	rsi
+	; pobierz informacje o strumieniu wyjścia
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_meta
+	mov	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_get | KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_out
+	mov	rdi,	shell_stream_meta
 	int	KERNEL_SERVICE
-	jc	.answer	; brak odpowiedzi
+	jc	shell	; brak odpowiedzi
 
 	; domyślnie, znak zachęty od nowej linii
  	mov	ecx,	shell_string_prompt_end - shell_string_prompt_with_new_line
  	mov	rsi,	shell_string_prompt_with_new_line
 
 	; kursor znajduje się w pierwszej kolumnie?
-	cmp	dword [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.cursor + CONSOLE_STRUCTURE_CURSOR.x],	STATIC_EMPTY
+	cmp	word [rdi + CONSOLE_STRUCTURE_STREAM_META.x],	STATIC_EMPTY
 	jne	.prompt	; nie
 
 .prompt_no_new_line:

@@ -19,9 +19,10 @@ struc	CONSOLE_STRUCTURE_CURSOR
 	.y			resb	4
 endstruc
 
-struc	CONSOLE_STRUCTURE_WINDOW_META
+struc	CONSOLE_STRUCTURE_STREAM_META
 	.width			resb	2
 	.height			resb	2
 	.x			resb	2
 	.y			resb	2
+	.SIZE:
 endstruc

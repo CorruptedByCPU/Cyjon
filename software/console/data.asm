@@ -35,7 +35,7 @@ console_ipc_data:
 	times KERNEL_IPC_STRUCTURE.SIZE		db	STATIC_EMPTY
 
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
-console_meta:					dw	CONSOLE_WINDOW_WIDTH_char
+console_stream_meta:				dw	CONSOLE_WINDOW_WIDTH_char
 						dw	CONSOLE_WINDOW_HEIGHT_char
 						dw	STATIC_EMPTY
 						dw	STATIC_EMPTY

@@ -9,6 +9,8 @@
 	;-----------------------------------------------------------------------
 	%include	"kernel/config.asm"
 	%include	"kernel/header/vfs.inc"
+	%include	"kernel/header/service.inc"
+	%include	"kernel/header/ipc.inc"
 	;-----------------------------------------------------------------------
 	%include	"software/console/config.asm"
 	%include	"software/console/header.inc"
@@ -86,7 +88,7 @@ console:
 	mov	ecx,	STATIC_EMPTY	; pobierz pierwszą linię lub całą zawartość
 	mov	rdi,	qword [console_cache_address]
 	int	KERNEL_SERVICE
-	jz	.loop	; brak danych
+	jz	.meta	; brak danych
 
 	; wyświetl zawartość
 	xor	eax,	eax
@@ -133,10 +135,24 @@ console:
 	; zatrzymaj dalsze wykonywanie kodu
 	jmp	.loop
 
+.meta:
+	; nowa pozycja kursora
+	mov	ax,	word [console_terminal_table + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.x]
+	mov	word [console_stream_meta + CONSOLE_STRUCTURE_STREAM_META.x],	ax
+	mov	ax,	word [console_terminal_table + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y]
+	mov	word [console_stream_meta + CONSOLE_STRUCTURE_STREAM_META.y],	ax
+
+	; aktualizuj strumień wejścia procesu o meta dane okna
+	call	console_meta
+
+	; zatrzymaj dalsze wykonywanie kodu
+	jmp	.loop
+
 	;-----------------------------------------------------------------------
 	%include	"software/console/data.asm"
 	%include	"software/console/transfer.asm"
 	%include	"software/console/sequence.asm"
+	%include	"software/console/meta.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"
 	%include	"library/integer_to_string.asm"

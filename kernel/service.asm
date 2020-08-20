@@ -412,27 +412,59 @@ kernel_service:
 	cmp	rcx,	KERNEL_STREAM_META_SIZE_byte
 	ja	.process_stream_meta_error	; tak, błąd
 
-	; zapisać dane?
-	cmp	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_out_set
-	jne	.process_stream_meta_read	; nie
-
-	; pobierz identyfikator strumienia wejścia procesu
+	; pobierz identyfikator strumienia procesu
 	call	kernel_task_active
+
+	; zapisać dane?
+	test	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_set
+	jz	.process_stream_meta_not_save	; nie
+
+	; strumień wejścia?
+	test	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_in
+	jz	.process_stream_meta_save_out	; nie
+
+	; strumień wejścia
 	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
 
+	; kontynuuj
+	jmp	.process_stream_meta_save
+
+.process_stream_meta_save_out:
+	; strumień wyjścia
+	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
+
+.process_stream_meta_save:
 	; zapisz dane do meta strumienia
 	mov	rdi,	rbx
 	add	rdi,	KERNEL_STREAM_STRUCTURE_ENTRY.meta
 	rep	movsb
 
+	; podnieś flagę, meta dane aktualne
+	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_meta
+
 	; koniec procedury
 	jmp	.process_stream_meta_end
 
-.process_stream_meta_read:
-	; pobierz identyfikator strumienia wejścia procesu
-	call	kernel_task_active
+.process_stream_meta_not_save:
+	; meta dane aktualne?
+	test	byte [rdi + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_meta
+	jnz	.process_stream_meta_error	; nie
+
+	; strumień wejścia?
+	test	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_in
+	jz	.process_stream_meta_read_out	; nie
+
+	; strumień wejścia
 	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
 
+	; kontynuuj
+	jmp	.process_stream_meta_read
+
+.process_stream_meta_read_out:
+	; strumień wyjścia
+	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
+
+.process_stream_meta_read:
 	; wyślij do procesu meta dane
 	mov	rsi,	rbx
 	add	rsi,	KERNEL_STREAM_STRUCTURE_ENTRY.meta

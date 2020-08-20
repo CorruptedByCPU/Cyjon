@@ -2,6 +2,4 @@
 ; Copyright (C) by blackdev.org
 ;===============================================================================
 
-%define SHELL_VERSION		"0.61"
-
-SHELL_CACHE_SIZE_byte	equ	128
+; to be continued
