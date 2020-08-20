@@ -22,6 +22,7 @@ kernel_page_total_count		dq	STATIC_EMPTY
 kernel_page_free_count		dq	STATIC_EMPTY
 kernel_page_reserved_count	dq	STATIC_EMPTY
 kernel_page_paged_count		dq	STATIC_EMPTY
+kernel_page_shared_count	dq	STATIC_EMPTY
 
 ;===============================================================================
 ; wejście:
