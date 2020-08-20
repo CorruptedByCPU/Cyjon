@@ -4,8 +4,7 @@
 
 KERNEL_STREAM_FLAG_data		equ	00000001b	; istnieją dane w strumieniu
 KERNEL_STREAM_FLAG_full		equ	00000010b	; w strumieniu nie ma miejsca
-
-KERNEL_STREAM_META_SIZE_byte	equ	0x08
+KERNEL_STREAM_FLAG_meta		equ	00000100b	; meta dane są aktualne
 
 struc	KERNEL_STREAM_STRUCTURE_ENTRY
 	.address		resb	8
@@ -306,8 +305,8 @@ kernel_stream_out:
 	; ustaw wskaźnik końca przestrzeni danych strumienia na początek
 	xor	dx,	dx
 
-	; podnieś flagę dane w strumieniu
-	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
+	; podnieś flagę dane w strumieniu oraz połóż flagę meta dane nieaktualne
+	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data & ~KERNEL_STREAM_FLAG_meta
 
 .continue:
 	; koniec ciągu danych?
