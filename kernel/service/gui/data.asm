@@ -2,10 +2,12 @@
 ; Copyright (C) by blackdev.org
 ;===============================================================================
 
-kernel_gui_pid			dq	STATIC_EMPTY
+kernel_gui_pid				dq	STATIC_EMPTY
 
 kernel_gui_clock_last_state		dq	STATIC_EMPTY
-kernel_gui_clock_colon		db	STATIC_ASCII_SPACE
+kernel_gui_clock_colon			db	STATIC_ASCII_SPACE
+
+kernel_gui_background_mixer		dq	0x00010101
 
 kernel_gui_event_console_file		db	"/bin/console"
 kernel_gui_event_console_file_end:
@@ -74,7 +76,7 @@ kernel_gui_window_taskbar_end:
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
 ;===============================================================================
-kernel_gui_window_menu		dq	160	; pozycja na osi X względem wskaźnika kursora
+kernel_gui_window_menu			dq	160	; pozycja na osi X względem wskaźnika kursora
 					dq	80	; pozycja na osi Y względem wskaźnika kursora
 					dq	STATIC_EMPTY	; szerokość okna względem zawartości elementów
 					dq	STATIC_EMPTY	; wysokość okna względem zawartości elementów

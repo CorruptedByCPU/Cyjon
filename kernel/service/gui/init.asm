@@ -32,11 +32,37 @@ kernel_gui_init:
 	; zachowaj adres przestrzeni
 	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.address],	rdi
 
-	; wypełnij przestrzeń okna domyślnym kolorem tła
-	mov	eax,	KERNEL_GUI_WINDOW_WORKBENCH_BACKGROUND_color
-	mov	rcx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size]
-	shr	rcx,	STATIC_DIVIDE_BY_DWORD_shift
-	rep	stosd
+	; zachowaj oryginalne rejestry
+	push	rbx
+
+	; wypełnij całe tło losowym szumem
+	mov	rbx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size]
+	shr	rbx,	KERNEL_VIDEO_DEPTH_shift
+
+.background:
+	; ziarno
+	rdtsc
+	call	library_xorshift32
+
+	; zamień liczbę losową na wartość od 0 do 15
+	xor	rdx,	rdx
+	mov	rcx,	16	; ilość kolorów dla szumu
+	div	rcx
+	mov	rax,	rdx
+
+	; wybierz kolor
+	mul	qword [kernel_gui_background_mixer]
+	add	eax,	KERNEL_GUI_WINDOW_WORKBENCH_BACKGROUND_color
+
+	; wyświetl
+	stosd
+
+	; pozostły piksele do przetworzenia?
+	dec	rbx
+	jnz	.background	; tak
+
+	; przywróć oryginalne rejestry
+	pop	rbx
 
 	; przydziel identyfikator dla okna
 	call	kernel_wm_object_id_new
