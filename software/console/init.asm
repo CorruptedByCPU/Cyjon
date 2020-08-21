@@ -31,9 +31,6 @@
 	or	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
 	int	KERNEL_WM_IRQ
 
-	; uzupełnij strumień wejścia procesu o meta dane okna
-	call	console_meta
-
 	; uruchom powłokę systemu
 	mov	ax,	KERNEL_SERVICE_PROCESS_run
 	mov	bl,	KERNEL_SERVICE_PROCESS_RUN_FLAG_out_to_in_parent	; przekieruj wyjście potomka na wejście rodzica

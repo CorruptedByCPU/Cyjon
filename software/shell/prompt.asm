@@ -46,10 +46,10 @@ shell_prompt:
 	call	library_string_compare
 	jc	.no_clear	; nie
 
-	; wyślij sekwencje czyszczenia ekranu
+	; wyślij sekwencje czyszczenia przestrzeni znakowej
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	ecx,	STATIC_ASCII_SEQUENCE_length
-	mov	rsi,	shell_string_sequence_terminal_clear
+	mov	ecx,	shell_string_sequence_clear_end - shell_string_sequence_clear
+	mov	rsi,	shell_string_sequence_clear
 	int	KERNEL_SERVICE
 
 	; powrót do pętli głównej

@@ -11,6 +11,8 @@
 	%include	"kernel/header/vfs.inc"
 	%include	"kernel/header/service.inc"
 	%include	"kernel/header/ipc.inc"
+	%include	"kernel/header/wm.inc"
+	%include	"kernel/macro/debug.asm"
 	;-----------------------------------------------------------------------
 	%include	"software/console/config.asm"
 	%include	"software/console/header.inc"
@@ -31,6 +33,9 @@ console:
 	%include	"software/console/init.asm"
 
 .loop:
+	; uzupełnij strumień wejścia procesu o meta dane okna
+	call	console_meta
+
 	; proces powłoki jest uruchomiony?
 	mov	ax,	KERNEL_SERVICE_PROCESS_check
 	mov	rcx,	qword [console_shell_pid]
@@ -54,31 +59,8 @@ console:
 
 	; komunikat typu: klawiatura?
 	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
-	je	.transfer	; tak
+	jne	.input	; nie
 
-	; komunikat typu: ekran?
-	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_GRAPHICS
-	jne	.input	; nie, zignoruj
-
-	; zwrócić właściwości terminala?
-	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.command],		CONSOLE_IPC_COMMAND_properties
-	je	.properties	; tak
-
-	; brak obsługi innych poleceń
-
-	; kontynuuj
-	jmp	.input
-
-.properties:
-	; zwróć szerokość i wysokość przestrzeni tekstowej w znakach
-	mov	qword [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.width],	CONSOLE_WINDOW_WIDTH_char
-	mov	qword [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.height],	CONSOLE_WINDOW_HEIGHT_char
-
-	; pozycję kurosra w przestrzeni konsolie
-	mov	rax,	qword [console_terminal_table + LIBRARY_TERMINAL_STRUCTURE.cursor]
-	mov	qword [rdi + KERNEL_IPC_STRUCTURE.data + CONSOLE_STRUCTURE_IPC.cursor],	rax
-
-.transfer:
 	; prześlij komunikat do powłoki
 	call	console_transfer
 
@@ -88,7 +70,7 @@ console:
 	mov	ecx,	STATIC_EMPTY	; pobierz pierwszą linię lub całą zawartość
 	mov	rdi,	qword [console_cache_address]
 	int	KERNEL_SERVICE
-	jz	.meta	; brak danych
+	jz	.loop	; brak danych
 
 	; wyświetl zawartość
 	xor	eax,	eax
@@ -99,15 +81,10 @@ console:
 	test	rcx,	rcx
 	jz	.flush	; tak
 
-	; pierwszy znak należy do sekwencji?
-	cmp	byte [rsi],	STATIC_ASCII_BACKSLASH
-	jne	.char	; nie
-
 	; przetworzono sekwencje?
 	call	console_sequence
 	jnc	.parse	; tak
 
-.char:
 	; pobierz znak z ciągu
 	lodsb
 
@@ -135,18 +112,7 @@ console:
 	; zatrzymaj dalsze wykonywanie kodu
 	jmp	.loop
 
-.meta:
-	; nowa pozycja kursora
-	mov	ax,	word [console_terminal_table + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.x]
-	mov	word [console_stream_meta + CONSOLE_STRUCTURE_STREAM_META.x],	ax
-	mov	ax,	word [console_terminal_table + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y]
-	mov	word [console_stream_meta + CONSOLE_STRUCTURE_STREAM_META.y],	ax
-
-	; aktualizuj strumień wejścia procesu o meta dane okna
-	call	console_meta
-
-	; zatrzymaj dalsze wykonywanie kodu
-	jmp	.loop
+	macro_debug	"console"
 
 	;-----------------------------------------------------------------------
 	%include	"software/console/data.asm"

@@ -11,8 +11,8 @@ shell_string_prompt				db	STATIC_ASCII_SEQUENCE_COLOR_RED_LIGHT
 shell_string_prompt_type			db	"# "
 shell_string_prompt_type_end			db	STATIC_ASCII_SEQUENCE_COLOR_DEFAULT
 shell_string_prompt_end:
-shell_string_sequence_terminal_clear		db	STATIC_ASCII_SEQUENCE_TERMINAL_CLEAR
-
+shell_string_sequence_clear			db	STATIC_ASCII_SEQUENCE_CLEAR
+shell_string_sequence_clear_end:
 shell_exec_path					db	"/bin/"
 shell_exec_path_end:
 

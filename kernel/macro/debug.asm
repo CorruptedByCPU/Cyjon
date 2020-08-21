@@ -6,7 +6,7 @@
 %ifdef	DEBUG
 	jmp	%%skip
 
-	db	"^ ", %1
+	db	" [", %1, "] "
 
 %%skip:
 %endif

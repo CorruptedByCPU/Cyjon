@@ -60,7 +60,7 @@ library_input:
 	je	.key_backspace
 
 	; klawisz typu Enter?
-	cmp	dx,	STATIC_ASCII_ENTER
+	cmp	dx,	STATIC_ASCII_RETURN
 	je	.key_enter
 
 	; klawisz typu ESC?

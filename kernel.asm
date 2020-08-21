@@ -15,6 +15,7 @@
 	%include	"kernel/header/service.inc"
 	%include	"kernel/header/ipc.inc"
 	%include	"kernel/header/stream.inc"
+	%include	"kernel/header/wm.inc"
 	;-----------------------------------------------------------------------
 
 ; 64 bitowy kod inicjalizacyjny jądra systemu

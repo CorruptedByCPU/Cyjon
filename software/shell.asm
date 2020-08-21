@@ -11,6 +11,8 @@
 	%include	"kernel/header/stream.inc"
 	%include	"kernel/header/service.inc"
 	%include	"kernel/header/ipc.inc"
+	%include	"kernel/header/wm.inc"
+	%include	"kernel/macro/debug.asm"
 	;-----------------------------------------------------------------------
 	%include	"software/console/header.inc"
 	;-----------------------------------------------------------------------
@@ -31,6 +33,7 @@ shell:
 	; pobierz informacje o strumieniu wyjścia
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_meta
 	mov	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_get | KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_out
+	mov	ecx,	CONSOLE_STRUCTURE_STREAM_META.SIZE
 	mov	rdi,	shell_stream_meta
 	int	KERNEL_SERVICE
 	jc	shell	; brak odpowiedzi
@@ -98,6 +101,8 @@ shell:
 
 	; przetwórz polecenie
 	jmp	shell_prompt
+
+	macro_debug	"shell"
 
 	;-----------------------------------------------------------------------
 	%include	"software/shell/data.asm"
