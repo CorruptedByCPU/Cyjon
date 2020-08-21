@@ -2,6 +2,7 @@
 WIDTH=640
 HEIGHT=480
 
+nasm -f bin software/tm.asm		-o build/tm
 nasm -f bin software/hello.asm		-o build/hello
 nasm -f bin software/console.asm	-o build/console
 nasm -f bin software/shell.asm		-o build/shell

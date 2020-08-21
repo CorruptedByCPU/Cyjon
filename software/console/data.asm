@@ -5,7 +5,6 @@
 console_shell_file				db	"/bin/shell"
 console_shell_file_end:
 
-console_string_sequence_terminal_clear		db	STATIC_ASCII_SEQUENCE_TERMINAL_CLEAR
 console_string_sequence_color_black		db	STATIC_ASCII_SEQUENCE_COLOR_BLACK
 console_string_sequence_color_blue		db	STATIC_ASCII_SEQUENCE_COLOR_BLUE
 console_string_sequence_color_green		db	STATIC_ASCII_SEQUENCE_COLOR_GREEN
@@ -22,7 +21,23 @@ console_string_sequence_color_red_light		db	STATIC_ASCII_SEQUENCE_COLOR_RED_LIGH
 console_string_sequence_color_magenta_light	db	STATIC_ASCII_SEQUENCE_COLOR_MAGENTA_LIGHT
 console_string_sequence_color_yellow		db	STATIC_ASCII_SEQUENCE_COLOR_YELLOW
 console_string_sequence_color_white		db	STATIC_ASCII_SEQUENCE_COLOR_WHITE
-console_string_sequence_color_invert		db	STATIC_ASCII_SEQUENCE_COLOR_INVERT
+
+console_table_color:				dd	STATIC_COLOR_black
+						dd	STATIC_COLOR_red
+						dd	STATIC_COLOR_green
+						dd	STATIC_COLOR_brown
+						dd	STATIC_COLOR_blue
+						dd	STATIC_COLOR_magenta
+						dd	STATIC_COLOR_cyan
+						dd	STATIC_COLOR_gray_light
+						dd	STATIC_COLOR_gray
+						dd	STATIC_COLOR_red_light
+						dd	STATIC_COLOR_green_light
+						dd	STATIC_COLOR_yellow
+						dd	STATIC_COLOR_blue_light
+						dd	STATIC_COLOR_magenta_light
+						dd	STATIC_COLOR_cyan_light
+						dd	STATIC_COLOR_white
 
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 console_cache_address				dq	STATIC_EMPTY
@@ -93,5 +108,5 @@ console_terminal_table				dq	CONSOLE_WINDOW_WIDTH_pixel	; szerokość w pikselac
 						dq	STATIC_EMPTY	; scanline_char
 						dq	STATIC_EMPTY	; pozycja kursora na osi X.Y
 						dq	STATIC_EMPTY	; blokada wirtualnego kursora
-						dd	0x00F5F5F5	; kolor czcionki
-						dd	0x00000000	; kolor tła
+						dd	STATIC_COLOR_default	; kolor czcionki
+						dd	STATIC_COLOR_BACKGROUND_default	; kolor tła

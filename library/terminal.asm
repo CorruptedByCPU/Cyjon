@@ -53,7 +53,7 @@ library_terminal:
 	mov	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.lock],	STATIC_FALSE
 
 	; inicjalizuj przestrzeń terminala
-	call	library_terminal_drain
+	call	library_terminal_clear
 
 	; włącz wirtualny kursor
 	call	library_terminal_cursor_enable
@@ -65,10 +65,12 @@ library_terminal:
 	; powrót z procedury
 	ret
 
+	macro_debug	"library_terminal"
+
 ;===============================================================================
 ; wejście:
 ;	r8 - wskaźnik do struktury terminala
-library_terminal_drain:
+library_terminal_clear:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rcx
@@ -101,6 +103,8 @@ library_terminal_drain:
 	; powrót z procedury
 	ret
 
+	macro_debug	"library_terminal_clear"
+
 ;===============================================================================
 ; wejście:
 ;	r8 - wskaźnik do struktury terminala
@@ -118,6 +122,8 @@ library_terminal_cursor_disable:
 .ready:
 	; przywróć oryginalne rejestry
 	ret
+
+	macro_debug	"library_terminal_cursor_disable"
 
 ;===============================================================================
 ; wejście:
@@ -140,6 +146,8 @@ library_terminal_cursor_enable:
 .ready:
 	; przywróć oryginalne rejestry
 	ret
+
+	macro_debug	"library_terminal_cursor_enable"
 
 ;===============================================================================
 ; wejście:
@@ -180,6 +188,8 @@ library_terminal_cursor_switch:
 	; powrót z procedury
 	ret
 
+	macro_debug	"library_terminal_cursor_switch"
+
 ;===============================================================================
 ; wejście:
 ;	r8 - wskaźnik do struktury terminala
@@ -216,6 +226,8 @@ library_terminal_cursor_set:
 	; powrót z procedury
 	ret
 
+	macro_debug	"library_terminal_cursor_set"
+
 ;===============================================================================
 ; wejście:
 ;	rax - kod ASCII znaku
@@ -230,6 +242,11 @@ library_terminal_matrix:
 	push	rsi
 	push	rdi
 	push	r9
+
+	cmp	rax,	256
+	jb	.ok
+	xchg	bx,bx
+.ok:
 
 	; oblicz prdesunięcie względem początku matrycy czcionki dla znaku
 	mov	ebx,	dword [library_font_height_pixel]
@@ -288,6 +305,8 @@ library_terminal_matrix:
 	; powrót z procedury
 	ret
 
+	macro_debug	"library_terminal_matrix"
+
 ;===============================================================================
 ; wejście:
 ;	rdi - wskaźnik pozycji znaku
@@ -336,6 +355,8 @@ library_terminal_empty_char:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_terminal_empty_char"
 
 ;===============================================================================
 ; wejście:
@@ -443,6 +464,8 @@ library_terminal_char:
 	; powrót z procedury
 	ret
 
+	macro_debug	"library_terminal_char"
+
 ;-------------------------------------------------------------------------------
 .new_line:
 	; zachowaj oryginalne rejestry
@@ -470,6 +493,8 @@ library_terminal_char:
 
 	; kontynuuj
 	jmp	.row
+
+	macro_debug	"library_terminal_char.new_line"
 
 ;-------------------------------------------------------------------------------
 .backspace:
@@ -519,6 +544,8 @@ library_terminal_char:
 	; kontynuuj
 	jmp	.continue
 
+	macro_debug	"library_terminal_char.backspace"
+
 ;===============================================================================
 ; wejście:
 ;	r8 - wskaźnik do struktury terminala
@@ -557,6 +584,8 @@ library_terminal_scroll:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_terminal_scroll"
 
 ;===============================================================================
 ; wejście:
@@ -599,6 +628,8 @@ library_terminal_empty_line:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_terminal_empty_line"
 
 ;===============================================================================
 ; wejście:
@@ -659,6 +690,8 @@ library_terminal_string:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_terminal_string"
 
 ;===============================================================================
 ; wejście:
@@ -767,3 +800,5 @@ library_terminal_number:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_terminal_number"

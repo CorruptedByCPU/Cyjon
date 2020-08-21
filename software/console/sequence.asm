@@ -8,239 +8,127 @@
 ;	rsi - wskaźnik do ciągu
 ;	r8 - wskaźnik do właściwości terminala
 console_sequence:
-	; w ciągu pozostało wystarczająco znaków dla sekwencji?
-	cmp	rcx,	STATIC_ASCII_SEQUENCE_length
-	jb	.end	; nie
+	; rozmiar ciągu może zawierać sekwencje?
+	cmp	rcx,	STATIC_ASCII_SEQUENCE_length_min
+	jb	.error	; nie
 
-	; zachowaj licznik i wskaźnik
-	push	rdi
-	push	rcx
+	; pierwszy znak należy do sekwencji?
+	cmp	byte [rsi],	STATIC_ASCII_CARET
+	jne	.error	; nie
 
-	; rozmiar sekwencji w znakach
-	mov	rcx,	STATIC_ASCII_SEQUENCE_length
+	; polecenie do wykonania?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte],	"["
+	jne	.error	; nie
 
-	;-----------------------------------------------------------------------
-	; czyszczenie przestrzeni terminala?
-	mov	rdi,	console_string_sequence_terminal_clear
-	call	library_string_compare
-	jc	.no_clear	; nie
+	; zmiana koloru?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x02],	"c"
+	je	.color	; tak
 
-	; wyczyść przestrzeń terminala
-	call	library_terminal_drain
+	; modyfikacja przestrzeni konsoli?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x02],	"t"
+	je	.terminal	; tak
 
-	; kontynuuj
-	jmp	.found
-
-.no_clear:
-	;-----------------------------------------------------------------------
-	; czarny?
-	mov	rdi,	console_string_sequence_color_black
-	call	library_string_compare
-	jc	.no_black	; nie
-
-	; kolor czarny
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	STATIC_COLOR_black
-	jmp	.found	; kontynuuj
-
-.no_black:
-	;-----------------------------------------------------------------------
-	; niebieski?
-	mov	rdi,	console_string_sequence_color_blue
-	call	library_string_compare
-	jc	.no_blue	; nie
-
-	; kolor niebieski
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	STATIC_COLOR_blue
-	jmp	.found	; kontynuuj
-
-.no_blue:
-	;-----------------------------------------------------------------------
-	; zielony?
-	mov	rdi,	console_string_sequence_color_green
-	call	library_string_compare
-	jc	.no_green	; nie
-
-	; kolor zielony
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	STATIC_COLOR_green
-	jmp	.found	; kontynuuj
-
-.no_green:
-	;-----------------------------------------------------------------------
-	; cyjan?
-	mov	rdi,	console_string_sequence_color_cyan
-	call	library_string_compare
-	jc	.no_cyan	; nie
-
-	; kolor cyjan
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	STATIC_COLOR_cyan
-	jmp	.found	; kontynuuj
-
-.no_cyan:
-	;-----------------------------------------------------------------------
-	; czerwony?
-	mov	rdi,	console_string_sequence_color_red
-	call	library_string_compare
-	jc	.no_red	; nie
-
-	; kolor czerwony
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	STATIC_COLOR_red
-	jmp	.found	; kontynuuj
-
-.no_red:
-	;-----------------------------------------------------------------------
-	; magenta?
-	mov	rdi,	console_string_sequence_color_magenta
-	call	library_string_compare
-	jc	.no_magenta	; nie
-
-	; kolor magenta
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	STATIC_COLOR_magenta
-	jmp	.found	; kontynuuj
-
-.no_magenta:
-	;-----------------------------------------------------------------------
-	; brązowy?
-	mov	rdi,	console_string_sequence_color_brown
-	call	library_string_compare
-	jc	.no_brown	; nie
-
-	; kolor brązowy
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	STATIC_COLOR_brown
-	jmp	.found	; kontynuuj
-
-.no_brown:
-	;-----------------------------------------------------------------------
-	; jasno-szary?
-	mov	rdi,	console_string_sequence_color_gray_light
-	call	library_string_compare
-	jc	.no_gray_light	; nie
-
-	; kolor jasno-szary
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	STATIC_COLOR_gray_light
-	jmp	.found	; kontynuuj
-
-.no_gray_light:
-	;-----------------------------------------------------------------------
-	; szary?
-	mov	rdi,	console_string_sequence_color_gray
-	call	library_string_compare
-	jc	.no_gray	; nie
-
-	; kolor szary
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	STATIC_COLOR_gray
-	jmp	.found	; kontynuuj
-
-.no_gray:
-	;-----------------------------------------------------------------------
-	; jasno-niebieski?
-	mov	rdi,	console_string_sequence_color_blue_light
-	call	library_string_compare
-	jc	.no_blue_light	; nie
-
-	; kolor jasno-niebieski
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	STATIC_COLOR_blue_light
-	jmp	.found	; kontynuuj
-
-.no_blue_light:
-	;-----------------------------------------------------------------------
-	; jasno-zielony?
-	mov	rdi,	console_string_sequence_color_green_light
-	call	library_string_compare
-	jc	.no_green_light	; nie
-
-	; kolor jasno-zielony
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	STATIC_COLOR_green_light
-	jmp	.found	; kontynuuj
-
-.no_green_light:
-	;-----------------------------------------------------------------------
-	; jasny cyjan?
-	mov	rdi,	console_string_sequence_color_cyan_light
-	call	library_string_compare
-	jc	.no_cyan_light	; nie
-
-	; kolor jasny cyjan
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	STATIC_COLOR_cyan_light
-	jmp	.found	; kontynuuj
-
-.no_cyan_light:
-	;-----------------------------------------------------------------------
-	; jasno-czerwony?
-	mov	rdi,	console_string_sequence_color_red_light
-	call	library_string_compare
-	jc	.no_red_light	; nie
-
-	; kolor jasno-czerwony
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	STATIC_COLOR_red_light
-	jmp	.found	; kontynuuj
-
-.no_red_light:
-	;-----------------------------------------------------------------------
-	; jasna magenta?
-	mov	rdi,	console_string_sequence_color_magenta_light
-	call	library_string_compare
-	jc	.no_magenta_light	; nie
-
-	; kolor jasna magenta
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	STATIC_COLOR_magenta_light
-	jmp	.found	; kontynuuj
-
-.no_magenta_light:
-	;-----------------------------------------------------------------------
-	; żółty?
-	mov	rdi,	console_string_sequence_color_yellow
-	call	library_string_compare
-	jc	.no_yellow	; nie
-
-	; kolor żółty
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	STATIC_COLOR_yellow
-	jmp	.found	; kontynuuj
-
-.no_yellow:
-	;-----------------------------------------------------------------------
-	; biały?
-	mov	rdi,	console_string_sequence_color_white
-	call	library_string_compare
-	jc	.no_white	; nie
-
-	; kolor biały
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	STATIC_COLOR_white
-	jmp	.found	; kontynuuj
-
-.no_white:
-	;-----------------------------------------------------------------------
-	; odwrócić kolory?
-	mov	rdi,	console_string_sequence_color_invert
-	call	library_string_compare
-	jc	.error	; nie
-
-	; odwróć kolory
-	mov	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color]
-	xchg	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.background_color]
-	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	eax
-
-.found:
-	; przesuń wskaźnik poza sekwencje
-	add	rsi,	rcx
-
-	; zmniejsz rozmiar ciągu o przetworzoną sekwencje
-	sub	qword [rsp],	STATIC_ASCII_SEQUENCE_length
-
-	; flaga, sukces
-	clc
-
-	; koniec
-	jmp	.return
+	xchg	bx,bx
 
 .error:
-	; flaga, błąd
+	; brak obsługi sekwencji
 	stc
-
-.return:
-	; przywróć oryginalne rejestry
-	pop	rcx
-	pop	rdi
 
 .end:
 	; powrót z procedury
 	ret
+
+;-------------------------------------------------------------------------------
+.color:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rdi
+
+	; tablica kolorów
+	mov	rdi,	console_table_color
+
+	; pobierz kolor znaku
+	movzx	eax,	byte [rsi + STATIC_BYTE_SIZE_byte * 0x04]
+
+	; brak koloru znaku?
+	cmp	al,	"*"
+	je	.color_background_only	; tak
+
+	; ustaw kolor znaku
+	call	.color_translate
+	mov	eax,	dword [rdi + rax * STATIC_DWORD_SIZE_byte]
+	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	eax
+
+.color_background_only:
+	; pobierz kolor tła
+	movzx	eax,	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03]
+
+	; brak koloru tła?
+	cmp	al,	"*"
+	je	.color_ready	; tak
+
+	; ustaw kolor tła
+	call	.color_translate
+	mov	eax,	dword [rdi + rax * STATIC_DWORD_SIZE_byte]
+	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.background_color],	eax
+
+%strlen	THIS_SEQUENCE_LENGTH STATIC_ASCII_SEQUENCE_COLOR_DEFAULT
+
+.color_ready:
+	; przetworzono sekwencję
+	sub	rcx,	THIS_SEQUENCE_LENGTH
+	add	rsi,	THIS_SEQUENCE_LENGTH
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rax
+
+	; powrót z podprocedury
+	jmp	console_sequence.end
+
+.color_translate:
+	; wartość decymalna?
+	cmp	al,	STATIC_ASCII_DIGIT_9
+	ja	.color_translate_hex
+
+	; zamień na cyfrę 0-9
+	sub	al,	STATIC_ASCII_DIGIT_0
+
+	; powrót z podprocedury
+	ret
+
+.color_translate_hex:
+	; zamień na literę A-F
+	sub	al,	STATIC_ASCII_HIGH_CASE - (STATIC_ASCII_DIGIT_9 - STATIC_ASCII_DIGIT_0)
+
+	; powrót z podprocedury
+	ret
+
+;-------------------------------------------------------------------------------
+.terminal:
+	; wyczyścić przestrzeń znakową?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"0"
+	jne	.terminal_no_clear	; nie
+
+	; wyczyść przestrzeń znakową konsoli
+	call	library_terminal_clear
+
+%strlen	THIS_SEQUENCE_LENGTH STATIC_ASCII_SEQUENCE_CLEAR
+
+	; przetworzono sekwencję
+	sub	rcx,	THIS_SEQUENCE_LENGTH
+	add	rsi,	THIS_SEQUENCE_LENGTH
+
+	; powrót z podprocedury
+	jmp	console_sequence.end
+
+.terminal_no_clear:
+	; ustawić kursor na nową pozycję w przestrzeni znakowej?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"1"
+	jne	.terminal_no_cursor	; nie
+
+	xchg	bx,bx
+
+.terminal_no_cursor:
+	; nie rozpoznano polecenia
+	jmp	console_sequence.error
