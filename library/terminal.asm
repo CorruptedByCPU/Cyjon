@@ -272,7 +272,7 @@ library_terminal_matrix:
 	mov	dword [rdi],	r9d
 
 	; wyświetl cień za pikselem
-	mov	dword [rdi + STATIC_DWORD_SIZE_byte],	STATIC_EMPTY
+	; mov	dword [rdi + STATIC_DWORD_SIZE_byte],	STATIC_EMPTY
 
 .continue:
 	; następny piksel matrycy znaku
