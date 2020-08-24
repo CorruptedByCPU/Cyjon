@@ -102,6 +102,12 @@ shell_prompt:
 	int	KERNEL_SERVICE
 	jnc	.wait_for_end	; nie
 
+	; włącz kursor tekstowy
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	shell_string_cursor_enable_end - shell_string_cursor_enable
+	mov	rsi,	shell_string_cursor_enable
+	int	KERNEL_SERVICE
+
 	; powrót do pętli głównej
 	jmp	shell
 

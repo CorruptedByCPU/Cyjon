@@ -125,10 +125,45 @@ console_sequence:
 .terminal_no_clear:
 	; ustawić kursor na nową pozycję w przestrzeni znakowej?
 	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"1"
-	jne	.terminal_no_cursor	; nie
+	jne	.terminal_no_cursor_position	; nie
 
 	xchg	bx,bx
 
-.terminal_no_cursor:
+	; powrót z podprocedury
+	jmp	console_sequence.end
+
+.terminal_no_cursor_position:
+	; przełączyć widoczność kursora?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"2"
+	jne	.terminal_no_cursor_visibility	; nie
+
+	xchg	bx,bx
+
+	; ukryj?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"1"
+	jne	.terminal_show_cursor	; nie
+
+	; ukryj kursor tekstowy
+	call	library_terminal_cursor_disable
+
+	; przetworzono sekwencję
+	sub	rcx,	0x07
+	add	rsi,	0x07
+
+	; powrót z podprocedury
+	jmp	console_sequence.end
+
+.terminal_show_cursor:
+	; pokaż kursor tekstowy
+	call	library_terminal_cursor_enable
+
+	; przetworzono sekwencję
+	sub	rcx,	0x07
+	add	rsi,	0x07
+
+	; powrót z podprocedury
+	jmp	console_sequence.end
+
+.terminal_no_cursor_visibility:
 	; nie rozpoznano polecenia
 	jmp	console_sequence.error
