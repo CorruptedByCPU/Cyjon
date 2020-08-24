@@ -8,6 +8,11 @@
 ;	rsi - wskaźnik do ciągu
 ;	r8 - wskaźnik do właściwości terminala
 console_sequence:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rdi
+
 	; rozmiar ciągu może zawierać sekwencje?
 	cmp	rcx,	STATIC_ASCII_SEQUENCE_length_min
 	jb	.error	; nie
@@ -35,6 +40,11 @@ console_sequence:
 	stc
 
 .end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rbx
+	pop	rax
+
 	; powrót z procedury
 	ret
 
@@ -123,12 +133,91 @@ console_sequence:
 	jmp	console_sequence.end
 
 .terminal_no_clear:
+	;-----------------------------------------------------------------------
+	;-----------------------------------------------------------------------
 	; ustawić kursor na nową pozycję w przestrzeni znakowej?
 	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"1"
-	jne	.terminal_no_cursor	; nie
+	jne	.terminal_no_cursor_position	; nie
 
-	xchg	bx,bx
+	; przesuń wskaźnik na pozycję X kursora
+	sub	rcx,	0x05
+	add	rsi,	0x05
 
-.terminal_no_cursor:
+	; pobierz rozmiar liczby
+	mov	bl,	";"
+	call	library_string_word_next
+	jc	console_sequence.error	; uszkodzona sekwencja
+
+	; zamień ciąg cyfr na wartość
+	call	library_string_to_integer
+
+	; ustaw kursor tekstowy na danej kolumnie
+	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.x],	eax
+
+	; przesuń wskaźnik na pozycję Y kursora
+	inc	rbx	; pomiń separator ";"
+	sub	rcx,	rbx
+	add	rsi,	rbx
+
+	; pobierz rozmiar liczby
+	mov	bl,	"]"
+	call	library_string_word_next
+	jc	console_sequence.error	; uszkodzona sekwencja
+
+	; pozostawić kursor w danym wierszu?
+	cmp	byte [rsi],	STATIC_ASCII_ASTERISK
+	je	.terminal_safe_row	; tak
+
+	; zamień ciąg cyfr na wartość
+	call	library_string_to_integer
+
+	; ustaw kursor tekstowy na danej kolumnie
+	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y],	eax
+
+.terminal_safe_row:
+	; przesuń wskaźnik za sekwencję
+	inc	rbx	; pomiń zamknięcie sekwencji "]"
+	sub	rcx,	rbx
+	add	rsi,	rbx
+
+	; zaktualizuj pozycję kursora tekstowego w konsoli
+	call	library_terminal_cursor_set
+
+	; powrót z podprocedury
+	jmp	console_sequence.end
+
+.terminal_no_cursor_position:
+	;-----------------------------------------------------------------------
+	;-----------------------------------------------------------------------
+	; przełączyć widoczność kursora?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"2"
+	jne	.terminal_no_cursor_visibility	; nie
+
+	; ukryj?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"1"
+	jne	.terminal_show_cursor	; nie
+
+	; ukryj kursor tekstowy
+	call	library_terminal_cursor_disable
+
+	; przetworzono sekwencję
+	sub	rcx,	0x07
+	add	rsi,	0x07
+
+	; powrót z podprocedury
+	jmp	console_sequence.end
+
+.terminal_show_cursor:
+	; pokaż kursor tekstowy
+	call	library_terminal_cursor_enable
+
+	; przetworzono sekwencję
+	sub	rcx,	0x07
+	add	rsi,	0x07
+
+	; powrót z podprocedury
+	jmp	console_sequence.end
+
+.terminal_no_cursor_visibility:
 	; nie rozpoznano polecenia
 	jmp	console_sequence.error

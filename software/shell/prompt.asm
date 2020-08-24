@@ -89,17 +89,25 @@ shell_prompt:
 	mov	bl,	KERNEL_SERVICE_PROCESS_RUN_FLAG_copy_out_of_parent
 	mov	rcx,	r8
 	int	KERNEL_SERVICE
-	jc	.end	; nie udało się uruchomić programu
+	jc	shell	; nie udało się uruchomić programu
 
 	; czekaj na zakończenie procesu
 	mov	ax,	KERNEL_SERVICE_PROCESS_check
 
 .wait_for_end:
+	; wszelkie przychodzące wyjątki klawiatury, przesyłaj do procesu
+	call	shell_event_transfer
+
 	; proces zakończył swoją pracę
 	int	KERNEL_SERVICE
 	jnc	.wait_for_end	; nie
 
-.end:
+	; włącz kursor tekstowy
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	shell_string_cursor_enable_end - shell_string_cursor_enable
+	mov	rsi,	shell_string_cursor_enable
+	int	KERNEL_SERVICE
+
 	; powrót do pętli głównej
 	jmp	shell
 
