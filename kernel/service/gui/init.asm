@@ -32,37 +32,86 @@ kernel_gui_init:
 	; zachowaj adres przestrzeni
 	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.address],	rdi
 
+	;-----------------------------------------------------------------------
+
 	; zachowaj oryginalne rejestry
 	push	rbx
 
-	; wypełnij całe tło losowym szumem
-	mov	rbx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size]
-	shr	rbx,	KERNEL_VIDEO_DEPTH_shift
+	; pobierz miks kolorów
+	mov	rax,	qword [kernel_gui_background_mixer]
 
-.background:
-	; ziarno
-	rdtsc
-	call	library_xorshift32
+	; szerokość i wysokość przestrzeni
+	mov	rbx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	mov	rdx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
 
-	; zamień liczbę losową na wartość od 0 do 15
-	xor	rdx,	rdx
-	mov	rcx,	16	; ilość kolorów dla szumu
-	div	rcx
-	mov	rax,	rdx
+	; przesunięcie linii pionowych
+	xor	r9,	r9
 
-	; wybierz kolor
-	mul	qword [kernel_gui_background_mixer]
-	add	eax,	KERNEL_GUI_WINDOW_WORKBENCH_BACKGROUND_color
+	; szerokość fragmentu na podstawie rozdzielszości
+	mov	r10,	qword [kernel_video_width_pixel]
+	shr	r10,	STATIC_DIVIDE_BY_16_shift
 
-	; wyświetl
-	stosd
+.background_reload:
+	; rozpocznij od fragmentu o rozmiarze 64 pikseli
+	mov	rcx,	r10
 
-	; pozostły piksele do przetworzenia?
-	dec	rbx
-	jnz	.background	; tak
+.background_loop:
+	; szerokość mniejsza od fragmentu?
+	cmp	rbx,	r10
+	jb	.fill	; tak, koryguj
+
+	; wypełnij fragment kolorem
+	rol	rax,	STATIC_REPLACE_EAX_WITH_HIGH_shift	; zamień kolorystykę
+	rep	stosd
+
+	; pozostała szerokość przestrzeni
+	sub	rbx,	r10
+	jz	.offset	; pierwszy wiersz gotowy
+	jns	.background_reload	; brak przepełnienia, kontynuuj
+
+.fill:
+	; pozostała szerokość do wypełnienia
+	mov	rcx,	rbx
+	rol	rax,	STATIC_REPLACE_EAX_WITH_HIGH_shift	; zamień kolorystykę
+	rep	stosd
+
+.offset:
+	; następny wiersz przesunięty o kolejny piksel
+	inc	r9
+
+	; przesunięcie większe od szerokości fragmentu?
+	cmp	r9,	r10
+	jb	.offset_ok	; nie
+
+	; resetuj pozycję przesunięcia
+	xor	r9,	r9
+
+	; zamień kolorystykę
+	rol	rax,	STATIC_REPLACE_EAX_WITH_HIGH_shift
+
+	; kontynuuj
+	jmp	.offset_end
+
+.offset_ok:
+	; wypełnij fragment przesunięcia
+	mov	rcx,	r9
+	rep	stosd
+
+.offset_end:
+	; szrokość przestrzeni
+	mov	rbx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+
+	; koryguj szerokość przestrzeni o przesunięcie fragmentu
+	sub	rbx,	r9
+
+	; koniec przestrzeni na wysokość
+	dec	rdx
+	jnz	.background_reload	; nie
 
 	; przywróć oryginalne rejestry
 	pop	rbx
+
+	;-----------------------------------------------------------------------
 
 	; przydziel identyfikator dla okna
 	call	kernel_wm_object_id_new
