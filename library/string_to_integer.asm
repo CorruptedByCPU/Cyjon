@@ -4,7 +4,7 @@
 
 ;===============================================================================
 ; wejście:
-;	rcx - ilość znaków w ciągu
+;	rbx - ilość znaków w ciągu
 ;	rsi - wskaźnik do ciągu
 ; wyjście:
 ;	rax - wartość
@@ -18,27 +18,27 @@ library_string_to_integer:
 	push	rax
 
 	; podstawa cyfry
-	mov	ebx,	1
+	mov	ecx,	1
 
 	; wynik cząstkowy
 	xor	r8,	r8
 
 .loop:
 	; pobierz ostatnią cyfrę z ciągu
-	movzx	eax,	byte [rsi + rcx - 0x01]
-	sub	al,	STATIC_ASCII_DIGIT_0	; przekształć kod ASCII cyfty na wartość
-	mul	rbx	; zamień na wartość z danej podstawy dla cyfry
+	movzx	eax,	byte [rsi + rbx - 0x01]
+	sub	al,	STATIC_ASCII_DIGIT_0	; przekształć kod ASCII cyfry na wartość
+	mul	rcx	; zamień na wartość z danej podstawy dla cyfry
 
 	; dodaj do wyniku cząstkowego
 	add	r8,	rax
 
 	; zamień podstawę na dziesiątki, setki, tysiące... itd.
 	mov	eax,	10
-	mul	rbx
-	mov	rbx,	rax
+	mul	rcx
+	mov	rcx,	rax
 
 	; koniec ciągu?
-	dec	rcx
+	dec	rbx
 	jnz	.loop	; nie, przetwarzaj dalej
 
 	; zwróć wynik
@@ -55,4 +55,4 @@ library_string_to_integer:
 	; powrót z procedury
 	ret
 
-	; macro_debug	"library_string_to_integer"
+	macro_debug	"library_string_to_integer"

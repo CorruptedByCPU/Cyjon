@@ -5,6 +5,7 @@
 ;===============================================================================
 ; wejście:
 ;	rcx - ilość znaków w ciągu
+;	bl - kod ASII separatora, jeśli 0x00 to TERMINATOR, NEW_LINE, SPACE, TAB
 ;	rsi - wskaźnik do ciągu
 ; wyjście:
 ;	Flaga CF - jeśli błąd
@@ -20,9 +21,9 @@ library_string_word_next:
 	jz	.not_found	; tak
 
 .find:
-	; koniec ciągu?
-	cmp	byte [rsi],	STATIC_ASCII_TERMINATOR
-	je	.not_found	; tak
+	; znaleziono separator?
+	cmp	byte [rsi],	bl
+	je	.not_found	; tak, koniec ciągu
 
 	; koniec lini?
 	cmp	byte [rsi],	STATIC_ASCII_NEW_LINE
@@ -57,9 +58,9 @@ library_string_word_next:
 	xor	rax,	rax
 
 .count:
-	; koniec ciągu?
-	cmp	byte [rsi],	STATIC_ASCII_TERMINATOR
-	je	.ready
+	; znaleziono separator?
+	cmp	byte [rsi],	bl
+	je	.ready	; tak, koniec słowa
 
 	; koniec lini?
 	cmp	byte [rsi],	STATIC_ASCII_NEW_LINE
@@ -108,4 +109,4 @@ library_string_word_next:
 	; powrót z procedury
 	ret
 
-	; macro_debug	"library_string_word_next"
+	macro_debug	"library_string_word_next"

@@ -125,5 +125,7 @@ console:
 	%include	"library/font.asm"
 	%include	"library/page_from_size.asm"
 	%include	"library/string_compare.asm"
+	%include	"library/string_to_integer.asm"
+	%include	"library/string_word_next.asm"
 	%include	"library/terminal.asm"
 	;-----------------------------------------------------------------------

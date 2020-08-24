@@ -96,6 +96,7 @@ shell:
 	pop	rcx
 
 	; znajdź nazwę polecenia
+	xor	bl,	bl	; brak specjalnego separatora
 	mov	rsi,	shell_cache
 	call	library_string_word_next
 
