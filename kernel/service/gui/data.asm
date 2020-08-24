@@ -7,7 +7,7 @@ kernel_gui_pid				dq	STATIC_EMPTY
 kernel_gui_clock_last_state		dq	STATIC_EMPTY
 kernel_gui_clock_colon			db	STATIC_ASCII_SPACE
 
-kernel_gui_background_mixer		dq	0x00010101
+kernel_gui_background_mixer		dd	0x001B1B1B, 0x00212121
 
 kernel_gui_event_console_file		db	"/bin/console"
 kernel_gui_event_console_file_end:
