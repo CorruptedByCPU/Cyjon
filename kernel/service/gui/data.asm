@@ -82,7 +82,7 @@ kernel_gui_window_menu			dq	160	; pozycja na osi X względem wskaźnika kursora
 					dq	STATIC_EMPTY	; wysokość okna względem zawartości elementów
 					dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
-					dq	LIBRARY_BOSU_WINDOW_FLAG_fragile | LIBRARY_BOSU_WINDOW_FLAG_unregistered
+					dq	LIBRARY_BOSU_WINDOW_FLAG_fragile | LIBRARY_BOSU_WINDOW_FLAG_unregistered | LIBRARY_BOSU_WINDOW_FLAG_border
 					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
 					db	11
 					db	"gui - menu             "

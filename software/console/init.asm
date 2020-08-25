@@ -16,11 +16,19 @@
 
 	; wylicz adres wskaźnika przestrzeni danych elementu "terminal"
 	mov	rax,	qword [console_window.element_terminal + LIBRARY_BOSU_STRUCTURE_ELEMENT_DRAW.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
-	mul	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline]
+	mul	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	add	rax,	qword [console_window.element_terminal + LIBRARY_BOSU_STRUCTURE_ELEMENT_DRAW.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
+	shl	rax,	KERNEL_VIDEO_DEPTH_shift
 	add	rax,	qword [console_window + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
 
-	; uzupełnij tablicę "terminal" o dany wskaźnik
+	; uzupełnij tablicę "terminal" o adres przestrzeni
 	mov	qword [console_terminal_table + LIBRARY_TERMINAL_STRUCTURE.address],	rax
+
+	; uzupełnij tablicę "terminal" o scanline okna
+	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline_byte]
+	mov	qword [console_terminal_table + LIBRARY_TERMINAL_STRUCTURE.scanline_byte],	rax
+
+	;
 
 	; inicjalizuj przestrzeń elementu "terminal"
 	mov	r8,	console_terminal_table

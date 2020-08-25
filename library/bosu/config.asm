@@ -5,6 +5,9 @@
 LIBRARY_BOSU_WINDOW_NAME_length			equ	23
 LIBRARY_BOSU_WINDOW_BACKGROUND_color		equ	0x00151515
 
+LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel	equ	0x01
+LIBRARY_BOSU_WINDOW_BORDER_color		equ	0x0030303000282828
+
 ;-------------------------------------------------------------------------------
 LIBRARY_BOSU_WINDOW_FLAG_visible		equ	1 << 0	; okno widoczne
 LIBRARY_BOSU_WINDOW_FLAG_flush			equ	1 << 1	; okno wymaga przerysowania
@@ -57,7 +60,7 @@ struc	LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA
 	.length					resb	1
 	.name					resb	LIBRARY_BOSU_WINDOW_NAME_length
 	;--- dane specyficzne dla Bosu
-	.scanline				resb	8
+	.scanline_byte				resb	8
 	.SIZE:
 endstruc
 
