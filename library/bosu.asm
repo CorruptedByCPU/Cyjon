@@ -22,6 +22,18 @@ library_bosu:
 	push	rsi
 	push	rcx
 
+	; skorygować położenie elementów względem krawędzi okna?
+	test	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_border
+	jz	.no_border	; nie
+
+	; koryguj szerokość i wysokość okna o grubość krawędzi
+	add	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel << STATIC_MULTIPLE_BY_2_shift
+	add	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height],	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel << STATIC_MULTIPLE_BY_2_shift
+
+	; koryguj wszystkie elementy okna
+	call	library_bosu_border_correction
+
+.no_border:
 	; pobierz szerokość i wysokość okna
 	mov	r8,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
 	mov	r9,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
@@ -57,6 +69,51 @@ library_bosu:
 	mov	rdi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
 	rep	stosd
 
+	; rysować krawędź okna?
+	test	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_border
+	jz	.no_draw_border	; nie
+
+	; kolorystyka
+	mov	rax,	LIBRARY_BOSU_WINDOW_BORDER_color
+
+	; górna krawędź
+	mov	rcx,	r8
+	mov	rdi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
+	rep	stosd
+
+	; przesunięcie między krawędziami oraz wysokość
+	sub	r8,	(LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel << STATIC_MULTIPLE_BY_2_shift)
+	shl	r8,	KERNEL_VIDEO_DEPTH_shift
+	sub	r9,	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel << STATIC_MULTIPLE_BY_2_shift
+
+.draw_border:
+	; lewa krawędź
+	stosd
+
+	; zmień kolor krawędzi
+	rol	rax,	STATIC_REPLACE_EAX_WITH_HIGH_shift
+
+	; przesuń wskaźnik na prawą krawędź
+	add	rdi,	r8
+
+	; prawa krawędź
+	stosd
+
+	; zmień kolor krawędzi
+	rol	rax,	STATIC_REPLACE_EAX_WITH_HIGH_shift
+
+	; koniec rysowania lewej i prawej krawędzi?
+	dec	r9
+	jnz	.draw_border	; nie
+
+	; zmień kolor krawędzi
+	rol	rax,	STATIC_REPLACE_EAX_WITH_HIGH_shift
+
+	; dolna krawędź
+	mov	rcx,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	rep	stosd
+
+.no_draw_border:
 	; przetwórz wszystkie elementy wchodzące w skład okna
 	call	library_bosu_elements
 
@@ -68,6 +125,67 @@ library_bosu:
 	pop	rax
 
 	; powrót z liblioteki
+	ret
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do specyfikacji okna
+library_bosu_border_correction:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rsi
+
+	; przesuń wskaźnik na początek listy elementów okna
+	add	rsi,	LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.SIZE
+
+.loop:
+	; koniec elementów do korekcji?
+	mov	eax,	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type]
+	cmp	eax,	STATIC_EMPTY
+	je	.ready	; tak
+
+	; element typu "chain"?
+	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_chain
+	je	.chain	; nie
+
+	; koryguj pozycję elementu o rozmiar krawędzi
+	add	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel
+	add	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel
+
+.next:
+	; przesuń wskaźnik na następny element
+	add	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+
+	; kontyuuj
+	jmp	.loop
+
+.chain:
+	; "łańcuch" jest pusty?
+	cmp	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.size],	STATIC_EMPTY
+	je	.next	; tak, pomiń
+
+	; zachowaj wskaźnik aktualnego elementu
+	push	rsi
+
+	; pobierz adres "łańcucha"
+	mov	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.address]
+	call	library_bosu_border_correction	; koryguj wszystkie elementy łańcucha
+
+	; przywróć wskaźnik aktualnego elementu
+	pop	rsi
+
+	; przesuń wskaźnik na następny element
+	add	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+
+	; kontynuuj
+	jmp	.loop
+
+.ready:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rax
+
+	; powrót z procedury
 	ret
 
 ;===============================================================================

@@ -5,6 +5,9 @@
 LIBRARY_BOSU_WINDOW_NAME_length			equ	23
 LIBRARY_BOSU_WINDOW_BACKGROUND_color		equ	0x00151515
 
+LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel	equ	0x01
+LIBRARY_BOSU_WINDOW_BORDER_color		equ	0x0022222200303030
+
 ;-------------------------------------------------------------------------------
 LIBRARY_BOSU_WINDOW_FLAG_visible		equ	1 << 0	; okno widoczne
 LIBRARY_BOSU_WINDOW_FLAG_flush			equ	1 << 1	; okno wymaga przerysowania
