@@ -74,17 +74,34 @@ library_terminal_clear:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rcx
+	push	rdx
 	push	rdi
 
 	; wyłączy wirtualny kursor
 	call	library_terminal_cursor_disable
 
 	; wyczyść przestrzeń domyślnym kolorem tła
-	mov	rdi,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.address]
 	mov	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.background_color]
-	mov	rcx,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.size_byte]
-	shr	rcx,	KERNEL_VIDEO_DEPTH_shift
+	mov	rdx,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.height]
+	mov	rdi,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.address]
+
+.loop:
+	; zachowaj adres początku fragmentu
+	push	rdi
+
+	; wyczyść pierwszy fragment
+	mov	rcx,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.width]
 	rep	stosd
+
+	; przywróć adres początku fragmentu
+	pop	rdi
+
+	; przesuń wskaźnik na następny fragment
+	add	rdi,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.scanline_byte]
+
+	; koniec przestrzeni?
+	dec	rdx
+	jnz	.loop	; nie
 
 	; ustaw wirtualny kursor na na początek przestrzeni terminala
 	mov	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor],	STATIC_EMPTY
@@ -97,6 +114,7 @@ library_terminal_clear:
 
 	; przywróć oryginalne rejestry
 	pop	rdi
+	pop	rdx
 	pop	rcx
 	pop	rax
 

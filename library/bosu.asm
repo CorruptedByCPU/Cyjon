@@ -41,14 +41,12 @@ library_bosu:
 	; oblicz scanline okna w Bajtach
 	mov	r10,	r8
 	shl	r10,	KERNEL_VIDEO_DEPTH_shift
-	; zachowaj
-	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline],	r10
+	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline_byte],	r10	; zachowaj
 
 	; oblicz rozmiar przestrzeni danych okna w Bajtach
 	mov	rax,	r10
 	mul	r9
-	; zachowaj
-	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.size],	rax
+	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.size],	rax	; zachowaj
 
 	; zarejestrować okno w menedżerze okien?
 	test	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_unregistered
@@ -72,6 +70,10 @@ library_bosu:
 	; rysować krawędź okna?
 	test	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_border
 	jz	.no_draw_border	; nie
+
+	; zachowaj oryginalne rejestry
+	push	r8
+	push	r9
 
 	; kolorystyka
 	mov	rax,	LIBRARY_BOSU_WINDOW_BORDER_color
@@ -112,6 +114,10 @@ library_bosu:
 	; dolna krawędź
 	mov	rcx,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
 	rep	stosd
+
+	; przywróć oryginalne rejestry
+	pop	r9
+	pop	r8
 
 .no_draw_border:
 	; przetwórz wszystkie elementy wchodzące w skład okna
@@ -363,7 +369,7 @@ library_bosu_element_chain:
 	; pobierz szerokość, wysokość i scanline okna
 	mov	r8,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
 	mov	r9,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
-	mov	r10,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline]
+	mov	r10,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline_byte]
 
 	; lista skoków do procedur
 	mov	rbx,	library_bosu_element_entry
@@ -429,6 +435,14 @@ library_bosu_element_header:
 	; domyślna szerokość elementu nagłówka
 	mov	r11,	r8
 
+	; okno posiada krawędzie?
+	test	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_border
+	jz	.no_border	; nie
+
+	; koryguj szerokość elementu
+	sub	r11,	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel << STATIC_MULTIPLE_BY_2_shift
+
+.no_border:
 	; ustaw wysokość i scanline elementu
 	mov	r12,	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel
 	mov	r13,	r11
@@ -657,7 +671,7 @@ library_bosu_element_button:
 	; pobierz szerokość, wysokość i scanline okna
 	mov	r8,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
 	mov	r9,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
-	mov	r10,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline]
+	mov	r10,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline_byte]
 
 	; wylicz szerokość, wysokość i scanline elementu
 	mov	r11,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
@@ -768,7 +782,7 @@ library_bosu_element_label:
 	; pobierz szerokość, wysokość i scanline okna
 	mov	r8,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
 	mov	r9,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
-	mov	r10,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline]
+	mov	r10,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline_byte]
 
 	; wylicz szerokość, wysokość i scanline elementu
 	mov	r11,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
