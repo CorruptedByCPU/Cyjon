@@ -466,6 +466,13 @@ library_bosu_element_header:
 	mov	eax,	LIBRARY_BOSU_ELEMENT_HEADER_BACKGROUND_color
 	call	library_bosu_element_drain
 
+	; wycentruj tekst w pionie
+	mov	rax,	r12
+	sub	rax,	LIBRARY_FONT_HEIGHT_pixel
+	shr	rax,	STATIC_DIVIDE_BY_2_shift
+	mul	r10
+	add	rdi,	rax
+
 	; wyświetl etykietę nagłówka
 	mov	ebx,	LIBRARY_BOSU_ELEMENT_HEADER_FOREGROUND_color
 	movzx	rcx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_HEADER.length]
@@ -700,6 +707,13 @@ library_bosu_element_button:
 	; rozmiar ciągu do wypisania w etykiecie
 	movzx	rcx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.length]
 
+	; wycentruj tekst w pionie
+	mov	rax,	r12
+	sub	rax,	LIBRARY_FONT_HEIGHT_pixel
+	shr	rax,	STATIC_DIVIDE_BY_2_shift
+	mul	r10
+	add	rdi,	rax
+
 	; wyświetl ciąg o domyślnym kolorze czcionki
 	mov	ebx,	LIBRARY_BOSU_ELEMENT_BUTTON_FOREGROUND_color
 	movzx	ecx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.length]
@@ -807,6 +821,13 @@ library_bosu_element_label:
 
 	; rozmiar ciągu do wypisania w etykiecie
 	movzx	rcx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.length]
+
+	; wycentruj tekst w pionie
+	mov	rax,	r12
+	sub	rax,	LIBRARY_FONT_HEIGHT_pixel
+	shr	rax,	STATIC_DIVIDE_BY_2_shift
+	mul	r10
+	add	rdi,	rax
 
 	; wyświetl ciąg o domyślnym kolorze czcionki
 	mov	ebx,	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color

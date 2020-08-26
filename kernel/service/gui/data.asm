@@ -61,12 +61,13 @@ kernel_gui_window_taskbar		dq	0	; pozycja na osi X
 					dq	0	; pozycja na osi X względem okna
 					dq	0	; pozycja na osi Y względem okna
 					dq	LIBRARY_FONT_WIDTH_pixel * (.element_label_clock_end - .element_label_clock_string_hour)	; szerokość elementu w pikselach
-					dq	LIBRARY_FONT_HEIGHT_pixel	; wysokość elementu w pikselach
+					dq	18	; wysokość elementu w pikselach
 					dq	STATIC_EMPTY	; wskaźnik procedury obsługi zdarzenia
-					db	.element_label_clock_end - .element_label_clock_string_hour   ; rozmiar ciągu w znakach
+					db	.element_label_clock_end - .element_label_clock_string   ; rozmiar ciągu w znakach
+.element_label_clock_string:		db	" ",
 .element_label_clock_string_hour:	db	"00"
 .element_label_clock_char_colon:	db	":"
-.element_label_clock_string_minute:	db	"00"
+.element_label_clock_string_minute:	db	"00  "	; dlaczego dwie spacje?
 .element_label_clock_end:		;---------------------------------------
 					; koniec elementów okna
 					;---------------------------------------
@@ -107,7 +108,7 @@ kernel_gui_window_menu			dq	160	; pozycja na osi X względem wskaźnika kursora
 					dq	0	; pozycja na osi X względem przestrzeni danych okna
 					dq	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel	; pozycja na osi Y względem przestrzeni danych okna
 					dq	((.element_label_0_end - .element_label_0_string) * LIBRARY_FONT_WIDTH_pixel)	; szerokość elementu
-					dq	LIBRARY_FONT_HEIGHT_pixel	; wysokość elementu
+					dq	0x10	; wysokość elementu
 					dq	kernel_gui_event_console
 					db	.element_label_0_end - .element_label_0_string
 .element_label_0_string:		db	" Console "
