@@ -16,3 +16,8 @@
 	; plik jądra systemu
 	;-----------------------------------------------------------------------
 	incbin	"build/kernel"
+
+	; VirtualBox wymaga obrazu o rozmiarze min. 1 MiB
+
+; wyrównaj rozmiar obrazu dysku do pełnego 1 MiB
+align	1048576
