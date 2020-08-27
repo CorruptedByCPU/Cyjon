@@ -355,6 +355,99 @@ library_bosu_elements:
 
 ;===============================================================================
 library_bosu_element_taskbar:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+	push	rdi
+	push	r8
+	push	r9
+	push	r10
+	push	r11
+	push	r12
+	push	r13
+
+	; pobierz szerokość, wysokość i scanline okna
+	mov	r8,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	mov	r9,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	mov	r10,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline_byte]
+
+	; wylicz szerokość, wysokość i scanline elementu
+	mov	r11,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	mov	r12,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	mov	r13,	r11
+	shl	r13,	KERNEL_VIDEO_DEPTH_shift
+
+	; zachowaj wskaźnik do właściwości okna
+	mov	rbx,	rdi
+
+	; wylicz pozycję bezwzględną elementu w przestrzeni danych okna
+	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
+	mul	r13	; * scanline
+	mov	rdi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
+	shl	rdi,	KERNEL_VIDEO_DEPTH_shift
+	add	rdi,	rax
+	add	rdi,	qword [rbx + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
+
+	; wyczyść przestrzeń elementu domyślnym kolorem
+	mov	eax,	LIBRARY_BOSU_ELEMENT_BUTTON_BACKGROUND_color
+	call	library_bosu_element_drain
+
+	; zachowaj wskaźnik początku przestrzeni elementu
+	push	rdi
+
+	; wylicz pozycję bezwzględną linii w przestrzeni elementu
+	mov	rax,	r12
+	dec	rax	; ostatni wiersz pikseli w przestrzeni elementu
+	mul	r10	; * scanline
+
+	; szerokość linii
+	mov	rcx,	r11
+
+	; wskaźnik bezpośredni do rysowanej linii
+	add	rdi,	rax
+
+	; rysuj dolną krawędź elementu
+	mov	eax,	0x00ff0000
+	rep	stosd
+
+.under_line:
+
+	; przywróć wksaźnik początku przestrzeni elementu
+	pop	rdi
+
+	; rozmiar ciągu do wypisania w etykiecie
+	movzx	rcx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.length]
+
+	; wycentruj tekst w pionie
+	mov	rax,	r12
+	sub	rax,	LIBRARY_FONT_HEIGHT_pixel
+	shr	rax,	STATIC_DIVIDE_BY_2_shift
+	mul	r10
+	add	rdi,	rax
+
+	; wyświetl ciąg o domyślnym kolorze czcionki
+	mov	ebx,	LIBRARY_BOSU_ELEMENT_BUTTON_FOREGROUND_color
+	movzx	ecx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.length]
+	add	rsi,	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.string
+	call	library_bosu_string
+
+	; przywróć oryginalne rejestry
+	pop	r13
+	pop	r12
+	pop	r11
+	pop	r10
+	pop	r9
+	pop	r8
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+	pop	rax
+
 	; powrót z procedry
 	ret
 
@@ -691,14 +784,11 @@ library_bosu_element_button:
 	mov	r13,	r11
 	shl	r13,	KERNEL_VIDEO_DEPTH_shift
 
-	; pozycja bezwzględna elementu na osi Y
-	xor	eax,	eax
-
 	; zachowaj wskaźnik do właściwości okna
 	mov	rbx,	rdi
 
 	; wylicz pozycję bezwzględną elementu w przestrzeni danych okna
-	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
+	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
 	mul	r13	; * scanline
 	mov	rdi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
 	shl	rdi,	KERNEL_VIDEO_DEPTH_shift
