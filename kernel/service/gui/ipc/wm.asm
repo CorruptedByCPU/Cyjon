@@ -51,6 +51,7 @@ kernel_gui_ipc_wm:
 	jne	.end	; nie
 
 	; koryguj pozycje okna "menu"
+	mov	rbx,	qword [kernel_gui_window_menu + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.id]
 	call	kernel_wm_object_by_id
 
 	; czy pozycja wskaźnika kursora pozwala na wyświetlenie okna "menu"?
