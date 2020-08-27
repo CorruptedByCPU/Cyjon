@@ -17,6 +17,13 @@ kernel_gui_ipc_wm:
 	cmp	rax,	qword [kernel_gui_window_menu + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.id]
 	jne	.end	; nie
 
+	; okno jest widoczne?
+	test	qword [kernel_gui_window_menu + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible
+	jz	.end	; nie, zignoruj akcję
+
+	; okno zostało automatycznie ukryte, usuń informację
+	and	qword [kernel_gui_window_menu + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	~LIBRARY_BOSU_WINDOW_FLAG_visible
+
 	; sprawdź, którego elementu okna dotyczny akcja
 	mov	rsi,	kernel_gui_window_menu
 	call	library_bosu_element
@@ -44,7 +51,6 @@ kernel_gui_ipc_wm:
 	jne	.end	; nie
 
 	; koryguj pozycje okna "menu"
-	mov	rbx,	qword [kernel_gui_window_menu + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.id]
 	call	kernel_wm_object_by_id
 
 	; czy pozycja wskaźnika kursora pozwala na wyświetlenie okna "menu"?
@@ -75,6 +81,9 @@ kernel_gui_ipc_wm:
 
 	; ustaw flagi "widoczne" oraz "odśwież" dla okna "menu"
 	or	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
+
+	; zapamiętaj
+	or	qword [kernel_gui_window_menu + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
 
 .end:
 	; powrót z procedury
