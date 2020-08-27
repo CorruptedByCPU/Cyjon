@@ -12,7 +12,7 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 
 ### Requirements:
 
-  - 8 MiB of RAM
+  - 12 MiB of RAM (for Full HD resolution)
   - keyboard and mouse at PS2 port
 
 ### Optional:
