@@ -11,3 +11,4 @@ library_bosu_element_entry:
 	.draw:			dq	STATIC_EMPTY
 	.chain:			dq	STATIC_EMPTY
 	.button:		dq	library_bosu_element_button
+	.taskbar		dq	library_bosu_element_taskbar

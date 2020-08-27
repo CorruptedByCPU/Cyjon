@@ -354,6 +354,11 @@ library_bosu_elements:
 	ret
 
 ;===============================================================================
+library_bosu_element_taskbar:
+	; powrót z procedry
+	ret
+
+;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do elementu "łańcuch"
 ;	rdi - wskaźnik do struktury okna
