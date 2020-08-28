@@ -122,7 +122,9 @@ kernel_gui_taskbar:
 	movzx	ecx,	byte [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.length]
 	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.length],	cl
 	add	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	rcx
-
+	;-----------------------------------------------------------------------
+	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background],	LIBRARY_BOSU_ELEMENT_TASKBAR_BACKGROUND_color
+	;-----------------------------------------------------------------------
 	; wstaw nazwę elementu na podstawie nazwy okna
 	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.name
 	add	rdi,	LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.string
@@ -132,10 +134,11 @@ kernel_gui_taskbar:
 	pop	rdi
 	pop	rsi
 
+	; zachowaj wskaźnik do ostatniego zarejestowanego elementu
+	mov	rcx,	rdi
+
 	; przesuń wskaźnik przestrzeni łańcucha za utworzony element
 	add	rdi,	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
-
-	xchg	bx,bx
 
 	; następny element z prawej strony aktualnego
 	add	rdx,	rbx
@@ -153,6 +156,14 @@ kernel_gui_taskbar:
 	call	kernel_gui_taskbar_clear
 
 .ready:
+	; oznaczyć ostatni element listy?
+	test	rcx,	rcx
+	jz	.no_active	; nie
+
+	; oznacz okno na pasku zadań jako aktywne
+	mov	dword [rcx + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background],	LIBRARY_BOSU_ELEMENT_TASKBAR_BG_ACTIVE_color
+
+.no_active:
 	; aktualizuj rozmiar przestrzeni łańcucha
 	pop	qword [kernel_gui_window_taskbar.element_chain_0 + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.size]
 
