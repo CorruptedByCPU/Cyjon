@@ -103,6 +103,9 @@ kernel_gui_taskbar:
 	cmp	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid],	rax
 	je	.next	; tak, pomiń okno
 
+	; wyczyść przestrzeń za pomocą pustej etykiety
+	call	kernel_gui_taskbar_clear
+
 	; zachowaj oryginalne rejstry
 	push	rsi
 	push	rdi
@@ -191,6 +194,12 @@ kernel_gui_taskbar:
 ; wyjście:
 ;	rdi - wskaźnik następnej pozycji na liście elementów
 kernel_gui_taskbar_clear:
+	; zachowaj oryginalne rejestry
+	push	rbx
+
+	; pełna szerokość bez marginesu
+	add	rbx,	KERNEL_GUI_WINDOW_TASKBAR_MARGIN_right
+
 	; wyczyść przestrzeń za pomocą pustej etykiety
 	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	LIBRARY_BOSU_ELEMENT_TYPE_label
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.SIZE
@@ -206,6 +215,9 @@ kernel_gui_taskbar_clear:
 
 	; przesuń wskaźnik przestrzeni łańcucha za utworzony element
 	add	rdi,	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+
+	; przywróć oryginalne rejstry
+	pop	rbx
 
 	; powrót z procedury
 	ret

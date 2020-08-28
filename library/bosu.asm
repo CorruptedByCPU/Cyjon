@@ -391,10 +391,6 @@ library_bosu_element_taskbar:
 	add	rdi,	rax
 	add	rdi,	qword [rbx + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
 
-	; wyczyść przestrzeń elementu domyślnym kolorem
-	mov	eax,	LIBRARY_BOSU_ELEMENT_BUTTON_BACKGROUND_color
-	call	library_bosu_element_drain
-
 	; zachowaj wskaźnik początku przestrzeni elementu
 	push	rdi
 
@@ -429,7 +425,7 @@ library_bosu_element_taskbar:
 	add	rdi,	rax
 
 	; wyświetl ciąg o domyślnym kolorze czcionki
-	mov	ebx,	LIBRARY_BOSU_ELEMENT_BUTTON_FOREGROUND_color
+	mov	ebx,	LIBRARY_BOSU_ELEMENT_TASKBAR_FOREGROUND_color
 	movzx	ecx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.length]
 	add	rsi,	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.string
 	call	library_bosu_string
