@@ -375,8 +375,8 @@ library_bosu_element_taskbar:
 	mov	r10,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline_byte]
 
 	; wylicz szerokość, wysokość i scanline elementu
-	mov	r11,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
-	mov	r12,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	mov	r11,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	mov	r12,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
 	mov	r13,	r11
 	shl	r13,	KERNEL_VIDEO_DEPTH_shift
 
@@ -384,12 +384,16 @@ library_bosu_element_taskbar:
 	mov	rbx,	rdi
 
 	; wylicz pozycję bezwzględną elementu w przestrzeni danych okna
-	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
+	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
 	mul	r13	; * scanline
-	mov	rdi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
+	mov	rdi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
 	shl	rdi,	KERNEL_VIDEO_DEPTH_shift
 	add	rdi,	rax
 	add	rdi,	qword [rbx + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
+
+	; wyczyść przestrzeń elementu
+	mov	eax,	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background]
+	call	library_bosu_element_drain
 
 	; zachowaj wskaźnik początku przestrzeni elementu
 	push	rdi
@@ -415,7 +419,7 @@ library_bosu_element_taskbar:
 	pop	rdi
 
 	; rozmiar ciągu do wypisania w etykiecie
-	movzx	rcx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.length]
+	movzx	rcx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.length]
 
 	; wycentruj tekst w pionie
 	mov	rax,	r12
@@ -426,8 +430,8 @@ library_bosu_element_taskbar:
 
 	; wyświetl ciąg o domyślnym kolorze czcionki
 	mov	ebx,	LIBRARY_BOSU_ELEMENT_TASKBAR_FOREGROUND_color
-	movzx	ecx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.length]
-	add	rsi,	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.string
+	movzx	ecx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.length]
+	add	rsi,	LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.string
 	call	library_bosu_string
 
 	; przywróć oryginalne rejestry
