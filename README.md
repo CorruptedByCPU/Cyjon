@@ -22,8 +22,8 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 ### Compilation/Exec (GNU/Linux):
 
 	user@hostname:~/Cyjon$ chmod +x make.sh qemu.sh
-	user@hostname:~/Cyjon$ .\make.sh
-	user@hostname:~/Cyjon$ .\qemu.sh
+	user@hostname:~/Cyjon$ ./make.sh
+	user@hostname:~/Cyjon$ ./qemu.sh
 
 ### Compilation/Exec (MS/Windows):
 
