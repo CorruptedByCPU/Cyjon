@@ -7,6 +7,7 @@
 ;	rdi - wskaźnik do komunikatu IPC
 kernel_gui_taskbar_event:
 	; zachowaj oryginalne rejestry
+	push	rbx
 	push	rsi
 
 	; lewy przycisk myszki?
@@ -22,8 +23,9 @@ kernel_gui_taskbar_event:
 	cmp	rsi,	kernel_gui_window_taskbar.element_label_clock
 	je	.end	; tak, brak akcji
 
-	; pobierz wskaźnik do obiektu elementu
-	mov	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.event]
+	; pobierz wskaźnik do obiektu na podstawie identyfikatora okna
+	mov	rbx,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.event]
+	call	kernel_wm_object_by_id
 
 	; zmień widoczność obiektu
 	xor	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
@@ -37,6 +39,7 @@ kernel_gui_taskbar_event:
 .end:
 	; przywróć oryginalne rejestry
 	pop	rsi
+	pop	rbx
 
 	; powrót z procedury
 	ret
@@ -132,9 +135,6 @@ kernel_gui_taskbar:
 	; sprawdź wszystkie okna od początku listy
 	mov	rsi,	qword [kernel_wm_object_list_address]
 
-	; oznacz okna na pasku zadań jako widoczne
-	mov	r8,	LIBRARY_BOSU_ELEMENT_TASKBAR_BG_HIDDEN_color
-
 	; brak elementów do wygenerowania?
 	test	rcx,	rcx
 	jz	.empty	; tak
@@ -159,13 +159,16 @@ kernel_gui_taskbar:
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	STATIC_EMPTY
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	rbx
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height],	KERNEL_GUI_WINDOW_TASKBAR_HEIGHT_pixel
-	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	rsi	; wslaźnik do obiektu
+	;----------------------------------------------------------------------
+	; pobierz identyfikator okna dla elementu
+	mov	r8,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id]
+	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	r8	; identyfikator okna
 	;-----------------------------------------------------------------------
 	movzx	ecx,	byte [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.length]
 	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.length],	cl
 	add	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	rcx
 	;-----------------------------------------------------------------------
-	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background],	r8d
+	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background],	LIBRARY_BOSU_ELEMENT_TASKBAR_BG_HIDDEN_color
 	; okno jest widoczne?
 	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
 	jz	.hidden	; nie
