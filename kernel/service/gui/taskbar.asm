@@ -3,14 +3,59 @@
 ;===============================================================================
 
 ;===============================================================================
+; wejście:
+;	rdi - wskaźnik do komunikatu IPC
+kernel_gui_taskbar_event:
+	; zachowaj oryginalne rejestry
+	push	rbx
+	push	rsi
+
+	; lewy przycisk myszki?
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.action],	KERNEL_WM_IPC_MOUSE_btn_left_press
+	jne	.end	; nie
+
+	; sprawdź, którego elementu okna dotyczny akcja
+	mov	rsi,	kernel_gui_window_taskbar.elements
+	call	library_bosu_element
+	jc	.end	; brak akcji
+
+	; akcja dotyczy elementu zegara?
+	cmp	rsi,	kernel_gui_window_taskbar.element_label_clock
+	je	.end	; tak, brak akcji
+
+	; pobierz wskaźnik do obiektu na podstawie identyfikatora okna
+	mov	rbx,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.event]
+	call	kernel_wm_object_by_id
+
+	; zmień widoczność obiektu
+	xor	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+
+	; poinformuj menedżer okien
+	or	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
+
+	; przwtwórz raz jeszcze taskbar
+	mov	qword [kernel_gui_window_taskbar_modify_time],	STATIC_EMPTY
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rbx
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"kernel_gui_taskbar_event"
+
+;===============================================================================
 kernel_gui_taskbar:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rbx
-	push	rdx
+	push	rcx
 	push	rdx
 	push	rsi
 	push	rdi
+	push	r8
 
 	; lista obiektów została zmodyfikowana?
 	mov	rax,	qword [kernel_wm_object_list_modify_time]
@@ -103,9 +148,6 @@ kernel_gui_taskbar:
 	cmp	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid],	rax
 	je	.next	; tak, pomiń okno
 
-	; wyczyść przestrzeń za pomocą pustej etykiety
-	call	kernel_gui_taskbar_clear
-
 	; zachowaj oryginalne rejstry
 	push	rsi
 	push	rdi
@@ -117,13 +159,24 @@ kernel_gui_taskbar:
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	STATIC_EMPTY
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	rbx
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height],	KERNEL_GUI_WINDOW_TASKBAR_HEIGHT_pixel
-	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	STATIC_EMPTY	; brak akcji
+	;----------------------------------------------------------------------
+	; pobierz identyfikator okna dla elementu
+	mov	r8,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id]
+	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	r8	; identyfikator okna
 	;-----------------------------------------------------------------------
 	movzx	ecx,	byte [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.length]
 	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.length],	cl
 	add	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	rcx
 	;-----------------------------------------------------------------------
-	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background],	LIBRARY_BOSU_ELEMENT_TASKBAR_BACKGROUND_color
+	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background],	LIBRARY_BOSU_ELEMENT_TASKBAR_BG_HIDDEN_color
+	; okno jest widoczne?
+	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	jz	.hidden	; nie
+
+	; oznacz okno na pasku zadań jako widoczne
+	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background],	LIBRARY_BOSU_ELEMENT_TASKBAR_BG_color
+
+.hidden:
 	;-----------------------------------------------------------------------
 	; wstaw nazwę elementu na podstawie nazwy okna
 	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.name
@@ -142,7 +195,16 @@ kernel_gui_taskbar:
 
 	; następny element z prawej strony aktualnego
 	add	rdx,	rbx
-	add	rdx,	KERNEL_GUI_WINDOW_TASKBAR_MARGIN_right << STATIC_MULTIPLE_BY_2_shift
+
+	; zachowaj szerokość elementów
+	push	rbx
+
+	; wstaw margines
+	mov	rbx,	KERNEL_GUI_WINDOW_TASKBAR_MARGIN_right
+	call	kernel_gui_taskbar_margin
+
+	; przywróć szerokość elementów
+	pop	rbx
 
 .next:
 	; przesuń wskaźnik na następny wpis listy okien
@@ -153,17 +215,10 @@ kernel_gui_taskbar:
 
 .empty:
 	; wyczyść przestrzeń za pomocą pustej etykiety
-	call	kernel_gui_taskbar_clear
+	add	rbx,	KERNEL_GUI_WINDOW_TASKBAR_MARGIN_right	; wraz z prawym marginesem
+	call	kernel_gui_taskbar_margin
 
 .ready:
-	; oznaczyć ostatni element listy?
-	test	rcx,	rcx
-	jz	.no_active	; nie
-
-	; oznacz okno na pasku zadań jako aktywne
-	mov	dword [rcx + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background],	LIBRARY_BOSU_ELEMENT_TASKBAR_BG_ACTIVE_color
-
-.no_active:
 	; aktualizuj rozmiar przestrzeni łańcucha
 	pop	qword [kernel_gui_window_taskbar.element_chain_0 + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.size]
 
@@ -185,8 +240,9 @@ kernel_gui_taskbar:
 
 .end:
 	; przywróć oryginalne rejestry
-	pop	rsi
+	pop	r8
 	pop	rdi
+	pop	rsi
 	pop	rdx
 	pop	rcx
 	pop	rbx
@@ -199,18 +255,12 @@ kernel_gui_taskbar:
 
 ;===============================================================================
 ; wejście:
-;	rbx - szerokość elementu w pikselach
 ;	rdx - pozycja elementu na osi X
 ;	rdi - wskaźnik do pozycji na liście elementów
 ; wyjście:
+;	rdx - pozycja następnego elementu na osi X
 ;	rdi - wskaźnik następnej pozycji na liście elementów
-kernel_gui_taskbar_clear:
-	; zachowaj oryginalne rejestry
-	push	rbx
-
-	; pełna szerokość bez marginesu
-	add	rbx,	KERNEL_GUI_WINDOW_TASKBAR_MARGIN_right
-
+kernel_gui_taskbar_margin:
 	; wyczyść przestrzeń za pomocą pustej etykiety
 	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	LIBRARY_BOSU_ELEMENT_TYPE_label
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.SIZE
@@ -224,11 +274,11 @@ kernel_gui_taskbar_clear:
 	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.string],	STATIC_ASCII_SPACE
 	add	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	0x01
 
+	; przesuń wskaźnik osi X
+	add	rdx,	rbx
+
 	; przesuń wskaźnik przestrzeni łańcucha za utworzony element
 	add	rdi,	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
-
-	; przywróć oryginalne rejstry
-	pop	rbx
 
 	; powrót z procedury
 	ret

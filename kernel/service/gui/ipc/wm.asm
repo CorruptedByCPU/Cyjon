@@ -15,7 +15,7 @@ kernel_gui_ipc_wm:
 
 	; akcja dotyczy okna "menu"?
 	cmp	rax,	qword [kernel_gui_window_menu + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.id]
-	jne	.end	; nie
+	jne	.left_mouse_button_no_menu	; nie
 
 	; okno jest widoczne?
 	test	qword [kernel_gui_window_menu + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible
@@ -25,7 +25,7 @@ kernel_gui_ipc_wm:
 	and	qword [kernel_gui_window_menu + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	~LIBRARY_BOSU_WINDOW_FLAG_visible
 
 	; sprawdź, którego elementu okna dotyczny akcja
-	mov	rsi,	kernel_gui_window_menu
+	mov	rsi,	kernel_gui_window_menu.elements
 	call	library_bosu_element
 	jc	.end	; brak akcji
 
@@ -35,9 +35,19 @@ kernel_gui_ipc_wm:
 
 	; wykonaj procedurę powiązaną z elementem
 	push	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.event]
-	ret
+	ret	; call
+
+	; koniec obsługi komunikatu
+	jmp	.end
 
 .left_mouse_button_no_menu:
+	; akcja dotyczy okna "taskbar"?
+	cmp	rax,	qword [kernel_gui_window_taskbar + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.id]
+	jne	.end	; nie
+
+	; wykonaj działanie związane z paskiem zadań
+	call	kernel_gui_taskbar_event
+
 	; koniec obsługi komunikatu
 	jmp	.end
 

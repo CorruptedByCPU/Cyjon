@@ -953,6 +953,7 @@ library_bosu_element_label:
 ;	r8 - pozycja kursora na osi X
 ;	r9 - pozycja kursora na osi Y
 ; wyjście:
+;	Flaga CF - jeśli nie znaleziono elementu na danej pozycji
 ;	rsi - wskaźnik do elementu okna
 library_bosu_element:
 	; zachowaj oryginalne rejestry
@@ -961,9 +962,6 @@ library_bosu_element:
 	push	r8
 	push	r9
 	push	rsi
-
-	; przesuń wskaźnik na listę elementów
-	add	rsi,	LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.SIZE
 
 .loop:
 	; sprawdzaj kolejno elementy okna
@@ -975,6 +973,35 @@ library_bosu_element:
 	; pobierz rozmiar elementu
 	mov	rcx,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
 
+	; element typu "łańcuch"?
+	cmp	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	LIBRARY_BOSU_ELEMENT_TYPE_chain
+	jne	.no_chain	; nie
+
+	; zachowaj wskaźnik do elementu łańcucha
+	push	rsi
+
+	; sprawdź elementy wew. łańcucha
+	mov	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.address]
+	call	library_bosu_element
+	jnc	.found	; znaleziono element w łańcuchu
+
+	; przywróć wskaźnik do elementu łańcucha
+	pop	rsi
+
+	; brak elementu w łańcuchu, kontynuuj
+	jmp	.next
+
+.found:
+	; zwróć wskaźnik do elementu
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rsi
+
+	; przywróć wskaźnik do elementu łańcucha
+	pop	rsi
+
+	; koniec obsługi procedury
+	jmp	.end
+
+.no_chain:
 	; porównaj pozycję wskaźnika z lewą krawędzią elementu
 	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
 	cmp	r8,	rax
