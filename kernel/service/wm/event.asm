@@ -42,10 +42,6 @@ kernel_wm_event:
 	; zapamiętaj ten stan
 	mov	byte [kernel_wm_mouse_button_left_semaphore],	STATIC_TRUE
 
-	; ; jest już wybrany obiekt aktywny?
-	; cmp	qword [kernel_wm_object_selected_pointer],	STATIC_EMPTY
-	; jne	.no_mouse_button_left_action	; tak, zignoruj przytrzymanie lewego klawisza myszki na innym obiekcie
-
 	; sprawdź, który obiekt znajduje się pod wskaźnikiem kursora
  	call	kernel_wm_object_find
 	jc	.no_mouse_button_left_action	; brak obiektu
