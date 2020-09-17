@@ -3,6 +3,39 @@
 ;===============================================================================
 
 ;===============================================================================
+kernel_gui_taskbar_reload:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rsi
+	push	rdi
+
+	; lista obiektów została zmodyfikowana?
+	mov	rax,	qword [kernel_wm_object_list_modify_time]
+	cmp	qword [kernel_gui_window_taskbar_modify_time],	rax
+	je	.end	; nie
+
+	; zablokuj dostęp do modyfikacji listy obiektów
+	macro_lock	kernel_wm_object_semaphore,	0
+
+	; zarejestruj okna na liście w kolejności ich pojawiania się
+	mov	rsi,	qword [kernel_wm_object_list_address]
+	mov	rdi,	qword [kernel_gui_taskbar_list]
+
+	; zwolnij dostęp do modyfikacji listy obiektów
+	mov	byte [kernel_wm_object_semaphore],	STATIC_FALSE
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"kernel_gui_taskbar_reload"
+
+;===============================================================================
 ; wejście:
 ;	rdi - wskaźnik do komunikatu IPC
 kernel_gui_taskbar_event:
@@ -168,15 +201,15 @@ kernel_gui_taskbar:
 	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.length],	cl
 	add	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	rcx
 	;-----------------------------------------------------------------------
-	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background],	LIBRARY_BOSU_ELEMENT_TASKBAR_BG_HIDDEN_color
+	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background],	LIBRARY_BOSU_ELEMENT_TASKBAR_BG_color
 	; okno jest widoczne?
 	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
-	jz	.hidden	; nie
+	jnz	.visible	; tak
 
 	; oznacz okno na pasku zadań jako widoczne
-	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background],	LIBRARY_BOSU_ELEMENT_TASKBAR_BG_color
+	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background],	LIBRARY_BOSU_ELEMENT_TASKBAR_BG_HIDDEN_color
 
-.hidden:
+.visible:
 	;-----------------------------------------------------------------------
 	; wstaw nazwę elementu na podstawie nazwy okna
 	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.name

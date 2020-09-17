@@ -19,6 +19,8 @@ kernel_gui_ipc_data:
 
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
+kernel_gui_taskbar_list			dq	STATIC_EMPTY
+
 ;===============================================================================
 kernel_gui_window_workbench		dq	0	; pozycja na osi X
 					dq	0	; pozycja na osi Y

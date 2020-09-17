@@ -199,4 +199,9 @@ kernel_gui_init:
 	mov	rax,	qword [kernel_wm_object_list_modify_time]
 	mov	qword [kernel_gui_window_taskbar_modify_time],	rax
 
+	; przygotuj listę kolejności okien
+	call	kernel_memory_alloc_page
+	call	kernel_page_drain
+	mov	qword [kernel_gui_taskbar_list],	rdi	; zachowaj wskaźnik
+
 	macro_debug	"kernel_gui_init"
