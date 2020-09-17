@@ -6,6 +6,7 @@
 kernel_gui_taskbar_reload:
 	; zachowaj oryginalne rejestry
 	push	rax
+	push	rcx
 	push	rsi
 	push	rdi
 
@@ -17,17 +18,75 @@ kernel_gui_taskbar_reload:
 	; zablokuj dostęp do modyfikacji listy obiektów
 	macro_lock	kernel_wm_object_semaphore,	0
 
+	xchg	bx,bx
+
+	; nasz numer PID
+	mov	rcx,	qword [kernel_gui_pid]
+
 	; zarejestruj okna na liście w kolejności ich pojawiania się
 	mov	rsi,	qword [kernel_wm_object_list_address]
 	mov	rdi,	qword [kernel_gui_taskbar_list]
 
+.loop:
+	; koniec listy okien?
+	cmp	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	STATIC_EMPTY
+	je	.registered	; tak
+
+	; zarejestrowane okno należy do nas?
+	cmp	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid],	rcx
+	je	.next	; tak, pomiń okno
+
+	; dodaj do listy
+	call	.insert
+
+.next:
+	; przesuń wskaźnik na następną pozycję obiektu
+	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
+
+	; kontynuuj
+	jmp	.loop
+
+.insert:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rdi
+
+	; ustaw wskaźnik na koniec listy
+	mov	rax,	qword [rdi + KERNEL_GUI_STRUCTURE_TASKBAR.counter]
+	inc	rax	; pierwszy rekord to licznik
+	shl	rax,	STATIC_MULTIPLE_BY_8_shift
+	add	rdi,	rax
+
+	; odłóż na listę identyfikator okna
+	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id]
+	stosq
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rax
+
+	; ilość zarejestrowanych okien
+	inc	qword [rdi + KERNEL_GUI_STRUCTURE_TASKBAR.counter]
+
+	; powrót z podprocedury
+	ret
+
+.deduplication:
+	; powrót z podprocedurys
+	ret
+
+.registered:
 	; zwolnij dostęp do modyfikacji listy obiektów
 	mov	byte [kernel_wm_object_semaphore],	STATIC_FALSE
+
+	; usuń z listy duplikaty
+	call	.deduplication
 
 .end:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rsi
+	pop	rcx
 	pop	rax
 
 	; powrót z procedury
@@ -94,6 +153,9 @@ kernel_gui_taskbar:
 	mov	rax,	qword [kernel_wm_object_list_modify_time]
 	cmp	qword [kernel_gui_window_taskbar_modify_time],	rax
 	je	.end	; nie
+
+	;debug
+	call	kernel_gui_taskbar_reload
 
 	; zatwierdź czas ostatniej modyfikacji listy okien
 	mov	qword [kernel_gui_window_taskbar_modify_time],	rax
