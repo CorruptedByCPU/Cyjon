@@ -18,14 +18,12 @@ kernel_gui_taskbar_reload:
 	; zablokuj dostęp do modyfikacji listy obiektów
 	macro_lock	kernel_wm_object_semaphore,	0
 
-	xchg	bx,bx
-
 	; nasz numer PID
 	mov	rcx,	qword [kernel_gui_pid]
 
 	; zarejestruj okna na liście w kolejności ich pojawiania się
 	mov	rsi,	qword [kernel_wm_object_list_address]
-	mov	rdi,	qword [kernel_gui_taskbar_list]
+	mov	rdi,	qword [kernel_gui_taskbar_list_address]
 
 .loop:
 	; koniec listy okien?
@@ -48,39 +46,100 @@ kernel_gui_taskbar_reload:
 
 .insert:
 	; zachowaj oryginalne rejestry
-	push	rax
+	push	rcx
 	push	rdi
 
-	; ustaw wskaźnik na koniec listy
-	mov	rax,	qword [rdi + KERNEL_GUI_STRUCTURE_TASKBAR.counter]
-	inc	rax	; pierwszy rekord to licznik
-	shl	rax,	STATIC_MULTIPLE_BY_8_shift
-	add	rdi,	rax
-
-	; odłóż na listę identyfikator okna
+	; identyfikator okna
 	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id]
+
+	; ilość identyfikatorów okien na liście
+	mov	rcx,	qword [kernel_gui_taskbar_list_count]
+
+	; lista jest pusta?
+	test	rcx,	rcx
+	jz	.insert_new	; tak
+
+.insert_loop:
+	; identyfikator znajduje się na liście?
+	cmp	rax,	qword [rdi]
+	je	.insert_end	; tak
+
+	; następny wpis
+	add	rdi,	STATIC_QWORD_SIZE_byte
+
+	; koniec listy?
+	dec	rcx
+	jnz	.insert_loop	; nie
+
+.insert_new:
+	; odłóż na listę identyfikator okna
 	stosq
 
-	; przywróć oryginalne rejestry
-	pop	rdi
-	pop	rax
-
 	; ilość zarejestrowanych okien
-	inc	qword [rdi + KERNEL_GUI_STRUCTURE_TASKBAR.counter]
+	inc	qword [kernel_gui_taskbar_list_count]
+
+.insert_end:
+	; przywróć oryginale rejestry
+	pop	rdi
+	pop	rcx
 
 	; powrót z podprocedury
 	ret
 
-.deduplication:
-	; powrót z podprocedurys
+.remove:
+	; zachowaj oryginalne rejestry
+	push	rbx
+
+	; przeszukaj całą listę identyfikatorów za nieistniejącymi oknami
+	mov	rcx,	qword [kernel_gui_taskbar_list_count]
+	mov	rdi,	qword [kernel_gui_taskbar_list_address]
+
+.remove_loop:
+	; sprawdź czy identyfikator okna istnieje
+	mov	rbx,	qword [rdi]
+	call	kernel_wm_object_by_id
+	jnc	.remove_next	; istnieje
+
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rdi
+
+	; usuń identyfikator z listy
+	mov	rsi,	rdi
+	add	rsi,	STATIC_QWORD_SIZE_byte
+	rep	movsq
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rcx
+
+	; ilość zarejestrowanych identyfikatorów
+	dec	qword [kernel_gui_taskbar_list_count]
+
+	; kontynuuj
+	jmp	.remove_step_by
+
+.remove_next:
+	; przesuń wskaźnik na następną pozycję
+	add	rdi,	STATIC_QWORD_SIZE_byte
+
+.remove_step_by:
+	; koniec listy?
+	dec	rcx
+	jnz	.remove_loop	; nie
+
+	; przywróć oryginalne rejestry
+	pop	rbx
+
+	; powrót z podprocedury
 	ret
 
 .registered:
+	; zwolnij wszystkie wpisy z nieistniejącymi identyfikatorami
+	call	.remove
+
 	; zwolnij dostęp do modyfikacji listy obiektów
 	mov	byte [kernel_wm_object_semaphore],	STATIC_FALSE
-
-	; usuń z listy duplikaty
-	call	.deduplication
 
 .end:
 	; przywróć oryginalne rejestry

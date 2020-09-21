@@ -202,6 +202,6 @@ kernel_gui_init:
 	; przygotuj listę kolejności okien
 	call	kernel_memory_alloc_page
 	call	kernel_page_drain
-	mov	qword [kernel_gui_taskbar_list],	rdi	; zachowaj wskaźnik
+	mov	qword [kernel_gui_taskbar_list_address],	rdi	; zachowaj wskaźnik
 
 	macro_debug	"kernel_gui_init"
