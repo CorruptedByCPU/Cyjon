@@ -95,6 +95,10 @@ kernel_gui_taskbar_reload:
 	mov	rdi,	qword [kernel_gui_taskbar_list_address]
 
 .remove_loop:
+	; lista identyfokatorów jest pusta?
+	test	rcx,	rcx
+	jz	.remove_end
+
 	; sprawdź czy identyfikator okna istnieje
 	mov	rbx,	qword [rdi]
 	call	kernel_wm_object_by_id
@@ -128,6 +132,7 @@ kernel_gui_taskbar_reload:
 	dec	rcx
 	jnz	.remove_loop	; nie
 
+.remove_end:
 	; przywróć oryginalne rejestry
 	pop	rbx
 
@@ -208,13 +213,13 @@ kernel_gui_taskbar:
 	push	rdi
 	push	r8
 
+	; przygotuj aktualną listę identyfikatorów okien
+	call	kernel_gui_taskbar_reload
+
 	; lista obiektów została zmodyfikowana?
 	mov	rax,	qword [kernel_wm_object_list_modify_time]
 	cmp	qword [kernel_gui_window_taskbar_modify_time],	rax
 	je	.end	; nie
-
-	;debug
-	call	kernel_gui_taskbar_reload
 
 	; zatwierdź czas ostatniej modyfikacji listy okien
 	mov	qword [kernel_gui_window_taskbar_modify_time],	rax
@@ -224,7 +229,7 @@ kernel_gui_taskbar:
 
 	; wylicz niezbędny rozmiar przestrzeni łańcucha do wypisania wszystkich elementów paska zadań
 	mov	eax,	LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.SIZE + LIBRARY_BOSU_WINDOW_NAME_length
-	mov	rcx,	qword [kernel_wm_object_list_records]
+	mov	rcx,	qword [kernel_gui_taskbar_list_count]
 	inc	rcx	; element czyszczący przestrzeń
 	mul	rcx
 
@@ -265,14 +270,14 @@ kernel_gui_taskbar:
 	; wylicz domyślną szerokość jednego elementu uwzględniająć dostępną przestrzeń paska zadań
 	mov	rax,	qword [kernel_gui_window_taskbar + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
 	sub	rax,	qword [kernel_gui_window_taskbar.element_label_clock + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
-	mov	rcx,	qword [kernel_wm_object_list_records]
+	mov	rcx,	qword [kernel_gui_taskbar_list_count]
 	xor	edx,	edx
 
-	; ilość otwartych okien, nienależących do GUI
-	sub	rcx,	KERNEL_GUI_WINDOW_count
-	jz	.max	; brak otwartych okien
+	; brak otwartych okien?
+	test	rcx,	rcx
+	jz	.max	; tak
 
-	; wylicz szerokość elementu
+	; wylicz szerokość jednego elementu
 	div	rcx
 
 .max:
@@ -280,14 +285,11 @@ kernel_gui_taskbar:
 	mov	rbx,	rax
 	sub	rbx,	KERNEL_GUI_WINDOW_TASKBAR_MARGIN_right
 
-	; pobierz nasz PID
-	mov	rax,	qword [kernel_gui_pid]
-
 	; pozycja pierwszego elementu na osi X
 	xor	edx,	edx
 
 	; sprawdź wszystkie okna od początku listy
-	mov	rsi,	qword [kernel_wm_object_list_address]
+	mov	r8,	qword [kernel_gui_taskbar_list_address]
 
 	; brak elementów do wygenerowania?
 	test	rcx,	rcx
@@ -295,15 +297,16 @@ kernel_gui_taskbar:
 
 .loop:
 	; koniec listy okien?
-	cmp	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	STATIC_EMPTY
+	cmp	qword [r8],	STATIC_EMPTY
 	je	.ready	; tak
 
-	; zarejestrowane okno należy do nas?
-	cmp	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid],	rax
-	je	.next	; tak, pomiń okno
+	; pobierz wskaźnik do obiektu
+	push	rbx
+	mov	rbx,	qword [r8]
+	call	kernel_wm_object_by_id
+	pop	rbx
 
 	; zachowaj oryginalne rejstry
-	push	rsi
 	push	rdi
 
 	; utwórz pierwszy element opisujący okno na początku paska zadań
@@ -315,8 +318,8 @@ kernel_gui_taskbar:
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height],	KERNEL_GUI_WINDOW_TASKBAR_HEIGHT_pixel
 	;----------------------------------------------------------------------
 	; pobierz identyfikator okna dla elementu
-	mov	r8,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id]
-	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	r8	; identyfikator okna
+	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id]
+	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	rax	; identyfikator okna
 	;-----------------------------------------------------------------------
 	movzx	ecx,	byte [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.length]
 	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.length],	cl
@@ -339,10 +342,6 @@ kernel_gui_taskbar:
 
 	; przywróć oryginalne rejestry
 	pop	rdi
-	pop	rsi
-
-	; zachowaj wskaźnik do ostatniego zarejestowanego elementu
-	mov	rcx,	rdi
 
 	; przesuń wskaźnik przestrzeni łańcucha za utworzony element
 	add	rdi,	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
@@ -362,7 +361,7 @@ kernel_gui_taskbar:
 
 .next:
 	; przesuń wskaźnik na następny wpis listy okien
-	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
+	add	r8,	STATIC_QWORD_SIZE_byte
 
 	; kontynuuj
 	jmp	.loop
