@@ -164,6 +164,10 @@ kernel_wm_irq:
 	mov	rax,	qword [rbx + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags]
 	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	rax
 
+	; zachowaj czas ostatniej modyfikacji listy
+	mov	rax,	qword [driver_rtc_microtime]
+	mov	qword [kernel_wm_object_list_modify_time],	rax
+
 	; koniec procedury
 	jmp	.window_flags_end
 
