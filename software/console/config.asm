@@ -2,7 +2,7 @@
 ; Copyright (C) by blackdev.org
 ;===============================================================================
 
-%define CONSOLE_VERSION			"0.23"
+%define CONSOLE_VERSION			"0.24"
 
 CONSOLE_WINDOW_WIDTH_char	equ	40
 CONSOLE_WINDOW_HEIGHT_char	equ	12

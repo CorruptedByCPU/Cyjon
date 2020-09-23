@@ -150,9 +150,21 @@ library_bosu_border_correction:
 	cmp	eax,	STATIC_EMPTY
 	je	.ready	; tak
 
+	; element typu "button close"?
+	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_button_close
+	je	.next	; tak, pomiń
+
+	; element typu "button minimize"?
+	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_button_minimize
+	je	.next	; tak, pomiń
+
+	; element typu "button maximize"?
+	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_button_maximize
+	je	.next	; tak, pomiń
+
 	; element typu "chain"?
 	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_chain
-	je	.chain	; nie
+	je	.chain	; tak
 
 	; koryguj pozycję elementu o rozmiar krawędzi
 	add	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel
@@ -207,6 +219,33 @@ library_bosu_close:
 
 	; przywróć oryginalne rejestry
 	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do właściwości okna
+library_bosu_element_button_close:
+	xchg	bx,bx
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do właściwości okna
+library_bosu_element_button_minimize:
+	xchg	bx,bx
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do właściwości okna
+library_bosu_element_button_maximize:
+	xchg	bx,bx
 
 	; powrót z procedury
 	ret
@@ -354,6 +393,9 @@ library_bosu_elements:
 	ret
 
 ;===============================================================================
+; wejście:
+;	rsi - wskaźnik do właściwości elementu
+;	rdi - wskaźnik do właściwości okna
 library_bosu_element_taskbar:
 	; zachowaj oryginalne rejestry
 	push	rax

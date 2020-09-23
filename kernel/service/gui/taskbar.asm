@@ -221,9 +221,6 @@ kernel_gui_taskbar:
 	cmp	qword [kernel_gui_window_taskbar_modify_time],	rax
 	je	.end	; nie
 
-	; zatwierdź czas ostatniej modyfikacji listy okien
-	mov	qword [kernel_gui_window_taskbar_modify_time],	rax
-
 	; zablokuj dostęp do modyfikacji listy obiektów
 	macro_lock	kernel_wm_object_semaphore,	0
 
@@ -390,6 +387,10 @@ kernel_gui_taskbar:
 	mov	al,	KERNEL_WM_WINDOW_update
 	mov	rsi,	kernel_gui_window_taskbar
 	int	KERNEL_WM_IRQ
+
+	; zatwierdź czas ostatniej modyfikacji listy okien
+	mov	rax,	qword [kernel_wm_object_list_modify_time]
+	mov	qword [kernel_gui_window_taskbar_modify_time],	rax
 
 .end:
 	; przywróć oryginalne rejestry

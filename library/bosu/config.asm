@@ -28,6 +28,9 @@ LIBRARY_BOSU_ELEMENT_TYPE_draw			equ	0x03
 LIBRARY_BOSU_ELEMENT_TYPE_chain			equ	0x04
 LIBRARY_BOSU_ELEMENT_TYPE_button		equ	0x05
 LIBRARY_BOSU_ELEMENT_TYPE_taskbar		equ	0x06
+LIBRARY_BOSU_ELEMENT_TYPE_button_close		equ	0x07
+LIBRARY_BOSU_ELEMENT_TYPE_button_minimize	equ	0x08
+LIBRARY_BOSU_ELEMENT_TYPE_button_maximize	equ	0x09
 
 LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel	equ	18
 LIBRARY_BOSU_ELEMENT_HEADER_PADDING_LEFT_pixel	equ	0x02
@@ -94,6 +97,27 @@ struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON
 	.element				resb	LIBRARY_BOSU_STRUCTURE_ELEMENT.SIZE
 	.length					resb	1
 	.string:
+	.SIZE:
+endstruc
+
+struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON_CLOSE
+	.type					resb	4
+	.size					resb	8
+	.event					resb	8
+	.SIZE:
+endstruc
+
+struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON_MINIMIZE
+	.type					resb	4
+	.size					resb	8
+	.event					resb	8
+	.SIZE:
+endstruc
+
+struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON_MAXIMIZE
+	.type					resb	4
+	.size					resb	8
+	.event					resb	8
 	.SIZE:
 endstruc
 
