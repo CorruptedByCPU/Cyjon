@@ -119,6 +119,7 @@ console:
 	%include	"software/console/transfer.asm"
 	%include	"software/console/sequence.asm"
 	%include	"software/console/meta.asm"
+	%include	"software/console/close.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"
 	%include	"library/integer_to_string.asm"

@@ -28,8 +28,6 @@
 	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline_byte]
 	mov	qword [console_terminal_table + LIBRARY_TERMINAL_STRUCTURE.scanline_byte],	rax
 
-	;
-
 	; inicjalizuj przestrzeń elementu "terminal"
 	mov	r8,	console_terminal_table
 	call	library_terminal
