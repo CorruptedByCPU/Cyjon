@@ -226,8 +226,83 @@ library_bosu_close:
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do właściwości okna
+;	r8 - szerokość okna w pikselach
+;	r10 - scanline okna w Bajtach
 library_bosu_element_button_close:
-	xchg	bx,bx
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; zachowaj wskaźnik do struktury okna
+	mov	rsi,	rdi
+
+	; ustaw wskaźnik na pozycję elementu
+	xor	rdi,	rdi
+
+	; pozycjq na osi X
+	mov	rax,	r8
+	sub	rax,	LIBRARY_BOSU_ELEMENT_BUTTON_CLOSE_width
+
+	; okno posiada krawędzie?
+	test	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_border
+	jz	.no_border	; nie
+
+	; koryguj pozycję na osi X
+	sub	rax,	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel
+
+	; koryguj pozycję na osi Y
+	add	rdi,	r10
+
+.no_border:
+	; docelowa pozycja pierwszej kreski elementu w przestrzeni danych okna
+	add	rax,	0x05	; 5 pikseli w prawo na osi X
+	shl	rax,	KERNEL_VIDEO_DEPTH_shift
+	add	rdi,	rax
+	mov	rax,	r10				; oraz 5 pikseli w dół na osi Y
+	shl	rax,	STATIC_MULTIPLE_BY_4_shift	; |
+	add	rax,	r10				; |
+	add	rdi,	rax				; /
+	add	rdi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
+
+	; kolor i rozmiar pierwszej kreski
+	mov	eax,	LIBRARY_BOSU_ELEMENT_BUTTON_FOREGROUND_color
+	mov	ecx,	0x08
+
+.left:
+	; rysuj
+	stosd
+
+	; przesuń wskaźnik na następną pozycję
+	add	rdi,	r10
+
+	; koniec pierwszej kreski?
+	dec	rcx
+	jnz	.left	; nie
+
+	; pozycja prawej kreski na osi X
+	sub	rdi,	0x08 << KERNEL_VIDEO_DEPTH_shift
+
+	; rozmiar drugiej kreski
+	mov	ecx,	0x08
+
+.right:
+	; przesuń wskaźnik na następną pozycję
+	sub	rdi,	r10
+
+	; rysuj
+	stosd
+
+	; koniec drugiej kreski?
+	dec	rcx
+	jnz	.right	; nie
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rcx
+	pop	rax
 
 	; powrót z procedury
 	ret
@@ -395,7 +470,7 @@ library_bosu_elements:
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do właściwości elementu
-;	rdi - wskaźnik do właściwości okna
+;	rdi - wskaźnik do struktury okna
 library_bosu_element_taskbar:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -551,8 +626,8 @@ library_bosu_element_chain:
 
 ;===============================================================================
 ; wejście:
-;	rdi - wskaźnik do struktury okna
 ;	rsi - wskaźnik do elementu
+;	rdi - wskaźnik do struktury okna
 ;	r8 - szerokość okna w pikselach
 ;	r9 - wysokość okna w pikselach
 ;	r10 - scanline okna w Bajtach
@@ -798,8 +873,8 @@ library_bosu_char:
 
 ;===============================================================================
 ; wejście:
-;	rdi - wskaźnik do struktury okna
 ;	rsi - wskaźnik do elementu
+;	rdi - wskaźnik do struktury okna
 library_bosu_element_button:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -913,8 +988,8 @@ library_bosu_element_drain:
 
 ;===============================================================================
 ; wejście:
-;	rdi - wskaźnik do struktury okna
 ;	rsi - wskaźnik do elementu
+;	rdi - wskaźnik do struktury okna
 library_bosu_element_label:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -991,7 +1066,7 @@ library_bosu_element_label:
 
 ;===============================================================================
 ; wejście:
-;	rsi - wskaźnik do właściwości okna
+;	rsi - wskaźnik do struktury okna
 ;	r8 - pozycja kursora na osi X
 ;	r9 - pozycja kursora na osi Y
 ; wyjście:
