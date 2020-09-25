@@ -549,6 +549,7 @@ library_bosu_element_taskbar:
 	mov	ebx,	LIBRARY_BOSU_ELEMENT_TASKBAR_FOREGROUND_color
 	movzx	ecx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.length]
 	add	rsi,	LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.string
+	add	rdi,	LIBRARY_BOSU_ELEMENT_TASKBAR_PADDING_LEFT_pixel << KERNEL_VIDEO_DEPTH_shift
 	call	library_bosu_string
 
 	; przywróć oryginalne rejestry
