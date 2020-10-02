@@ -171,7 +171,7 @@ kernel_gui_taskbar_event:
 	jne	.end	; nie
 
 	; sprawdź, którego elementu okna dotyczny akcja
-	mov	rsi,	kernel_gui_window_taskbar.elements
+	mov	rsi,	kernel_gui_window_taskbar
 	call	library_bosu_element
 	jc	.end	; brak akcji
 

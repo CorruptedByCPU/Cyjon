@@ -4,5 +4,7 @@
 
 ;===============================================================================
 console_window_close:
+	xchg	bx,bx
+
 	; powrót z procedury
 	ret

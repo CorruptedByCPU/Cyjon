@@ -25,7 +25,7 @@ kernel_gui_ipc_wm:
 	and	qword [kernel_gui_window_menu + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	~LIBRARY_BOSU_WINDOW_FLAG_visible
 
 	; sprawdź, którego elementu okna dotyczny akcja
-	mov	rsi,	kernel_gui_window_menu.elements
+	mov	rsi,	kernel_gui_window_menu
 	call	library_bosu_element
 	jc	.end	; brak akcji
 
@@ -34,11 +34,9 @@ kernel_gui_ipc_wm:
 	je	.end	; nie, koniec obsługi akcji
 
 	; wykonaj procedurę powiązaną z elementem
+	push	.end	; powrót z procedury
 	push	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.event]
 	ret	; call
-
-	; koniec obsługi komunikatu
-	jmp	.end
 
 .left_mouse_button_no_menu:
 	; akcja dotyczy okna "taskbar"?

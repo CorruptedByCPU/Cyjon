@@ -1079,7 +1079,14 @@ library_bosu_element:
 	push	rcx
 	push	r8
 	push	r9
+	push	rdi
 	push	rsi
+
+	; zachowaj wskaźnik do struktury okna
+	mov	rdi,	rsi
+
+	; przesuń wskaźnik na elementy okna
+	add	rsi,	LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.SIZE
 
 .loop:
 	; sprawdzaj kolejno elementy okna
@@ -1120,6 +1127,51 @@ library_bosu_element:
 	jmp	.end
 
 .no_chain:
+	; zachowaj rozmiar elementu
+	push	rcx
+
+	; element typu: button close?
+	cmp	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	LIBRARY_BOSU_ELEMENT_TYPE_button_close
+	jne	.no_button_close	; nie
+
+	; pozycja elementu na osi X
+	mov	rax,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	sub	rax,	LIBRARY_BOSU_ELEMENT_BUTTON_CLOSE_width
+
+	; pozycja elementu na osi Y
+	xor	ecx,	ecx
+
+	; okno zawiera krawędzie?
+	test	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_border
+	jz	.no_button_close_border	; nie
+
+	; koryguj pozycję na osi X,Y
+	add	rax,	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel
+	add	rcx,	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel
+
+.no_button_close_border:
+	; porównaj pozycję wskaźnika z lewą krawędzią elementu
+	cmp	r8,	rax
+	jl	.next	; poza przestrzenią elementu
+
+	; porównaj pozycję wskaźnika z prawą krawędzią elementu
+	add	rax,	LIBRARY_BOSU_ELEMENT_BUTTON_CLOSE_width
+	cmp	r8,	rax
+	jge	.next	; poza przestrzenią elementu
+
+	; porównaj pozycję wskaźnika z górną krawędzią elementu
+	cmp	r9,	rcx
+	jl	.next	; poza przestrzenią elementu
+
+	; porównaj pozycję wskaźnika z dolną krawędzią elementu
+	add	rcx,	LIBRARY_BOSU_ELEMENT_BUTTON_CLOSE_width
+	cmp	r9,	rcx
+	jge	.next	; poza przestrzenią elementu
+
+	; rozpoznano element: button close
+	jmp	.element_recognized
+
+.no_button_close:
 	; porównaj pozycję wskaźnika z lewą krawędzią elementu
 	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
 	cmp	r8,	rax
@@ -1140,6 +1192,10 @@ library_bosu_element:
 	cmp	r9,	rax
 	jge	.next	; poza przestrzenią elementu
 
+.element_recognized:
+	; usuń rozmiar elementu z stosu
+	add	rsp,	STATIC_QWORD_SIZE_byte
+
 	; flaga, sukces
 	clc
 
@@ -1150,6 +1206,9 @@ library_bosu_element:
 	jmp	.end
 
 .next:
+	; przywróć rozmiar elementu
+	pop	rcx
+
 	; przesuń wskaźnik na następny element z listy
 	add	rsi,	rcx
 
@@ -1163,6 +1222,7 @@ library_bosu_element:
 .end:
 	; przywróć oryginalne rejestry
 	pop	rsi
+	pop	rdi
 	pop	r9
 	pop	r8
 	pop	rcx
