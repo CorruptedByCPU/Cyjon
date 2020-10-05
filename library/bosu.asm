@@ -1075,10 +1075,6 @@ library_bosu_element_label:
 ;	rsi - wskaźnik do elementu okna
 library_bosu_element:
 	; zachowaj oryginalne rejestry
-	push	rax
-	push	rcx
-	push	r8
-	push	r9
 	push	rdi
 	push	rsi
 
@@ -1087,6 +1083,30 @@ library_bosu_element:
 
 	; przesuń wskaźnik na elementy okna
 	add	rsi,	LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.SIZE
+
+	; przeszukaj elementy
+	call	library_bosu_element_subroutine
+	jc	.end	; nie znaleziono
+
+	; zwróć wskaźnik do elementu
+	mov	qword [rsp],	rsi
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rdi
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+library_bosu_element_subroutine:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	r8
+	push	r9
+	push	rsi
 
 .loop:
 	; sprawdzaj kolejno elementy okna
@@ -1107,14 +1127,14 @@ library_bosu_element:
 
 	; sprawdź elementy wew. łańcucha
 	mov	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.address]
-	call	library_bosu_element
+	call	library_bosu_element_subroutine
 	jnc	.found	; znaleziono element w łańcuchu
 
 	; przywróć wskaźnik do elementu łańcucha
 	pop	rsi
 
 	; brak elementu w łańcuchu, kontynuuj
-	jmp	.next
+	jmp	.next_from_chain
 
 .found:
 	; zwróć wskaźnik do elementu
@@ -1209,6 +1229,7 @@ library_bosu_element:
 	; przywróć rozmiar elementu
 	pop	rcx
 
+.next_from_chain:
 	; przesuń wskaźnik na następny element z listy
 	add	rsi,	rcx
 
@@ -1222,11 +1243,10 @@ library_bosu_element:
 .end:
 	; przywróć oryginalne rejestry
 	pop	rsi
-	pop	rdi
 	pop	r9
 	pop	r8
 	pop	rcx
 	pop	rax
 
-	; powrót z procedury
+	; powrót z podprocedury
 	ret
