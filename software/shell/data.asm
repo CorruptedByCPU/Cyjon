@@ -2,6 +2,8 @@
 ; Copyright (C) by blackdev.org
 ;===============================================================================
 
+shell_pid_parent				dq	STATIC_EMPTY
+
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 shell_ipc_data:
 	times KERNEL_IPC_STRUCTURE.SIZE		db	STATIC_EMPTY

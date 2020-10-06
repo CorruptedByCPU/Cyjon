@@ -71,6 +71,10 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_PROCESS_pid
 	je	.process_pid	; tak
 
+	; zwrócić PID procesu rodzica?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_pid_parent
+	je	.process_pid_parent	; tak
+
 	; przesłać ciąg znaków na standardowe wyjście?
 	cmp	ax,	KERNEL_SERVICE_PROCESS_stream_out
 	je	.process_stream_out	; tak
@@ -89,6 +93,23 @@ kernel_service:
 
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
+
+;-------------------------------------------------------------------------------
+; wyjście:
+;	rcx - PID procesu rodzica
+.process_pid_parent:
+	; zachowaj oryginalne rejestry
+	push	rdi
+
+	; zwróć PID rodzica
+	call	kernel_task_active
+	mov	rcx,	qword [rdi + KERNEL_TASK_STRUCTURE.parent]
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
 
 ;-------------------------------------------------------------------------------
 ; wejście:

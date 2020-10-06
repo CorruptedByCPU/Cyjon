@@ -42,6 +42,7 @@ console:
 	int	KERNEL_SERVICE
 	jnc	.exist	; tak
 
+.close:
 	; zamknij okno
 	mov	rsi,	console_window
 	call	library_bosu_close
@@ -59,8 +60,36 @@ console:
 
 	; komunikat typu: klawiatura?
 	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
-	jne	.input	; nie
+	je	.transfer	; tak
 
+	; komunikat typu: grafika?
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_MOUSE
+	jne	.input	; nie, zignoruj wiadomość
+
+	; naciśnięcie lewego klawisza myszki?
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.action],	KERNEL_WM_IPC_MOUSE_btn_left_press
+	jne	.input	; nie, zignoruj wiadomość
+
+	; pobierz współrzędne kursora
+	mov	r8,	qword [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]	; x
+	mov	r9,	qword [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value1]	; y
+
+	; pobierz wskaźnik do elementu biorącego udział w zdarzeniu
+	mov	rsi,	console_window
+	call	library_bosu_element
+	jc	.input	; nie znaleziono elementu zależnego
+
+	; element posiada przypisaną procedurę obsługi akcji?
+	cmp	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	STATIC_EMPTY
+	je	.input	; nie, koniec obsługi akcji
+
+	; wykonaj procedurę powiązaną z elementem
+	mov	rax,	.input
+	push	rax	; powrót z procedury
+	push	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON_CLOSE.event]
+	ret	; call
+
+.transfer:
 	; prześlij komunikat do powłoki
 	call	console_transfer
 
@@ -75,6 +104,9 @@ console:
 	; wyświetl zawartość
 	xor	eax,	eax
 	mov	rsi,	rdi
+
+	; przywróć wskaźnik do struktury terminala
+	mov	r8,	console_terminal_table
 
 .parse:
 	; koniec ciągu?

@@ -1075,6 +1075,33 @@ library_bosu_element_label:
 ;	rsi - wskaźnik do elementu okna
 library_bosu_element:
 	; zachowaj oryginalne rejestry
+	push	rdi
+	push	rsi
+
+	; zachowaj wskaźnik do struktury okna
+	mov	rdi,	rsi
+
+	; przesuń wskaźnik na elementy okna
+	add	rsi,	LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.SIZE
+
+	; przeszukaj elementy
+	call	library_bosu_element_subroutine
+	jc	.end	; nie znaleziono
+
+	; zwróć wskaźnik do elementu
+	mov	qword [rsp],	rsi
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rdi
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+library_bosu_element_subroutine:
+	; zachowaj oryginalne rejestry
 	push	rax
 	push	rcx
 	push	r8
@@ -1100,14 +1127,14 @@ library_bosu_element:
 
 	; sprawdź elementy wew. łańcucha
 	mov	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.address]
-	call	library_bosu_element
+	call	library_bosu_element_subroutine
 	jnc	.found	; znaleziono element w łańcuchu
 
 	; przywróć wskaźnik do elementu łańcucha
 	pop	rsi
 
 	; brak elementu w łańcuchu, kontynuuj
-	jmp	.next
+	jmp	.next_from_chain
 
 .found:
 	; zwróć wskaźnik do elementu
@@ -1120,6 +1147,51 @@ library_bosu_element:
 	jmp	.end
 
 .no_chain:
+	; zachowaj rozmiar elementu
+	push	rcx
+
+	; element typu: button close?
+	cmp	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	LIBRARY_BOSU_ELEMENT_TYPE_button_close
+	jne	.no_button_close	; nie
+
+	; pozycja elementu na osi X
+	mov	rax,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	sub	rax,	LIBRARY_BOSU_ELEMENT_BUTTON_CLOSE_width
+
+	; pozycja elementu na osi Y
+	xor	ecx,	ecx
+
+	; okno zawiera krawędzie?
+	test	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_border
+	jz	.no_button_close_border	; nie
+
+	; koryguj pozycję na osi X,Y
+	add	rax,	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel
+	add	rcx,	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel
+
+.no_button_close_border:
+	; porównaj pozycję wskaźnika z lewą krawędzią elementu
+	cmp	r8,	rax
+	jl	.next	; poza przestrzenią elementu
+
+	; porównaj pozycję wskaźnika z prawą krawędzią elementu
+	add	rax,	LIBRARY_BOSU_ELEMENT_BUTTON_CLOSE_width
+	cmp	r8,	rax
+	jge	.next	; poza przestrzenią elementu
+
+	; porównaj pozycję wskaźnika z górną krawędzią elementu
+	cmp	r9,	rcx
+	jl	.next	; poza przestrzenią elementu
+
+	; porównaj pozycję wskaźnika z dolną krawędzią elementu
+	add	rcx,	LIBRARY_BOSU_ELEMENT_BUTTON_CLOSE_width
+	cmp	r9,	rcx
+	jge	.next	; poza przestrzenią elementu
+
+	; rozpoznano element: button close
+	jmp	.element_recognized
+
+.no_button_close:
 	; porównaj pozycję wskaźnika z lewą krawędzią elementu
 	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
 	cmp	r8,	rax
@@ -1140,6 +1212,10 @@ library_bosu_element:
 	cmp	r9,	rax
 	jge	.next	; poza przestrzenią elementu
 
+.element_recognized:
+	; usuń rozmiar elementu z stosu
+	add	rsp,	STATIC_QWORD_SIZE_byte
+
 	; flaga, sukces
 	clc
 
@@ -1150,6 +1226,10 @@ library_bosu_element:
 	jmp	.end
 
 .next:
+	; przywróć rozmiar elementu
+	pop	rcx
+
+.next_from_chain:
 	; przesuń wskaźnik na następny element z listy
 	add	rsi,	rcx
 
@@ -1168,5 +1248,5 @@ library_bosu_element:
 	pop	rcx
 	pop	rax
 
-	; powrót z procedury
+	; powrót z podprocedury
 	ret

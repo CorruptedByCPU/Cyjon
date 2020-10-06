@@ -21,6 +21,7 @@ kernel_gui_ipc:
 	cmp	qword [rdi + KERNEL_IPC_STRUCTURE.pid_source],	rax
 	jne	.no_desu	; nie, zignoruj
 
+	; obsłuż komunikat
 	call	kernel_gui_ipc_wm
 
 .no_desu:
