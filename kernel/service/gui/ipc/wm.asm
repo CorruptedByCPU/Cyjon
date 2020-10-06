@@ -4,6 +4,10 @@
 
 ;===============================================================================
 kernel_gui_ipc_wm:
+	; komunikat niezwiązany z myszką?
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_MOUSE
+	jne	.end	; tak
+
 	; pobierz identyfikator okna i koordynary wskaźnika kursora
 	mov	rax,	qword [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.id]
 	mov	r8,	qword [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]

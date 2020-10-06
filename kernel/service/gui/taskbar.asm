@@ -170,8 +170,6 @@ kernel_gui_taskbar_event:
 	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.action],	KERNEL_WM_IPC_MOUSE_btn_left_press
 	jne	.end	; nie
 
-	xchg	bx,bx
-
 	; sprawdź, którego elementu okna dotyczny akcja
 	mov	rsi,	kernel_gui_window_taskbar
 	call	library_bosu_element

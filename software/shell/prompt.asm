@@ -95,7 +95,7 @@ shell_prompt:
 	mov	ax,	KERNEL_SERVICE_PROCESS_check
 
 .wait_for_end:
-	; wszelkie przychodzące wyjątki klawiatury, przesyłaj do procesu
+	; wszelkie przychodzące wyjątki, przesyłaj do procesu
 	call	shell_event_transfer
 
 	; proces zakończył swoją pracę

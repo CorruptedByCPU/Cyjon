@@ -105,6 +105,9 @@ console:
 	xor	eax,	eax
 	mov	rsi,	rdi
 
+	; przywróć wskaźnik do struktury terminala
+	mov	r8,	console_terminal_table
+
 .parse:
 	; koniec ciągu?
 	test	rcx,	rcx
