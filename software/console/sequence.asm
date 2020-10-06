@@ -57,7 +57,7 @@ console_sequence:
 	; tablica kolorów
 	mov	rdi,	console_table_color
 
-	; pobierz kolor znaku
+	; pobierz kod koloru
 	movzx	eax,	byte [rsi + STATIC_BYTE_SIZE_byte * 0x04]
 
 	; brak koloru znaku?
@@ -70,7 +70,7 @@ console_sequence:
 	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.foreground_color],	eax
 
 .color_background_only:
-	; pobierz kolor tła
+	; pobierz kod koloru
 	movzx	eax,	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03]
 
 	; brak koloru tła?
@@ -97,6 +97,8 @@ console_sequence:
 	jmp	console_sequence.end
 
 .color_translate:
+	xchg	bx,bx
+
 	; wartość decymalna?
 	cmp	al,	STATIC_ASCII_DIGIT_9
 	ja	.color_translate_hex
@@ -109,7 +111,7 @@ console_sequence:
 
 .color_translate_hex:
 	; zamień na literę A-F
-	sub	al,	STATIC_ASCII_HIGH_CASE - (STATIC_ASCII_DIGIT_9 - STATIC_ASCII_DIGIT_0)
+	sub	al,	(STATIC_ASCII_HIGH_CASE - (STATIC_ASCII_DIGIT_9 - STATIC_ASCII_DIGIT_0)) - 0x01
 
 	; powrót z podprocedury
 	ret

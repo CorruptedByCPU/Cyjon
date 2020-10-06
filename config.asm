@@ -35,6 +35,7 @@ STATIC_MULTIPLE_BY_16_shift				equ	4
 STATIC_MULTIPLE_BY_32_shift				equ	5
 STATIC_MULTIPLE_BY_64_shift				equ	6
 STATIC_MULTIPLE_BY_512_shift				equ	9
+STATIC_MULTIPLE_BY_1024_shift				equ	10
 STATIC_MULTIPLE_BY_PAGE_shift				equ	STATIC_PAGE_SIZE_shift
 
 STATIC_DIVIDE_BY_2_shift				equ	1
@@ -160,9 +161,9 @@ STATIC_COLOR_green					equ	0x0000AA00
 STATIC_COLOR_cyan					equ	0x0000AAAA
 STATIC_COLOR_red					equ	0x00AA0000
 STATIC_COLOR_magenta					equ	0x00AA00AA
-STATIC_COLOR_brown					equ	0x00AA0000
+STATIC_COLOR_brown					equ	0x00AAAA00
 STATIC_COLOR_gray_light					equ	0x00AAAAAA
-STATIC_COLOR_gray					equ	0x00555555
+STATIC_COLOR_gray					equ	0x00272727
 STATIC_COLOR_blue_light					equ	0x005555FF
 STATIC_COLOR_green_light				equ	0x0000FF00
 STATIC_COLOR_cyan_light					equ	0x0000FFFF
