@@ -36,13 +36,13 @@ tm:
 	int	KERNEL_SERVICE
 	jc	tm	; brak odpowiedzi
 
-.loop:
 	; wyczyść przestrzeń znakową
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
 	mov	ecx,	tm_string_init_end - tm_string_init
 	mov	rsi,	tm_string_init
 	int	KERNEL_SERVICE
 
+.loop:
 	; wyświetl nagówek "Ram"
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
 	mov	ecx,	tm_string_ram_end - tm_string_ram
@@ -57,52 +57,12 @@ tm:
 	; r9 - free
 	; r10 - paged
 
-	; przelicz ilość wolnej przestrzeni na odpowiednią wartość
+	; wyświetl ilość dostępnej pamięci RAM
 	mov	rax,	r9
-	shl	rax,	STATIC_MULTIPLE_BY_PAGE_shift	; zamień strony na Bajty
-	call	library_value_to_size
-
-	; formatuj ciąg wyjściowy rozmiaru
-	mov	rdi,	tm_string_ram_value
-	call	tm_ram_format
-
-	; pobierz typ wartości
-	mov	rsi,	tm_string_size_values
-	mov	bl,	byte [rsi + rbx]
-
-	; dołącz do ciągu
-	mov	byte [rdi + TR_STRING_RAM_length - 0x01],	bl
-
-	; wyświetl całkowitą część wartości
-	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	ecx,	tm_string_ram_part_one_end - tm_string_ram_part_one
-	mov	rsi,	tm_string_ram_part_one
-	int	KERNEL_SERVICE
-	mov	ecx,	0x04
-	mov	rsi,	tm_string_ram_value
-	int	KERNEL_SERVICE
-
-	; wyświetl procent reszty wartości
-	mov	ecx,	tm_string_ram_part_two_end - tm_string_ram_part_two
-	mov	rsi,	tm_string_ram_part_two
-	int	KERNEL_SERVICE
-	mov	ecx,	0x02
-	mov	rsi,	tm_string_ram_value + 0x04
-	int	KERNEL_SERVICE
-
-	; wyświetl oznaczenie wartości
-	mov	ecx,	tm_string_ram_part_tree_end - tm_string_ram_part_tree
-	mov	rsi,	tm_string_ram_part_tree
-	int	KERNEL_SERVICE
-	mov	ecx,	0x01
-	mov	rsi,	tm_string_ram_value + 0x06
-	int	KERNEL_SERVICE
-
-	jmp	$
+	call	tm_ram
 
 	; pobierz wiadomość
 	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
-	mov	ecx,	KERNEL_IPC_STRUCTURE.SIZE
 	mov	rdi,	tm_ipc_data
 	int	KERNEL_SERVICE
 	jc	.no_event	; brak wiadomości

@@ -97,8 +97,6 @@ console_sequence:
 	jmp	console_sequence.end
 
 .color_translate:
-	xchg	bx,bx
-
 	; wartość decymalna?
 	cmp	al,	STATIC_ASCII_DIGIT_9
 	ja	.color_translate_hex

@@ -163,7 +163,7 @@ STATIC_COLOR_red					equ	0x00AA0000
 STATIC_COLOR_magenta					equ	0x00AA00AA
 STATIC_COLOR_brown					equ	0x00AAAA00
 STATIC_COLOR_gray_light					equ	0x00AAAAAA
-STATIC_COLOR_gray					equ	0x00272727
+STATIC_COLOR_gray					equ	0x00404040
 STATIC_COLOR_blue_light					equ	0x005555FF
 STATIC_COLOR_green_light				equ	0x0000FF00
 STATIC_COLOR_cyan_light					equ	0x0000FFFF

@@ -4,6 +4,61 @@
 
 ;===============================================================================
 ; wejście:
+;	rax - rozmiar w Bajtach
+tm_ram:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+	push	rdi
+
+	; przelicz ilość wolnej przestrzeni na odpowiedni typ oraz resztę w procentach
+	mov	rax,	r9
+	shl	rax,	STATIC_MULTIPLE_BY_PAGE_shift	; zamień strony na Bajty
+	call	library_value_to_size
+
+	; formatuj ciąg wyjściowy rozmiaru
+	mov	rdi,	tm_string_ram_value
+	call	tm_ram_format
+
+	; pobierz typ wartości
+	mov	rsi,	tm_string_size_values
+	mov	bl,	byte [rsi + rbx]
+
+	; dołącz do ciągu
+	mov	byte [rdi + TR_STRING_RAM_length - 0x01],	bl
+
+	; wyświetl całkowitą część wartości
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	0x04
+	mov	rsi,	tm_string_ram_value
+	int	KERNEL_SERVICE
+
+	; wyświetl procent reszty wartości
+	mov	ecx,	0x02
+	mov	rsi,	tm_string_ram_value + 0x04
+	int	KERNEL_SERVICE
+
+	; wyświetl oznaczenie wartości
+	mov	ecx,	0x01
+	mov	rsi,	tm_string_ram_value + 0x06
+	int	KERNEL_SERVICE
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
 ;	rax - wartość całkowita
 ;	rdx - procent z reszty
 ;	rdi - wskaźnik docelowy konstruowanego ciągu

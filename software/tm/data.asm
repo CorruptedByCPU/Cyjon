@@ -9,7 +9,7 @@ tm_stream_meta:
 tm_string_init					db	STATIC_ASCII_SEQUENCE_CURSOR_DISABLE, STATIC_ASCII_SEQUENCE_CLEAR
 tm_string_init_end:
 
-tm_string_ram					db	"^[t1;1;1]", STATIC_ASCII_SEQUENCE_COLOR_DEFAULT, "Ram "
+tm_string_ram					db	"^[t1;1;1]", STATIC_ASCII_SEQUENCE_COLOR_DEFAULT, "RAM "
 tm_string_ram_end:
 tm_string_ram_part_one				db	STATIC_ASCII_SEQUENCE_COLOR_WHITE, STATIC_ASCII_SEQUENCE_COLOR_BACKGROUND_BLACK
 tm_string_ram_part_one_end:
