@@ -153,7 +153,7 @@ kernel_stream_release:
 ;	rdi - wskaźnik docelowy danych
 ; wyjście:
 ;	rcx - ilość przesłanych danych
-kernel_stream_in:
+kernel_stream_receive:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rdx
@@ -166,12 +166,6 @@ kernel_stream_in:
 	; zablokuj dostęp do strumienia
 	macro_lock	rbx, KERNEL_STREAM_STRUCTURE_ENTRY.semaphore
 
-	; pobierz aktualny wskaźnik początku danych strumienia
-	movzx	edx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.start]
-
-	; ustaw wskaźnik docelowy w przestrzeni strumienia
-	mov	rsi,	qword [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.address]
-
 	; w strumieniu znajdują się dane?
 	test	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
 	jz	.end	; nie
@@ -179,14 +173,16 @@ kernel_stream_in:
 	; zresetuj akumulator
 	xor	al,	al
 
+	; pobierz aktualny wskaźnik początku danych strumienia
+	movzx	edx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.start]
+
+	; ustaw wskaźnik docelowy w przestrzeni strumienia
+	mov	rsi,	qword [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.address]
+
 	; zresetuj ilość przesłanych danych do procesu
 	xor	r8,	r8
 
 .load:
-	; ostatni przesłany znak to semafor?
-	cmp	al,	STATIC_ASCII_NEW_LINE
-	je	.close	; tak, zakończ przetwarzanie strumienia
-
 	; pobierz wartość z strumienia
 	mov	al,	byte [rsi + rdx]
 
@@ -200,7 +196,7 @@ kernel_stream_in:
 	cmp	dx,	STATIC_PAGE_SIZE_byte
 	jne	.continue	; nie
 
-	; ustaw wskaźnik końca przestrzeni danych strumienia na początek
+	; przestaw wskaźnik początku przestrzeni danych strumienia
 	xor	dx,	dx
 
 .continue:
@@ -222,12 +218,15 @@ kernel_stream_in:
 	; zwróć ilość przesnałych danych
 	mov	qword [rsp],	r8
 
+	; wyłącz flagę pełny
+	and	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	~KERNEL_STREAM_FLAG_full
+
 	; przestrzeń strumienia jest pusta?
 	cmp	dx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end]
 	jne	.end	; nie
 
-	; wyłącz flagę dane oraz pełny
-	and	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	~KERNEL_STREAM_FLAG_data & ~KERNEL_STREAM_FLAG_full
+	; wyłącz flagę dane
+	and	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	~KERNEL_STREAM_FLAG_data
 
 .end:
 	; odblokuj dostęp do potoku
@@ -249,7 +248,7 @@ kernel_stream_in:
 ;	rbx - identyfikator potoku
 ;	rcx - ilość danych do przesłania
 ;	rsi - wskaźnik źródłowy danych
-kernel_stream_out:
+kernel_stream_insert:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rdx
@@ -306,7 +305,8 @@ kernel_stream_out:
 	xor	dx,	dx
 
 	; podnieś flagę dane w strumieniu oraz połóż flagę meta dane nieaktualne
-	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data & ~KERNEL_STREAM_FLAG_meta
+	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
+	and	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	~KERNEL_STREAM_FLAG_meta
 
 .continue:
 	; koniec ciągu danych?

@@ -43,6 +43,8 @@ tm:
 	int	KERNEL_SERVICE
 
 .loop:
+	xchg	bx,bx
+
 	; wyświetl nagówek "Ram"
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
 	mov	ecx,	tm_string_ram_end - tm_string_ram
@@ -56,10 +58,10 @@ tm:
 	; r8 - total
 	; r9 - free
 	; r10 - paged
-
-	; wyświetl ilość dostępnej pamięci RAM
-	mov	rax,	r9
-	call	tm_ram
+	;
+	; ; wyświetl ilość dostępnej pamięci RAM
+	; mov	rax,	r9
+	; call	tm_ram
 
 	; pobierz wiadomość
 	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive

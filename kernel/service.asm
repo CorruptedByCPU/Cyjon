@@ -346,7 +346,7 @@ kernel_service:
 	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
 
 	; wyślij ciąg znaków na standardowe wyjście
-	call	kernel_stream_out
+	call	kernel_stream_insert
 
 .process_stream_out_end:
 	; przywróć oryginalne rejestry
@@ -373,7 +373,7 @@ kernel_service:
 
 	; wyślij ciąg znaków na standardowe wyjście
 	pop	rdi	; przywróć adres docelowy bufora procesu
-	call	kernel_stream_in
+	call	kernel_stream_receive
 
 	; brak danych?
 	test	rcx,	rcx
@@ -402,7 +402,7 @@ kernel_service:
 	push	rdx
 	mov	ecx,	STATIC_BYTE_SIZE_byte
 	mov	rsi,	rsp
-	call	kernel_stream_out
+	call	kernel_stream_insert
 	pop	rdx
 
 .process_stream_out_byte_end:
