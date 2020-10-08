@@ -32,10 +32,11 @@ console:
 	; ; inicjalizacja przestrzeni konsoli
 	%include	"software/console/init.asm"
 
-.loop:
+.empty:
 	; uzupełnij strumień wejścia procesu o meta dane okna
 	call	console_meta
 
+.loop:
 	; proces powłoki jest uruchomiony?
 	mov	ax,	KERNEL_SERVICE_PROCESS_check
 	mov	rcx,	qword [console_shell_pid]
@@ -99,7 +100,7 @@ console:
 	mov	ecx,	STATIC_EMPTY	; pobierz pierwszą linię lub całą zawartość
 	mov	rdi,	qword [console_cache_address]
 	int	KERNEL_SERVICE
-	jz	.loop	; brak danych
+	jz	.empty	; brak danych
 
 	; wyświetl zawartość
 	xor	eax,	eax

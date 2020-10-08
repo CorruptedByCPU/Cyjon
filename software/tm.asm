@@ -34,7 +34,7 @@ tm:
 	mov	ecx,	CONSOLE_STRUCTURE_STREAM_META.SIZE
 	mov	rdi,	tm_stream_meta
 	int	KERNEL_SERVICE
-	jc	tm	; brak odpowiedzi
+	jc	tm	; brak aktualnych informacji
 
 	; wyczyść przestrzeń znakową
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
