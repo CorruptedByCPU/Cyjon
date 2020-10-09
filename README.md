@@ -4,6 +4,8 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 
 ![screenshot](https://raw.githubusercontent.com/blackend/cyjon/master/gui.png)
 
+If possible, please run Qemu on GNU/Linux - performance against MS/Windows is overwhelming ;)
+
 ### Software:
 
   - Qemu 5.0.0 or Bochs 2.6.11 (no SMP support on MS/Windows)
@@ -12,7 +14,7 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 
 ### Requirements:
 
-  - 12 MiB of RAM (for Full HD resolution)
+  - 16 MiB of RAM (for Full HD resolution)
   - keyboard and mouse at PS2 port
 
 ### Optional:

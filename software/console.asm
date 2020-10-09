@@ -11,6 +11,7 @@
 	%include	"kernel/header/vfs.inc"
 	%include	"kernel/header/service.inc"
 	%include	"kernel/header/ipc.inc"
+	%include	"kernel/header/stream.inc"
 	%include	"kernel/header/wm.inc"
 	%include	"kernel/macro/debug.asm"
 	;-----------------------------------------------------------------------
@@ -96,7 +97,7 @@ console:
 .input:
 	; pobierz ciąg z strumienia
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_in
-	mov	ecx,	STATIC_EMPTY	; pobierz pierwszą linię lub całą zawartość
+	mov	ecx,	STATIC_EMPTY	; pobierz całą zawartość
 	mov	rdi,	qword [console_cache_address]
 	int	KERNEL_SERVICE
 	jz	.loop	; brak danych

@@ -28,24 +28,42 @@
 
 ;===============================================================================
 tm:
+	; wyczyść przestrzeń znakową
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	tm_string_init_end - tm_string_init
+	mov	rsi,	tm_string_init
+	int	KERNEL_SERVICE
+
+.check:
 	; pobierz informacje o strumieniu wyjścia
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_meta
 	mov	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_get | KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_out
 	mov	ecx,	CONSOLE_STRUCTURE_STREAM_META.SIZE
 	mov	rdi,	tm_stream_meta
 	int	KERNEL_SERVICE
-	jc	tm	; brak odpowiedzi
-
-	; wyczyść przestrzeń znakową
-	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	ecx,	tm_string_header_end - tm_string_header
-	mov	rsi,	tm_string_header
-	int	KERNEL_SERVICE
+	jc	.check	; brak aktualnych informacji
 
 .loop:
+	; wyświetl nagówek "Ram"
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	tm_string_ram_end - tm_string_ram
+	mov	rsi,	tm_string_ram
+	int	KERNEL_SERVICE
+
+	; pobierz aktualne właściwości pamięci RAM
+	mov	ax,	KERNEL_SERVICE_SYSTEM_memory
+	int	KERNEL_SERVICE
+
+	; r8 - total
+	; r9 - free
+	; r10 - paged
+	;
+	; wyświetl ilość dostępnej pamięci RAM
+	mov	rax,	r9
+	call	tm_ram
+
 	; pobierz wiadomość
 	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
-	mov	ecx,	KERNEL_IPC_STRUCTURE.SIZE
 	mov	rdi,	tm_ipc_data
 	int	KERNEL_SERVICE
 	jc	.no_event	; brak wiadomości
@@ -54,7 +72,7 @@ tm:
 	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
 	jne	.no_event	; nie, zignoruj
 
-	; naciśnięto klawisz "Q"?
+	; naciśnięto klawisz "q"?
 	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	"q"
 	je	.end	; tak, zakończ działanie procesu
 
@@ -64,7 +82,7 @@ tm:
 
 .no_event:
 	; powrót do głównej pętli
-	jmp	.loop
+	jmp	.check
 
 .end:
 	; zakończ proces
@@ -75,4 +93,8 @@ tm:
 
 	;-----------------------------------------------------------------------
 	%include	"software/tm/data.asm"
+	%include	"software/tm/ram.asm"
+	;-----------------------------------------------------------------------
+	%include	"library/integer_to_string.asm"
+	%include	"library/value_to_size.asm"
 	;-----------------------------------------------------------------------

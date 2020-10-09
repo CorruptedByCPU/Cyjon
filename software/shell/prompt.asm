@@ -89,7 +89,7 @@ shell_prompt:
 	mov	bl,	KERNEL_SERVICE_PROCESS_RUN_FLAG_copy_out_of_parent
 	mov	rcx,	r8
 	int	KERNEL_SERVICE
-	jc	shell	; nie udało się uruchomić programu
+	jc	shell.restart	; nie udało się uruchomić programu
 
 	; czekaj na zakończenie procesu
 	mov	ax,	KERNEL_SERVICE_PROCESS_check
@@ -109,7 +109,7 @@ shell_prompt:
 	int	KERNEL_SERVICE
 
 	; powrót do pętli głównej
-	jmp	shell
+	jmp	shell.restart
 
 .error:
 	; wyświetl komunikat
