@@ -81,7 +81,8 @@ shell_prompt:
 
 	; każdy nowo uruchamiony progam ma prawo do nowej linii
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_byte
-	mov	dx,	STATIC_ASCII_NEW_LINE
+	mov	ecx,	0x01	; wyślij jeden znak nowej linii
+	mov	dl,	STATIC_ASCII_NEW_LINE
 	int	KERNEL_SERVICE
 
 	; uruchom program

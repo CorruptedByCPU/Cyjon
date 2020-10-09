@@ -17,6 +17,14 @@ tm_string_ram_part_two				db	STATIC_ASCII_SEQUENCE_COLOR_GRAY
 tm_string_ram_part_two_end:
 tm_string_ram_part_tree				db	STATIC_ASCII_SEQUENCE_COLOR_GRAY_LIGHT
 tm_string_ram_part_tree_end:
+tm_string_bar_low				db	STATIC_ASCII_SEQUENCE_COLOR_GREEN_LIGHT
+tm_string_bar_low_end:
+tm_string_bar_medium				db	STATIC_ASCII_SEQUENCE_COLOR_YELLOW
+tm_string_bar_medium_end:
+tm_string_bar_high				db	STATIC_ASCII_SEQUENCE_COLOR_RED_LIGHT
+tm_string_bar_high_end:
+
+tm_char_bar					db	"|"
 
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 tm_ipc_data:

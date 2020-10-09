@@ -89,9 +89,16 @@ library_input:
 	inc	rcx
 
 .print:
+	; zachowaj ilość znaków w buforze
+	push	rcx
+
 	; wyświetl znak na terminal
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_byte
+	mov	ecx,	0x01	; jeden raz
 	int	KERNEL_SERVICE
+
+	; przywróć ilość znakóœ w buforze
+	pop	rcx
 
 	; kontynuuj
 	jmp	.loop

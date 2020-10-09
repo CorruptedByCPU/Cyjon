@@ -386,6 +386,7 @@ kernel_service:
 
 ;-------------------------------------------------------------------------------
 ; wejście:
+;	rcx - ile kopii znaku wysłać
 ;	dl - wartość
 .process_stream_out_byte:
 	; zachowaj oryginalne rejestry
@@ -393,20 +394,31 @@ kernel_service:
 	push	rcx
 	push	rsi
 	push	rdi
+	push	rdx	; pozostaw znak na stosie
 
 	; pobierz identyfikator potoku wyjścia procesu
 	call	kernel_task_active
 	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
 
+	cmp	rcx,	1
+	je	.loop
+	xchg	bx,bx
+
+.loop:
 	; wyślij wartość na standardowe wyjście
-	push	rdx
+	push	rcx
 	mov	ecx,	STATIC_BYTE_SIZE_byte
 	mov	rsi,	rsp
 	call	kernel_stream_insert
-	pop	rdx
+	pop	rcx
+
+	; wysłano wszystkie kopie znaku?
+	dec	rcx
+	jnz	.loop	; nie
 
 .process_stream_out_byte_end:
 	; przywróć oryginalne rejestry
+	pop	rdx	; przywróć znak z stosu
 	pop	rdi
 	pop	rsi
 	pop	rcx

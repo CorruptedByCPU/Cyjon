@@ -3,8 +3,25 @@
 ;===============================================================================
 
 ;===============================================================================
-; wejście:
-;	rax - rozmiar w Bajtach
+tm_ram_bar:
+	; pierwsza część paska, zielony
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	tm_string_bar_low_end - tm_string_bar_low
+	mov	rsi,	tm_string_bar_low
+	int	KERNEL_SERVICE
+
+	; oblicz procent zajętości
+	mov	rax,	r8	; rozmiar całkowity
+	sub	rax,	r9	; rozmiar wolny
+	mov	ecx,	10	; przelicz na wartosc 1..10
+	mul	rcx
+	xor	edx,	edx
+	div	r8d
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
 tm_ram:
 	; zachowaj oryginalne rejestry
 	push	rax
