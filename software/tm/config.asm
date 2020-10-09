@@ -5,3 +5,4 @@
 %define TR_VERSION		"0.1"
 
 TR_STRING_RAM_length	equ	0x07
+TM_STRING_BAR_char	equ	"/"

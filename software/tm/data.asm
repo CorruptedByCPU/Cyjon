@@ -24,8 +24,6 @@ tm_string_bar_medium_end:
 tm_string_bar_high				db	STATIC_ASCII_SEQUENCE_COLOR_RED_LIGHT
 tm_string_bar_high_end:
 
-tm_char_bar					db	"|"
-
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 tm_ipc_data:
 	times KERNEL_IPC_STRUCTURE.SIZE		db	STATIC_EMPTY

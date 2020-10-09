@@ -93,7 +93,7 @@ library_input:
 	push	rcx
 
 	; wyświetl znak na terminal
-	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_byte
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_char
 	mov	ecx,	0x01	; jeden raz
 	int	KERNEL_SERVICE
 
