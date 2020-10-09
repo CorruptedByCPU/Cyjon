@@ -32,16 +32,25 @@ tm_ram:
 
 	; wyświetl całkowitą część wartości
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	tm_string_ram_part_one_end - tm_string_ram_part_one
+	mov	rsi,	tm_string_ram_part_one
+	int	KERNEL_SERVICE
 	mov	ecx,	0x04
 	mov	rsi,	tm_string_ram_value
 	int	KERNEL_SERVICE
 
 	; wyświetl procent reszty wartości
+	mov	ecx,	tm_string_ram_part_two_end - tm_string_ram_part_two
+	mov	rsi,	tm_string_ram_part_two
+	int	KERNEL_SERVICE
 	mov	ecx,	0x02
 	mov	rsi,	tm_string_ram_value + 0x04
 	int	KERNEL_SERVICE
 
 	; wyświetl oznaczenie wartości
+	mov	ecx,	tm_string_ram_part_tree_end - tm_string_ram_part_tree
+	mov	rsi,	tm_string_ram_part_tree
+	int	KERNEL_SERVICE
 	mov	ecx,	0x01
 	mov	rsi,	tm_string_ram_value + 0x06
 	int	KERNEL_SERVICE

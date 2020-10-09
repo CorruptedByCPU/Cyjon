@@ -2,16 +2,14 @@
 ; Copyright (C) by blackdev.org
 ;===============================================================================
 
-KERNEL_STREAM_FLAG_data		equ	00000001b	; istnieją dane w strumieniu
-KERNEL_STREAM_FLAG_full		equ	00000010b	; w strumieniu nie ma miejsca
-KERNEL_STREAM_FLAG_meta		equ	00000100b	; meta dane są aktualne
+KERNEL_STREAM_FLAG_meta		equ	00000001b	; meta dane są aktualne
 
 struc	KERNEL_STREAM_STRUCTURE_ENTRY
 	.address		resb	8
 	.data:
 	.start			resb	2
 	.end			resb	2
-	.reserved		resb	2
+	.free			resb	2
 	.flags			resb	1
 	.semaphore		resb	1
 	.meta			resb	KERNEL_STREAM_META_SIZE_byte
@@ -93,17 +91,21 @@ kernel_stream:
 
 .found:
 	; przygotuj przestrzeń pod strumień
-	call	kernel_memory_alloc_page
+	mov	ecx,	KERNEL_STREAM_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
+	call	kernel_memory_alloc
 	jc	.error	; brak wolnej przestrzeni
 
 	; wyczyść przestrzeń strumienia
-	call	kernel_page_drain
+	call	kernel_page_drain_few
 
 	; zachowaj adres przestrzeni strumienia
 	mov	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.address],	rdi
 
 	; wyczyść wskaźniki początku końca danych w strumieniu
 	mov	dword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.data],	STATIC_EMPTY
+
+	; strumień nie posiada danych
+	mov	word [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.free],	KERNEL_STREAM_SIZE_byte
 
 	; zresetuj flagi stanu strumienia
 	mov	byte [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	STATIC_EMPTY
@@ -162,13 +164,12 @@ kernel_stream_receive:
 	push	r8
 	push	rcx
 
-.retry:
 	; zablokuj dostęp do strumienia
 	macro_lock	rbx, KERNEL_STREAM_STRUCTURE_ENTRY.semaphore
 
 	; w strumieniu znajdują się dane?
-	test	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
-	jz	.end	; nie
+	cmp	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.free],	KERNEL_STREAM_SIZE_byte
+	je	.end	; nie
 
 	; zresetuj akumulator
 	xor	al,	al
@@ -183,6 +184,10 @@ kernel_stream_receive:
 	xor	r8,	r8
 
 .load:
+	; przesłano znak nowej linii?
+	cmp	al,	STATIC_ASCII_NEW_LINE
+	je	.close	; tak
+
 	; pobierz wartość z strumienia
 	mov	al,	byte [rsi + rdx]
 
@@ -193,7 +198,7 @@ kernel_stream_receive:
 	inc	dx
 
 	; koniec przestrzeni strumienia?
-	cmp	dx,	STATIC_PAGE_SIZE_byte
+	cmp	dx,	KERNEL_STREAM_SIZE_byte
 	jne	.continue	; nie
 
 	; przestaw wskaźnik początku przestrzeni danych strumienia
@@ -218,15 +223,8 @@ kernel_stream_receive:
 	; zwróć ilość przesnałych danych
 	mov	qword [rsp],	r8
 
-	; wyłącz flagę pełny
-	and	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	~KERNEL_STREAM_FLAG_full
-
-	; przestrzeń strumienia jest pusta?
-	cmp	dx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end]
-	jne	.end	; nie
-
-	; wyłącz flagę dane
-	and	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	~KERNEL_STREAM_FLAG_data
+	; aktualna ilość wolnego miejsca w strumieniu
+	add	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.free],	r8w
 
 .end:
 	; odblokuj dostęp do potoku
@@ -246,7 +244,7 @@ kernel_stream_receive:
 ;===============================================================================
 ; wejście:
 ;	rbx - identyfikator potoku
-;	rcx - ilość danych do przesłania
+;	cx - ilość danych do przesłania
 ;	rsi - wskaźnik źródłowy danych
 kernel_stream_insert:
 	; zachowaj oryginalne rejestry
@@ -267,21 +265,11 @@ kernel_stream_insert:
 	mov	rdi,	qword [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.address]
 
 .next:
-	; w potoku jest wolna przestrzeń?
-	cmp	dx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.start]
-	jne	.insert	; tak
+	; w strumieniu jest wystarczająco wolnej przestrzeni?
+	cmp	cx,	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.free]
+	jbe	.insert	; tak
 
-	; w strumieniu znajdują się dane?
-	test	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
-	jz	.insert	; nie
-
-	; zachowaj aktualny wskaźnik końca danych strumienia
-	mov	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end],	dx
-
-	; podnieś flagę pełny w strumieniu
-	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_full
-
-	; odblokuj dostęp do potoku
+	; odblokuj dostęp do strumienia
 	mov	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.semaphore],	STATIC_FALSE
 
 	; spróbuj raz jeszcze
@@ -298,15 +286,11 @@ kernel_stream_insert:
 	inc	dx
 
 	; koniec przestrzeni strumienia?
-	cmp	dx,	STATIC_PAGE_SIZE_byte
+	cmp	dx,	KERNEL_STREAM_SIZE_byte
 	jne	.continue	; nie
 
 	; ustaw wskaźnik końca przestrzeni danych strumienia na początek
 	xor	dx,	dx
-
-	; podnieś flagę dane w strumieniu oraz połóż flagę meta dane nieaktualne
-	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
-	and	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	~KERNEL_STREAM_FLAG_meta
 
 .continue:
 	; koniec ciągu danych?
@@ -316,15 +300,18 @@ kernel_stream_insert:
 	; zachowaj aktualny wskaźnik końca danych strumienia
 	mov	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.end],	dx
 
-	; podnieś flagę danych w strumieniu
-	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_data
+	; pozostała ilość wolnego miejsca w strumieniu
+	pop	rcx
+	sub	word [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.free],	cx
+
+	; wyłącz flagę: meta
+	and	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	~KERNEL_STREAM_FLAG_meta
 
 .end:
 	; odblokuj dostęp do potoku
 	mov	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.semaphore],	STATIC_FALSE
 
 	; przywróć oryginalne rejestry
-	pop	rcx
 	pop	rdi
 	pop	rsi
 	pop	rdx

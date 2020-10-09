@@ -4,7 +4,7 @@
 
 	; przygotuj przestrzeń pod dane przychodzące z standardowego wejścia
 	mov	ax,	KERNEL_SERVICE_PROCESS_memory_alloc
-	mov	ecx,	STATIC_PAGE_SIZE_byte
+	mov	ecx,	KERNEL_STREAM_SIZE_byte
 	int	KERNEL_SERVICE
 
 	; zachowaj adres bufora

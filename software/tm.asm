@@ -28,23 +28,22 @@
 
 ;===============================================================================
 tm:
-	; pobierz informacje o strumieniu wyjścia
-	mov	ax,	KERNEL_SERVICE_PROCESS_stream_meta
-	mov	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_get | KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_out
-	mov	ecx,	CONSOLE_STRUCTURE_STREAM_META.SIZE
-	mov	rdi,	tm_stream_meta
-	int	KERNEL_SERVICE
-	jc	tm	; brak aktualnych informacji
-
 	; wyczyść przestrzeń znakową
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
 	mov	ecx,	tm_string_init_end - tm_string_init
 	mov	rsi,	tm_string_init
 	int	KERNEL_SERVICE
 
-.loop:
-	xchg	bx,bx
+.check:
+	; pobierz informacje o strumieniu wyjścia
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_meta
+	mov	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_get | KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_out
+	mov	ecx,	CONSOLE_STRUCTURE_STREAM_META.SIZE
+	mov	rdi,	tm_stream_meta
+	int	KERNEL_SERVICE
+	jc	.check	; brak aktualnych informacji
 
+.loop:
 	; wyświetl nagówek "Ram"
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
 	mov	ecx,	tm_string_ram_end - tm_string_ram
@@ -59,9 +58,9 @@ tm:
 	; r9 - free
 	; r10 - paged
 	;
-	; ; wyświetl ilość dostępnej pamięci RAM
-	; mov	rax,	r9
-	; call	tm_ram
+	; wyświetl ilość dostępnej pamięci RAM
+	mov	rax,	r9
+	call	tm_ram
 
 	; pobierz wiadomość
 	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
@@ -83,7 +82,7 @@ tm:
 
 .no_event:
 	; powrót do głównej pętli
-	jmp	.loop
+	jmp	.check
 
 .end:
 	; zakończ proces
