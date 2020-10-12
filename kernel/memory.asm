@@ -633,9 +633,9 @@ kernel_memory_mark:
 	cmp	r13,	kernel_page_RECORDS_amount
 	jnb	.pml3	; tak
 
-	; pobierz następny rekord w tablicy PML2
-	add	r9,	STATIC_QWORD_SIZE_byte
+	; pobierz kolejny rekord w tablicy PML2
 	mov	r8,	qword [r9]
+	add	r9,	STATIC_QWORD_SIZE_byte	; przestaw wskaźnik na przyszły rekord
 
 	; usuń flagi z adresu tablicy PML3
 	and	r8w,	STATIC_PAGE_mask
@@ -651,9 +651,9 @@ kernel_memory_mark:
 	cmp	r14,	kernel_page_RECORDS_amount
 	jnb	.pml4	; tak
 
-	; pobierz następny rekord w tablicy PML3
-	add	r10,	STATIC_QWORD_SIZE_byte
+	; pobierz kolejny rekord w tablicy PML3
 	mov	r9,	qword [r10]
+	add	r10,	STATIC_QWORD_SIZE_byte	; przestaw wskaźnik na przyszły rekord
 
 	; usuń flagi z adresu tablicy PML3
 	and	r9w,	STATIC_PAGE_mask
@@ -669,9 +669,9 @@ kernel_memory_mark:
 	cmp	r15,	kernel_page_RECORDS_amount
 	jnb	.error	; tak
 
-	; pobierz następny rekord w tablicy PML4
-	add	r11,	STATIC_QWORD_SIZE_byte
+	; pobierz kolejny rekord w tablicy PML4
 	mov	r10,	qword [r10]
+	add	r11,	STATIC_QWORD_SIZE_byte	; przestaw wskaźnik na przyszły rekord
 
 	; usuń flagi z adresu tablicy PML3
 	and	r10w,	STATIC_PAGE_mask
