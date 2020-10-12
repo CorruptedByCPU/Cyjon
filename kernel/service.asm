@@ -84,8 +84,8 @@ kernel_service:
 	je	.process_stream_in	; tak
 
 	; przesłać jeden Bajt na standardowe wyjście?
-	cmp	ax,	KERNEL_SERVICE_PROCESS_stream_out_byte
-	je	.process_stream_out_byte	; tak
+	cmp	ax,	KERNEL_SERVICE_PROCESS_stream_out_char
+	je	.process_stream_out_char	; tak
 
 	; przetworzyć meta dane strumienia?
 	cmp	ax,	KERNEL_SERVICE_PROCESS_stream_meta
@@ -386,27 +386,36 @@ kernel_service:
 
 ;-------------------------------------------------------------------------------
 ; wejście:
+;	rcx - ile kopii znaku wysłać
 ;	dl - wartość
-.process_stream_out_byte:
+.process_stream_out_char:
 	; zachowaj oryginalne rejestry
 	push	rbx
 	push	rcx
 	push	rsi
 	push	rdi
+	push	rdx	; pozostaw znak na stosie
 
 	; pobierz identyfikator potoku wyjścia procesu
 	call	kernel_task_active
 	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
 
-	; wyślij wartość na standardowe wyjście
-	push	rdx
+	; wyświetl znak N razy
+	mov	rdx,	rcx
 	mov	ecx,	STATIC_BYTE_SIZE_byte
 	mov	rsi,	rsp
-	call	kernel_stream_insert
-	pop	rdx
 
-.process_stream_out_byte_end:
+.loop:
+	; wyślij wartość na standardowe wyjście
+	call	kernel_stream_insert
+
+	; wysłano wszystkie kopie znaku?
+	dec	rdx
+	jnz	.loop	; nie
+
+.process_stream_out_char_end:
 	; przywróć oryginalne rejestry
+	pop	rdx	; przywróć znak z stosu
 	pop	rdi
 	pop	rsi
 	pop	rcx

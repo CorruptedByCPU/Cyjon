@@ -57,9 +57,11 @@ tm:
 	; r8 - total
 	; r9 - free
 	; r10 - paged
-	;
+
+	; wyświetl pasek obciążenia pamięci RAM
+	call	tm_ram_bar
+
 	; wyświetl ilość dostępnej pamięci RAM
-	mov	rax,	r9
 	call	tm_ram
 
 	; pobierz wiadomość

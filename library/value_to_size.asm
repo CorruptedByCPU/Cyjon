@@ -58,8 +58,11 @@ library_value_to_size:
 	mov	rax,	rdx
 	mov	edx,	100
 	shr	rcx,	STATIC_MULTIPLE_BY_1024_shift	; koryguj podstawę wyniku
-	div	rcx
 	mul	rdx
+	div	rcx
+
+	; zwróć procent
+	mov	rdx,	rax
 
 .end:
 	; przywróć oryginalne rejestry

@@ -2,7 +2,7 @@
 plugin_ctrl: unmapped=true, biosdev=true, speaker=true, extfpuirq=true, parallel=true, serial=true, iodebug=true
 config_interface: textconfig
 display_library: x, options="gui_debug"
-memory: host=12, guest=12
+memory: host=16, guest=16
 romimage: file="/usr/share/bochs/BIOS-bochs-latest", address=0x00000000, options=none
 vgaromimage: file="/usr/share/bochs/VGABIOS-lgpl-latest"
 boot: disk
