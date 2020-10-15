@@ -126,20 +126,24 @@ kernel_service:
 
 	; rozwiąż ścieżkę do programu
 	call	kernel_vfs_path_resolve
-	jc	.process_run_end	; błąd, niepoprawna ścieżka
+	jc	.process_run_error	; błąd, niepoprawna ścieżka
 
 	; odszukaj program w danym katalogu
 	call	kernel_vfs_file_find
-	jc	.process_run_end	; błąd, pliku nie znaleziono
+	jc	.process_run_error	; błąd, pliku nie znaleziono
 
 	; uruchom program
 	call	kernel_exec
+	jc	.process_run_error	; program dodany do kolejki zadań
 
 	; zwróć identyfikator uruchomionego procesu
 	mov	qword [rsp],	rcx
 
 	; utwórz potok wejścia procesu
 	call	kernel_stream
+	jc	.process_run_no_memory	; brak wystarczającej przestrzeni pamięci
+
+	; zachowaj wskaźnik strumienia wejście procesu
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.in],	rsi
 
 	; użyć tego samego strumienia wyjścia co rodzic?
@@ -149,7 +153,7 @@ kernel_service:
 	; zachowaj wskaźnik struktury procesu
 	push	rdi
 
-	; pobierz identyfikator potoku wyjścia rodzica
+	; pobierz identyfikator strumienia wyjścia rodzica
 	call	kernel_task_active
 	mov	rsi,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
 
@@ -159,9 +163,25 @@ kernel_service:
 	; kontynuuj
 	jmp	.process_run_ready
 
+.process_run_no_memory:
+	; kod błędu
+	mov	eax,	KERNEL_ERROR_memory_low
+
+.process_run_revoke:
+	; oznacz proces jako zamknięty
+	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_closed
+
+.process_run_error:
+	; zwróć kod błędu
+	mov	qword [rsp],	rax
+
+	; koniec obsługi procedury
+	jmp	.process_run_end
+
 .process_run_no_copy_out_to_parent:
-	; przygotuj potok wyjścia procesu
+	; przygotuj strumień wyjścia procesu
 	call	kernel_stream
+	jc	.process_run_no_memory	; brak wystarczającej przestrzeni pamięci
 
 	; przekierować wyjście dziecka na wejście rodzica?
 	test	bl,	KERNEL_SERVICE_PROCESS_RUN_FLAG_out_to_in_parent
@@ -173,7 +193,7 @@ kernel_service:
 	; zachowaj wskaźnik struktury procesu
 	push	rdi
 
-	; pobierz identyfikator potoku wejścia rodzica
+	; pobierz identyfikator strumienia wejścia rodzica
 	call	kernel_task_active
 	mov	rsi,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
 
@@ -181,7 +201,7 @@ kernel_service:
 	pop	rdi
 
 .process_run_ready:
-	; załaduj identyfikator potoku na wyjście procesu
+	; załaduj identyfikator strumienia na wyjście procesu
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.out],	rsi
 
 	; oznacz proces jako gotowy do przetwarzania
@@ -192,9 +212,6 @@ kernel_service:
 	pop	rcx
 	pop	rdi
 	pop	rsi
-
-	; ; zwróć kod błędu
-	; mov	qword [rsp],	rax
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
@@ -337,11 +354,11 @@ kernel_service:
 	push	rbx
 	push	rdi
 
-	; brak ciągu dla potoku?
+	; brak ciągu dla strumienia?
 	test	rcx,	rcx
 	jz	.process_stream_out_end	 ; tak
 
-	; pobierz identyfikator potoku wyjścia procesu
+	; pobierz identyfikator strumienia wyjścia procesu
 	call	kernel_task_active
 	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
 
@@ -367,7 +384,7 @@ kernel_service:
 	push	rbx
 	push	rdi
 
-	; pobierz identyfikator potoku wejścia procesu
+	; pobierz identyfikator strumienia wejścia procesu
 	call	kernel_task_active
 	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
 
@@ -396,7 +413,7 @@ kernel_service:
 	push	rdi
 	push	rdx	; pozostaw znak na stosie
 
-	; pobierz identyfikator potoku wyjścia procesu
+	; pobierz identyfikator strumienia wyjścia procesu
 	call	kernel_task_active
 	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
 

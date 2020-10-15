@@ -4,7 +4,7 @@
 
 %define	KERNEL_name					"Cyjon"
 %define	KERNEL_version					"0"
-%define	KERNEL_revision					"1290"
+%define	KERNEL_revision					"1294"
 %define	KERNEL_architecture				"x86_64"
 
 KERNEL_BASE_address					equ	0x0000000000100000
@@ -32,3 +32,6 @@ KERNEL_VIDEO_DEPTH_bit					equ	32
 ; ERROR
 ;===============================================================================
 KERNEL_ERROR_memory_low					equ	0x0001
+KERNEL_ERROR_vfs_file_not_found				equ	0x0002
+KERNEL_ERROR_vfs_file_read				equ	0x0003
+KERNEL_ERROR_vfs_file_not_directory			equ	0x0004

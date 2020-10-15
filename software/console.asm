@@ -48,6 +48,7 @@ console:
 	mov	rsi,	console_window
 	call	library_bosu_close
 
+.terminate:
 	; zakończ działanie konsoli
 	xor	ax,	ax
 	int	KERNEL_SERVICE

@@ -120,6 +120,24 @@ kernel_wm_irq:
 	; zarejestruj obiekt
 	call	kernel_wm_object_insert
 
+	; pozycjonuj obiekt domyślnie na środku przestrzeni roboczej
+
+	; oś X
+	mov	rax,	qword [kernel_video_width_pixel]
+	mov	rbx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	shr	rax,	STATIC_DIVIDE_BY_2_shift
+	shr	rbx,	STATIC_DIVIDE_BY_2_shift
+	sub	rax,	rbx
+	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x],	rax
+
+	; oś Y
+	mov	rax,	qword [kernel_video_height_pixel]
+	mov	rbx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	shr	rax,	STATIC_DIVIDE_BY_2_shift
+	shr	rbx,	STATIC_DIVIDE_BY_2_shift
+	sub	rax,	rbx
+	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y],	rax
+
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rsi

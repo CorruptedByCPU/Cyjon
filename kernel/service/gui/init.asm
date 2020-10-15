@@ -204,4 +204,7 @@ kernel_gui_init:
 	call	kernel_page_drain
 	mov	qword [kernel_gui_taskbar_list_address],	rdi	; zachowaj wskaźnik
 
+	; uruchom domyślnie program Console
+	call	kernel_gui_event_console
+
 	macro_debug	"kernel_gui_init"
