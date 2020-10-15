@@ -191,7 +191,9 @@ kernel_service:
 	jz	.process_run_ready	; nie
 
 	; zwolnij przygotowany potok
+	xchg	rsi,	rdi
 	call	kernel_stream_release
+	xchg	rdi,	rsi
 
 	; zachowaj wskaźnik struktury procesu
 	push	rdi

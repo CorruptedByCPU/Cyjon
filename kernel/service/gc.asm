@@ -10,13 +10,45 @@ service_gc:
 	; cdn
 	xchg	bx,bx
 
+	;-----------------------------------------------------------------------
+
+	; zamknij wszystkie okna utworzone przez proces
+	mov	rax,	qword [rsi + KERNEL_TASK_STRUCTURE.pid]
+	call	kernel_wm_object_drain
+
+	;-----------------------------------------------------------------------
+
+	; pobierz identyfikator strumienia wejścia procesu
+	mov	rdi,	qword [rsi + KERNEL_TASK_STRUCTURE.in]
+
+	; strumień wejścia jest własnością procesu?
+	test	qword [rsi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_stream_in
+	jnz	.stream_in_unique	; nie
+
+	; zwolnij strumień
+	call	kernel_stream_release
+
+.stream_in_unique:
+	; pobierz identyfikator strumienia wejścia procesu
+	mov	rdi,	qword [rsi + KERNEL_TASK_STRUCTURE.out]
+
+	; strumień wejścia jest własnością procesu?
+	test	qword [rsi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_stream_out
+	jnz	.stream_out_unique	; nie
+
+	; zwolnij strumień
+	call	kernel_stream_release
+
+.stream_out_unique:
+	;-----------------------------------------------------------------------
+
 	; zapamiętaj adres tablicy PML4 procesu
 	mov	r11,	qword [rsi + KERNEL_TASK_STRUCTURE.cr3]
 
 	; ustaw wskaźnik na podstawę przestrzeni stosu kontekstu
 	mov	rax,	KERNEL_MEMORY_HIGH_VIRTUAL_address
 
-	; pobierz rozmiar stosu wątku
+	; pobierz rozmiar stosu kontekstu wątku
 	movzx	ecx,	word [rsi + KERNEL_TASK_STRUCTURE.stack]
 
 	; koryguj pozycję wskaźnika

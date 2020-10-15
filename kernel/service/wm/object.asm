@@ -4,6 +4,94 @@
 
 ;===============================================================================
 ; wejście:
+;	rax - PID procesu
+kernel_wm_object_drain:
+	; zachowaj oryginalne rejestry
+	push	rsi
+
+.next:
+	; zamknij wszystkie obiekty należące do procesu
+	call	kernel_wm_object_by_pid
+	jc	.end	; wszystkie zamknięte
+
+	; oznacz obiekt jako nieaktywny
+	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_visible & KERNEL_WM_OBJECT_FLAG_undraw
+
+.wait:
+	; obiekt został usunięty z przestrzeni roboczej ekranu?
+	cmp	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	STATIC_EMPTY
+	jne	.wait	; nie, czekaj
+
+	; usuń obiekt
+	call	kernel_wm_object_delete
+
+	; wykonaj dla pozostałych obiektów należących do procesu
+	jmp	.next
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rax - PID procesu
+; wyjście:
+;	Flaga CF, jeśli nie znaleziono
+;	rsi - wskaźnik do obiektu na liście
+kernel_wm_object_by_pid:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rsi
+
+	; na liście znajdują się obiekty?
+	cmp	qword [kernel_wm_object_list_records],	STATIC_EMPTY
+	je	.error	; nie
+
+	; ilość obiektów na liście
+	mov	rcx,	qword [kernel_wm_object_list_records]
+
+	; pobierz wskaźnik początku listy obiektów
+	mov	rsi,	qword [kernel_wm_object_list_address]
+
+.loop:
+	; poszukiwany identyfikator?
+	cmp	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid],	rax
+	je	.found	; tak
+
+	; przesuń wskaźnik na następny obiekt
+	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
+
+	; koniec obiektów?
+	dec	rcx
+	jnz	.loop	; nie, szukaj dalej
+
+.error:
+	; Flaga, błąd
+	stc
+
+	; koniec obsługi procedury
+	jmp	.end
+
+.found:
+	; zwróć wskaźnik do obiektu
+	mov	qword [rsp],	rsi
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rcx
+
+	; powrót z procedury
+	ret
+
+	; informacja dla Bochs
+	macro_debug	"kernel_wm_object_by_pid"
+
+;===============================================================================
+; wejście:
 ;	rbx - identyfikator okna
 ; wyjście:
 ;	Flaga CF, jeśli nie znaleziono
@@ -610,61 +698,6 @@ kernel_wm_object_id_new:
 	ret
 
 	macro_debug	"kernel_wm_object_id"
-
-; ;===============================================================================
-; ; wejście:
-; ;	rbx - identyfikator okna
-; ; wyjście:
-; ;	Flaga CF, jeśli nie znaleziono
-; ;	rdi - wskaźnik do obiektu na liście
-; kernel_wm_object_find_by_id:
-; 	; zachowaj oryginalne rejestry
-; 	push	rcx
-; 	push	rdi
-;
-; 	; na liście znajdują się obiekty?
-; 	cmp	qword [kernel_wm_object_list_records],	STATIC_EMPTY
-; 	je	.error	; nie
-;
-; 	; ilość obiektów na liście
-; 	mov	rcx,	qword [kernel_wm_object_list_records]
-;
-; 	; pobierz wskaźnik początku listy obiektów
-; 	mov	rdi,	qword [kernel_wm_object_list_address]
-;
-; .loop:
-; 	; poszukiwany identyfikator?
-; 	cmp	qword [rdi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id],	rbx
-; 	je	.found	; tak
-;
-; 	; przesuń wskaźnik na następny obiekt
-; 	add	rdi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
-;
-; 	; koniec obiektów?
-; 	dec	rcx
-; 	jnz	.loop	; nie, szukaj dalej
-;
-; .error:
-; 	; Flaga, błąd
-; 	stc
-;
-; 	; koniec obsługi procedury
-; 	jmp	.end
-;
-; .found:
-; 	; zwróć wskaźnik do obiektu
-; 	mov	qword [rsp],	rdi
-;
-; .end:
-; 	; przywróć oryginalne rejestry
-; 	pop	rdi
-; 	pop	rcx
-;
-; 	; powrót z procedury
-; 	ret
-;
-; 	; informacja dla Bochs
-; 	macro_debug	"service desu object find by id"
 
 ;===============================================================================
 ; wejście:
