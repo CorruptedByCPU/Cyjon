@@ -6,7 +6,7 @@
 	mov	ax,	KERNEL_SERVICE_PROCESS_memory_alloc
 	mov	ecx,	KERNEL_STREAM_SIZE_byte
 	int	KERNEL_SERVICE
-	jc	console.terminate	; brak wystarczającej przestrzeni pamięci
+	jc	console.close	; brak wystarczającej przestrzeni pamięci
 
 	; zachowaj adres bufora
 	mov	qword [console_cache_address],	rdi
@@ -14,7 +14,7 @@
 	; utwórz okno
 	mov	rsi,	console_window
 	call	library_bosu
-	jc	console.terminate	; brak wystarczającej przestrzeni pamięci
+	jc	console.close	; brak wystarczającej przestrzeni pamięci
 
 	; wylicz adres wskaźnika przestrzeni danych elementu "terminal"
 	mov	rax,	qword [console_window.element_terminal + LIBRARY_BOSU_STRUCTURE_ELEMENT_DRAW.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
@@ -40,7 +40,7 @@
 	mov	ecx,	console_shell_file_end - console_shell_file
 	mov	rsi,	console_shell_file
 	int	KERNEL_SERVICE
-	jc	console.terminate	; nie udało się uruchomić procesu powłoki
+	jc	console.close	; nie udało się uruchomić procesu powłoki
 
 	; wyświetl okno
 	mov	al,	KERNEL_WM_WINDOW_update

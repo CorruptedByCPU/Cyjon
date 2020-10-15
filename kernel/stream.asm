@@ -130,20 +130,20 @@ kernel_stream:
 
 ;===============================================================================
 ; wejście:
-;	rsi - identyfikator strumienia
+;	rdi - identyfikator strumienia
 kernel_stream_release:
 	; zachowaj oryginalne rejestry
 	push	rdi
 
 	; zwolnij przestrzeń strumienia
-	mov	rdi,	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.address]
+	mov	rdi,	qword [rdi + KERNEL_STREAM_STRUCTURE_ENTRY.address]
 	call	kernel_memory_release_page
-
-	; zwolnij wpis w tablicy strumieni
-	mov	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.address],	STATIC_EMPTY
 
 	; przywróć oryginalne rejestry
 	pop	rdi
+
+	; zwolnij wpis w tablicy strumieni
+	mov	qword [rdi + KERNEL_STREAM_STRUCTURE_ENTRY.address],	STATIC_EMPTY
 
 	; powrót z procedury
 	ret
