@@ -37,6 +37,7 @@ kernel_exec:
 	mov	r12,	rcx
 
 	; zarezerwuj ilość stron, niezbędną do inicjalizacji procesu
+	mov	eax,	KERNEL_ERROR_memory_low	; kod błędu
 	add	rcx,	14
 	call	kernel_page_secure
 	jc	.error	; brak wystarczającej ilości pamięci
@@ -147,12 +148,14 @@ kernel_exec:
 	; załaduj kod programu do przestrzeni pamięci procesu
 	mov	rdi,	SOFTWARE_base_address
 	call	kernel_vfs_file_read
+	jc	.error	; nie udało się załadować pliku do przestrzeni pamięci
 
 	; przywróć przestrzeń pamięci na rodzica
 	mov	cr3,	rax
 	;-----------------------------------------------------------------------
 
 	; wstaw proces do kolejki zadań
+	mov	eax,	KERNEL_ERROR_memory_low	; kod błędu
 	movzx	ecx,	byte [rsi + KERNEL_VFS_STRUCTURE_KNOT.length]
 	add	rsi,	KERNEL_VFS_STRUCTURE_KNOT.name
 	call	kernel_task_add

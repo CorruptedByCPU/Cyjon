@@ -33,12 +33,10 @@ KERNEL_VFS_FILE_FLAGS_reserved_bit			equ	1
 
 KERNEL_VFS_ERROR_FILE_exists				equ	0x01
 KERNEL_VFS_ERROR_DIRECTORY_full				equ	0x02
-KERNEL_VFS_ERROR_FILE_not_exists			equ	0x03
 KERNEL_VFS_ERROR_FILE_name_long				equ	0x04
 KERNEL_VFS_ERROR_FILE_name_short			equ	0x05
 KERNEL_VFS_ERROR_FILE_low_memory			equ	0x06
 KERNEL_VFS_ERROR_FILE_overflow				equ	0x07	; np. niedozwolony znak przesyłany do urządzenia znakowego
-KERNEL_VFS_ERROR_FILE_no_directory			equ	0x08
 
 ; struktura Magicznego Węzła wirtualnego systemu plików jądra systemu
 struc	KERNEL_VFS_STRUCTURE_MAGICKNOT
@@ -268,7 +266,7 @@ kernel_vfs_path_resolve:
 	jz	.leave	; tak
 
 	; kod błędu, pliku nie znaleziono
-	mov	eax,	KERNEL_VFS_ERROR_FILE_not_exists
+	mov	eax,	KERNEL_ERROR_vfs_file_not_found
 
 	; plik istnieje?
 	call	kernel_vfs_file_find
@@ -283,7 +281,7 @@ kernel_vfs_path_resolve:
 
 .no_link:
 	; kod błędu, to nie jest katalog
-	mov	eax,	KERNEL_VFS_ERROR_FILE_no_directory
+	mov	eax,	KERNEL_ERROR_vfs_file_not_directory
 
 	; plik jest katalogiem?
 	bt	word [rdi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_directory_bit
@@ -325,7 +323,7 @@ kernel_vfs_path_resolve:
 
 .empty:
 	; kod błędu, błąd ścieżki
-	mov	rax,	KERNEL_VFS_ERROR_FILE_not_exists
+	mov	eax,	KERNEL_ERROR_vfs_file_not_found
 
 .error:
 	; zwróć kod błędu
@@ -458,7 +456,8 @@ kernel_vfs_file_touch:
 ;	rsi - wskaźnik do nazwy plik
 ;	rdi - supeł/identyfikator katalogu przeszukiwanego
 ; wyjście
-;	Flaga CF - ustawiona jeśli pliku nie znaleziono
+;	Flaga CF - jeśli błąd
+;	rax - kod błędu
 ;	rdi - wskaźnik supła opisującego plik
 kernel_vfs_file_find:
 	; zachowaj oryginalne rejestry
@@ -513,7 +512,8 @@ kernel_vfs_file_find:
 	test	rdi,	rdi	; koniec bloków danych?
 	jnz	.prepare	; przeszukaj następny blok danych katalogu
 
-	; brak poszukiwanego pliku
+	; brak poszukiwanego pliku, zwróć kod błędu
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte * 0x03],	KERNEL_ERROR_vfs_file_not_found
 
 	; flaga, błąd
 	stc
