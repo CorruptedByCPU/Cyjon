@@ -160,6 +160,9 @@ kernel_service:
 	; przywróć wskaźnik struktury procesu
 	pop	rdi
 
+	; strumień wyjścia został odziedziczony
+	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_stream_out
+
 	; kontynuuj
 	jmp	.process_run_ready
 
@@ -199,6 +202,9 @@ kernel_service:
 
 	; przywróć wskaźnik struktury procesu
 	pop	rdi
+
+	; strumień wyjścia został przekierowany
+	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_stream_out
 
 .process_run_ready:
 	; załaduj identyfikator strumienia na wyjście procesu

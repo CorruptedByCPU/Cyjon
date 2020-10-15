@@ -3,9 +3,12 @@
 ;===============================================================================
 
 ;===============================================================================
-service_tresher:
+service_gc:
 	; szukaj zakończonego procesu
-	call	service_tresher_search
+	call	service_gc_search
+
+	; cdn
+	xchg	bx,bx
 
 	; zapamiętaj adres tablicy PML4 procesu
 	mov	r11,	qword [rsi + KERNEL_TASK_STRUCTURE.cr3]
@@ -51,14 +54,14 @@ service_tresher:
 	inc	qword [kernel_task_free]
 
 	; szukaj nowego procesu do zwolnienia
-	jmp	service_tresher
+	jmp	service_gc
 
-	macro_debug	"service_tresher"
+	macro_debug	"service_gc"
 
 ;===============================================================================
 ; wyjście:
 ;	rsi - wskaźnik do znalezionego rekordu
-service_tresher_search:
+service_gc_search:
 	; zachowaj oryginalne rejestry
 	push	rcx
 
@@ -93,4 +96,4 @@ service_tresher_search:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_tresher_search"
+	macro_debug	"service_gc_search"
