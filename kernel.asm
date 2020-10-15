@@ -71,12 +71,12 @@ kernel:
 	%include	"kernel/driver/storage/ide.asm"
 	%include	"kernel/driver/serial.asm"
 	;-----------------------------------------------------------------------
-	%include	"kernel/service/tresher.asm"
-	%include	"kernel/service/http.asm"
-	%include	"kernel/service/tx.asm"
-	%include	"kernel/service/network.asm"
+	%include	"kernel/service/gc.asm"
 	%include	"kernel/service/wm.asm"
 	%include	"kernel/service/gui.asm"
+	%include	"kernel/service/network.asm"
+	%include	"kernel/service/tx.asm"
+	%include	"kernel/service/http.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/color.asm"
 	%include	"library/integer_to_string.asm"

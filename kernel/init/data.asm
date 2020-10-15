@@ -25,9 +25,9 @@ kernel_init_ap_count				db	STATIC_EMPTY
 kernel_init_apic_id_highest			db	STATIC_EMPTY
 
 kernel_init_services_list:
-						dq	service_tresher
-						db	7
-						db	"tresher"
+						dq	service_gc
+						db	2
+						db	"gc"
 						dq	kernel_wm
 						db	2
 						db	"wm"

@@ -14,6 +14,8 @@ KERNEL_TASK_FLAG_service		equ	0000000000000100b
 KERNEL_TASK_FLAG_processing		equ	0000000000001000b	; oznaczenie wpisu aktualnie przerwarzanego (obsługiwanego przez jeden z procesorów)
 KERNEL_TASK_FLAG_secured		equ	0000000000010000b	; oznaczenie wpisu zajętego
 KERNEL_TASK_FLAG_thread			equ	0000000000100000b
+KERNEL_TASK_FLAG_stream_in		equ	0000000001000000b	; strumień wejścia został przekierowany lub odziedziczony
+KERNEL_TASK_FLAG_stream_out		equ	0000000010000000b	; strumień wyjścia został przekierowany lub odziedziczony
 
 KERNEL_TASK_FLAG_active_bit		equ	0
 KERNEL_TASK_FLAG_closed_bit		equ	1
@@ -21,6 +23,8 @@ KERNEL_TASK_FLAG_service_bit		equ	2
 KERNEL_TASK_FLAG_processing_bit		equ	3
 KERNEL_TASK_FLAG_secured_bit		equ	4
 KERNEL_TASK_FLAG_thread_bit		equ	5
+KERNEL_TASK_FLAG_stream_in_bit		equ	6
+KERNEL_TASK_FLAG_stream_out_bit		equ	7
 
 KERNEL_TASK_STACK_address		equ	(KERNEL_MEMORY_HIGH_VIRTUAL_address << STATIC_MULTIPLE_BY_2_shift) - (KERNEL_TASK_STACK_SIZE_page << STATIC_MULTIPLE_BY_PAGE_shift)
 KERNEL_TASK_STACK_SIZE_page		equ	1
