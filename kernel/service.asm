@@ -235,6 +235,7 @@ kernel_service:
 ;-------------------------------------------------------------------------------
 ; wejście:
 ;	rcx - rozmiar przestrzeni do zaalokowania
+;	rdi - wskaźnik do przestrzeni jądra systemu
 ; wyjście:
 ;	Flaga CF - jeśli brak miejsca
 ;	rdi - wskaźnik do zaalokowanej przestrzeni
@@ -257,7 +258,7 @@ kernel_service:
 	; mapuj przestrzeń
 	mov	rax,	rdi
 	sub	rax,	qword [kernel_memory_high_mask]	; zamień na adres bezpośredni
-	mov	bx,	kernel_page_FLAG_write | kernel_page_FLAG_user | kernel_page_FLAG_available
+	mov	bx,	KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_available
 	mov	r11,	cr3
 	call	kernel_page_map_logical
 	jnc	.process_memory_alloc_ready	; przydzielono
@@ -645,16 +646,18 @@ kernel_service_memory_alloc:
 	push	rax
 	push	rcx
 
-	; zresetuj numer pierwszego bitu poszukiwanej przestrzeni
+	; numer pierwszego bitu wolnej przestrzeni
 	mov	rax,	STATIC_MAX_unsigned
 
 	; pobierz wskaźnik do właściwości procesu
 	call	kernel_task_active
 
-	; pobierz ilość opisanych stron w binarnej mapie pamięci
-	mov	rcx,	qword [rdi + KERNEL_TASK_STRUCTURE.map_size]
+	; proces wykonujący jest usługą?
+	test	qword [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_service
+	jnz	.end	; zignoruj wywołanie
 
-	; przeszukaj binarną mapę pamięci procesu od początku
+	; pobierz wskaźnik i ilość stron w binarnej mapie pamięci procesu
+	mov	rcx,	qword [rdi + KERNEL_TASK_STRUCTURE.map_size]
 	mov	rsi,	qword [rdi + KERNEL_TASK_STRUCTURE.map]
 
 .reload:

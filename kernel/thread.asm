@@ -25,7 +25,7 @@ kernel_thread:
 
 	; utwórz nowy stos kontekstu dla wątku
 	mov	rax,	KERNEL_STACK_address
-	mov	ebx,	kernel_page_FLAG_available | kernel_page_FLAG_write
+	mov	ebx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
 	mov	ecx,	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	mov	r11,	rdi
 	call	kernel_page_map_logical

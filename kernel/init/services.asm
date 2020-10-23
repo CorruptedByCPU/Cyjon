@@ -23,7 +23,7 @@ kernel_init_services:
 
 	; mapuj przestrzeń pod stos usługi
 	mov	rax,	KERNEL_STACK_address
-	mov	rbx,	kernel_page_FLAG_available | kernel_page_FLAG_write
+	mov	rbx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
 	mov	rcx,	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	mov	r11,	rdi
 	call	kernel_page_map_logical

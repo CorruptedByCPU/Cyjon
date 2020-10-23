@@ -80,7 +80,6 @@ kernel_memory_alloc:
 	push	rbx
 	push	rdx
 	push	rsi
-	push	rbp
 	push	rax
 	push	rcx
 
@@ -160,10 +159,14 @@ kernel_memory_alloc:
 	dec	rbp
 	dec	dword [kernel_page_reserved_count]
 
+	; wykorzystano zarezerwowaną stronę
+	jmp	.reserved
+
 .next:
 	; ilość dostępnych stron zmiejszyła się
 	dec	qword [kernel_page_free_count]
 
+.reserved:
 	; następna strona
 	inc	rax
 
@@ -185,7 +188,6 @@ kernel_memory_alloc:
 	; przywróć oryginalne rejestry
 	pop	rcx
 	pop	rax
-	pop	rbp
 	pop	rsi
 	pop	rdx
 	pop	rbx
@@ -304,7 +306,7 @@ kernel_memory_release_foreign:
 
 	;-----------------------------------------------------------------------
 	; oblicz numer wpisu w tablicy PML4 na podstawie otrzymanego adresu fizycznego/logicznego
-	mov	rcx,	kernel_page_PML3_SIZE_byte
+	mov	rcx,	KERNEL_PAGE_PML3_SIZE_byte
 	xor	rdx,	rdx	; wyczyść starszą część
 	div	rcx
 
@@ -325,7 +327,7 @@ kernel_memory_release_foreign:
 	;-----------------------------------------------------------------------
 	; oblicz numer wpisu w tablicy PML3 na podstawie pozostałego adresu fizycznego/logicznego
 	mov	rax,	rdx	; przywróć resztę z dzielenia
-	mov	rcx,	kernel_page_PML2_SIZE_byte
+	mov	rcx,	KERNEL_PAGE_PML2_SIZE_byte
 	xor	rdx,	rdx	; wyczyść starszą część
 	div	rcx
 
@@ -346,7 +348,7 @@ kernel_memory_release_foreign:
 	;-----------------------------------------------------------------------
 	; oblicz numer wpisu w tablicy PML2 na podstawie pozostałego adresu fizycznego/logicznego
 	mov	rax,	rdx	; przywróć resztę z dzielenia
-	mov	rcx,	kernel_page_PML1_SIZE_byte
+	mov	rcx,	KERNEL_PAGE_PML1_SIZE_byte
 	xor	rdx,	rdx	; wyczyść starszą część
 	div	rcx
 
@@ -407,7 +409,7 @@ kernel_memory_release_foreign:
 	inc	r12
 
 	; koniec tablicy PML1
-	cmp	r12,	kernel_page_RECORDS_amount
+	cmp	r12,	KERNEL_PAGE_RECORDS_amount
 	jne	.pml1	; nie
 
 .pml2_entry:
@@ -432,7 +434,7 @@ kernel_memory_release_foreign:
 	inc	r13
 
 	; koniec tablicy PML2?
-	cmp	r13,	kernel_page_RECORDS_amount
+	cmp	r13,	KERNEL_PAGE_RECORDS_amount
 	je	.pml3_entry	; tak
 
 .pml2_record:
@@ -474,7 +476,7 @@ kernel_memory_release_foreign:
 	inc	r14
 
 	; koniec tablicy PML3?
-	cmp	r14,	kernel_page_RECORDS_amount
+	cmp	r14,	KERNEL_PAGE_RECORDS_amount
 	je	.pml4_entry	; tak
 
 .pml3_record:
@@ -510,13 +512,19 @@ kernel_memory_release_foreign:
 	; usuń rekord z tablicy PML4
 	mov	qword [r11],	STATIC_EMPTY
 
+	; wyczyszczono strukturę tablic aż do poziomu PML4
+
+	; czy przestrzeń jest już przetworzona?
+	test	rcx,	rcx
+	jz	.end	; tak, koniec procedury
+
 .pml4:
 	; następny wpis w tablicy PML4
 	add	r11,	STATIC_QWORD_SIZE_byte
 	inc	r15
 
 	; koniec tablicy PML4?
-	cmp	r15,	kernel_page_RECORDS_amount
+	cmp	r15,	KERNEL_PAGE_RECORDS_amount
 	je	.pml5	; tak... że jak?
 
 	; pobierz adres tablicy PML3
@@ -594,136 +602,3 @@ kernel_memory_copy:
 	ret
 
 	macro_debug	"kernel_memory_copy"
-
-;===============================================================================
-; wejście:
-;	rcx - rozmiar przestrzeni w stronach
-;	rdi - wskaźnik do przestrzeni
-; UWAGA:
-;	Procedura przeznaczona tylko dla procesów CLP3!
-kernel_memory_mark:
-	; zachowaj oryginalne rejestry
-	push	rcx
-	push	rdi
-	push	r8
-	push	r9
-	push	r10
-	push	r11
-	push	r12
-	push	r13
-	push	r14
-	push	r15
-	push	rax
-
-	; pobierz adres tablicy PML4 procesu
-	mov	r11,	cr3
-
-	; przygotuj podstawową ścieżkę do mapowanej przestrzeni
-	mov	rax,	rdi
-	call	kernel_page_prepare
-	jc	.error	; błąd, nie udało się rozwiązać ścieżki w tablicach stronicowania do podanej przestrzeni
-
-.pml1:
-	; koniec rekordów w tablicy PML1?
-	cmp	r12,	kernel_page_RECORDS_amount
-	jb	.entry	; nie
-
-.pml2:
-	; koniec rekordów w tablicy PML2?
-	cmp	r13,	kernel_page_RECORDS_amount
-	jnb	.pml3	; tak
-
-	; pobierz kolejny rekord w tablicy PML2
-	mov	r8,	qword [r9]
-	add	r9,	STATIC_QWORD_SIZE_byte	; przestaw wskaźnik na przyszły rekord
-
-	; usuń flagi z adresu tablicy PML3
-	and	r8w,	STATIC_PAGE_mask
-
-	; ilość wpisów w tablicy PML1
-	xor	r12,	r12
-
-	; przetwórz pierwszy rekord w tablicy PML1
-	jmp	.entry
-
-.pml3:
-	; koniec rekordów w tablicy PML3?
-	cmp	r14,	kernel_page_RECORDS_amount
-	jnb	.pml4	; tak
-
-	; pobierz kolejny rekord w tablicy PML3
-	mov	r9,	qword [r10]
-	add	r10,	STATIC_QWORD_SIZE_byte	; przestaw wskaźnik na przyszły rekord
-
-	; usuń flagi z adresu tablicy PML3
-	and	r9w,	STATIC_PAGE_mask
-
-	; ilość wpisów w tablicy PML2
-	xor	r13,	r13
-
-	; pobierz pierwszy rekord z tablicy PML2
-	jmp	.pml2
-
-.pml4:
-	; koniec rekordów w tablicy PML4?
-	cmp	r15,	kernel_page_RECORDS_amount
-	jnb	.error	; tak
-
-	; pobierz kolejny rekord w tablicy PML4
-	mov	r10,	qword [r10]
-	add	r11,	STATIC_QWORD_SIZE_byte	; przestaw wskaźnik na przyszły rekord
-
-	; usuń flagi z adresu tablicy PML3
-	and	r10w,	STATIC_PAGE_mask
-
-	; ilość wpisów w tablicy PML3
-	xor	r14,	r14
-
-	; pobierz pierwszy rekord z tablicy PML3
-	jmp	.pml3
-
-.entry:
-	; udostępnij stronę dla procesu
-	or	word [r8],	kernel_page_FLAG_user
-
-	; przesuń adres do następnego mapowanej przestrzeni
-	add	r8,	STATIC_QWORD_SIZE_byte
-
-	; ustaw numer następnego wiersza w tablicy PML1
-	inc	r12
-
-	; następny wpis tablicy?
-	dec	rcx
-	jnz	.pml1	; tak
-
-	; flaga, sukces
-	clc
-
-	; koniec
-	jmp	.end
-
-.error:
-	; debug
-	xchg	bx,bx
-
-	; zatrzymaj dalsze wykonywanie kodu
-	jmp	$
-
-.end:
-	; przywróć oryginalne rejestry
-	pop	rax
-	pop	r15
-	pop	r14
-	pop	r13
-	pop	r12
-	pop	r11
-	pop	r10
-	pop	r9
-	pop	r8
-	pop	rdi
-	pop	rcx
-
-	; powrót z procedury
-	ret
-
-	macro_debug	"kernel_memory_mark"

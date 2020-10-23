@@ -38,7 +38,7 @@ kernel_exec:
 
 	; zarezerwuj ilość stron, niezbędną do inicjalizacji procesu
 	mov	eax,	KERNEL_ERROR_memory_low	; kod błędu
-	add	rcx,	14
+	add	rcx,	15	; 14 stron na przestrzeń procesu, +1 do rozszerzenia serpentyny jeśli brak miejsca
 	call	kernel_page_secure
 	jc	.error	; brak wystarczającej ilości pamięci
 
@@ -49,6 +49,7 @@ kernel_exec:
 	call	kernel_memory_alloc_page
 	call	kernel_page_drain
 
+
 	; wykorzystano stronę do stronicowania
 	inc	qword [kernel_page_paged_count]
 
@@ -58,18 +59,20 @@ kernel_exec:
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod przestrzeń kodu procesu
 	mov	rax,	KERNEL_MEMORY_HIGH_VIRTUAL_address
-	mov	bx,	kernel_page_FLAG_available | kernel_page_FLAG_write | kernel_page_FLAG_user
+	mov	bx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user
 	mov	rcx,	r12
 	call	kernel_page_map_logical
 	jc	.error
+
 
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod binarną mapę pamięci procesu
 	shl	r12,	STATIC_PAGE_SIZE_shift
 	add	rax,	r12	; za przestrzenią kodu procesu
-	and	bx,	~kernel_page_FLAG_user	; dostęp tylko od strony jądra systemu
+	and	bx,	~KERNEL_PAGE_FLAG_user	; dostęp tylko od strony jądra systemu
 	mov	rcx,	KERNEL_MEMORY_MAP_SIZE_page
 	call	kernel_page_map_logical
+
 
 	; zachowaj bezpośredni adres binarnej mapy pamięci procesu
 	mov	r13,	rax
@@ -91,10 +94,11 @@ kernel_exec:
 	add	rcx,	KERNEL_MEMORY_MAP_SIZE_page
 	call	kernel_memory_secure
 
+
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod stos procesu
 	mov	rax,	(KERNEL_MEMORY_HIGH_VIRTUAL_address << STATIC_MULTIPLE_BY_2_shift) - STATIC_PAGE_SIZE_byte
-	or	bx,	kernel_page_FLAG_user
+	or	bx,	KERNEL_PAGE_FLAG_user
 	mov	rcx,	STATIC_PAGE_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	call	kernel_page_map_logical
 	jc	.error
@@ -102,7 +106,7 @@ kernel_exec:
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod stos kontekstu (należy do jądra systemu)
 	mov	rax,	KERNEL_STACK_address
-	mov	rbx,	kernel_page_FLAG_available | kernel_page_FLAG_write
+	mov	rbx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
 	mov	rcx,	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	call	kernel_page_map_logical
 	jc	.error

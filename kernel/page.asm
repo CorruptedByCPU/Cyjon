@@ -2,19 +2,22 @@
 ; Copyright (C) by blackdev.org
 ;===============================================================================
 
-kernel_page_FLAG_available	equ	0x01
-kernel_page_FLAG_write		equ	0x02
-kernel_page_FLAG_user		equ	0x04
-kernel_page_FLAG_write_through	equ	0x08
-kernel_page_FLAG_cache_disable	equ	0x10
-kernel_page_FLAG_length		equ	0x80
+KERNEL_PAGE_FLAG_available	equ	0x01
+KERNEL_PAGE_FLAG_write		equ	0x02
+KERNEL_PAGE_FLAG_user		equ	0x04
+KERNEL_PAGE_FLAG_write_through	equ	0x08
+KERNEL_PAGE_FLAG_cache_disable	equ	0x10
+KERNEL_PAGE_FLAG_length		equ	0x80
 
-kernel_page_RECORDS_amount	equ	512
+KERNEL_PAGE_RECORDS_amount	equ	512
 
-kernel_page_PML4_SIZE_byte	equ	kernel_page_RECORDS_amount * kernel_page_PML3_SIZE_byte
-kernel_page_PML3_SIZE_byte	equ	kernel_page_RECORDS_amount * kernel_page_PML2_SIZE_byte
-kernel_page_PML2_SIZE_byte	equ	kernel_page_RECORDS_amount * kernel_page_PML1_SIZE_byte
-kernel_page_PML1_SIZE_byte	equ	kernel_page_RECORDS_amount * STATIC_PAGE_SIZE_byte
+KERNEL_PAGE_PML4_SIZE_byte	equ	KERNEL_PAGE_RECORDS_amount * KERNEL_PAGE_PML3_SIZE_byte
+KERNEL_PAGE_PML3_SIZE_byte	equ	KERNEL_PAGE_RECORDS_amount * KERNEL_PAGE_PML2_SIZE_byte
+KERNEL_PAGE_PML2_SIZE_byte	equ	KERNEL_PAGE_RECORDS_amount * KERNEL_PAGE_PML1_SIZE_byte
+KERNEL_PAGE_PML1_SIZE_byte	equ	KERNEL_PAGE_RECORDS_amount * STATIC_PAGE_SIZE_byte
+
+; wyrównaj pozycję zmiennych do pełnego adresu
+align	STATIC_QWORD_SIZE_byte,	db	STATIC_NOTHING
 
 kernel_page_pml4_address	dq	STATIC_EMPTY
 
@@ -38,7 +41,7 @@ kernel_page_empty:
 	xor	eax,	eax
 
 	; ilość rekordów do sprawdzenia
-	mov	ecx,	kernel_page_RECORDS_amount - 0x01
+	mov	ecx,	KERNEL_PAGE_RECORDS_amount - 0x01
 
 .loop:
 	; pobierz zawartość rekordu
@@ -152,7 +155,7 @@ kernel_page_map_physical:
 
 .row:
 	; sprawdź czy skończyły się rekordy w tablicy PML1
-	cmp	r12,	kernel_page_RECORDS_amount
+	cmp	r12,	KERNEL_PAGE_RECORDS_amount
 	jb	.exist	; nie
 
 	; utwórz nową tablicę stronicowania PML1
@@ -232,7 +235,7 @@ kernel_page_map_logical:
 
 .record:
 	; sprawdź czy skończyły się rekordy w tablicy PML1
-	cmp	r12,	kernel_page_RECORDS_amount
+	cmp	r12,	KERNEL_PAGE_RECORDS_amount
 	jb	.exists	; istnieją rekordy
 
 	; utwórz nową tablicę stronicowania PML1
@@ -308,6 +311,105 @@ kernel_page_map_logical:
 
 ;===============================================================================
 ; wejście:
+;	rcx - rozmiar przestrzeni w stronach do opisania
+;	rsi - wskaźnik do przestrzeni jądra systemu
+;	rdi - wskaźnik do przestrzeni procesu
+;	r11 - adres fizyczny tablicy PML4, w której dokonać podłączenie
+; wyjście:
+;	Flaga CF - jeśli ustawiona, błąd
+kernel_page_map_virtual:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rsi
+	push	rdi
+	push	r8
+	push	r9
+	push	r10
+	push	r11
+	push	r12
+	push	r13
+	push	r14
+	push	r15
+
+	; koryguj adres przestrzeni logicznej
+	mov	rax,	KERNEL_MEMORY_HIGH_mask
+	sub	rdi,	rax
+	mov	rax,	rdi
+
+	; pobierz wskaźnik do właściwości procesu
+	call	kernel_task_active
+
+	; proces wykonujący jest usługą?
+	test	qword [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_service
+	jnz	.end	; zignoruj wywołanie
+
+	; przestrzeń mapowana, udostępniona dla procesu
+	mov	bx,	KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_available
+	or	si,	bx
+
+	; przygotuj podstawową ścieżkę z tablic do mapowanego adresu
+	mov	r11,	qword [rdi + KERNEL_TASK_STRUCTURE.cr3]
+	call	kernel_page_prepare
+	jc	.error
+
+.record:
+	; sprawdź czy skończyły się rekordy w tablicy PML1
+	cmp	r12,	KERNEL_PAGE_RECORDS_amount
+	jb	.exists	; istnieją rekordy
+
+	; utwórz nową tablicę stronicowania PML1
+	call	kernel_page_pml1
+	jc	.error
+
+.exists:
+	; rekord wolny?
+	cmp	qword [r8],	STATIC_EMPTY
+	jne	.error	; przestrzeń jest już zajęta!
+
+	; podłącz stronę przestrzeni jądra systemu do procesu
+	mov	qword [r8],	rsi
+
+	; następna strona przestrzeni jądra systemu
+	add	rsi,	STATIC_PAGE_SIZE_byte
+	add	r8,	STATIC_QWORD_SIZE_byte	; następny wpis w tablicy
+
+	; ustaw numer następnego rekordu w tablicy pml1
+	inc	r12
+
+	; kontynuuj
+	dec	rcx
+	jnz	.record
+
+	; koniec procedury
+	jmp	.end
+
+.error:
+	; flaga, błąd
+	stc
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	r15
+	pop	r14
+	pop	r13
+	pop	r12
+	pop	r11
+	pop	r10
+	pop	r9
+	pop	r8
+	pop	rdi
+	pop	rsi
+	pop	rcx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"kernel_page_map_virtual"
+
+;===============================================================================
+; wejście:
 ;	rax - adres przestrzeni fizycznej do opisania w tablicach stronicowania
 ;	bx - flagi rekordów tablic stronicowania
 ;	r11 - adres fizyczny tablicy PML4, w której wykonać stronicowanie
@@ -330,7 +432,7 @@ kernel_page_prepare:
 	push	rax
 
 	; oblicz numer rekordu w tablicy PML4 na podstawie otrzymanego adresu fizycznego/logicznego
-	mov	rcx,	kernel_page_PML3_SIZE_byte
+	mov	rcx,	KERNEL_PAGE_PML3_SIZE_byte
 	xor	rdx,	rdx	; wyczyść starszą część
 	div	rcx
 
@@ -380,7 +482,7 @@ kernel_page_prepare:
 
 	; oblicz numer rekordu w tablicy PML4 na podstawie otrzymanego adresu fizycznego/logicznego
 	mov	rax,	rdx	; przywróć resztę z dzielenia
-	mov	rcx,	kernel_page_PML2_SIZE_byte
+	mov	rcx,	KERNEL_PAGE_PML2_SIZE_byte
 	xor	rdx,	rdx	; wyczyść starszą część
 	div	rcx
 
@@ -430,7 +532,7 @@ kernel_page_prepare:
 
 	; oblicz numer rekordu w tablicy PML2 na podstawie otrzymanego adresu fizycznego/logicznego
 	mov	rax,	rdx	; przywróć resztę z dzielenia
-	mov	rcx,	kernel_page_PML1_SIZE_byte
+	mov	rcx,	KERNEL_PAGE_PML1_SIZE_byte
 	xor	rdx,	rdx	; wyczyść starszą część
 	div	rcx
 
@@ -541,7 +643,7 @@ kernel_page_prepare:
 ;	procedura zmniejsza licznik stron zarezerwowanych w binarnej mapie pamięci!
 kernel_page_pml1:
 	; sprawdź czy tablica PML2 jest pełna
-	cmp	r13,	kernel_page_RECORDS_amount
+	cmp	r13,	KERNEL_PAGE_RECORDS_amount
 	je	.pml3	; jeśli tak, utwórz nową tablicę PML2
 
 	; sprawdź czy kolejny w kolejce rekord tablicy PML2 posiada adres tablicy PML1
@@ -590,7 +692,7 @@ kernel_page_pml1:
 
 .pml3:
 	; sprawdź czy tablica PML3 jest pełna
-	cmp	r14,	kernel_page_RECORDS_amount
+	cmp	r14,	KERNEL_PAGE_RECORDS_amount
 	je	.pml4	; jeśli tak, utwórz nową tablicę PML3
 
 	; sprawdź czy kolejny w kolejce rekord tablicy PML3 posiada adres tablicy PML2
@@ -639,7 +741,7 @@ kernel_page_pml1:
 
 .pml4:
 	; sprawdź czy tablica PML4 jest pełna
-	cmp	r15,	kernel_page_RECORDS_amount
+	cmp	r15,	KERNEL_PAGE_RECORDS_amount
 	je	.error	; jeśli tak, utwórz nową tablicę PML5..., że jak?!
 
 	; sprawdź czy kolejny w kolejce rekord tablicy PML4 posiada adres tablicy PML3
@@ -725,7 +827,7 @@ kernel_page_merge:
 	dec	rbx
 
 	; ilość rekordów na jedną tablicę
-	mov	rcx,	kernel_page_RECORDS_amount
+	mov	rcx,	KERNEL_PAGE_RECORDS_amount
 
 .loop:
 	; sprawdź czy rekord źródłowy istnieje
@@ -734,34 +836,34 @@ kernel_page_merge:
 
 	; sprawdź czy rekord docelowy zajęty
 	cmp	qword [rdi],	STATIC_EMPTY
-	ja	.compare	; zajęty
+	jne	.level	; zajęty
 
 	; pobierz wpis z tablicy źródłowej
 	mov	rax,	qword [rsi]
 
-	; znajdujemy się w tablicy PML1?
-	test	bl,	bl
-	jz	.page	; tak
-
-	; zachowaj wskaźnik do aktualnego rekordu tablicy PML procesu
-	push	rdi
-
-	; przygotuj przestrzeń pod tablicę stronicowania
-	call	kernel_memory_alloc_page
-	call	kernel_page_drain	; wyczyść wszystkie wpisy
-
-	; ustaw flagi nowej tablicy
-	mov	rax,	rdi
-	or	ax,	kernel_page_FLAG_user | kernel_page_FLAG_write | kernel_page_FLAG_available
-
-	; dołącz do tablic stronicowania
-	pop	rdi
-
-.page:
+; 	; znajdujemy się w tablicy PML1?
+; 	test	bl,	bl
+; 	jz	.page	; tak
+;
+; 	; zachowaj wskaźnik do aktualnego rekordu tablicy PML procesu
+; 	push	rdi
+;
+; 	; przygotuj przestrzeń pod tablicę stronicowania
+; 	call	kernel_memory_alloc_page
+; 	call	kernel_page_drain	; wyczyść wszystkie wpisy
+;
+; 	; ustaw flagi nowej tablicy
+; 	mov	rax,	rdi
+; 	or	ax,	KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_available
+;
+; 	; dołącz do tablic stronicowania
+; 	pop	rdi
+;
+; .page:
 	; załaduj wpis do tablicy docelowej
 	mov	qword [rdi],	rax
 
-.compare:
+.level:
 	; brak tablic innego poziomu
 	test	bl,	bl
 	jz	.next	; tak
