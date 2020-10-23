@@ -96,56 +96,119 @@ kernel_wm_irq:
 ; wejście:
 ;	rsi - wskaźnik do struktury obiektu
 ; wyjście:
+;	Flaga CF - jeśli brak wystarczającej ilości pamięci
 ;	rcx - identyfikator obiektu
 .window_create:
 	; zachowaj oryginalne rejestry
-	push	rsi
+	push	rax
+	push	rbx
+	push	rdx
 	push	rdi
+	push	rcx
+	push	rsi
 
 	; przygotuj przestrzeń pod dane obiektu
 	mov	rcx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size]
 	call	library_page_from_size
 	call	kernel_memory_alloc
+	jc	.window_create_end	; brak wystarczającej ilości pamięci
 
-	; zwróć adres przestrzeni okna
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.address],	rdi
+	; zachowaj wskaźnik przestrzeni jądra systemu
+	push	rdi
 
-	; oznacz przesterzeń jako dostępną dla procesu
-	call	kernel_memory_mark
+	; przygotuj przestrzeń pod dane obiektu w procesue
+	call	kernel_service_memory_alloc
+	jnc	.window_create_allocated	; przydzielono
+
+.window_create_failover:
+	; zwolnij zmienną lokalną
+	pop	rdi
+
+	; zwolnij przestrzeń jądra systemu
+	call	kernel_memory_release
+
+	; flaga, błąd
+	stc
+
+	; koniec obsługi procedury
+	jmp	.window_create_end
+
+.window_create_allocated:
+	; mapuj przestrzeń jądra do procesu
+	mov	rsi,	qword [rsp]
+	call	kernel_page_map_virtual
+	jc	.window_create_failover	; brak miejsca na stronicowanie
+
+	; usuń zmienną lokalną
+	add	rsp,	STATIC_QWORD_SIZE_byte
+
+	; przywróć wskaźnik do właściwości obiektu
+	mov	rdx,	qword [rsp]
+
+	; zwróć adres przestrzeni obiektu w jądrze systemu
+	mov	qword [rdx + KERNEL_WM_STRUCTURE_OBJECT.address],	rsi
 
 	; przydziel identyfikator dla okna
 	call	kernel_wm_object_id_new
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id],	rcx
+	mov	qword [rdx + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id],	rcx
+
+	; ustaw okno na środku pzrestrzeni roboczej
+	call	.window_create_position
 
 	; zarejestruj obiekt
+	mov	rsi,	rdx
 	call	kernel_wm_object_insert
 
-	; pozycjonuj obiekt domyślnie na środku przestrzeni roboczej
+	; zachowaj wskaźnik do przestrzeni procesu
+	mov	rsi,	rdi
 
-	; oś X
-	mov	rax,	qword [kernel_video_width_pixel]
-	mov	rbx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	shr	rax,	STATIC_DIVIDE_BY_2_shift
-	shr	rbx,	STATIC_DIVIDE_BY_2_shift
-	sub	rax,	rbx
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x],	rax
+	; proces jest usługą?
+	call	kernel_task_active
+	test	qword [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_service
+	jnz	.window_create_service	; tak
 
-	; oś Y
-	mov	rax,	qword [kernel_video_height_pixel]
-	mov	rbx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
-	shr	rax,	STATIC_DIVIDE_BY_2_shift
-	shr	rbx,	STATIC_DIVIDE_BY_2_shift
-	sub	rax,	rbx
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y],	rax
+	; do procesu zwróć adres przestrzeni okna w procesie
+	mov	qword [rdx + KERNEL_WM_STRUCTURE_OBJECT.address],	rsi
 
+.window_create_service:
+	; zwróć identyfikator obiektu
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rcx
+
+.window_create_end:
 	; przywróć oryginalne rejestry
-	pop	rdi
 	pop	rsi
+	pop	rcx
+	pop	rdi
+	pop	rdx
+	pop	rbx
+	pop	rax
 
 	; koniec obsługi opcji
 	jmp	kernel_wm_irq.end
 
 	macro_debug	"kernel_wm_irq.window_create"
+
+.window_create_position:
+	; pozycjonuj obiekt domyślnie na środku przestrzeni roboczej
+
+	; oś X
+	mov	rax,	qword [kernel_video_width_pixel]
+	mov	rbx,	qword [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	shr	rax,	STATIC_DIVIDE_BY_2_shift
+	shr	rbx,	STATIC_DIVIDE_BY_2_shift
+	sub	rax,	rbx
+	mov	qword [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x],	rax
+
+	; oś Y
+	mov	rax,	qword [kernel_video_height_pixel]
+	mov	rbx,	qword [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	shr	rax,	STATIC_DIVIDE_BY_2_shift
+	shr	rbx,	STATIC_DIVIDE_BY_2_shift
+	sub	rax,	rbx
+	mov	qword [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y],	rax
+
+	; powrót z podprocedury
+	ret
 
 ;-------------------------------------------------------------------------------
 ; wejście:

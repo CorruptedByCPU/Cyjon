@@ -42,7 +42,7 @@ struc	KERNEL_TASK_STRUCTURE
 	.flags				resb	2	; flagi stanu procesu
 	.in				resb	8	; stdin
 	.out				resb	8	; stdout
-	.stack				resb	2	; rozmiar przestrzeni stosu w stronach
+	.stack				resb	2	; rozmiar przestrzeni stosu kontekstu w stronach
 	.length				resb	1	; ilość znaków w nazwie procesu
 	.name				resb	255	; nazwa procesu
 	.SIZE:

@@ -55,6 +55,7 @@ library_bosu:
 	; utwórz okno
 	mov	al,	KERNEL_WM_WINDOW_create
 	int	KERNEL_WM_IRQ
+	jc	.end	; brak przestrzeni pamięci
 
 	; zwróć wskaźnik/identyfikator zarejestrowanego okna
 	mov	qword [rsp],	rcx
@@ -123,6 +124,7 @@ library_bosu:
 	; przetwórz wszystkie elementy wchodzące w skład okna
 	call	library_bosu_elements
 
+.end:
 	; przywróć oryginalne rejestry
 	pop	rcx
 	pop	rsi

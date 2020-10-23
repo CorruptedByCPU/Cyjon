@@ -7,8 +7,8 @@ service_gc:
 	; szukaj zakończonego procesu
 	call	service_gc_search
 
-	; cdn
 	xchg	bx,bx
+	mov	rax,	qword [kernel_page_free_count]
 
 	;-----------------------------------------------------------------------
 
@@ -84,6 +84,9 @@ service_gc:
 
 	; ilość dostępnych rekordów w kolejce zadań
 	inc	qword [kernel_task_free]
+
+	xchg	bx,bx
+	mov	rax,	qword [kernel_page_free_count]
 
 	; szukaj nowego procesu do zwolnienia
 	jmp	service_gc
