@@ -2,12 +2,13 @@
 ; Copyright (C) by blackdev.org
 ;===============================================================================
 
-KERNEL_PAGE_FLAG_available	equ	0x01
-KERNEL_PAGE_FLAG_write		equ	0x02
-KERNEL_PAGE_FLAG_user		equ	0x04
-KERNEL_PAGE_FLAG_write_through	equ	0x08
-KERNEL_PAGE_FLAG_cache_disable	equ	0x10
-KERNEL_PAGE_FLAG_length		equ	0x80
+KERNEL_PAGE_FLAG_available	equ	1 << 0
+KERNEL_PAGE_FLAG_write		equ	1 << 1
+KERNEL_PAGE_FLAG_user		equ	1 << 2
+KERNEL_PAGE_FLAG_write_through	equ	1 << 3
+KERNEL_PAGE_FLAG_cache_disable	equ	1 << 4
+KERNEL_PAGE_FLAG_length		equ	1 << 7
+KERNEL_PAGE_FLAG_virtual	equ	1 << 9
 
 KERNEL_PAGE_RECORDS_amount	equ	512
 
@@ -344,9 +345,12 @@ kernel_page_map_virtual:
 	test	qword [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_service
 	jnz	.end	; zignoruj wywołanie
 
-	; przestrzeń mapowana, udostępniona dla procesu
+	; tablice stronicowania domyślne dla procesu
 	mov	bx,	KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_available
+
+	; strony fizyczne oznacz jako virtualne, gdyż są tylko "kopią" udostępnioną dla procesu
 	or	si,	bx
+	or	si,	KERNEL_PAGE_FLAG_virtual
 
 	; przygotuj podstawową ścieżkę z tablic do mapowanego adresu
 	mov	r11,	qword [rdi + KERNEL_TASK_STRUCTURE.cr3]

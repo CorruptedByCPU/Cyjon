@@ -392,11 +392,18 @@ kernel_memory_release_foreign:
 	cmp	qword [r8],	STATIC_EMPTY
 	je	.pml1_omit	; tak, pomiń
 
-	; zwolnij przestrzeń
+	; pobierz adres fizyczny strony
 	mov	rdi,	qword [r8]
+
+	; strona oznaczona jako wirtualna?
+	test	di,	KERNEL_PAGE_FLAG_virtual
+	jnz	.virtual	; tak, zignoruj
+
+	; zwolnij stronę
 	and	di,	STATIC_PAGE_mask
 	call	kernel_memory_release_page
 
+.virtual:
 	; zwolnij wpis w tablicy PML1
 	mov	qword [r8],	STATIC_EMPTY
 
