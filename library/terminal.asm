@@ -261,11 +261,6 @@ library_terminal_matrix:
 	push	rdi
 	push	r9
 
-	cmp	rax,	256
-	jb	.ok
-	xchg	bx,bx
-.ok:
-
 	; oblicz prdesunięcie względem początku matrycy czcionki dla znaku
 	mov	ebx,	dword [library_font_height_pixel]
 	mul	rbx
