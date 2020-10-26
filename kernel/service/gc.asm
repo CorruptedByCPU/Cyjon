@@ -7,32 +7,25 @@ service_gc:
 	; szukaj zakończonego procesu
 	call	service_gc_search
 
-	xchg	bx,bx
-	mov	rax,	qword [kernel_page_free_count]
-
-	;-----------------------------------------------------------------------
-
 	; zamknij wszystkie okna utworzone przez proces
 	mov	rax,	qword [rsi + KERNEL_TASK_STRUCTURE.pid]
 	call	kernel_wm_object_drain
-
-	;-----------------------------------------------------------------------
 
 	; pobierz identyfikator strumienia wejścia procesu
 	mov	rdi,	qword [rsi + KERNEL_TASK_STRUCTURE.in]
 
 	; strumień wejścia jest własnością procesu?
 	test	qword [rsi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_stream_in
-	jnz	.stream_in_unique	; nie
+	jnz	.stream_not_unique	; nie
 
 	; zwolnij strumień
 	call	kernel_stream_release
 
-.stream_in_unique:
-	; pobierz identyfikator strumienia wejścia procesu
+.stream_not_unique:
+	; pobierz identyfikator strumienia wyjścia procesu
 	mov	rdi,	qword [rsi + KERNEL_TASK_STRUCTURE.out]
 
-	; strumień wejścia jest własnością procesu?
+	; strumień wyjścia jest własnością procesu?
 	test	qword [rsi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_stream_out
 	jnz	.stream_out_unique	; nie
 
@@ -40,20 +33,14 @@ service_gc:
 	call	kernel_stream_release
 
 .stream_out_unique:
-	;-----------------------------------------------------------------------
-
 	; zapamiętaj adres tablicy PML4 procesu
 	mov	r11,	qword [rsi + KERNEL_TASK_STRUCTURE.cr3]
 
 	; ustaw wskaźnik na podstawę przestrzeni stosu kontekstu
 	mov	rax,	KERNEL_MEMORY_HIGH_VIRTUAL_address
-
-	; pobierz rozmiar stosu kontekstu wątku
-	movzx	ecx,	word [rsi + KERNEL_TASK_STRUCTURE.stack]
-
-	; koryguj pozycję wskaźnika
-	shl	rcx,	STATIC_PAGE_SIZE_shift
-	sub	rax,	rcx
+	movzx	ecx,	word [rsi + KERNEL_TASK_STRUCTURE.stack]	; rozmiar stosu kontekstu wątku
+	shl	rcx,	STATIC_PAGE_SIZE_shift	; zamień na Bajty
+	sub	rax,	rcx	; koryguj pozycję wskaźnika
 
 	; zwolnij przestrzeń stosu kontekstu wątku
 	shr	rcx,	STATIC_PAGE_SIZE_shift
@@ -84,9 +71,6 @@ service_gc:
 
 	; ilość dostępnych rekordów w kolejce zadań
 	inc	qword [kernel_task_free]
-
-	xchg	bx,bx
-	mov	rax,	qword [kernel_page_free_count]
 
 	; szukaj nowego procesu do zwolnienia
 	jmp	service_gc
