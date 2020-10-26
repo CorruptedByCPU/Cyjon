@@ -34,36 +34,15 @@ tm:
 	mov	rsi,	tm_string_init
 	int	KERNEL_SERVICE
 
+	; wyświetl zniezmienne elementy interfejsu
+	call	tm_static
+
 .check:
 	; pobierz informacje o strumieniu wyjścia
-	mov	ax,	KERNEL_SERVICE_PROCESS_stream_meta
-	mov	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_get | KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_out
-	mov	ecx,	CONSOLE_STRUCTURE_STREAM_META.SIZE
-	mov	rdi,	tm_stream_meta
-	int	KERNEL_SERVICE
-	jc	.check	; brak aktualnych informacji
+	call	tm_stream_info
 
 .loop:
-	; wyświetl nagówek "Ram"
-	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	ecx,	tm_string_ram_end - tm_string_ram
-	mov	rsi,	tm_string_ram
-	int	KERNEL_SERVICE
-
-	; pobierz aktualne właściwości pamięci RAM
-	mov	ax,	KERNEL_SERVICE_SYSTEM_memory
-	int	KERNEL_SERVICE
-
-	; r8 - total
-	; r9 - free
-	; r10 - paged
-
-	; wyświetl pasek obciążenia pamięci RAM
-	call	tm_ram_bar
-
-	; wyświetl ilość dostępnej pamięci RAM
-	call	tm_ram
-
+	;-----------------------------------------------------------------------
 	; pobierz wiadomość
 	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
 	mov	rdi,	tm_ipc_data
@@ -95,7 +74,8 @@ tm:
 
 	;-----------------------------------------------------------------------
 	%include	"software/tm/data.asm"
-	%include	"software/tm/ram.asm"
+	%include	"software/tm/static.asm"
+	%include	"software/tm/stream.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/integer_to_string.asm"
 	%include	"library/value_to_size.asm"
