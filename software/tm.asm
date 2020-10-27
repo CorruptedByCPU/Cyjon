@@ -14,6 +14,7 @@
 	%include	"kernel/header/stream.inc"
 	%include	"kernel/header/ipc.inc"
 	%include	"kernel/header/wm.inc"
+	%include	"kernel/header/task.inc"
 	%include	"kernel/macro/debug.asm"
 	;-----------------------------------------------------------------------
 	%include	"software/console/header.inc"

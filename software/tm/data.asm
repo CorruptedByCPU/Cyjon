@@ -48,8 +48,8 @@ tm_string_header_position_and_color		db	"^[t1;0;4]^[c70]"
 tm_string_header_position_and_color_end:
 tm_string_header				db	"  PID %CPU %Mem Time+ Command"
 tm_string_header_end:
-tm_string_table_row_first_position		db	"^[t1;0;5]"
-tm_string_table_row_first_position_end:
+tm_string_table_row_first_position_and_color	db	"^[t1;0;5]", STATIC_ASCII_SEQUENCE_COLOR_DEFAULT
+tm_string_table_row_first_position_and_color_end:
 
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 tm_ipc_data:

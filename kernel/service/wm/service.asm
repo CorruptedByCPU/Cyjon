@@ -121,7 +121,7 @@ kernel_wm_irq:
 	push	rdi
 
 	; przygotuj przestrzeń pod dane obiektu w procesue
-	call	kernel_service_memory_alloc
+	call	kernel_memory_alloc_task_secure
 	jnc	.window_create_allocated	; przydzielono
 
 .window_create_failover:
