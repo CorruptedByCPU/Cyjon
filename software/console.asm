@@ -121,6 +121,10 @@ console:
 	; pobierz znak z ciągu
 	lodsb
 
+	; brak znaku?
+	test	al,	al
+	jz	.next	; tak
+
 	; zachowaj licznik
 	push	rcx
 
@@ -131,6 +135,7 @@ console:
 	; przywróć licznik
 	pop	rcx
 
+.next:
 	; wyświetlić pozostałe znaki z ciągu?
 	dec	rcx
 	jnz	.parse	; tak

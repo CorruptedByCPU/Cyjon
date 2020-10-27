@@ -259,32 +259,9 @@ kernel_service:
 	; zamień rozmiar przestrzeni na strony
 	call	library_page_from_size
 
-	; zarezerwuj podany rozmiar przestrzeni
-	call	kernel_service_memory_alloc
-	jc	.process_memory_alloc_error	; brak wystarczającej ilości pamięci
+	; przydziel przestrzeń pamięci o podanym rozmiarze dla procesu
+	call	kernel_memory_alloc_task
 
-	; mapuj przestrzeń
-	mov	rax,	rdi
-	sub	rax,	qword [kernel_memory_high_mask]	; zamień na adres bezpośredni
-	mov	bx,	KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_available
-	mov	r11,	cr3
-	call	kernel_page_map_logical
-	jnc	.process_memory_alloc_ready	; przydzielono
-
-	; brak wolnej przestrzeni RAM, wyrejestruj przestrzeń procesu
-	call	kernel_service_memory_release
-
-.process_memory_alloc_error:
-	; flaga, błąd
-	stc
-
-	; kod błędu
-	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	KERNEL_ERROR_memory_low
-
-	; koniec obsługi przerwania
-	jmp	.process_memory_alloc_end
-
-.process_memory_alloc_ready:
 	; zwróć adres przydzielonej przestrzeni
 	mov	qword [rsp],	rdi
 
@@ -558,20 +535,76 @@ kernel_service:
 ;	rsi - wskaźnik do przestrzeni listy
 .process_list:
 	; zachowaj oryginalne rejestry
-	push	rcx
 	push	rdi
+	push	rcx
 
 	; przydziel przestrzeń dla procesu
 	mov	rcx,	qword [kernel_task_size_page]
-	call	kernel_service_memory_alloc
+	call	kernel_memory_alloc_task
 	jc	.process_list_end	; brak dostępnej przestrzeni
 
+	; zachowaj wskaźnik początku przestrzeni
+	push	rdi
 
+	; uzupełnij listę o wszystkie procesy zarejetrowane w serpentynie
+	mov	rsi,	qword [kernel_task_address]
+
+.process_list_reload:
+	; ilość wpisów na blok serpentyny
+	mov	cl,	STATIC_STRUCTURE_BLOCK.link / KERNEL_TASK_STRUCTURE.SIZE
+
+.process_list_loop:
+	; wpis jest pusty?
+	cmp	qword [rsi + KERNEL_TASK_STRUCTURE.flags],	STATIC_EMPTY
+	je	.process_list_next	; tak
+
+	; zachowaj ilość pozostałych wpisów i wskaźnik do aktualnie przetwarzanego
+	push	rcx
+	push	rsi
+
+	; przenieś wpis do procesu
+	mov	ecx,	KERNEL_TASK_STRUCTURE.SIZE
+	rep	movsb
+
+	; przywróć ilość pozostałych wpisów
+	pop	rsi
+	pop	rcx
+
+	; usuń wszystkie dane o których proces nie musi wiedzieć
+	mov	qword [(rdi - KERNEL_TASK_STRUCTURE.SIZE) + KERNEL_TASK_STRUCTURE.cr3],	STATIC_EMPTY
+	mov	qword [(rdi - KERNEL_TASK_STRUCTURE.SIZE) + KERNEL_TASK_STRUCTURE.rsp],	STATIC_EMPTY
+	mov	qword [(rdi - KERNEL_TASK_STRUCTURE.SIZE) + KERNEL_TASK_STRUCTURE.map],	STATIC_EMPTY
+	mov	qword [(rdi - KERNEL_TASK_STRUCTURE.SIZE) + KERNEL_TASK_STRUCTURE.map_size],	STATIC_EMPTY
+	mov	word [(rdi - KERNEL_TASK_STRUCTURE.SIZE) + KERNEL_TASK_STRUCTURE.stack],	STATIC_EMPTY
+
+.process_list_next:
+	; następny wpis z listy
+	add	rsi,	KERNEL_TASK_STRUCTURE.SIZE
+
+	; koniec wpisów w bloku?
+	dec	cl
+	jnz	.process_list_loop	; nie
+
+	; pobierz adres następnego bloku serpentyny
+	and	si,	STATIC_PAGE_mask
+	mov	rsi,	qword [rsi + STATIC_STRUCTURE_BLOCK.link]
+
+	; koniec serpentyny?
+	cmp	rsi,	qword [kernel_task_address]
+	jne	.process_list_reload	; nie
+
+	; zwróć adres przestrzeni listy procesów
+	pop	rsi
+
+	; zwróć rozmiar listy procesów w Bajtach
+	mov	rcx,	rdi
+	sub	rcx,	rsi
+	mov	qword [rsp],	rcx
 
 .process_list_end:
 	; przywróć oryginalne rejestry
-	pop	rdi
 	pop	rcx
+	pop	rdi
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
@@ -678,180 +711,3 @@ kernel_service:
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
-
-;===============================================================================
-; wejście:
-;	rcx - rozmiar przestrzeni w stronach
-; wyjście:
-;	Flaga CF, jeśli brak dostępnej
-;	rax - kod błędu, jeśli Flaga CF jest podniesiona
-;	rdi - wskaźnik do przydzielonej przestrzeni
-kernel_service_memory_alloc:
-	; zachowaj oryginalne rejestry
-	push	rbx
-	push	rdx
-	push	rsi
-	push	rdi
-	push	rax
-	push	rcx
-
-	; numer pierwszego bitu wolnej przestrzeni
-	mov	rax,	STATIC_MAX_unsigned
-
-	; pobierz wskaźnik do właściwości procesu
-	call	kernel_task_active
-
-	; proces wykonujący jest usługą?
-	test	qword [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_service
-	jnz	.end	; zignoruj wywołanie
-
-	; pobierz wskaźnik i ilość stron w binarnej mapie pamięci procesu
-	mov	rcx,	qword [rdi + KERNEL_TASK_STRUCTURE.map_size]
-	mov	rsi,	qword [rdi + KERNEL_TASK_STRUCTURE.map]
-
-.reload:
-	; ilość stron wchodzących w skład rozpatrywanej przestrzeni
-	xor	edx,	edx
-
-.search:
-	; sprawdź następną stronę
-	inc	rax
-
-	; koniec binarnej mapy pamięci?
-	cmp	rax,	rcx
-	je	.error	; tak
-
-	; znaleziono wolną stronę?
-	bt	qword [rsi],	rax
-	jnc	.search	; nie
-
-	; zachowaj numer pierwszego bitu wchodzącego w skład poszukiwanej przestrzeni
-	mov	rbx,	rax
-
-.check:
-	; sprawdź następną stronę
-	inc	rax
-
-	; zalicz aktualną stronę do poszukiwanej przestrzeni
-	inc	rdx
-
-	; znaleziono całkowity rozmiar przestrzeni
-	cmp	rdx,	qword [rsp]
-	je	.found	; tak
-
-	; koniec binarnej mapy pamięci?
-	cmp	rax,	rcx
-	je	.error	; tak
-
-	; następna strona wchodząca w skład poszukiwanej przestrzeni?
-	bt	qword [rsi],	rax
-	jc	.check	; tak
-
-	; rozpatrywana przestrzeń jest niepełna, znajdź następną
-	jmp	.reload
-
-.error:
-	; zwróć kod błędu
-	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	KERNEL_ERROR_memory_low
-
-	; flaga, błąd
-	stc
-
-	; koniec procedury
-	jmp	.end
-
-.found:
-	; ustaw numer pierwszej strony przestrzeni do zablokowania
-	mov	rax,	rbx
-
-.lock:
-	; zwolnij kolejne strony wchodzące w skład znalezionej przestrzeni
-	btr	qword [rsi],	rax
-
-	; następna strona
-	inc	rax
-
-	; koniec przetwarzania przestrzeni?
-	dec	rdx
-	jnz	.lock	; nie, kontynuuj
-
-	; przelicz numer pierwszej strony przestrzeni na adres WZGLĘDNY
-	shl	rbx,	STATIC_MULTIPLE_BY_PAGE_shift
-
-	; koryguj o adres początku opisanej przestrzeni przez binarną mapę pamięci procesu
-	add	rbx,	qword [kernel_memory_real_address]
-
-	; zwróć adres do procesu
-	mov	qword [rsp + STATIC_QWORD_SIZE_byte * 0x02],	rbx
-
-.end:
-	; przywróć oryginalne rejestry
-	pop	rcx
-	pop	rax
-	pop	rdi
-	pop	rsi
-	pop	rdx
-	pop	rbx
-
-	; powrót z procedury
-	ret
-
-	macro_debug	"kernel_service_memory_alloc"
-
-;===============================================================================
-; wejście:
-;	rcx - rozmiar przestrzeni w stronach
-;	rdi - adres przestrzeni do zwolnienia
-kernel_service_memory_release:
-	; zachowaj oryginalne rejestry i flagi
-	push	rax
-	push	rdx
-	push	rsi
-	push	rdi
-	push	rcx
-
-	; pobierz wskaźnik do właściwości procesu
-	call	kernel_task_active
-
-	; pobierz wskaźnik do binarnej mapy pamięci procesu
-	mov	rsi,	qword [rdi + KERNEL_TASK_STRUCTURE.map]
-
-	; przelicz adres strony na numer bitu
-	mov	rax,	rdi
-	sub	rax,	qword [kernel_memory_real_address]
-	shr	rax,	STATIC_PAGE_SIZE_shift
-
-	; oblicz prdesunięcie względem początku binarnej mapy pamięci
-	mov	rcx,	64
-	xor	rdx,	rdx	; wyczyść starszą część
-	div	rcx
-
-	; przesuń wskaźnik na "pakiet"
-	shl	rax,	STATIC_MULTIPLE_BY_8_shift
-	add	rsi,	rax
-
-	; zwolnij wszystkie strony wchodzące w skład przestrzeni
-	mov	rcx,	qword [rsp]
-
-.loop:
-	; włącz bit odpowiadający za zwalnianą stronę
-	bts	qword [rsi],	rdx
-
-	; następna strona przestrzeni
-	inc	rdx
-
-	; koniec przestrzeni?
-	dec	rcx
-	jnz	.loop	; nie
-
-	; przywróć oryginalne rejestry i flagi
-	pop	rcx
-	pop	rdi
-	pop	rsi
-	pop	rdx
-	pop	rax
-
-	; powrót z procedury
-	ret
-
-	macro_debug	"kernel_service_memory_release"

@@ -24,6 +24,7 @@ KERNEL_TASK_FLAG_thread_bit		equ	5
 KERNEL_TASK_FLAG_stream_in_bit		equ	6
 KERNEL_TASK_FLAG_stream_out_bit		equ	7
 
+; KERNEL_TASK_STRUCTURE.SIZE % STATIC_DWORD_SIZE_byte = 0
 struc	KERNEL_TASK_STRUCTURE
 	.cr3				resb	8	; adres tablicy PML4 procesu
 	.rsp				resb	8	; ostatni znany wskaźnik szczytu stosu kontekstu procesu
