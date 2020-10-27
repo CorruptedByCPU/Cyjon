@@ -76,6 +76,11 @@ tm:
 	je	.end	; tak, zakończ działanie procesu
 
 .no_event:
+	; uśpij proces na 1 sekundę
+	mov	ax,	KERNEL_SERVICE_PROCESS_sleep
+	mov	ecx,	1
+	int	KERNEL_SERVICE
+
 	; powrót do głównej pętli
 	jmp	.check
 
