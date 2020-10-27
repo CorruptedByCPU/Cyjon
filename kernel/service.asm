@@ -620,14 +620,31 @@ kernel_service:
 .system:
 	; zwrócić właściwości pamięci RAM
 	cmp	ax,	KERNEL_SERVICE_SYSTEM_memory
-	jne	kernel_service.error	; nie
+	je	.system_memory	; tak
 
+	; zwrócić informacje o czasie?
+	cmp	ax,	KERNEL_SERVICE_SYSTEM_time
+	je	.system_time
+
+	; brak obsługi podprocedury
+	jmp	kernel_service.error
+
+;-------------------------------------------------------------------------------
+.system_memory:
 	; rozmiar całkowity
 	mov	r8,	qword [kernel_page_total_count]
 	mov	r9,	qword [kernel_page_free_count]
 	mov	r10,	qword [kernel_page_paged_count]
 
 	; powrót do procesu
+	jmp	kernel_service.end
+
+;-------------------------------------------------------------------------------
+.system_time:
+	; zwróć uptime systemu (1 sekunda to 1024 tyknięcia)
+	mov	r8,	qword [driver_rtc_microtime]
+
+	; koniec obsługi opcji
 	jmp	kernel_service.end
 
 ;===============================================================================

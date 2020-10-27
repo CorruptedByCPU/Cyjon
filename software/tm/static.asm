@@ -9,12 +9,12 @@ tm_static:
 
 	; wyświetl uptime systemu
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	ecx,	tm_string_uptime_days_end - tm_string_uptime
+	mov	ecx,	tm_string_uptime_end - tm_string_uptime
 	mov	rsi,	tm_string_uptime
 	int	KERNEL_SERVICE
 
 	; wyświetl ilość procesów
-	mov	ecx,	tm_string_tasks_sleeping_end - tm_string_tasks
+	mov	ecx,	tm_string_tasks_end - tm_string_tasks
 	mov	rsi,	tm_string_tasks
 	int	KERNEL_SERVICE
 

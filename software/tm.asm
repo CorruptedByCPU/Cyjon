@@ -34,7 +34,7 @@ tm:
 	mov	rsi,	tm_string_init
 	int	KERNEL_SERVICE
 
-	; wyświetl zniezmienne elementy interfejsu
+	; wyświetl niezmienne elementy interfejsu
 	call	tm_static
 
 .check:
@@ -42,6 +42,12 @@ tm:
 	call	tm_stream_info
 
 .loop:
+	; wyświetl uptime systemu
+	call	tm_uptime
+
+	; wyświetl wykorzystanie pamięci RAM
+	call	tm_ram
+
 	;-----------------------------------------------------------------------
 	; pobierz wiadomość
 	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
@@ -76,6 +82,8 @@ tm:
 	%include	"software/tm/data.asm"
 	%include	"software/tm/static.asm"
 	%include	"software/tm/stream.asm"
+	%include	"software/tm/ram.asm"
+	%include	"software/tm/uptime.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/integer_to_string.asm"
 	%include	"library/value_to_size.asm"
