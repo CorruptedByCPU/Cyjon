@@ -1,5 +1,9 @@
 ;===============================================================================
-; Copyright (C) by blackdev.org
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+; GPL-3.0 License
+;
+; Main developer:
+;	Andrzej Adamczyk
 ;===============================================================================
 
 KERNEL_EXEC_FLAG_accept_childrens	equ	00000001b	; przyjmuj na standardowe wejście strumienie od procesów potomnych

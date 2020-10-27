@@ -1,5 +1,9 @@
 ;===============================================================================
-; Copyright (C) by blackdev.org
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+; GPL-3.0 License
+;
+; Main developer:
+;	Andrzej Adamczyk
 ;===============================================================================
 
 ;===============================================================================
@@ -90,6 +94,10 @@ kernel_service:
 	; przetworzyć meta dane strumienia?
 	cmp	ax,	KERNEL_SERVICE_PROCESS_stream_meta
 	je	.process_stream_meta	; tak
+
+	; zwrócić listę uruchomionych procesów?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_list
+	je	.process_list	; tak
 
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
@@ -540,6 +548,30 @@ kernel_service:
 	pop	rsi
 	pop	rcx
 	pop	rbx
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;-------------------------------------------------------------------------------
+; wyjście:
+;	rcx - rozmiar listy w Bajtach
+;	rsi - wskaźnik do przestrzeni listy
+.process_list:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rdi
+
+	; przydziel przestrzeń dla procesu
+	mov	rcx,	qword [kernel_task_size_page]
+	call	kernel_service_memory_alloc
+	jc	.end	; brak dostępnej przestrzeni
+
+
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rcx
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end

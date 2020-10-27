@@ -1,5 +1,9 @@
 ;===============================================================================
-; Copyright (C) by blackdev.org
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+; GPL-3.0 License
+;
+; Main developer:
+;	Andrzej Adamczyk
 ;===============================================================================
 
 KERNEL_VFS_FILE_TYPE_character_device_bit		equ	1

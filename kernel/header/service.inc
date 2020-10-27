@@ -1,5 +1,9 @@
 ;===============================================================================
-; Copyright (C) by blackdev.org
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+; GPL-3.0 License
+;
+; Main developer:
+;	Andrzej Adamczyk
 ;===============================================================================
 
 KERNEL_SERVICE						equ	0x40
@@ -18,6 +22,8 @@ KERNEL_SERVICE_PROCESS_stream_in			equ	0x0900 + KERNEL_SERVICE_PROCESS
 KERNEL_SERVICE_PROCESS_stream_out_char			equ	0x0A00 + KERNEL_SERVICE_PROCESS
 KERNEL_SERVICE_PROCESS_stream_meta			equ	0x0B00 + KERNEL_SERVICE_PROCESS
 KERNEL_SERVICE_PROCESS_pid_parent			equ	0x0C00 + KERNEL_SERVICE_PROCESS
+KERNEL_SERVICE_PROCESS_list				equ	0x0D00 + KERNEL_SERVICE_PROCESS
+KERNEL_SERVICE_PROCESS_memory_release			equ	0x0E00 + KERNEL_SERVICE_PROCESS
 
 KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_get		equ	00000001b
 KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_set		equ	00000010b

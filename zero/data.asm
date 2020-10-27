@@ -1,5 +1,9 @@
 ;===============================================================================
-; Copyright (C) by blackdev.org
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+; GPL-3.0 License
+;
+; Main developer:
+;	Andrzej Adamczyk
 ;===============================================================================
 
 zero_microtime				dq	0x0000000000000000

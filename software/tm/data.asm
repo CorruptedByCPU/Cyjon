@@ -1,5 +1,9 @@
 ;===============================================================================
-; Copyright (C) by blackdev.org
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+; GPL-3.0 License
+;
+; Main developer:
+;	Andrzej Adamczyk
 ;===============================================================================
 
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_EMPTY
@@ -23,6 +27,7 @@ tm_string_uptime_days				db	STATIC_ASCII_SEQUENCE_COLOR_DEFAULT, " days "
 tm_string_uptime_days_end:
 tm_string_tasks					db	"^[t1;0;1]Tasks: "
 tm_string_tasks_end:
+tm_string_tasks_position_and_color		db	"^[t1;7;1]", STATIC_ASCII_SEQUENCE_COLOR_WHITE
 tm_string_tasks_total				db	" total, "
 tm_string_tasks_total_end:
 tm_string_tasks_running				db	" running, "
@@ -43,6 +48,8 @@ tm_string_header_position_and_color		db	"^[t1;0;4]^[c70]"
 tm_string_header_position_and_color_end:
 tm_string_header				db	"  PID %CPU %Mem Time+ Command"
 tm_string_header_end:
+tm_string_table_row_first_position		db	"^[t1;0;5]"
+tm_string_table_row_first_position_end:
 
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 tm_ipc_data:

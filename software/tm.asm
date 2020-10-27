@@ -1,5 +1,9 @@
 ;===============================================================================
-; Copyright (C) by blackdev.org
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+; GPL-3.0 License
+;
+; Main developer:
+;	Andrzej Adamczyk
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
@@ -48,6 +52,9 @@ tm:
 	; wyświetl wykorzystanie pamięci RAM
 	call	tm_ram
 
+	; wyświetl ilość i listę aktywnych procesów
+	call	tm_task
+
 	;-----------------------------------------------------------------------
 	; pobierz wiadomość
 	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
@@ -84,6 +91,7 @@ tm:
 	%include	"software/tm/stream.asm"
 	%include	"software/tm/ram.asm"
 	%include	"software/tm/uptime.asm"
+	%include	"software/tm/task.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/integer_to_string.asm"
 	%include	"library/value_to_size.asm"

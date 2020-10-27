@@ -1,5 +1,9 @@
 ;===============================================================================
-; Copyright (C) by blackdev.org
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+; GPL-3.0 License
+;
+; Main developer:
+;	Andrzej Adamczyk
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
@@ -16,6 +20,7 @@
 	%include	"kernel/header/ipc.inc"
 	%include	"kernel/header/stream.inc"
 	%include	"kernel/header/wm.inc"
+	%include	"kernel/header/task.inc"
 	;-----------------------------------------------------------------------
 
 ; 64 bitowy kod inicjalizacyjny jądra systemu
