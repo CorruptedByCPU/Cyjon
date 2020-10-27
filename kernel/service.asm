@@ -99,6 +99,10 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_PROCESS_list
 	je	.process_list	; tak
 
+	; zatrzymać proces na dany czas?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_sleep
+	je	.process_sleep	; tak
+
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
 
@@ -605,6 +609,39 @@ kernel_service:
 	; przywróć oryginalne rejestry
 	pop	rcx
 	pop	rdi
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;-------------------------------------------------------------------------------
+; wejście:
+;	rcx - ilość sekund
+.process_sleep:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rdi
+
+	; pobierz wskaźnik procesu
+	call	kernel_task_active
+
+	; oznacz proces w stanie uśpienia
+	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_sleep
+
+	; ustaw czas wybudzenia procesu
+	shl	rcx,	STATIC_MULTIPLE_BY_1024_shift
+	add	rcx,	qword [driver_rtc_microtime]
+
+.wait:
+	; todo
+	; wywłaszczenie
+
+	; wybudzić proces?
+	cmp	rcx,	qword [driver_rtc_microtime]
+	ja	.wait	; nie
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rcx
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end

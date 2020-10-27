@@ -14,6 +14,7 @@ KERNEL_TASK_FLAG_secured		equ	0000000000010000b	; oznaczenie wpisu zajętego
 KERNEL_TASK_FLAG_thread			equ	0000000000100000b
 KERNEL_TASK_FLAG_stream_in		equ	0000000001000000b	; strumień wejścia został przekierowany lub odziedziczony
 KERNEL_TASK_FLAG_stream_out		equ	0000000010000000b	; strumień wyjścia został przekierowany lub odziedziczony
+KERNEL_TASK_FLAG_sleep			equ	0000000100000000b	; proces uśpiony
 
 KERNEL_TASK_FLAG_active_bit		equ	0
 KERNEL_TASK_FLAG_closed_bit		equ	1
@@ -23,6 +24,7 @@ KERNEL_TASK_FLAG_secured_bit		equ	4
 KERNEL_TASK_FLAG_thread_bit		equ	5
 KERNEL_TASK_FLAG_stream_in_bit		equ	6
 KERNEL_TASK_FLAG_stream_out_bit		equ	7
+KERNEL_TASK_FLAG_sleep_bit		equ	8
 
 ; KERNEL_TASK_STRUCTURE.SIZE % STATIC_DWORD_SIZE_byte = 0
 struc	KERNEL_TASK_STRUCTURE
