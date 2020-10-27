@@ -64,7 +64,6 @@ kernel_exec:
 	call	kernel_page_map_logical
 	jc	.error
 
-
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod binarną mapę pamięci procesu
 	shl	r12,	STATIC_PAGE_SIZE_shift
@@ -72,7 +71,6 @@ kernel_exec:
 	and	bx,	~KERNEL_PAGE_FLAG_user	; dostęp tylko od strony jądra systemu
 	mov	rcx,	KERNEL_MEMORY_MAP_SIZE_page
 	call	kernel_page_map_logical
-
 
 	; zachowaj bezpośredni adres binarnej mapy pamięci procesu
 	mov	r13,	rax
@@ -93,7 +91,6 @@ kernel_exec:
 	shr	rcx,	STATIC_PAGE_SIZE_shift
 	add	rcx,	KERNEL_MEMORY_MAP_SIZE_page
 	call	kernel_memory_secure
-
 
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod stos procesu
