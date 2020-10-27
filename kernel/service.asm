@@ -564,11 +564,11 @@ kernel_service:
 	; przydziel przestrzeń dla procesu
 	mov	rcx,	qword [kernel_task_size_page]
 	call	kernel_service_memory_alloc
-	jc	.end	; brak dostępnej przestrzeni
+	jc	.process_list_end	; brak dostępnej przestrzeni
 
 
 
-.end:
+.process_list_end:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rcx
