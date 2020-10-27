@@ -1,5 +1,9 @@
 ;===============================================================================
-; Copyright (C) by blackdev.org
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+; GPL-3.0 License
+;
+; Main developer:
+;	Andrzej Adamczyk
 ;===============================================================================
 
 ;===============================================================================
@@ -90,6 +94,10 @@ kernel_service:
 	; przetworzyć meta dane strumienia?
 	cmp	ax,	KERNEL_SERVICE_PROCESS_stream_meta
 	je	.process_stream_meta	; tak
+
+	; zwrócić listę uruchomionych procesów?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_list
+	je	.process_list	; tak
 
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
@@ -544,6 +552,30 @@ kernel_service:
 	; koniec obsługi opcji
 	jmp	kernel_service.end
 
+;-------------------------------------------------------------------------------
+; wyjście:
+;	rcx - rozmiar listy w Bajtach
+;	rsi - wskaźnik do przestrzeni listy
+.process_list:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rdi
+
+	; przydziel przestrzeń dla procesu
+	mov	rcx,	qword [kernel_task_size_page]
+	call	kernel_service_memory_alloc
+	jc	.process_list_end	; brak dostępnej przestrzeni
+
+
+
+.process_list_end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rcx
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
 ;===============================================================================
 .vfs:
 	; sprawdzić poprawność ścieżki?
@@ -620,14 +652,31 @@ kernel_service:
 .system:
 	; zwrócić właściwości pamięci RAM
 	cmp	ax,	KERNEL_SERVICE_SYSTEM_memory
-	jne	kernel_service.error	; nie
+	je	.system_memory	; tak
 
+	; zwrócić informacje o czasie?
+	cmp	ax,	KERNEL_SERVICE_SYSTEM_time
+	je	.system_time
+
+	; brak obsługi podprocedury
+	jmp	kernel_service.error
+
+;-------------------------------------------------------------------------------
+.system_memory:
 	; rozmiar całkowity
 	mov	r8,	qword [kernel_page_total_count]
 	mov	r9,	qword [kernel_page_free_count]
 	mov	r10,	qword [kernel_page_paged_count]
 
 	; powrót do procesu
+	jmp	kernel_service.end
+
+;-------------------------------------------------------------------------------
+.system_time:
+	; zwróć uptime systemu (1 sekunda to 1024 tyknięcia)
+	mov	r8,	qword [driver_rtc_microtime]
+
+	; koniec obsługi opcji
 	jmp	kernel_service.end
 
 ;===============================================================================

@@ -7,25 +7,45 @@
 ;===============================================================================
 
 ;===============================================================================
-kernel_gui_event_console:
+tm_task:
 	; zachowaj oryginalne rejestry
+	push	rax
 	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+	push	rdi
+
+	; pobierz informacje o uruchomionych procesach
+	mov	ax,	KERNEL_SERVICE_PROCESS_list
+	int	KERNEL_SERVICE
+
+	; zachowaj adres i rozmiar listy
 	push	rcx
 	push	rsi
 
-	; uruchom program "Console"
-	mov	ax,	KERNEL_SERVICE_PROCESS_run
-	mov	ebx,	KERNEL_SERVICE_PROCESS_RUN_FLAG_default
-	mov	ecx,	kernel_gui_event_console_file_end - kernel_gui_event_console_file
-	mov	rsi,	kernel_gui_event_console_file
+	; rcx - rozmiar listy
+	; rsi - wskaźnik do listy
+
+
+
+	; przywróć adres i rozmiar listy
+	pop	rdi
+	pop	rcx
+
+	; zwolnij przestrzeń
+	mov	ax,	KERNEL_SERVICE_PROCESS_memory_release
 	int	KERNEL_SERVICE
 
+	jmp	$
+
 	; przywróć oryginalne rejestry
+	pop	rdi
 	pop	rsi
+	pop	rdx
 	pop	rcx
 	pop	rbx
+	pop	rax
 
-	; powrót z procedury obsługi akcji
+	; powrót z procedury
 	ret
-
-	macro_debug	"kernel_gui_event_console"

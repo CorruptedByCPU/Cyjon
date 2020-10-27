@@ -1,5 +1,9 @@
 ;===============================================================================
-; Copyright (C) by blackdev.org
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+; GPL-3.0 License
+;
+; Main developer:
+;	Andrzej Adamczyk
 ;===============================================================================
 
 KERNEL_EXEC_FLAG_accept_childrens	equ	00000001b	; przyjmuj na standardowe wejście strumienie od procesów potomnych
@@ -64,7 +68,6 @@ kernel_exec:
 	call	kernel_page_map_logical
 	jc	.error
 
-
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod binarną mapę pamięci procesu
 	shl	r12,	STATIC_PAGE_SIZE_shift
@@ -72,7 +75,6 @@ kernel_exec:
 	and	bx,	~KERNEL_PAGE_FLAG_user	; dostęp tylko od strony jądra systemu
 	mov	rcx,	KERNEL_MEMORY_MAP_SIZE_page
 	call	kernel_page_map_logical
-
 
 	; zachowaj bezpośredni adres binarnej mapy pamięci procesu
 	mov	r13,	rax
@@ -93,7 +95,6 @@ kernel_exec:
 	shr	rcx,	STATIC_PAGE_SIZE_shift
 	add	rcx,	KERNEL_MEMORY_MAP_SIZE_page
 	call	kernel_memory_secure
-
 
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod stos procesu

@@ -1,5 +1,9 @@
 ;===============================================================================
-; Copyright (C) by blackdev.org
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+; GPL-3.0 License
+;
+; Main developer:
+;	Andrzej Adamczyk
 ;===============================================================================
 
 ;===============================================================================
@@ -13,14 +17,6 @@ kernel_wm_object_drain:
 	; zamknij wszystkie obiekty należące do procesu
 	call	kernel_wm_object_by_pid
 	jc	.end	; wszystkie zamknięte
-
-	; oznacz obiekt jako nieaktywny
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_visible & KERNEL_WM_OBJECT_FLAG_undraw
-
-.wait:
-	; obiekt został usunięty z przestrzeni roboczej ekranu?
-	cmp	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	STATIC_EMPTY
-	jne	.wait	; nie, czekaj
 
 	; usuń obiekt
 	call	kernel_wm_object_delete
