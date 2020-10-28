@@ -16,10 +16,10 @@ tm_task:
 	push	rsi
 	push	rdi
 
-	; ustaw kursor na pierwszy wersz tablicy
+	; ustaw kursor na nagłówek listy
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	ecx,	tm_string_table_row_first_position_and_color_end - tm_string_table_row_first_position_and_color
-	mov	rsi,	tm_string_table_row_first_position_and_color
+	mov	ecx,	tm_string_header_position_end - tm_string_header_position
+	mov	rsi,	tm_string_header_position
 	int	KERNEL_SERVICE
 
 	; pobierz informacje o uruchomionych procesach
@@ -38,8 +38,15 @@ tm_task:
 	push	rcx
 	push	rsi
 
-	; wyświetl PID pierwszego procesu
-	mov	rax,	qword [rsi + KERNEL_TASK_STRUCTURE.pid]
+	; przesuń kursor na kolejny wiersz listy
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	tm_string_table_row_next_end - tm_string_table_row_next
+	mov	rsi,	tm_string_table_row_next
+	int	KERNEL_SERVICE
+
+	; pobierz PID pierwszego procesu z listy
+	mov	rax,	qword [rsp]
+	mov	rax,	qword [rax + KERNEL_TASK_STRUCTURE.pid]
 
 	; przekształć wartość na ciąg
 	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
@@ -53,13 +60,14 @@ tm_task:
 	mov	rsi,	rdi
 	int	KERNEL_SERVICE
 
-	;---
+	;------
 	; debug
-	;---
+	;------
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_char
 	mov	ecx,	0x11
 	mov	dl,	STATIC_ASCII_SPACE
 	int	KERNEL_SERVICE
+	;------
 
 	; wyświetl nazwę procesu
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
@@ -67,12 +75,6 @@ tm_task:
 	sub	ecx,	22	; debug
 	mov	rsi,	qword [rsp]
 	add	rsi,	KERNEL_TASK_STRUCTURE.name
-	int	KERNEL_SERVICE
-
-	; przesuń kursor do następnego wiersza
-	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_char
-	mov	ecx,	0x01
-	mov	dl,	STATIC_ASCII_NEW_LINE
 	int	KERNEL_SERVICE
 
 	; przywróć właściwości listy procesów

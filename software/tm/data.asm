@@ -42,14 +42,16 @@ tm_string_memory_total				db	STATIC_ASCII_SEQUENCE_COLOR_DEFAULT, " [t], ", STAT
 tm_string_memory_total_end:
 tm_string_memory_free				db	STATIC_ASCII_SEQUENCE_COLOR_DEFAULT, " [f], ", STATIC_ASCII_SEQUENCE_COLOR_WHITE
 tm_string_memory_free_end:
-tm_string_memory_used				db	STATIC_ASCII_SEQUENCE_COLOR_DEFAULT, " [u]"
+tm_string_memory_used				db	STATIC_ASCII_SEQUENCE_COLOR_DEFAULT, " [u] "
 tm_string_memory_used_end:
-tm_string_header_position_and_color		db	"^[t1;0;4]^[c70]"
+tm_string_header_position			db	"^[t1;0;4]"
+tm_string_header_position_end:
+tm_string_header_position_and_color		db	"^[c70]"
 tm_string_header_position_and_color_end:
-tm_string_header				db	"  PID %CPU %Mem Time+ Command"
+tm_string_header				db	"  PID %CPU %Mem Time+ Process"
 tm_string_header_end:
-tm_string_table_row_first_position_and_color	db	"^[t1;0;5]", STATIC_ASCII_SEQUENCE_COLOR_DEFAULT
-tm_string_table_row_first_position_and_color_end:
+tm_string_table_row_next			db	STATIC_ASCII_NEW_LINE, STATIC_ASCII_SEQUENCE_CLEAR_LINE
+tm_string_table_row_next_end:
 
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 tm_ipc_data:

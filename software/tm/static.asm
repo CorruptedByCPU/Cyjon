@@ -28,8 +28,8 @@ tm_static:
 	int	KERNEL_SERVICE
 
 	; wyświetl nagłówek tablicy procesów
-	mov	ecx,	tm_string_header_end - tm_string_header_position_and_color
-	mov	rsi,	tm_string_header_position_and_color
+	mov	ecx,	tm_string_header_end - tm_string_header_position
+	mov	rsi,	tm_string_header_position
 	int	KERNEL_SERVICE
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_char
 	movzx	ecx,	word [tm_stream_meta + CONSOLE_STRUCTURE_STREAM_META.width]

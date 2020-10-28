@@ -223,5 +223,29 @@ console_sequence:
 	jmp	console_sequence.end
 
 .terminal_no_cursor_visibility:
+	;-----------------------------------------------------------------------
+	;-----------------------------------------------------------------------
+	; wyczyścić linię w miejscu kursora?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"3"
+	jne	.terminal_no_line_clear	; nie
+
+	; zachowaj oryginalne rejestr
+	push	rcx
+
+	; numer linii do wyczyszczenia
+	mov	ecx,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y]
+	call	library_terminal_empty_line
+
+	; przywróć oryginalny rejestr
+	pop	rcx
+
+	; przetworzono sekwencję
+	sub	rcx,	0x05
+	add	rsi,	0x05
+
+	; powrót z podprocedury
+	jmp	console_sequence.end
+
+.terminal_no_line_clear:
 	; nie rozpoznano polecenia
 	jmp	console_sequence.error

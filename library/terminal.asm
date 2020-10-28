@@ -611,7 +611,6 @@ library_terminal_scroll:
 library_terminal_empty_line:
 	; zachowaj oryginalne rejestry
 	push	rax
-	push	rbx
 	push	rcx
 	push	rdx
 	push	rdi
@@ -619,17 +618,17 @@ library_terminal_empty_line:
 	; wyłącz wirtualny kursor
 	call	library_terminal_cursor_disable
 
-	; załaduj numer linii do akumulatora
-	mov	rax,	rcx
-
-	; ustaw wskaźnik na początek danej linii ekranu0
-	mov	rcx,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.scanline_char]
+	; wylicz pozycję względmą linii w przestrzeni terminala
+	mov	rax,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.scanline_char]
 	mul	rcx
-	add	rax,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.address]
-	mov	rdi,	rax
+
+	; ustaw wskaźnik
+	mov	rdi,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.address]
+	add	rdi,	rax
 
 	; wyczyść linię domyślnym kolorem tła
 	mov	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.background_color]
+	mov	rcx,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.scanline_char]
 	shr	rcx,	KERNEL_VIDEO_DEPTH_shift
 	rep	stosd
 
@@ -640,7 +639,6 @@ library_terminal_empty_line:
 	pop	rdi
 	pop	rdx
 	pop	rcx
-	pop	rbx
 	pop	rax
 
 	; powrót z procedury
