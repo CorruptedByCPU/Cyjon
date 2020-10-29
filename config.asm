@@ -123,6 +123,7 @@ STATIC_ASCII_SEQUENCE_length_min			equ	0x05
 %define STATIC_ASCII_SEQUENCE_CURSOR_RETURN			"^[t1;0;*]"	; ustaw kursor na początek aktualnej linii
 %define	STATIC_ASCII_SEQUENCE_CURSOR_ENABLE			"^[t2;0]"	; włącz kursor tekstowy
 %define	STATIC_ASCII_SEQUENCE_CURSOR_DISABLE			"^[t2;1]"	; wyłącz kursor tekstowy
+%define	STATIC_ASCII_SEQUENCE_CLEAR_LINE			"^[t3]"		; wyczyść aktualną linię
 %define	STATIC_ASCII_SEQUENCE_COLOR_DEFAULT			"^[c07]"	; kolor jasno-szary na czarnym tle
 %define	STATIC_ASCII_SEQUENCE_COLOR_BLACK			"^[c*0]"
 %define	STATIC_ASCII_SEQUENCE_COLOR_RED				"^[c*1]"
