@@ -15,6 +15,7 @@ tm_task:
 	push	rdx
 	push	rsi
 	push	rdi
+	push	r8
 
 	; ustaw kursor na nagłówek listy
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
@@ -37,6 +38,10 @@ tm_task:
 	; zachowaj właściwości listy procesów
 	push	rcx
 	push	rsi
+
+	; proces jest aktywny?
+	test	qword [rsi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active
+	jz	.next	; nie, zignoruj
 
 	; przesuń kursor na kolejny wiersz listy
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
@@ -77,6 +82,7 @@ tm_task:
 	add	rsi,	KERNEL_TASK_STRUCTURE.name
 	int	KERNEL_SERVICE
 
+.next:
 	; przywróć właściwości listy procesów
 	pop	rsi
 	pop	rcx
@@ -97,6 +103,7 @@ tm_task:
 	int	KERNEL_SERVICE
 
 	; przywróć oryginalne rejestry
+	pop	r8
 	pop	rdi
 	pop	rsi
 	pop	rdx
