@@ -50,6 +50,8 @@ tm_string_header_position_and_color		db	"^[c70]"
 tm_string_header_position_and_color_end:
 tm_string_header				db	"  PID %CPU %Mem Time+ Process"
 tm_string_header_end:
+tm_string_first_row_position			db	"^[t1;0;5]"
+tm_string_first_row_position_end:
 tm_string_table_row_next			db	STATIC_ASCII_NEW_LINE, STATIC_ASCII_SEQUENCE_CLEAR_LINE
 tm_string_table_row_next_end:
 
