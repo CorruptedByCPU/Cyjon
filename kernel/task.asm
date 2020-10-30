@@ -105,6 +105,11 @@ kernel_task:
 	mov	rax,	cr3
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.cr3],	rax
 
+	; pobierz niewykorzystana ilość czasu procesora
+	mov	rax,	qword [kernel_apic_base_address]
+	mov	ecx,	dword [rax + KERNEL_APIC_TCCR_register]
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.apic],	ecx
+
 	; usuń z zadania informacje o przydzielonym procesorze logicznym
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.cpu],	STATIC_EMPTY
 

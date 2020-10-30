@@ -632,8 +632,8 @@ kernel_service:
 	add	rcx,	qword [driver_rtc_microtime]
 
 .wait:
-	; todo
 	; wywłaszczenie
+	int	KERNEL_APIC_IRQ_number
 
 	; wybudzić proces?
 	cmp	rcx,	qword [driver_rtc_microtime]

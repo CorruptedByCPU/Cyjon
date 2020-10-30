@@ -34,6 +34,7 @@ struc	KERNEL_TASK_STRUCTURE
 	.pid				resb	8	; identyfikator procesu
 	.parent				resb	8	; identyfikator procesu rodzica
 	.time				resb	8	; czas uruchomienia procesu względem czasu życia jądra systemu
+	.apic				resb	4	; niewykorzystana ilość czasu procesora
 	.knot				resb	8	; wskaźnik do supła katalogu roboczego procesu
 	.map				resb	8	; wskaźnik do przestrzeni binarnej mapy pamięci procesu
 	.map_size			resb	8	; rozmiar przestrzeni binarnej mapy pamięci procesu w bitach
