@@ -30,14 +30,14 @@ kernel_init_apic_id_highest			db	STATIC_EMPTY
 
 kernel_init_services_list:
 						dq	service_gc
-						db	2
-						db	"gc"
+						db	17
+						db	"garbage collector"
 						dq	kernel_wm
-						db	2
-						db	"wm"
+						db	14
+						db	"window manager"
 						dq	kernel_gui
-						db	3
-						db	"gui"
+						db	24
+						db	"graphical user interface"
 						; dq	service_tx
 						; dq	service_network
 						; dq	service_http

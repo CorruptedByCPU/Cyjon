@@ -346,7 +346,7 @@ kernel_page_map_virtual:
 	call	kernel_task_active
 
 	; proces wykonujący jest usługą?
-	test	qword [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_service
+	test	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_service
 	jnz	.end	; zignoruj wywołanie
 
 	; tablice stronicowania domyślne dla procesu

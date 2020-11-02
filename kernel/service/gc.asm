@@ -19,7 +19,7 @@ service_gc:
 	mov	rdi,	qword [rsi + KERNEL_TASK_STRUCTURE.in]
 
 	; strumień wejścia jest własnością procesu?
-	test	qword [rsi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_stream_in
+	test	word [rsi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_stream_in
 	jnz	.stream_not_unique	; nie
 
 	; zwolnij strumień
@@ -30,7 +30,7 @@ service_gc:
 	mov	rdi,	qword [rsi + KERNEL_TASK_STRUCTURE.out]
 
 	; strumień wyjścia jest własnością procesu?
-	test	qword [rsi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_stream_out
+	test	word [rsi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_stream_out
 	jnz	.stream_out_unique	; nie
 
 	; zwolnij strumień
