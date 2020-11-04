@@ -103,6 +103,10 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_PROCESS_sleep
 	je	.process_sleep	; tak
 
+	; zwolnić pozostały czas procesora?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_release
+	je	.process_release	; tak
+
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
 
@@ -535,10 +539,12 @@ kernel_service:
 
 ;-------------------------------------------------------------------------------
 ; wyjście:
+;	rbx - ilość wpisów
 ;	rcx - rozmiar listy w Bajtach
 ;	rsi - wskaźnik do przestrzeni listy
 .process_list:
 	; zachowaj oryginalne rejestry
+	push	rax
 	push	rdi
 	push	rcx
 
@@ -547,8 +553,12 @@ kernel_service:
 	call	kernel_memory_alloc_task
 	jc	.process_list_end	; brak dostępnej przestrzeni
 
-	; zachowaj wskaźnik początku przestrzeni
+	; zachowaj wskaźnik początku i rozmiaru przestrzeni
+	push	rcx
 	push	rdi
+
+	; ilość wpisów przesłanych do procesu
+	xor	ebx,	ebx
 
 	; uzupełnij listę o wszystkie procesy zarejetrowane w serpentynie
 	mov	rsi,	qword [kernel_task_address]
@@ -559,27 +569,66 @@ kernel_service:
 
 .process_list_loop:
 	; wpis jest pusty?
-	cmp	qword [rsi + KERNEL_TASK_STRUCTURE.flags],	STATIC_EMPTY
+	cmp	word [rsi + KERNEL_TASK_STRUCTURE.flags],	STATIC_EMPTY
 	je	.process_list_next	; tak
 
-	; zachowaj ilość pozostałych wpisów i wskaźnik do aktualnie przetwarzanego
+	; proces jest aktywny?
+	test	word [rsi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active
+	jz	.process_list_next	; nie, zignoruj
+
+	; zachowaj wskaźnik i ilość wpisów do przetworzenia w bloku serpentyny
 	push	rcx
 	push	rsi
 
-	; przenieś wpis do procesu
-	mov	ecx,	KERNEL_TASK_STRUCTURE.SIZE
+	; wyślij dedykowane informacje o procesie
+
+	; PID procesu
+	mov	rax,	qword [rsi + KERNEL_TASK_STRUCTURE.pid]
+	stosq
+
+	; PID rodzica
+	mov	rax,	qword [rsi + KERNEL_TASK_STRUCTURE.parent]
+	stosq
+
+	; numer procesora logicznego przetwarzajcego proces
+	mov	rax,	qword [rsi + KERNEL_TASK_STRUCTURE.cpu]
+	stosq
+
+	; czas uruchomienia procesu w formacie Microtime
+	mov	rax,	qword [rsi + KERNEL_TASK_STRUCTURE.time]
+	stosq
+
+	; niewykorzystany czas procesora w formacie APIC
+	mov	eax,	dword [rsi + KERNEL_TASK_STRUCTURE.apic]
+	stosd
+
+	; rozmiar wykorzystanej przestrzeni pamięci przez proces (bez tablic stronicowania)
+	mov	rax,	qword [rsi + KERNEL_TASK_STRUCTURE.memory]
+	stosq
+
+	; supeł katalogu roboczego procesu
+	mov	rax,	qword [rsi + KERNEL_TASK_STRUCTURE.knot]
+	stosq
+
+	; flagi stanu procesu
+	mov	ax,	word [rsi + KERNEL_TASK_STRUCTURE.flags]
+	stosw
+
+	; ilość znaków reprezentujących nazwę procesu
+	movzx	eax,	byte [rsi + KERNEL_TASK_STRUCTURE.length]
+	stosb
+
+	; nazwa procesu
+	mov	ecx,	eax
+	add	rsi,	KERNEL_TASK_STRUCTURE.name
 	rep	movsb
 
-	; przywróć ilość pozostałych wpisów
+	; przywróć wskaźnik i ilość wpisów do przetworzenia w bloku serpentyny
 	pop	rsi
 	pop	rcx
 
-	; usuń wszystkie dane o których proces nie musi wiedzieć
-	mov	qword [(rdi - KERNEL_TASK_STRUCTURE.SIZE) + KERNEL_TASK_STRUCTURE.cr3],	STATIC_EMPTY
-	mov	qword [(rdi - KERNEL_TASK_STRUCTURE.SIZE) + KERNEL_TASK_STRUCTURE.rsp],	STATIC_EMPTY
-	mov	qword [(rdi - KERNEL_TASK_STRUCTURE.SIZE) + KERNEL_TASK_STRUCTURE.map],	STATIC_EMPTY
-	mov	qword [(rdi - KERNEL_TASK_STRUCTURE.SIZE) + KERNEL_TASK_STRUCTURE.map_size],	STATIC_EMPTY
-	mov	word [(rdi - KERNEL_TASK_STRUCTURE.SIZE) + KERNEL_TASK_STRUCTURE.stack],	STATIC_EMPTY
+	; załądowano informacje o procesie
+	inc	rbx
 
 .process_list_next:
 	; następny wpis z listy
@@ -599,16 +648,19 @@ kernel_service:
 
 	; zwróć adres przestrzeni listy procesów
 	pop	rsi
-
-	; zwróć rozmiar listy procesów w Bajtach
-	mov	rcx,	rdi
-	sub	rcx,	rsi
+	pop	rcx	; i jej rozmiar w Bajtach
+	shl	rcx,	STATIC_MULTIPLE_BY_PAGE_shift
 	mov	qword [rsp],	rcx
+
+	; zwróć rozmiar wszystkich elementów listy w Bajtach
+	mov	rbx,	rdi
+	sub	rbx,	rsi
 
 .process_list_end:
 	; przywróć oryginalne rejestry
 	pop	rcx
 	pop	rdi
+	pop	rax
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
@@ -632,8 +684,8 @@ kernel_service:
 	add	rcx,	qword [driver_rtc_microtime]
 
 .wait:
-	; todo
 	; wywłaszczenie
+	int	KERNEL_APIC_IRQ_number
 
 	; wybudzić proces?
 	cmp	rcx,	qword [driver_rtc_microtime]
@@ -642,6 +694,14 @@ kernel_service:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rcx
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;-------------------------------------------------------------------------------
+.process_release:
+	; wywłaszczenie
+	int	KERNEL_APIC_IRQ_number
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end

@@ -168,7 +168,7 @@ kernel_wm_irq:
 
 	; proces jest usługą?
 	call	kernel_task_active
-	test	qword [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_service
+	test	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_service
 	jnz	.window_create_service	; tak
 
 	; do procesu zwróć adres przestrzeni okna w procesie

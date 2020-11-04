@@ -15,6 +15,28 @@ KERNEL_TASK_EFLAGS_default		equ	KERNEL_TASK_EFLAGS_if
 KERNEL_TASK_STACK_address		equ	(KERNEL_MEMORY_HIGH_VIRTUAL_address << STATIC_MULTIPLE_BY_2_shift) - (KERNEL_TASK_STACK_SIZE_page << STATIC_MULTIPLE_BY_PAGE_shift)
 KERNEL_TASK_STACK_SIZE_page		equ	1
 
+; KERNEL_TASK_STRUCTURE.SIZE % STATIC_DWORD_SIZE_byte = 0
+struc	KERNEL_TASK_STRUCTURE
+	.cr3				resb	8	; adres tablicy PML4 procesu
+	.rsp				resb	8	; ostatni znany wskaźnik szczytu stosu kontekstu procesu
+	.cpu				resb	8	; identyfikator procesora logicznego, obsługującego w danym czasie proces
+	.pid				resb	8	; identyfikator procesu
+	.parent				resb	8	; identyfikator procesu rodzica
+	.time				resb	8	; czas uruchomienia procesu względem czasu życia jądra systemu
+	.apic				resb	4	; niewykorzystana ilość czasu procesora
+	.memory				resb	8	; rozmiar zajętej przestrzeni pamięci RAM w stronach (bez tablic stronicowania)
+	.knot				resb	8	; wskaźnik do supła katalogu roboczego procesu
+	.map				resb	8	; wskaźnik do przestrzeni binarnej mapy pamięci procesu
+	.map_size			resb	8	; rozmiar przestrzeni binarnej mapy pamięci procesu w bitach
+	.flags				resb	2	; flagi stanu procesu
+	.in				resb	8	; stdin
+	.out				resb	8	; stdout
+	.stack				resb	2	; rozmiar przestrzeni stosu kontekstu w stronach
+	.length				resb	1	; ilość znaków w nazwie procesu
+	.name				resb	255	; nazwa procesu
+	.SIZE:
+endstruc
+
 struc	KERNEL_TASK_STRUCTURE_IRETQ
 	.rip				resb	8
 	.cs				resb	8
@@ -104,6 +126,11 @@ kernel_task:
 	; zachowaj w kolejce adres tablicy PML4 zadania
 	mov	rax,	cr3
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.cr3],	rax
+
+	; pobierz niewykorzystana ilość czasu procesora
+	mov	rax,	qword [kernel_apic_base_address]
+	mov	ecx,	dword [rax + KERNEL_APIC_TCCR_register]
+	mov	dword [rdi + KERNEL_TASK_STRUCTURE.apic],	ecx
 
 	; usuń z zadania informacje o przydzielonym procesorze logicznym
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.cpu],	STATIC_EMPTY
@@ -473,8 +500,8 @@ kernel_task_pid_check:
 	jmp	.end
 
 .found:
-	; proces zamknięty?
-	cmp	byte [rdi + KERNEL_TASK_STRUCTURE.flags],	STATIC_EMPTY
+	; wpis pusty?
+	cmp	word [rdi + KERNEL_TASK_STRUCTURE.flags],	STATIC_EMPTY
 	je	.omit	; tak
 
 	; proces jest zamknięty?

@@ -28,6 +28,9 @@ kernel_gui:
 	; aktualizuj etykietę "zegar"
 	call	kernel_gui_clock
 
+	; ; zwolnij pozostały czas procesora
+	; call	kernel_sleep
+
 	; powrót do głównej pętli
 	jmp	.loop
 

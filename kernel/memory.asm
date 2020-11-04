@@ -679,7 +679,7 @@ kernel_memory_alloc_task_secure:
 	call	kernel_task_active
 
 	; proces wykonujący jest usługą?
-	test	qword [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_service
+	test	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_service
 	jnz	.end	; zignoruj wywołanie
 
 	; pobierz wskaźnik i ilość stron w binarnej mapie pamięci procesu

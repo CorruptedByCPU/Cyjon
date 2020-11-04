@@ -44,6 +44,9 @@ kernel_wm:
 	;-----------------------------------------------------------------------
 	call	kernel_wm_cursor
 
+	; ; zwolnij pozostały czas procesora
+	; call	kernel_sleep
+
 	; powróć do głównej pętli
 	jmp	.loop
 
