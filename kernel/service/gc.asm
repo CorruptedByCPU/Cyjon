@@ -107,9 +107,14 @@ service_gc_search:
 	dec	rcx
 	jnz	.next	; tak
 
+	; ; zwolnij pozostały czas procesora
+	; call	kernel_sleep
+
 	; pobierz adres następnego bloku kolejki zadań
 	and	si,	STATIC_PAGE_mask
 	mov	rsi,	qword [rsi + STATIC_STRUCTURE_BLOCK.link]
+
+	; przeszukaj ponownie serpentynę
 	jmp	.restart
 
 .found:

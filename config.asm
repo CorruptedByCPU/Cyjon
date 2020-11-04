@@ -69,6 +69,7 @@ STATIC_BYTE_SIZE_byte					equ	0x01
 STATIC_WORD_SIZE_byte					equ	0x02
 STATIC_DWORD_SIZE_byte					equ	0x04
 STATIC_QWORD_SIZE_byte					equ	0x08
+STATIC_DQWORD_SIZE_byte					equ	0x10
 STATIC_QWORD_SIZE_bit					equ	64
 
 STATIC_WORD_mask					equ	0x000000000000FFFF

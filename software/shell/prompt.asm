@@ -97,13 +97,17 @@ shell_prompt:
 	jc	shell.restart	; nie udało się uruchomić programu
 
 	; czekaj na zakończenie procesu
-	mov	ax,	KERNEL_SERVICE_PROCESS_check
 
 .wait_for_end:
+	; ; zwolnij pozostały czas procesora
+	; mov	ax,	KERNEL_SERVICE_PROCESS_release
+	; int	KERNEL_SERVICE
+
 	; wszelkie przychodzące wyjątki, przesyłaj do procesu
 	call	shell_event_transfer
 
-	; proces zakończył swoją pracę
+	; proces zakończył swoją pracę?
+	mov	ax,	KERNEL_SERVICE_PROCESS_check
 	int	KERNEL_SERVICE
 	jnc	.wait_for_end	; nie
 

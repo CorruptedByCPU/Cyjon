@@ -103,6 +103,10 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_PROCESS_sleep
 	je	.process_sleep	; tak
 
+	; zwolnić pozostały czas procesora?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_release
+	je	.process_release	; tak
+
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
 
@@ -648,6 +652,10 @@ kernel_service:
 	shl	rcx,	STATIC_MULTIPLE_BY_PAGE_shift
 	mov	qword [rsp],	rcx
 
+	; zwróć rozmiar wszystkich elementów listy w Bajtach
+	mov	rbx,	rdi
+	sub	rbx,	rsi
+
 .process_list_end:
 	; przywróć oryginalne rejestry
 	pop	rcx
@@ -686,6 +694,14 @@ kernel_service:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rcx
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;-------------------------------------------------------------------------------
+.process_release:
+	; wywłaszczenie
+	int	KERNEL_APIC_IRQ_number
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end

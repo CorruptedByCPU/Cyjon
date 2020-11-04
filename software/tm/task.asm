@@ -35,21 +35,10 @@ tm_task:
 	push	rcx
 	push	rsi
 
-	; przygotuj listę elementów do posortowania
-	shl	rbx,	STATIC_MULTIPLE_BY_8_shift
-	sub	rsp,	rbx
-	mov	rdi,	rsp
-	shr	rbx,	STATIC_DIVIDE_BY_8_shift
-	call	tm_task_list
+	; posortuj listę elementów względem kolumny %CPU od najmniejszej wartości
+	call	tm_task_sort
 
-	xchg	bx,bx
-
-	; posortuj listę od najmniejszego elementu
-	xor	eax,	eax
-	dec	rbx
-	call	tm_task_sort_quick
-
-	; rcx - rozmiar listy w Bajtach
+	; rbx - rozmiar listy w Bajtach
 	; rsi - wskaźnik do listy
 
 .loop:
@@ -107,11 +96,11 @@ tm_task:
 ; 	dec	r8
 ; 	jz	.next	; brak wolnych wierszy w listy
 
-	; przesuń kursor na kolejny wiersz listy
-	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	ecx,	tm_string_table_row_next_end - tm_string_table_row_next
-	mov	rsi,	tm_string_table_row_next
-	int	KERNEL_SERVICE
+	; ; przesuń kursor na kolejny wiersz listy
+	; mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	; mov	ecx,	tm_string_table_row_next_end - tm_string_table_row_next
+	; mov	rsi,	tm_string_table_row_next
+	; int	KERNEL_SERVICE
 
 .next:
 	; przywróć właściwości listy procesów
@@ -160,90 +149,57 @@ tm_task:
 
 ;===============================================================================
 ; wejście:
-;	rbx - ilość elementów na liście
-;	rsi - wskaźnik do listy elementów
-;	rdi - wskaźnik do listy docelowej
-tm_task_list:
-	; zachowaj oryginalne rejestry
-	push	rax
-	push	rbx
-	push	rsi
-	push	rdi
-
-.loop:
-	; odłóż do listy docelowej wartość APIC elementu
-	mov	eax,	dword [rsi + KERNEL_TASK_STRUCTURE_ENTRY.apic]
-	stosq
-
-	; przesuń wskaźnik listy źródłowej na następny element
-	movzx	eax,	byte [rsi + KERNEL_TASK_STRUCTURE_ENTRY.length]
-	add	eax,	KERNEL_TASK_STRUCTURE_ENTRY.name
-	add	rsi,	rax
-
-	; koniec elementów źródłowych?
-	dec	rbx
-	jnz	.loop	; nie
-
-	; przywróć oryginalne rejestry
-	pop	rdi
-	pop	rsi
-	pop	rbx
-	pop	rax
-
-	; powrót z procedury
-	ret
-
-;===============================================================================
-; wejście:
-;	rax - indeks pierwszego elementu
-;	rbx - indeks ostatniego elementu
-;	rdi - wskaźnik do listy
-tm_task_sort_quick:
+;	rbx - rozmiar wszystkich elmentów na liście w Bajtach
+;	rsi - wskaźnik do listy
+tm_task_sort:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rbx
 	push	rcx
-	push	rsi
+	push	rdx
 
-	; fragment większy od jednego elementu?
-	cmp	rax,	rbx
-	jnb	.end	; nie, koniec sortowania
+.next:
+	; pozycja względna elementu aktualnego
+	xor	ecx,	ecx
 
+.loop:
+	; pozycja względna elementu następnego
+	movzx	edx,	byte [rsi + rcx + KERNEL_TASK_STRUCTURE_ENTRY.length]
+	add	rdx,	rcx
+	add	rdx,	KERNEL_TASK_STRUCTURE_ENTRY.name
 
+	; koniec elementów na liście?
+	cmp	rbx,	rdx
+	je	.omit	; koniec pierwszej fazy
+
+	; wartość elementu[rcx] większa od elementu[rcx + 1]?
+	mov	eax,	dword [rsi + rcx + KERNEL_TASK_STRUCTURE_ENTRY.apic]
+	cmp	eax,	dword [rsi + rdx + KERNEL_TASK_STRUCTURE_ENTRY.apic]
+	jbe	.no	; nie
+
+	; zamień elementy miejscami
+	call	tm_task_replace
+
+.no:
+	; następny element z listy
+	xchg	rcx,	rdx
+
+	; kontynuuj
+	jmp	.loop
+
+.omit:
+	; następna faza
+	mov	rbx,	rcx
+
+	; wszystko posortowane?
+	test	rbx,	rbx
+	jnz	.next	; nie
 
 .end:
 	; przywróć oryginalne rejestry
-	pop	rsi
-	pop	rcx
-	pop	rbx
-	pop	rax
-
-	; powrót z procedury
-	ret
-
-;===============================================================================
-; wejście:
-;	rax - indeks pierwszego elementu
-;	rbx - indeks ostatniego elementu
-;	rdi - wskaźnik do listy
-; wyjście:
-;	rcx - indeks elementu rozdzielającego
-tm_task_sort_quick_divide:
-	; zachowaj oryginalne rejestry
-	push	rax
-	push	rcx
-	push	rdx
-
-	; wybierz indeks elementu rozdzielającego
-	call	tm_task_sort_quick_select
-	push	rcx	; zapamiętaj
-
-	; zapamiętaj wartość podziału
-	push	qword [rdi + rcx * STATIC_QWORD_SIZE_byte]
-
-	; przywróć oryginalne rejestry
 	pop	rdx
 	pop	rcx
+	pop	rbx
 	pop	rax
 
 	; powrót z procedury
@@ -251,49 +207,93 @@ tm_task_sort_quick_divide:
 
 ;===============================================================================
 ; wejście:
-;	rax - indeks pierwszego elementu
-;	rbx - indeks ostatniego elementu
-; wyjście:
-;	rcx - indeks elementu rozdzielającego
-tm_task_sort_quick_select:
-	; zachowaj oryginalne rejestry
-	push	rbx
-
-	; koryguj indeks ostatniego elementu listy
-	dec	rbx
-
-	; rozmiar listy w elementach
-	mov	rcx,	rax
-	add	rcx,	rbx
-	shr	rcx,	STATIC_DIVIDE_BY_2_shift
-
-	; przywróć oryginalne rejestry
-	pop	rbx
-
-	; powróz procedury
-	ret
-
-;===============================================================================
-; wejście:
-;	rbx - indeks ostatniego elementu
-;	rcx - indeks elementu rozdzielającego
-;	rdi - wskaźnik do listy
-tm_task_sort_quick_move:
+;	rcx - indeks pierwszego elementu
+;	rdx - indeks drugiego elementu
+;	rsi - wskaźnik bezpośredni listy
+tm_task_replace:
 	; zachowaj oryginalne rejestry
 	push	rax
+	push	rbx
 	push	rcx
 	push	rdx
 	push	rsi
-	push	rdi
+	push	rbp
+	push	r8
 
-	; wskaźnik do ostatniego elementu
-	mov	eax,	KERNEL_TASK_STRUCTURE_ENTRY.SIZE
+	; zapamiętaj indeks pierwszego elementu
+	mov	r8,	rcx
+
+	; rozmiar pierwszego elementu
+	movzx	ebx,	byte [rsi + r8 + KERNEL_TASK_STRUCTURE_ENTRY.length]
+	add	rbx,	KERNEL_TASK_STRUCTURE_ENTRY.SIZE
+
+	; przestrzeń tymczasowa pod element pierwszy
+	sub	rsp,	rbx
+	mov	rbp,	rsp
+
+.save:
+	; odłóż element pierwszy na stos
+	mov	al,	byte [rsi + rcx]
+	mov	byte [rbp],	al
+
+	; następna wartość elementu
+	inc	rcx
+	inc	rbp
+
+	; zachowano?
+	dec	rbx
+	jnz	.save	; nie
+
+	; rozmiar drugiego elementu
+	movzx	ebx,	byte [rsi + rdx + KERNEL_TASK_STRUCTURE_ENTRY.length]
+	add	rbx,	KERNEL_TASK_STRUCTURE_ENTRY.SIZE
+
+	; prztwróć indeks elementu pierwszego
+	mov	rcx,	r8
+
+.element_two:
+	; przesuń element drugi w miejsce pierwszego
+	mov	al,	byte [rsi + rdx]
+	mov	byte [rsi + rcx],	al
+
+	; następna wartość elementu
+	inc	rcx
+	inc	rdx
+
+	; przeniesiony?
+	dec	rbx
+	jnz	.element_two
+
+	; początek przestrzeni tymczasowej
+	mov	rbp,	rsp
+
+	; rozmiar pierwszego elementu
+	movzx	ebx,	byte [rsp + KERNEL_TASK_STRUCTURE_ENTRY.length]
+	add	rbx,	KERNEL_TASK_STRUCTURE_ENTRY.SIZE
+
+.restore:
+	; przywróć element pierwszy na "pozycję" elementu drugiego
+	mov	al,	byte [rbp]
+	mov	byte [rsi + rcx],	al
+
+	; następna wartość elementu
+	inc	rcx
+	inc	rbp
+
+	; przeniesiono?
+	dec	rbx
+	jnz	.restore	; nie
+
+	; zwolnij przestrzeń tymczasową
+	mov	rsp,	rbp
 
 	; przywróć oryginalne rejestry
-	pop	rdi
+	pop	r8
+	pop	rbp
 	pop	rsi
 	pop	rdx
 	pop	rcx
+	pop	rbx
 	pop	rax
 
 	; powrót z procedury

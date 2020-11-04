@@ -41,6 +41,10 @@ console:
 	; uzupełnij strumień wejścia procesu o meta dane okna
 	call	console_meta
 
+	; ; zwolnij pozostały czas procesora
+	; mov	ax,	KERNEL_SERVICE_PROCESS_release
+	; int	KERNEL_SERVICE
+
 	; proces powłoki jest uruchomiony?
 	mov	ax,	KERNEL_SERVICE_PROCESS_check
 	mov	rcx,	qword [console_shell_pid]
