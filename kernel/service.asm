@@ -99,6 +99,10 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_PROCESS_list
 	je	.process_list	; tak
 
+	; zwolnić przestrzeń procesu?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_memory_release
+	je	.process_memory_release	; tak
+
 	; zatrzymać proces na dany czas?
 	cmp	ax,	KERNEL_SERVICE_PROCESS_sleep
 	je	.process_sleep	; tak
@@ -660,6 +664,38 @@ kernel_service:
 	; przywróć oryginalne rejestry
 	pop	rcx
 	pop	rdi
+	pop	rax
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;===============================================================================
+; wejście:
+;	rcx - rozmiar przestrzeni w Bajtach
+;	rdi - wskaźnik do przestrzeni
+.process_memory_release:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	r11
+
+	; adres przestrzeni do zwolnienia
+	mov	rax,	KERNEL_MEMORY_HIGH_mask
+	sub	rdi,	rax	; zamień na rzeczywisty
+	mov	rax,	rdi
+
+	; tablica stronicowania procesu
+	mov	r11,	cr3
+
+	; rozmiar przestrzeni w stronach
+	call	library_page_from_size
+
+	; zwolnij przestrzeń
+	call	kernel_memory_release_foreign
+
+	; przywróć oryginalne rejestry
+	pop	r11
+	pop	rcx
 	pop	rax
 
 	; koniec obsługi opcji
