@@ -10,16 +10,9 @@
 tm_task:
 	; zachowaj oryginalne rejestry
 	push	rax
-	push	rbx
 	push	rcx
-	push	rdx
 	push	rsi
 	push	rdi
-	push	r8
-
-	; pobierz wysokość przestrzeni znakowej
-	movzx	r8,	word [tm_stream_meta + CONSOLE_STRUCTURE_STREAM_META.height]
-	sub	r8,	TM_TABLE_FIRST_ROW_y + 0x01	; koryguj o pozycję pierwszego elementu listy (ostatni zawsze pusty)
 
 	; ustaw kursor na pierwszy element listy
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
@@ -31,88 +24,166 @@ tm_task:
 	mov	ax,	KERNEL_SERVICE_PROCESS_list
 	int	KERNEL_SERVICE
 
-	; zachowaj adres i rozmiar listy
-	push	rcx
+	; zachowaj adres przestrzeni listy
 	push	rsi
+
+	; wyświetl uruchomione procesy
+	call	tm_task_show
+
+	; zwolnij przestrzeń
+	mov	ax,	KERNEL_SERVICE_PROCESS_memory_release
+	pop	rdi	; przywróć adres przestrzeni listy
+	int	KERNEL_SERVICE
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rcx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rbx-  rozmiar całkowity elementów na liście w Bajtach
+;	rcx - rozmiar przestrzeni listy w Bajtach
+;	rsi - wskaźnik do początku przestrzeni listy
+tm_task_show:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+	push	rdi
+	push	r8
+
+	; pobierz wysokość przestrzeni znakowej
+	movzx	r8,	word [tm_stream_meta + CONSOLE_STRUCTURE_STREAM_META.height]
+	sub	r8,	TM_TABLE_FIRST_ROW_y + 0x01	; koryguj o pozycję pierwszego elementu listy (ostatni zawsze pusty)
 
 	; posortuj listę elementów względem kolumny %CPU od najmniejszej wartości
 	call	tm_task_sort
 
-	; rbx - rozmiar listy w Bajtach
+	; rbx - rozmiar całkowity elementów na liście w Bajtach
 	; rsi - wskaźnik do listy
 
 .loop:
 	; zachowaj właściwości listy procesów
 	push	rbx
-	push	rcx
 	push	rsi
 
-; 	; pobierz PID pierwszego procesu z listy
-; 	mov	rax,	qword [rsi + KERNEL_TASK_STRUCTURE_ENTRY.pid]
-;
-; 	; przekształć wartość na ciąg
-; 	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
-; 	mov	ecx,	5	; uzupełnij wartośc o prefix do piętego miejsca
-; 	mov	dl,	STATIC_ASCII_SPACE	; prefix
-; 	mov	rdi,	tm_string_value_format
-; 	call	library_integer_to_string
-;
-; 	; wyświetl wartość
-; 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-; 	mov	rsi,	rdi
-; 	int	KERNEL_SERVICE
-;
-; 	;------
-; 	; debug
-; 	;------
-; 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_char
-; 	mov	ecx,	0x11
-; 	mov	dl,	STATIC_ASCII_SPACE
-; 	int	KERNEL_SERVICE
-; 	;------
-;
-; 	; przywróć wskaźnik do wpisu
-; 	mov	rsi,	qword [rsp]
-;
-; 	; ilość dostępnych znaków dla nazwy procesu
-; 	movzx	ecx,	word [tm_stream_meta + CONSOLE_STRUCTURE_STREAM_META.width]
-; 	sub	ecx,	TM_TABLE_CELL_process_x + 0x01	; pozycja kolumny "Process" na osi X (nie wyświetlaj ostatniego znaku w kolumnie)
-;
-; 	; nazwa procesu większa?
-; 	movzx	eax,	byte [rsi + KERNEL_TASK_STRUCTURE_ENTRY.length]
-; 	cmp	eax,	ecx
-; 	ja	.yes	; tak, wyświetl maksymalną możliwą
-;
-; 	; nie, wyświetl tyle ile jest
-; 	mov	ecx,	eax
-;
-; .yes:
-; 	; wyświetl nazwę procesu
-; 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-; 	add	rsi,	KERNEL_TASK_STRUCTURE_ENTRY.name
-; 	int	KERNEL_SERVICE
-;
-; 	; wykorzystano wiersz listy
-; 	dec	r8
-; 	jz	.next	; brak wolnych wierszy w listy
+	;-----------------------------------------------------------------------
 
-	; ; przesuń kursor na kolejny wiersz listy
-	; mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	; mov	ecx,	tm_string_table_row_next_end - tm_string_table_row_next
-	; mov	rsi,	tm_string_table_row_next
-	; int	KERNEL_SERVICE
+	; pobierz PID pierwszego procesu z listy
+	mov	rax,	qword [rsi + KERNEL_TASK_STRUCTURE_ENTRY.pid]
+
+	; przekształć wartość na ciąg
+	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
+	mov	ecx,	5	; uzupełnij wartośc o prefix do piętego miejsca
+	mov	dl,	STATIC_ASCII_SPACE	; prefix
+	mov	rdi,	tm_string_value_format
+	call	library_integer_to_string
+
+	; wyświetl wartość
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	rsi,	rdi
+	int	KERNEL_SERVICE
+
+	;-----------------------------------------------------------------------
+
+	; pobierz wartość APIC pierwszego procesu z listy
+	mov	rsi,	qword [rsp]
+	mov	eax,	dword [rsi + KERNEL_TASK_STRUCTURE_ENTRY.apic]
+
+	; przekształć wartość na ciąg
+	call	library_integer_to_string
+
+	; wyświetl wartość
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	rsi,	rdi
+	int	KERNEL_SERVICE
+
+	;-----------------------------------------------------------------------
+
+	; pobierz wartość Memory pierwszego procesu z listy
+	mov	rsi,	qword [rsp]
+	mov	eax,	dword [rsi + KERNEL_TASK_STRUCTURE_ENTRY.memory]
+
+	; przekształć wartość na ciąg
+	call	library_integer_to_string
+
+	; wyświetl wartość
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	rsi,	rdi
+	int	KERNEL_SERVICE
+
+	;-----------------------------------------------------------------------
+
+	; pobierz wartość APIC pierwszego procesu z listy
+	mov	rsi,	qword [rsp]
+	mov	eax,	dword [rsi + KERNEL_TASK_STRUCTURE_ENTRY.time]
+
+	; przekształć wartość na ciąg
+	mov	cl,	0x06	; uzupełnij wartośc o prefix do szóstego miejsca
+	call	library_integer_to_string
+
+	; wyświetl wartość
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	rsi,	rdi
+	int	KERNEL_SERVICE
+
+	;-----------------------------------------------------------------------
+
+	; przesuń kursor na kolumnę "Process"
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_char
+	mov	ecx,	0x1
+	int	KERNEL_SERVICE
+
+	; przywróć wskaźnik do wpisu
+	mov	rsi,	qword [rsp]
+
+	; ilość dostępnych znaków dla nazwy procesu
+	movzx	ecx,	word [tm_stream_meta + CONSOLE_STRUCTURE_STREAM_META.width]
+	sub	ecx,	TM_TABLE_CELL_process_x + 0x01	; pozycja kolumny "Process" na osi X (nie wyświetlaj ostatniego znaku w kolumnie)
+
+	; nazwa procesu większa?
+	movzx	eax,	byte [rsi + KERNEL_TASK_STRUCTURE_ENTRY.length]
+	cmp	eax,	ecx
+	ja	.yes	; tak, wyświetl maksymalną możliwą
+
+	; nie, wyświetl tyle ile jest
+	mov	ecx,	eax
+
+.yes:
+	; wyświetl nazwę procesu
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	add	rsi,	KERNEL_TASK_STRUCTURE_ENTRY.name
+	int	KERNEL_SERVICE
+
+	; wykorzystano wiersz listy
+	dec	r8
+	jz	.next	; brak wolnych wierszy w listy
+
+	; przesuń kursor na kolejny wiersz listy
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	tm_string_table_row_next_end - tm_string_table_row_next
+	mov	rsi,	tm_string_table_row_next
+	int	KERNEL_SERVICE
 
 .next:
 	; przywróć właściwości listy procesów
 	pop	rsi
-	pop	rcx
 	pop	rbx
 
 	; przesuń wskaźnik do następnego wpisu
-	add	rsi,	KERNEL_TASK_STRUCTURE_ENTRY.SIZE
+	movzx	eax,	byte [rsi + KERNEL_TASK_STRUCTURE_ENTRY.length]
+	add	eax,	KERNEL_TASK_STRUCTURE_ENTRY.SIZE
+	add	rsi,	rax
 
 	; koniec elementów na liście?
-	dec	rbx
+	sub	rbx,	rax
 	jnz	.loop	; nie
 
 .clear:
@@ -127,14 +198,6 @@ tm_task:
 	jnz	.clear	; tak
 
 .end:
-	; przywróć adres i rozmiar listy
-	pop	rdi
-	pop	rcx
-
-	; zwolnij przestrzeń
-	mov	ax,	KERNEL_SERVICE_PROCESS_memory_release
-	int	KERNEL_SERVICE
-
 	; przywróć oryginalne rejestry
 	pop	r8
 	pop	rdi
@@ -159,6 +222,9 @@ tm_task_sort:
 	push	rdx
 
 .next:
+	; zmienna lokalna
+	push	STATIC_TRUE
+
 	; pozycja względna elementu aktualnego
 	xor	ecx,	ecx
 
@@ -173,12 +239,15 @@ tm_task_sort:
 	je	.omit	; koniec pierwszej fazy
 
 	; wartość elementu[rcx] większa od elementu[rcx + 1]?
-	mov	eax,	dword [rsi + rcx + KERNEL_TASK_STRUCTURE_ENTRY.apic]
-	cmp	eax,	dword [rsi + rdx + KERNEL_TASK_STRUCTURE_ENTRY.apic]
+	mov	rax,	qword [rsi + rcx + KERNEL_TASK_STRUCTURE_ENTRY.pid]
+	cmp	rax,	qword [rsi + rdx + KERNEL_TASK_STRUCTURE_ENTRY.pid]
 	jbe	.no	; nie
 
 	; zamień elementy miejscami
 	call	tm_task_replace
+
+	; zamieniono miejscami elementy
+	mov	byte [rsp],	STATIC_FALSE
 
 .no:
 	; następny element z listy
@@ -188,6 +257,13 @@ tm_task_sort:
 	jmp	.loop
 
 .omit:
+	; przywróć zmienną lokalną
+	pop	rax
+
+	; lista posortowana?
+	test	al,	al
+	jz	.end	; tak
+
 	; następna faza
 	mov	rbx,	rcx
 

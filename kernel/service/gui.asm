@@ -29,7 +29,7 @@ kernel_gui:
 	call	kernel_gui_clock
 
 	; ; zwolnij pozostały czas procesora
-	; call	kernel_sleep
+	call	kernel_sleep
 
 	; powrót do głównej pętli
 	jmp	.loop
