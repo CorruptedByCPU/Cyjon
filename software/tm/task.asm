@@ -91,12 +91,55 @@ tm_task_show:
 	mov	rsi,	rdi
 	int	KERNEL_SERVICE
 
+	;-----------------------------------------------------------------------
+
+	; pobierz wartość APIC pierwszego procesu z listy
+	mov	rsi,	qword [rsp]
+	mov	eax,	dword [rsi + KERNEL_TASK_STRUCTURE_ENTRY.apic]
+
+	; przekształć wartość na ciąg
+	call	library_integer_to_string
+
+	; wyświetl wartość
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	rsi,	rdi
+	int	KERNEL_SERVICE
+
+	;-----------------------------------------------------------------------
+
+	; pobierz wartość Memory pierwszego procesu z listy
+	mov	rsi,	qword [rsp]
+	mov	eax,	dword [rsi + KERNEL_TASK_STRUCTURE_ENTRY.memory]
+
+	; przekształć wartość na ciąg
+	call	library_integer_to_string
+
+	; wyświetl wartość
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	rsi,	rdi
+	int	KERNEL_SERVICE
+
+	;-----------------------------------------------------------------------
+
+	; pobierz wartość APIC pierwszego procesu z listy
+	mov	rsi,	qword [rsp]
+	mov	eax,	dword [rsi + KERNEL_TASK_STRUCTURE_ENTRY.time]
+
+	; przekształć wartość na ciąg
+	mov	cl,	0x06	; uzupełnij wartośc o prefix do szóstego miejsca
+	call	library_integer_to_string
+
+	; wyświetl wartość
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	rsi,	rdi
+	int	KERNEL_SERVICE
+
+	;-----------------------------------------------------------------------
+
 	; przesuń kursor na kolumnę "Process"
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_char
 	mov	ecx,	0x1
 	int	KERNEL_SERVICE
-
-	;-----------------------------------------------------------------------
 
 	; przywróć wskaźnik do wpisu
 	mov	rsi,	qword [rsp]

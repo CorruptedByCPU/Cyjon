@@ -719,6 +719,8 @@ kernel_service:
 	shl	rcx,	STATIC_MULTIPLE_BY_1024_shift
 	add	rcx,	qword [driver_rtc_microtime]
 
+	xchg	bx,bx
+
 .wait:
 	; wywłaszczenie
 	int	KERNEL_APIC_IRQ_number
@@ -726,6 +728,9 @@ kernel_service:
 	; wybudzić proces?
 	cmp	rcx,	qword [driver_rtc_microtime]
 	ja	.wait	; nie
+
+	; usuń informację o uśpieniu procesu
+	and	word [rdi + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_sleep
 
 	; przywróć oryginalne rejestry
 	pop	rdi

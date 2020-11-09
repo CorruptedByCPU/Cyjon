@@ -108,7 +108,7 @@ service_gc_search:
 	jnz	.next	; tak
 
 	; ; zwolnij pozostały czas procesora
-	; call	kernel_sleep
+	call	kernel_sleep
 
 	; pobierz adres następnego bloku kolejki zadań
 	and	si,	STATIC_PAGE_mask
