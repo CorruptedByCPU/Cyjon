@@ -64,7 +64,7 @@ tm_task_show:
 	sub	r8,	TM_TABLE_FIRST_ROW_y + 0x01	; koryguj o pozycję pierwszego elementu listy (ostatni zawsze pusty)
 
 	; posortuj listę elementów względem kolumny %CPU od najmniejszej wartości
-	; call	tm_task_sort
+	call	tm_task_sort
 
 	; rbx - rozmiar całkowity elementów na liście w Bajtach
 	; rsi - wskaźnik do listy
@@ -73,6 +73,8 @@ tm_task_show:
 	; zachowaj właściwości listy procesów
 	push	rbx
 	push	rsi
+
+	;-----------------------------------------------------------------------
 
 	; pobierz PID pierwszego procesu z listy
 	mov	rax,	qword [rsi + KERNEL_TASK_STRUCTURE_ENTRY.pid]
@@ -89,14 +91,12 @@ tm_task_show:
 	mov	rsi,	rdi
 	int	KERNEL_SERVICE
 
-	;------
-	; debug
-	;------
+	; przesuń kursor na kolumnę "Process"
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_char
-	mov	ecx,	0x11
-	mov	dl,	STATIC_ASCII_SPACE
+	mov	ecx,	0x1
 	int	KERNEL_SERVICE
-	;------
+
+	;-----------------------------------------------------------------------
 
 	; przywróć wskaźnik do wpisu
 	mov	rsi,	qword [rsp]
@@ -179,6 +179,9 @@ tm_task_sort:
 	push	rdx
 
 .next:
+	; zmienna lokalna
+	push	STATIC_TRUE
+
 	; pozycja względna elementu aktualnego
 	xor	ecx,	ecx
 
@@ -193,12 +196,15 @@ tm_task_sort:
 	je	.omit	; koniec pierwszej fazy
 
 	; wartość elementu[rcx] większa od elementu[rcx + 1]?
-	mov	eax,	dword [rsi + rcx + KERNEL_TASK_STRUCTURE_ENTRY.apic]
-	cmp	eax,	dword [rsi + rdx + KERNEL_TASK_STRUCTURE_ENTRY.apic]
+	mov	rax,	qword [rsi + rcx + KERNEL_TASK_STRUCTURE_ENTRY.pid]
+	cmp	rax,	qword [rsi + rdx + KERNEL_TASK_STRUCTURE_ENTRY.pid]
 	jbe	.no	; nie
 
 	; zamień elementy miejscami
 	call	tm_task_replace
+
+	; zamieniono miejscami elementy
+	mov	byte [rsp],	STATIC_FALSE
 
 .no:
 	; następny element z listy
@@ -208,6 +214,13 @@ tm_task_sort:
 	jmp	.loop
 
 .omit:
+	; przywróć zmienną lokalną
+	pop	rax
+
+	; lista posortowana?
+	test	al,	al
+	jz	.end	; tak
+
 	; następna faza
 	mov	rbx,	rcx
 
