@@ -121,12 +121,22 @@ tm_task_show:
 
 	;-----------------------------------------------------------------------
 
-	; pobierz wartość APIC pierwszego procesu z listy
+	; pobierz aktualne zegary systemu
+	mov	ax,	KERNEL_SERVICE_SYSTEM_time
+	int	KERNEL_SERVICE
+
+	; pobierz wartość Time pierwszego procesu z listy
 	mov	rsi,	qword [rsp]
-	mov	eax,	dword [rsi + KERNEL_TASK_STRUCTURE_ENTRY.time]
+	sub	rax,	qword [rsi + KERNEL_TASK_STRUCTURE_ENTRY.time]
+
+	; zamień wartość "uptime" na sekundy
+	mov	ecx,	1024
+	xor	edx,	edx
+	div	rcx
 
 	; przekształć wartość na ciąg
-	mov	cl,	0x06	; uzupełnij wartośc o prefix do szóstego miejsca
+	mov	ecx,	0x06	; uzupełnij wartośc o prefix do szóstego miejsca
+	mov	dl,	STATIC_ASCII_SPACE
 	call	library_integer_to_string
 
 	; wyświetl wartość

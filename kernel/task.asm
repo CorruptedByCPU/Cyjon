@@ -45,8 +45,6 @@ struc	KERNEL_TASK_STRUCTURE_IRETQ
 	.ds				resb	8
 endstruc
 
-kernel_task_debug_semaphore		db	STATIC_FALSE
-
 kernel_task_address			dq	STATIC_EMPTY
 kernel_task_size_page			dq	KERNEL_TASK_STACK_SIZE_page
 kernel_task_count			dq	STATIC_EMPTY
@@ -61,25 +59,6 @@ kernel_task:
 	; wyłącz przerwania i wyjątki
 	cli
 
-	; włączono tryb debugowania?
-	cmp	byte [kernel_task_debug_semaphore],	STATIC_FALSE
-	je	.no	; nie
-
-	; tak
-	xchg	bx,bx
-
-.no:
-; 	; nie wiem dlaczego, ale Bochs odkłada czasami 1..2 wartości na stos...
-; 	cmp	qword [rsp + STATIC_QWORD_SIZE_byte],	KERNEL_STRUCTURE_GDT.cs_ring0
-; 	je	.cs	; znaleziono deskryptor CS
-;
-; 	; usuń wartość ze stosu
-; 	add	rsp,	STATIC_QWORD_SIZE_byte
-;
-; 	; sprawdź raz jeszcze
-; 	jmp	.no
-;
-; .cs:
 	; zachowaj oryginalne rejestry na stosie kontekstu procesu/jądra
 	push	rax
 	push	rdi
@@ -541,6 +520,7 @@ kernel_task_active_pid:
 
 ;===============================================================================
 ; wyjście:
+;	Flaga ZF - jeśli brak wskaźnika procesu dla procesora logicznego
 ;	rdi - wskaźnik do pozycji zadania procesora logicznego
 kernel_task_active:
 	; zachowaj oryginalne rejestry
@@ -562,6 +542,9 @@ kernel_task_active:
 
 	; przywróć oryginalne rejestry
 	pop	rax
+
+	; zwróć stan wykonania procedury
+	test	rdi,	rdi
 
 	; powrót z procedury
 	ret

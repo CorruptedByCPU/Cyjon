@@ -719,8 +719,6 @@ kernel_service:
 	shl	rcx,	STATIC_MULTIPLE_BY_1024_shift
 	add	rcx,	qword [driver_rtc_microtime]
 
-	xchg	bx,bx
-
 .wait:
 	; wywłaszczenie
 	int	KERNEL_APIC_IRQ_number
@@ -845,7 +843,8 @@ kernel_service:
 ;-------------------------------------------------------------------------------
 .system_time:
 	; zwróć uptime systemu (1 sekunda to 1024 tyknięcia)
-	mov	r8,	qword [driver_rtc_microtime]
+	mov	rax,	qword [driver_rtc_microtime]
+	mov	qword [rsp],	rax
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
