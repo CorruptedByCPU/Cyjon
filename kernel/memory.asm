@@ -178,6 +178,19 @@ kernel_memory_alloc:
 	dec	rdx
 	jnz	.lock	; nie, kontynuuj
 
+	; lista zadań aktywna?
+	cmp	qword [kernel_task_active_list],	STATIC_EMPTY
+	je	.init	; nie
+
+	; lista zadań procesorów logicznych uzupełniona?
+	call	kernel_task_active
+	jz	.init	; nie, trwa dalsza inicjalizacja jądra systemu
+
+	; dodaj wykorzystaną przestrzeń do stanu procesu
+	mov	rcx,	qword [rsp]
+	add	qword [rdi + KERNEL_TASK_STRUCTURE.memory],	rcx
+
+.init:
 	; przelicz numer pierwszej strony przestrzeni na adres WZGLĘDNY
 	mov	rdi,	rbx
 	shl	rdi,	STATIC_MULTIPLE_BY_PAGE_shift
@@ -245,6 +258,18 @@ kernel_memory_release_page:
 	; zwiększamy ilość dostępnych stron o jedną
 	inc	qword [kernel_page_free_count]
 
+	; lista zadań aktywna?
+	cmp	qword [kernel_task_active_list],	STATIC_EMPTY
+	je	.end	; nie
+
+	; lista zadań procesorów logicznych uzupełniona?
+	call	kernel_task_active
+	jz	.end	; nie, trwa dalsza inicjalizacja jądra systemu
+
+	; dodaj wykorzystaną przestrzeń do stanu procesu
+	dec	qword [rdi + KERNEL_TASK_STRUCTURE.memory]
+
+.end:
 	; przywróć oryginalne rejestry i flagi
 	pop	rdi
 	pop	rsi

@@ -15,8 +15,6 @@ tm_uptime:
 	push	rdx
 	push	rsi
 	push	rdi
-	push	r8
-	push	r9
 
 	; ustaw kursor na pozycję "uptime"
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
@@ -28,10 +26,9 @@ tm_uptime:
 	mov	ax,	KERNEL_SERVICE_SYSTEM_time
 	int	KERNEL_SERVICE
 
-	; r8 - uptime
+	; rax - uptime
 
 	; zamień wartość "uptime" na sekundy
-	mov	rax,	r8
 	mov	ecx,	1024
 	xor	edx,	edx
 	div	rcx
@@ -87,8 +84,6 @@ tm_uptime:
 
 .end:
 	; przywróć oryginalne rejestry
-	pop	r9
-	pop	r8
 	pop	rdi
 	pop	rsi
 	pop	rdx

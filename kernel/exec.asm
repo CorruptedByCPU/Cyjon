@@ -166,6 +166,10 @@ kernel_exec:
 	call	kernel_task_add
 	jc	.error
 
+	; rozmiar zajetej przestrzeni przez proces w stronach
+	shr	r12,	STATIC_DIVIDE_BY_PAGE_shift
+	mov	qword [rdi +KERNEL_TASK_STRUCTURE.memory],	r12
+
 	; uzupełnij wpis o adres binarnej mapy pamięci procesu i jej rozmiar
 	add	r13,	qword [kernel_memory_high_mask]
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.map],	r13

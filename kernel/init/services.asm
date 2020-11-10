@@ -8,6 +8,7 @@
 
 struc	KERNEL_INIT_STRUCTURE_SERVICE
 	.pointer	resb	8
+	.size		resb	8
 	.length		resb	1
 	.name:
 endstruc
@@ -76,6 +77,11 @@ kernel_init_services:
 
 	; oznacz zadanie jako aktywne i usługa
 	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_service
+
+	; wstaw informacje o rozmiarze procesu w stronach
+	mov	rcx,	qword [rsi + (KERNEL_INIT_STRUCTURE_SERVICE.size - KERNEL_INIT_STRUCTURE_SERVICE.name)]
+	call	library_page_from_size
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.memory],	rcx
 
 	; koniec tablicy?
 	pop	rcx	; przywróć ilość znaków nazwie procesu

@@ -7,9 +7,9 @@
 ;===============================================================================
 
 ;===============================================================================
-service_gc:
+kernel_gc:
 	; szukaj zakończonego procesu
-	call	service_gc_search
+	call	kernel_gc_search
 
 	; zamknij wszystkie okna utworzone przez proces
 	mov	rax,	qword [rsi + KERNEL_TASK_STRUCTURE.pid]
@@ -77,14 +77,14 @@ service_gc:
 	inc	qword [kernel_task_free]
 
 	; szukaj nowego procesu do zwolnienia
-	jmp	service_gc
+	jmp	kernel_gc
 
-	macro_debug	"service_gc"
+	macro_debug	"kernel_gc"
 
 ;===============================================================================
 ; wyjście:
 ;	rsi - wskaźnik do znalezionego rekordu
-service_gc_search:
+kernel_gc_search:
 	; zachowaj oryginalne rejestry
 	push	rcx
 
@@ -124,4 +124,7 @@ service_gc_search:
 	; powrót z procedury
 	ret
 
-	macro_debug	"service_gc_search"
+	macro_debug	"kernel_gc_search"
+
+kernel_gc_end:
+;===============================================================================
