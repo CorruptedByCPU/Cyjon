@@ -129,20 +129,8 @@ tm_task_show:
 	mov	rsi,	qword [rsp]
 	sub	rax,	qword [rsi + KERNEL_TASK_STRUCTURE_ENTRY.time]
 
-	; zamień wartość "uptime" na sekundy
-	mov	ecx,	1024
-	xor	edx,	edx
-	div	rcx
-
-	; przekształć wartość na ciąg
-	mov	ecx,	0x06	; uzupełnij wartośc o prefix do szóstego miejsca
-	mov	dl,	STATIC_ASCII_SPACE
-	call	library_integer_to_string
-
 	; wyświetl wartość
-	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	rsi,	rdi
-	int	KERNEL_SERVICE
+	call	tm_uptime
 
 	;-----------------------------------------------------------------------
 

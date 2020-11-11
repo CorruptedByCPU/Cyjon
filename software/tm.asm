@@ -47,6 +47,16 @@ tm:
 	call	tm_stream_info
 
 .loop:
+	; ustaw kursor na pozycję "uptime"
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	tm_string_uptime_position_and_color_end - tm_string_uptime_position_and_color
+	mov	rsi,	tm_string_uptime_position_and_color
+	int	KERNEL_SERVICE
+
+	; pobierz aktualne zegary systemu
+	mov	ax,	KERNEL_SERVICE_SYSTEM_time
+	int	KERNEL_SERVICE
+
 	; wyświetl uptime systemu
 	call	tm_uptime
 
