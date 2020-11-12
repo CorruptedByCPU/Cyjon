@@ -55,6 +55,14 @@ tm_string_first_row_position_end:
 tm_string_table_row_next			db	STATIC_ASCII_NEW_LINE, STATIC_ASCII_SEQUENCE_CLEAR_LINE
 tm_string_table_row_next_end:
 
+tm_string_menu					db	"^[t1;0;*]^[c70]Q", STATIC_ASCII_SEQUENCE_COLOR_DEFAULT, "uit"
+tm_string_menu_end:
+
+tm_string_service_color				db	"^[c*8]"
+tm_string_service_color_end:
+tm_string_program_color				db	"^[c*7]"
+tm_string_program_color_end:
+
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 tm_ipc_data:
 	times KERNEL_IPC_STRUCTURE.SIZE		db	STATIC_EMPTY

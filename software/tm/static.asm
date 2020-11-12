@@ -37,5 +37,11 @@ tm_static:
 	mov	dl,	STATIC_ASCII_SPACE
 	int	KERNEL_SERVICE
 
+	; wyświetl menu programu
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	tm_string_menu_end - tm_string_menu
+	mov	rsi,	tm_string_menu
+	int	KERNEL_SERVICE
+
 	; powrót z procedury
 	ret

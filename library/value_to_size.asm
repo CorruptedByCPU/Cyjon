@@ -61,7 +61,7 @@ library_value_to_size:
 	; resztę przelicz na %
 	mov	rax,	rdx
 	mov	edx,	100
-	shr	rcx,	STATIC_MULTIPLE_BY_1024_shift	; koryguj podstawę wyniku
+	shr	rcx,	STATIC_DIVIDE_BY_1024_shift	; koryguj podstawę wyniku
 	mul	rdx
 	div	rcx
 

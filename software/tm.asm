@@ -110,6 +110,7 @@ tm:
 	%include	"software/tm/ram.asm"
 	%include	"software/tm/uptime.asm"
 	%include	"software/tm/task.asm"
+	%include	"software/tm/percent.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/integer_to_string.asm"
 	%include	"library/value_to_size.asm"
