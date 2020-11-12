@@ -61,7 +61,7 @@ tm_task_show:
 
 	; pobierz wysokość przestrzeni znakowej
 	movzx	r8,	word [tm_stream_meta + CONSOLE_STRUCTURE_STREAM_META.height]
-	sub	r8,	TM_TABLE_FIRST_ROW_y + 0x01	; koryguj o pozycję pierwszego elementu listy (ostatni zawsze pusty)
+	sub	r8,	TM_TABLE_FIRST_ROW_y + 0x02	; koryguj o pozycję pierwszego elementu listy (ostatni zawsze pusty)
 
 	; posortuj listę elementów względem kolumny %CPU od najmniejszej wartości
 	call	tm_task_sort
@@ -73,6 +73,34 @@ tm_task_show:
 	; zachowaj właściwości listy procesów
 	push	rbx
 	push	rsi
+
+	; zachowaj oyrginalne rejestry
+	push	rax
+
+	; proces typu "usługa"?
+	test	word [rsi + KERNEL_TASK_STRUCTURE_ENTRY.flags],	KERNEL_TASK_FLAG_service
+	jz	.no_service	; nie
+
+	; zmień kolor wiersza
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	tm_string_service_color_end - tm_string_service_color
+	mov	rsi,	tm_string_service_color
+	int	KERNEL_SERVICE
+
+	; kontynuuj
+	jmp	.show
+
+.no_service:
+	; zmień kolor wiersza
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	tm_string_program_color_end - tm_string_program_color
+	mov	rsi,	tm_string_program_color
+	int	KERNEL_SERVICE
+
+.show:
+	; przywróć oryginalne rejestry
+	pop	rax
+	mov	rsi,	qword [rsp]
 
 	;-----------------------------------------------------------------------
 
@@ -97,7 +125,10 @@ tm_task_show:
 	mov	rsi,	qword [rsp]
 	mov	eax,	dword [rsi + KERNEL_TASK_STRUCTURE_ENTRY.apic]
 
-	; przekształć wartość na ciąg
+	; przekształć wartość na procent bez reszty
+	call	tm_percent
+
+	; zamień wartość na ciąg
 	call	library_integer_to_string
 
 	; wyświetl wartość
@@ -111,7 +142,10 @@ tm_task_show:
 	mov	rsi,	qword [rsp]
 	mov	eax,	dword [rsi + KERNEL_TASK_STRUCTURE_ENTRY.memory]
 
-	; przekształć wartość na ciąg
+	; przekształć wartość na procent bez reszty
+	call	tm_percent
+
+	; zamień wartość na ciąg
 	call	library_integer_to_string
 
 	; wyświetl wartość

@@ -147,14 +147,32 @@ console_sequence:
 	sub	rcx,	0x05
 	add	rsi,	0x05
 
+
 	; pobierz rozmiar liczby
 	mov	bl,	";"
 	call	library_string_word_next
 	jc	console_sequence.error	; uszkodzona sekwencja
 
+	; rozmiar wartości większy większy od cyfry?
+	cmp	rbx,	0x01
+	ja	.terminal_cursor_position_column
+
+	; ustawić na ostatną kolumnę aktualnego wiersza?
+	cmp	byte [rsi],	STATIC_ASCII_ASTERISK
+	jne	.terminal_cursor_position_column	; nie
+
+	; numer ostatniej kolumny
+	mov	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.width_char]
+	dec	eax
+
+	; kontynuuj
+	jmp	.terminal_cursor_position_column_set
+
+.terminal_cursor_position_column:
 	; zamień ciąg cyfr na wartość
 	call	library_string_to_integer
 
+.terminal_cursor_position_column_set:
 	; ustaw kursor tekstowy na danej kolumnie
 	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.x],	eax
 
@@ -168,13 +186,27 @@ console_sequence:
 	call	library_string_word_next
 	jc	console_sequence.error	; uszkodzona sekwencja
 
-	; pozostawić kursor w danym wierszu?
-	cmp	byte [rsi],	STATIC_ASCII_ASTERISK
-	je	.terminal_safe_row	; tak
 
+	; rozmiar wartości większy większy od cyfry?
+	cmp	rbx,	0x01
+	ja	.terminal_cursor_position_row
+
+	; ustawić na ostatną kolumnę aktualnego wiersza?
+	cmp	byte [rsi],	STATIC_ASCII_ASTERISK
+	jne	.terminal_cursor_position_row	; nie
+
+	; numer ostatniej kolumny
+	mov	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.height_char]
+	dec	eax
+
+	; kontynuuj
+	jmp	.terminal_cursor_position_row_set
+
+.terminal_cursor_position_row:
 	; zamień ciąg cyfr na wartość
 	call	library_string_to_integer
 
+.terminal_cursor_position_row_set:
 	; ustaw kursor tekstowy na danej kolumnie
 	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y],	eax
 
