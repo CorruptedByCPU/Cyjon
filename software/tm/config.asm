@@ -8,6 +8,8 @@
 
 %define TR_VERSION			"0.2"
 
+TM_FLAG_services		equ	1 << 0
+
 TM_TABLE_FIRST_ROW_y		equ	0x05
 
 TM_TABLE_CELL_cpu_x		equ	0x06
