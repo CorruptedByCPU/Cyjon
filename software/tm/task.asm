@@ -58,10 +58,14 @@ tm_task_show:
 	push	rsi
 	push	rdi
 	push	r8
+	push	r9
 
 	; pobierz wysokość przestrzeni znakowej
 	movzx	r8,	word [tm_stream_meta + CONSOLE_STRUCTURE_STREAM_META.height]
 	sub	r8,	TM_TABLE_FIRST_ROW_y + 0x02	; koryguj o pozycję pierwszego elementu listy (ostatni zawsze pusty)
+
+	; ilość procesów
+	xor	r9,	r9
 
 	; posortuj listę elementów względem kolumny %CPU od najmniejszej wartości
 	call	tm_task_sort
@@ -70,16 +74,24 @@ tm_task_show:
 	; rsi - wskaźnik do listy
 
 .loop:
+
 	; zachowaj właściwości listy procesów
 	push	rbx
 	push	rsi
 
-	; zachowaj oyrginalne rejestry
-	push	rax
+	; process
+	add	r9,	0x00000001
 
 	; proces typu "usługa"?
 	test	word [rsi + KERNEL_TASK_STRUCTURE_ENTRY.flags],	KERNEL_TASK_FLAG_service
 	jz	.no_service	; nie
+
+	; wyświetlić procesy typu "usługa"?
+	test	r15,	TM_FLAG_services
+	jz	.next	; nie
+
+	; zachowaj oyrginalne rejestry
+	push	rax
 
 	; zmień kolor wiersza
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
@@ -91,6 +103,9 @@ tm_task_show:
 	jmp	.show
 
 .no_service:
+	; zachowaj oyrginalne rejestry
+	push	rax
+
 	; zmień kolor wiersza
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
 	mov	ecx,	tm_string_program_color_end - tm_string_program_color
@@ -230,7 +245,51 @@ tm_task_show:
 	jnz	.clear	; tak
 
 .end:
+	; wyświetl ilość uruchomionych procesów
+
+	; ustaw kursor na pozycję
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	tm_string_tasks_position_and_color_end - tm_string_tasks_position_and_color
+	mov	rsi,	tm_string_tasks_position_and_color
+	int	KERNEL_SERVICE
+
+	; przekształć wartość na ciąg
+	movzx	eax,	r9w
+	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
+	xor	ecx,	ecx	; bez prefiksu
+	mov	rdi,	tm_string_value_format
+	call	library_integer_to_string
+
+	; wyświetl
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	rsi,	rdi
+	int	KERNEL_SERVICE
+
+	; ustaw kursor na pozycję "wątki"
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	tm_string_tasks_total_end - tm_string_tasks_total
+	mov	rsi,	tm_string_tasks_total
+	int	KERNEL_SERVICE
+
+	; przekształć wartość na ciąg
+	mov	eax,	r9d
+	shr	eax,	STATIC_MOVE_HIGH_TO_AX_shift
+	xor	ecx,	ecx	; bez prefiksu
+	call	library_integer_to_string
+
+	; wyświetl
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	rsi,	rdi
+	int	KERNEL_SERVICE
+
+	; wyświetl typ
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	tm_string_tasks_threads_end - tm_string_tasks_threads
+	mov	rsi,	tm_string_tasks_threads
+	int	KERNEL_SERVICE
+
 	; przywróć oryginalne rejestry
+	pop	r9
 	pop	r8
 	pop	rdi
 	pop	rsi

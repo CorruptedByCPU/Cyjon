@@ -533,7 +533,7 @@ library_bosu_element_taskbar:
 	add	rdi,	rax
 
 	; rysuj dolną krawędź elementu
-	mov	eax,	0x00ff0000
+	mov	eax,	0x0000FF00
 	rep	stosd
 
 .under_line:
