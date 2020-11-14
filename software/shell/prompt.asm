@@ -99,9 +99,9 @@ shell_prompt:
 	; czekaj na zakończenie procesu
 
 .wait_for_end:
-	; ; zwolnij pozostały czas procesora
-	; mov	ax,	KERNEL_SERVICE_PROCESS_release
-	; int	KERNEL_SERVICE
+	; zwolnij pozostały czas procesora
+	mov	ax,	KERNEL_SERVICE_PROCESS_release
+	int	KERNEL_SERVICE
 
 	; wszelkie przychodzące wyjątki, przesyłaj do procesu
 	call	shell_event_transfer
