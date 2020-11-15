@@ -80,29 +80,12 @@ tm_task_show:
 	push	rsi
 
 	; process
-	add	r9,	0x00000001
+	inc	r9
 
-	; proces typu "usługa"?
+	; proces typu "usługa systemu"?
 	test	word [rsi + KERNEL_TASK_STRUCTURE_ENTRY.flags],	KERNEL_TASK_FLAG_service
-	jz	.no_service	; nie
+	jnz	.next	; tak, pomiń
 
-	; wyświetlić procesy typu "usługa"?
-	test	r15,	TM_FLAG_services
-	jz	.next	; nie
-
-	; zachowaj oyrginalne rejestry
-	push	rax
-
-	; zmień kolor wiersza
-	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	ecx,	tm_string_service_color_end - tm_string_service_color
-	mov	rsi,	tm_string_service_color
-	int	KERNEL_SERVICE
-
-	; kontynuuj
-	jmp	.show
-
-.no_service:
 	; zachowaj oyrginalne rejestry
 	push	rax
 

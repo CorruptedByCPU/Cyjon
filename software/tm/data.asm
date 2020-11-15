@@ -54,13 +54,11 @@ tm_string_first_row_position_end:
 tm_string_table_row_next			db	STATIC_ASCII_NEW_LINE, STATIC_ASCII_SEQUENCE_CLEAR_LINE
 tm_string_table_row_next_end:
 
-tm_string_menu					db	"^[t1;0;*]^[c70]Q^[c07]uit ^[c80]S^[c08]ervices ^[c80]K^[c08]ill ^[c80]F^[c08]ind"
+tm_string_menu					db	"^[t1;0;*]^[cA0]Q^[c07]uit ^[c80]K^[c08]ill ^[c80]F^[c08]ind"
 tm_string_menu_end:
 
 tm_microtime					dq	STATIC_EMPTY
 
-tm_string_service_color				db	"^[c*8]"
-tm_string_service_color_end:
 tm_string_program_color				db	"^[c*7]"
 tm_string_program_color_end:
 

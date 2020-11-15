@@ -6,9 +6,7 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-%define TR_VERSION			"0.2"
-
-TM_FLAG_services		equ	1 << 0
+%define TR_VERSION			"0.3"
 
 TM_TABLE_FIRST_ROW_y		equ	0x05
 
