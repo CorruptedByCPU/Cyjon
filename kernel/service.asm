@@ -703,7 +703,8 @@ kernel_service:
 
 ;-------------------------------------------------------------------------------
 ; wejście:
-;	rcx - ilość sekund
+;	rcx - ilość milisekund
+;	1 sekunda = 1024 cykli mikrotime
 .process_sleep:
 	; zachowaj oryginalne rejestry
 	push	rcx
@@ -716,7 +717,6 @@ kernel_service:
 	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_sleep
 
 	; ustaw czas wybudzenia procesu
-	shl	rcx,	STATIC_MULTIPLE_BY_1024_shift
 	add	rcx,	qword [driver_rtc_microtime]
 
 .wait:
