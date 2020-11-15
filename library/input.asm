@@ -40,6 +40,10 @@ library_input:
 	sub	rbx,	rcx
 
 .loop:
+	; zwolnij pozostały czas procesora
+	mov	ax,	KERNEL_SERVICE_PROCESS_release
+	int	KERNEL_SERVICE
+
 	; pobierz komunikat "znak z bufora klawiatury"
 	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
 	int	KERNEL_SERVICE

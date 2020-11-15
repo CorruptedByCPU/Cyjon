@@ -73,8 +73,6 @@ tm:
 	int	KERNEL_SERVICE
 	jc	.no_event	; brak wiadomości
 
-	xchg	bx,bx
-
 	; komunikat typu: klawiatura?
 	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
 	jne	.no_event	; nie, zignoruj

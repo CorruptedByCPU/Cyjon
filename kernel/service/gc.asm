@@ -107,7 +107,7 @@ kernel_gc_search:
 	dec	rcx
 	jnz	.next	; tak
 
-	; ; zwolnij pozostały czas procesora
+	; zwolnij pozostały czas procesora
 	call	kernel_sleep
 
 	; pobierz adres następnego bloku kolejki zadań

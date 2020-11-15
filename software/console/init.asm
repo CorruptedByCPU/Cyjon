@@ -46,10 +46,10 @@
 	int	KERNEL_SERVICE
 	jc	console.close	; nie udało się uruchomić procesu powłoki
 
+	; zachowaj PID powłoki
+	mov	qword [console_shell_pid],	rcx
+
 	; wyświetl okno
 	mov	al,	KERNEL_WM_WINDOW_update
 	or	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
 	int	KERNEL_WM_IRQ
-
-	; zachowaj PID powłoki
-	mov	qword [console_shell_pid],	rcx

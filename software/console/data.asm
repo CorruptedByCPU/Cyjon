@@ -89,7 +89,7 @@ console_window					dq	STATIC_EMPTY	; pozycja na osi X
 						;---------------------------------------
 						dd	LIBRARY_BOSU_ELEMENT_TYPE_button_close
 						dq	.element_button_close_end - .element_button_close
-						dq	console_window_close
+						dq	console.close
 .element_button_close_end:			;---------------------------------------
 						; element "terminal"
 						;---------------------------------------
