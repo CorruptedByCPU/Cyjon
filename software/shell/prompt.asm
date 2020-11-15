@@ -103,14 +103,24 @@ shell_prompt:
 	mov	ax,	KERNEL_SERVICE_PROCESS_release
 	int	KERNEL_SERVICE
 
+	; proces zakończył pracę?
+	mov	ax,	KERNEL_SERVICE_PROCESS_check
+	int	KERNEL_SERVICE
+	jc	.end	; tak
+
+	; pobierz komunikat
+	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
+	mov	rdi,	shell_ipc_data
+	int	KERNEL_SERVICE
+	jc	.wait_for_end	; brak wiadomości
+
 	; wszelkie przychodzące wyjątki, przesyłaj do procesu
 	call	shell_event_transfer
 
-	; proces zakończył swoją pracę?
-	mov	ax,	KERNEL_SERVICE_PROCESS_check
-	int	KERNEL_SERVICE
-	jnc	.wait_for_end	; nie
+	; kontynuuj
+	jmp	.wait_for_end
 
+.end:
 	; włącz kursor tekstowy
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
 	mov	ecx,	shell_string_cursor_enable_end - shell_string_cursor_enable

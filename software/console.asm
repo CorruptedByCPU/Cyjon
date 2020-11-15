@@ -63,11 +63,11 @@ console:
 	int	KERNEL_SERVICE
 	jc	.input	; brak wiadomości
 
-	; komunikat typu: klawiatura?
+	; komunikat typu: urządzenie wskazujące (klawiatura)?
 	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
 	je	.transfer	; tak
 
-	; komunikat typu: grafika?
+	; komunikat typu: urządzenie wskazujące (myszka)?
 	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_MOUSE
 	jne	.input	; nie, zignoruj wiadomość
 
@@ -91,7 +91,7 @@ console:
 	; wykonaj procedurę powiązaną z elementem
 	mov	rax,	.input
 	push	rax	; powrót z procedury
-	push	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON_CLOSE.event]
+	push	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON_CLOSE.event]	; procedura do wykonania
 	ret	; call
 
 .transfer:
@@ -161,7 +161,6 @@ console:
 	%include	"software/console/transfer.asm"
 	%include	"software/console/sequence.asm"
 	%include	"software/console/meta.asm"
-	%include	"software/console/close.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"
 	%include	"library/integer_to_string.asm"
