@@ -399,10 +399,6 @@ kernel_vfs_file_touch:
 	; zachowaj wskaźnik do rekordu supła
 	mov	rax,	rdi
 
-	; typ pliku: katalog?
-	cmp	dl,	KERNEL_VFS_FILE_TYPE_directory
-	jne	.no_directory	; nie
-
 	; przygotuj blok danych dla nowego klatalogu
 	call	kernel_memory_alloc_page
 	jc	.end	; brak miejsca w przestrzeni pamięci
@@ -414,7 +410,6 @@ kernel_vfs_file_touch:
 	mov	qword [rax + KERNEL_VFS_STRUCTURE_KNOT.data],	rdi	; pierwszy blok danych pliku
 	mov	qword [rax + KERNEL_VFS_STRUCTURE_KNOT.size],	1	; rozmiar 1 blok
 
-.no_directory:
 	; ilość znaków w nazwie pliku
 	mov	byte [rax + KERNEL_VFS_STRUCTURE_KNOT.length],	cl
 
@@ -565,7 +560,7 @@ kernel_vfs_knot_prepare:
 
 .loop:
 	; wolny supeł?
-	cmp	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.type],	STATIC_EMPTY
+	cmp	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.flags],	STATIC_EMPTY
 	je	.ready	; tak
 
 	; przesuń wskaźnik na następny supeł
@@ -602,7 +597,7 @@ kernel_vfs_knot_prepare:
 
 .ready:
 	; zablokuj dostęp do supła
-	mov	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.length],	STATIC_TRUE
+	mov	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.flags],	KERNEL_VFS_FILE_FLAGS_reserved
 
 .end:
 	; zwolnij dostęp do systemu plików
