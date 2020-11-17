@@ -154,7 +154,7 @@ console:
 	; zatrzymaj dalsze wykonywanie kodu
 	jmp	.loop
 
-	macro_debug	"console"
+	macro_debug	"software: console"
 
 	;-----------------------------------------------------------------------
 	%include	"software/console/data.asm"

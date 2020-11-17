@@ -66,6 +66,19 @@ tm:
 	; wyświetl ilość i listę aktywnych procesów
 	call	tm_task
 
+	; koleja aktualizacja stanu za 1 sekundę
+	add	rax,	1024
+	mov	qword [tm_microtime],	rax
+
+.event:
+	; pobierz microtime systemu
+	mov	ax,	KERNEL_SERVICE_SYSTEM_time
+	int	KERNEL_SERVICE
+
+	; odczekano 1 sekundę?
+	cmp	rax,	qword [tm_microtime]
+	jnb	.check	; tak
+
 	;-----------------------------------------------------------------------
 	; pobierz wiadomość
 	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
@@ -81,25 +94,21 @@ tm:
 	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	"q"
 	je	.end	; tak, zakończ działanie procesu
 
-	; naciśnięto klawisz "ESC"?
-	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	STATIC_ASCII_ESCAPE
-	je	.end	; tak, zakończ działanie procesu
-
 .no_event:
-	; uśpij proces na 1 sekundę
+	; zwolnij pozostały czas procesora
 	mov	ax,	KERNEL_SERVICE_PROCESS_sleep
-	mov	ecx,	1
+	xor	ecx,	ecx	; brak oczekiwania w czasie
 	int	KERNEL_SERVICE
 
 	; powrót do głównej pętli
-	jmp	.check
+	jmp	.event
 
 .end:
 	; zakończ proces
 	xor	ax,	ax
 	int	KERNEL_SERVICE
 
-	macro_debug	"tm"
+	macro_debug	"software: tm"
 
 	;-----------------------------------------------------------------------
 	%include	"software/tm/data.asm"

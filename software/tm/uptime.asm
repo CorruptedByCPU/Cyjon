@@ -135,7 +135,7 @@ tm_uptime:
 	mov	dl,	STATIC_ASCII_SPACE
 
 .hours_only:
-	; ilość godzin mniejsza od 10?
+	; ilość godzin większa od 10?
 	cmp	rax,	10	; 10 godzin
 	jb	.hour_overflow	; nie
 
@@ -188,7 +188,7 @@ tm_uptime:
 	xor	edx,	edx
 	div	rcx
 
-	; format: _M:SSm
+	; format: _M:SSm lub _H:MMh
 	mov	ecx,	0x02
 
 	; zachowaj resztę z dzielenia (sekundy)
