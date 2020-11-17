@@ -767,6 +767,29 @@ kernel_service:
 ;	rcx - rozmiar ścieżki w Bajtach
 ;	rsi - wskaźnik do ciągu reprezentującego ścieżkę
 .vfs_dir:
+	; zachowaj oryginalne rejestry
+	push	rsi
+	push	rcx
+	push	rdi
+
+	xchg	bx,bx
+
+	; rozwiąż ścieżkę do pliku
+	call	kernel_vfs_path_resolve
+	jc	.read_end	; nie udało sie rozwiązać ścieżki do ostatniego pliku
+
+	; odszukaj plik w katalogu docelowym
+	call	kernel_vfs_file_find
+	jc	.read_end	; nie znaleziono podanego pliku
+
+	;
+
+.read_end:
+	; przywróć oryginale rejestry
+	pop	rdi
+	pop	rcx
+	pop	rsi
+
 	; koniec obsługi opcji
 	jmp	kernel_service.end
 
