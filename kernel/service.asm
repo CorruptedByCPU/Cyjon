@@ -755,8 +755,20 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_VFS_touch
 	je	.vfs_touch	; tak
 
+	; zwrócić listę plików z podanej ścieżki?
+	cmp	ax,	KERNEL_SERVICE_VFS_dir
+	je	.vfs_dir	; tak
+
 	; brak obsługi podprocedury
 	jmp	kernel_service.error
+
+;-------------------------------------------------------------------------------
+; wejście:
+;	rcx - rozmiar ścieżki w Bajtach
+;	rsi - wskaźnik do ciągu reprezentującego ścieżkę
+.vfs_dir:
+	; koniec obsługi opcji
+	jmp	kernel_service.end
 
 ;-------------------------------------------------------------------------------
 ; wejście:

@@ -114,7 +114,7 @@ shell:
 	; przetwórz polecenie
 	jmp	shell_prompt
 
-	macro_debug	"shell"
+	macro_debug	"software: shell"
 
 	;-----------------------------------------------------------------------
 	%include	"software/shell/data.asm"

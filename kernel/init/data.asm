@@ -78,6 +78,11 @@ kernel_init_vfs_files:
 						db	12
 						db	"/bin/console"
 
+						dq	kernel_init_vfs_file_ls
+						dq	kernel_init_vfs_file_ls_end - kernel_init_vfs_file_ls
+						db	7
+						db	"/bin/ls"
+
 						; koniec listy plików
 						dq	STATIC_EMPTY
 
@@ -89,6 +94,8 @@ kernel_init_vfs_file_tm				incbin	"build/tm"
 kernel_init_vfs_file_tm_end:
 kernel_init_vfs_file_console			incbin	"build/console"
 kernel_init_vfs_file_console_end:
+kernel_init_vfs_file_ls				incbin	"build/ls"
+kernel_init_vfs_file_ls_end:
 
 kernel_init_boot_file:
 						incbin	"build/boot"

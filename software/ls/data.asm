@@ -6,7 +6,5 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-%define	PROGRAM_NAME		"shell"
-%define	PROGRAM_VERSION		"0.63"
-
-SHELL_CACHE_SIZE_byte	equ	128
+ls_string_init		db	STATIC_ASCII_SEQUENCE_CURSOR_DISABLE
+ls_string_init_end:

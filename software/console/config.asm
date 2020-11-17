@@ -6,7 +6,8 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-%define CONSOLE_VERSION			"0.25"
+%define	PROGRAM_NAME			"console"
+%define	PROGRAM_VERSION			"0.26"
 
 CONSOLE_WINDOW_WIDTH_char	equ	44
 CONSOLE_WINDOW_HEIGHT_char	equ	16

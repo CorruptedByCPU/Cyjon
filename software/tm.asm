@@ -108,7 +108,7 @@ tm:
 	xor	ax,	ax
 	int	KERNEL_SERVICE
 
-	macro_debug	"tm"
+	macro_debug	"software: tm"
 
 	;-----------------------------------------------------------------------
 	%include	"software/tm/data.asm"

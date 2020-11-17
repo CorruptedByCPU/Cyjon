@@ -6,7 +6,8 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-%define TR_VERSION			"0.3"
+%define	PROGRAM_NAME			"tm"
+%define	PROGRAM_VERSION			"0.9"
 
 TM_TABLE_FIRST_ROW_y		equ	0x05
 
