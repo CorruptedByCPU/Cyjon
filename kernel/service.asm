@@ -768,25 +768,72 @@ kernel_service:
 ;	rsi - wskaźnik do ciągu reprezentującego ścieżkę
 .vfs_dir:
 	; zachowaj oryginalne rejestry
+	push	rax
+	push	rdx
 	push	rsi
 	push	rcx
 	push	rdi
 
 	; rozwiąż ścieżkę do pliku
 	call	kernel_vfs_path_resolve
-	jc	.read_end	; nie udało sie rozwiązać ścieżki do ostatniego pliku
+	jc	.vfs_dir_end	; nie udało sie rozwiązać ścieżki do ostatniego pliku
 
 	; odszukaj plik w katalogu docelowym
 	call	kernel_vfs_file_find
-	jc	.read_end	; nie znaleziono podanego pliku
+	jc	.vfs_dir_end	; nie znaleziono podanego pliku
 
+	; typ pliku: katalog?
+	test	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_directory
+	jz	.vfs_dir_not	; nie
+
+	; ustaw wskaźnik źródłowy na pierwszy blok danych katalogu
+	mov	rsi,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.data]
+
+	; oblicz rozmiar wymaganej przestrzeni dla wszystkich supłów
+	mov	eax,	KERNEL_VFS_STRUCTURE_KNOT.SIZE
+	mul	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.size]
+
+	; zamień na ilość stron
+	mov	rcx,	rax
+	call	library_page_from_size
+
+	; zarezerwuj przestrzeń dla procesu
+	call	kernel_memory_alloc_task
+	jc	.vfs_dir_end	; brak miejsca w pamięci
+
+.vfs_dir_loop:
+	; supeł
 	xchg	bx,bx
 
-.read_end:
-	; przywróć oryginale rejestry
+.vfs_dir_not:
+	; ustaw wskaźnik źródłowy
+	mov	rsi,	rdi
+
+	; przydziel przestrzeń pamięci o podanym rozmiarze dla procesu
+	mov	rcx,	0x01	; 4 KiB dla jednego supła :/
+	call	kernel_memory_alloc_task
+	jc	.vfs_dir_end	; brak miejsca w pamięci
+
+	; zachowaj wskaźnik przestrzeni danych procesu
+	push	rdi
+
+	; kopiuj informacje o suple do przestrzeni procesu
+	mov	ecx,	KERNEL_VFS_STRUCTURE_KNOT.SIZE
+	rep	movsb
+
+	; przywróć wskaźnik przestrzeni danych procesu
 	pop	rdi
+
+	; zwróć informacje o ilości przekazanych supłów
+	mov	qword [rsp],	0x01
+
+.vfs_dir_end:
+	; przywróć oryginale rejestry
 	pop	rcx
+	pop	rdi
 	pop	rsi
+	pop	rdx
+	pop	rax
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end

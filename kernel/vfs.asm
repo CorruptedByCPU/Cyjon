@@ -94,6 +94,10 @@ kernel_vfs_dir_symlinks:
 	mov	rax,	qword [rsp]
 	mov	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.data],	rax
 
+	; następne dowiązanie dotyczy super supła?
+	cmp	qword [rsp + STATIC_QWORD_SIZE_byte],	kernel_vfs_magicknot
+	je	.end	; tak, brak dowiązania symbolicznego do katalogu nadrzędnego :)
+
 	;-----------------------------------------------------------------------
 	; utwórz dowiązanie symboliczne do katalogu nadrzędnego ".."
 	mov	ecx,	0x02	; ilość znaków w nazwie pliku
@@ -104,6 +108,7 @@ kernel_vfs_dir_symlinks:
 	mov	rax,	qword [rsp + STATIC_QWORD_SIZE_byte]
 	mov	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.data],	rax
 
+.end:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rsi
@@ -362,8 +367,15 @@ kernel_vfs_file_touch:
 
 	; przygotuj blok danych dla nowego klatalogu
 	call	kernel_memory_alloc_page
-	jc	.end	; brak miejsca w przestrzeni pamięci
+	jnc	.assigned	; przydzielono
 
+	; zwolnij wpis w katalogu
+	mov	word [rdi + KERNEL_VFS_STRUCTURE_KNOT.flags],	STATIC_EMPTY
+
+	; koniec obsługi
+	jmp	.error
+
+.assigned:
 	; wyczyść blok danych katalogu
 	call	kernel_page_drain
 	mov	qword [rax + KERNEL_VFS_STRUCTURE_KNOT.data],	rdi
@@ -464,7 +476,8 @@ kernel_vfs_file_find:
 	add	rdi,	KERNEL_VFS_STRUCTURE_KNOT.SIZE
 
 	; sprawdź kolejne supły
-	loop	.loop
+	dec	rcx
+	jnz	.loop
 
 	; skończyły się rekordy z danego bloku, pobierz adres następnego bloku danych katalogu głównego
 	and	di,	STATIC_PAGE_mask
@@ -519,10 +532,10 @@ kernel_vfs_file_find:
 ;	rdi - supeł/identyfikator katalogu
 ; wyjście:
 ;	Flaga CF, jeśli nie znaleziono wolnego miejsca
-;	rdi - wskaźnik do nowego supła wew. katalogu lub wartość niezdefiniowana jeśli CF
 kernel_vfs_knot_prepare:
 	; zachowaj oryginalne rejestry
 	push	rcx
+	push	rdi
 
 	; zablokuj dostęp do systemu plików
 	macro_lock	kernel_vfs_semaphore, 0
@@ -575,11 +588,19 @@ kernel_vfs_knot_prepare:
 	; zablokuj dostęp do supła
 	mov	word [rdi + KERNEL_VFS_STRUCTURE_KNOT.flags],	KERNEL_VFS_FILE_FLAGS_reserved
 
+	; zwiększ licznik supłów w katalogu bierzącym
+	mov	rcx,	qword [rsp]
+	inc	qword [rcx + KERNEL_VFS_STRUCTURE_KNOT.size]
+
+	; zwróć wskaźnik do supła
+	mov	qword [rsp],	rdi
+
 .end:
 	; zwolnij dostęp do systemu plików
 	mov	byte [kernel_vfs_semaphore],	STATIC_FALSE
 
 	; przywróć oryginalne rejestry
+	pop	rdi
 	pop	rcx
 
 	; powrót z procedury
