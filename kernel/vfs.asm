@@ -6,12 +6,6 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-KERNEL_VFS_FILE_TYPE_character_device_bit		equ	1
-KERNEL_VFS_FILE_TYPE_directory_bit			equ	2
-KERNEL_VFS_FILE_TYPE_block_device_bit			equ	3
-KERNEL_VFS_FILE_TYPE_regular_file_bit			equ	4
-KERNEL_VFS_FILE_TYPE_symbolic_link_bit			equ	5
-
 KERNEL_VFS_FILE_MODE_suid				equ	0000100000000000b
 KERNEL_VFS_FILE_MODE_sgid				equ	0000010000000000b
 KERNEL_VFS_FILE_MODE_sticky				equ	0000001000000000b
@@ -29,11 +23,7 @@ KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse		equ	0000000000000001b
 KERNEL_VFS_FILE_MODE_OTHER_full_control			equ	0000000000000111b
 KERNEL_VFS_FILE_MODE_UNKNOWN_execute			equ	KERNEL_VFS_FILE_MODE_USER_execute_or_traverse | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
 
-KERNEL_VFS_FILE_FLAGS_save				equ	00000001b
-KERNEL_VFS_FILE_FLAGS_reserved				equ	00000010b
-
-KERNEL_VFS_FILE_FLAGS_SAVE_bit				equ	0
-KERNEL_VFS_FILE_FLAGS_reserved_bit			equ	1
+KERNEL_VFS_FILE_FLAGS_reserved				equ	00000001b
 
 KERNEL_VFS_ERROR_FILE_exists				equ	0x01
 KERNEL_VFS_ERROR_DIRECTORY_full				equ	0x02
@@ -41,12 +31,6 @@ KERNEL_VFS_ERROR_FILE_name_long				equ	0x04
 KERNEL_VFS_ERROR_FILE_name_short			equ	0x05
 KERNEL_VFS_ERROR_FILE_low_memory			equ	0x06
 KERNEL_VFS_ERROR_FILE_overflow				equ	0x07	; np. niedozwolony znak przesyłany do urządzenia znakowego
-
-; struktura Magicznego Węzła wirtualnego systemu plików jądra systemu
-struc	KERNEL_VFS_STRUCTURE_MAGICKNOT
-	.root						resb	8
-	.size						resb	8
-endstruc
 
 ; struktura supła w drzewie katalogu głównego
 struc	KERNEL_VFS_STRUCTURE_KNOT
@@ -57,7 +41,6 @@ struc	KERNEL_VFS_STRUCTURE_KNOT
 	.time_modified					resb	8
 	.length						resb	1
 	.name						resb	255
-	.metadata					resb	32
 	.SIZE:
 endstruc
 
@@ -71,7 +54,15 @@ endstruc
 
 kernel_vfs_semaphore					db	STATIC_FALSE
 
-kernel_vfs_magicknot					dq	STATIC_EMPTY
+; wyrównaj pozycję węzła do pełnego adresu
+align	STATIC_QWORD_SIZE_byte,				db	STATIC_NOTHING
+kernel_vfs_magicknot:					dq	STATIC_EMPTY
+							dq	0x01
+							db	KERNEL_VFS_FILE_TYPE_directory
+							dw	STATIC_EMPTY
+							dq	STATIC_EMPTY
+							db	0x01
+							db	"/"
 
 kernel_vfs_string_directory_local			db	"."
 kernel_vfs_string_directory_local_end:
@@ -85,8 +76,8 @@ kernel_vfs_metadata_update:
 
 ;===============================================================================
 ; wejście:
-;	rsi - wskaźnik do katalogu nadrzędnego
-;	rdi - wskaźnik do katalogu przetwarzanego
+;	rsi - wskaźnik do supła katalogu nadrzędnego
+;	rdi - wskaźnik do supła katalogu przetwarzanego
 kernel_vfs_dir_symlinks:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -110,6 +101,9 @@ kernel_vfs_dir_symlinks:
 
 	; typ: dowiązanie symboliczne
 	mov	word [rbx + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_symbolic_link
+
+	; flaga: wpis zajęty
+	mov	word [rbx + KERNEL_VFS_STRUCTURE_KNOT.flags],	KERNEL_VFS_FILE_FLAGS_reserved
 
 	; czas ostatniej modyfikacji: teraz
 	mov	rax,	qword [driver_rtc_microtime]
@@ -140,8 +134,10 @@ kernel_vfs_dir_symlinks:
 	; typ: dowiązanie symboliczne
 	mov	word [rbx + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_symbolic_link
 
+	; flaga: wpis zajęty
+	mov	word [rbx + KERNEL_VFS_STRUCTURE_KNOT.flags],	KERNEL_VFS_FILE_FLAGS_reserved
+
 	; czas ostatniej modyfikacji: teraz
-	mov	rax,	qword [driver_rtc_microtime]
 	mov	qword [rbx + KERNEL_VFS_STRUCTURE_KNOT.time_modified],	rax
 
 	; ilość znaków w nazwie dowiązania symbolicznego
@@ -277,8 +273,8 @@ kernel_vfs_path_resolve:
 	jc	.error	; nie
 
 	; plik jest dowiązaniem symbolicznym?
-	bt	word [rdi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_symbolic_link_bit
-	jnc	.no_link	; nie
+	test	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_symbolic_link
+	jz	.no_link	; nie
 
 	; przeładuj wskaźnik
 	mov	rdi,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.data]
@@ -288,8 +284,8 @@ kernel_vfs_path_resolve:
 	mov	eax,	KERNEL_ERROR_vfs_file_not_directory
 
 	; plik jest katalogiem?
-	bt	word [rdi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_directory_bit
-	jnc	.error	; nie
+	test	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_directory
+	jz	.error	; nie
 
 	; koryguj ścieżkę
 	sub	qword [rsp],	rcx
@@ -521,8 +517,22 @@ kernel_vfs_file_find:
 	jmp	.end
 
 .found:
-	; zwróć adres rekordu opisującego znleziony plik
+	; cofnij wskaźnik na wpis
 	sub	rdi,	KERNEL_VFS_STRUCTURE_KNOT.name
+
+.unload:
+	; plik jest dowiązaniem symbolicznym?
+	test	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_symbolic_link
+	jz	.return	; nie
+
+	; załaduj adres supła wskazywanego przez dowiązanie symboliczne
+	mov	rdi,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.data]
+
+	; sprawdź raz jeszcze
+	jmp	.unload
+
+.return:
+	; zwróć adres supła opisującego znleziony plik
 	mov	qword [rsp],	rdi
 
 .end:
@@ -540,6 +550,7 @@ kernel_vfs_file_find:
 
 ;===============================================================================
 ; wejście:
+;	dl - typ pliku
 ;	rdi - supeł/identyfikator katalogu
 ; wyjście:
 ;	Flaga CF, jeśli nie znaleziono wolnego miejsca
@@ -560,7 +571,7 @@ kernel_vfs_knot_prepare:
 
 .loop:
 	; wolny supeł?
-	cmp	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.flags],	STATIC_EMPTY
+	cmp	word [rdi + KERNEL_VFS_STRUCTURE_KNOT.flags],	STATIC_EMPTY
 	je	.ready	; tak
 
 	; przesuń wskaźnik na następny supeł
@@ -597,7 +608,7 @@ kernel_vfs_knot_prepare:
 
 .ready:
 	; zablokuj dostęp do supła
-	mov	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.flags],	KERNEL_VFS_FILE_FLAGS_reserved
+	mov	word [rdi + KERNEL_VFS_STRUCTURE_KNOT.flags],	KERNEL_VFS_FILE_FLAGS_reserved
 
 .end:
 	; zwolnij dostęp do systemu plików
@@ -919,8 +930,8 @@ kernel_vfs_file_read:
 
 .symbolic_link:
 	; plik jest dowiązaniem symbolicznym?
-	bt	word [rsi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_symbolic_link_bit
-	jnc	.file	; nie
+	test	word [rsi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_symbolic_link
+	jz	.file	; nie
 
 	; pobierz prawidłowy supeł pliku
 	mov	rsi,	qword [rsi + KERNEL_VFS_STRUCTURE_KNOT.data]
@@ -933,8 +944,8 @@ kernel_vfs_file_read:
 	mov	rax,	qword [rsi + KERNEL_VFS_STRUCTURE_KNOT.size]
 
 	; plik jest katalogiem?
-	bt	word [rsi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_directory_bit
-	jnc	.regular_file	; nie
+	test	byte [rsi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_directory
+	jz	.regular_file	; nie
 
 	; określ ilość bloków danych pliku
 	mov	rcx,	STATIC_STRUCTURE_BLOCK.link

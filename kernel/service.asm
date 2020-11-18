@@ -772,8 +772,6 @@ kernel_service:
 	push	rcx
 	push	rdi
 
-	xchg	bx,bx
-
 	; rozwiąż ścieżkę do pliku
 	call	kernel_vfs_path_resolve
 	jc	.read_end	; nie udało sie rozwiązać ścieżki do ostatniego pliku
@@ -782,7 +780,7 @@ kernel_service:
 	call	kernel_vfs_file_find
 	jc	.read_end	; nie znaleziono podanego pliku
 
-	;
+	xchg	bx,bx
 
 .read_end:
 	; przywróć oryginale rejestry

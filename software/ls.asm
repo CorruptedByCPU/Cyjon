@@ -37,7 +37,7 @@ ls:
 	int	KERNEL_SERVICE
 	jc	.error	; błędna ścieżka do katalogu lub pliku nie znaleziono
 
-	
+	xchg	bx,bx
 
 .error:
 	; wyświetl komunikat
