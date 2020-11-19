@@ -22,7 +22,7 @@ kernel_init_vfs:
 
 	; wyczyść przestrzeń i zachowa wskaźnik katalogu głównego
 	call	kernel_page_drain
-	mov	qword [kernel_vfs_magicknot + KERNEL_VFS_STRUCTURE_MAGICKNOT.root],	rdi
+	mov	qword [kernel_vfs_magicknot + KERNEL_VFS_STRUCTURE_KNOT.data],	rdi
 
 	; ustaw wskaźnik na Super Węzeł
 	mov	rdi,	kernel_vfs_magicknot
