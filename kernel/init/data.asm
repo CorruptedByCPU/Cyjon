@@ -52,7 +52,11 @@ kernel_init_vfs_directory_structure:
 						db	0x04
 						db	"/bin"
 						db	0x04
+						db	"/etc"
+						db	0x04
 						db	"/dev"
+						db	0x04
+						db	"/var"
 
 						; koniec struktury katalogów
 						db	STATIC_EMPTY

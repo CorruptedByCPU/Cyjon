@@ -766,13 +766,17 @@ kernel_service:
 ; wejście:
 ;	rcx - rozmiar ścieżki w Bajtach
 ;	rsi - wskaźnik do ciągu reprezentującego ścieżkę
+; wyjście:
+;	rcx - ilość wpisów
+;	rdi - wskaźnik do przestrzeni z wpisami
 .vfs_dir:
 	; zachowaj oryginalne rejestry
 	push	rax
+	push	rbx
 	push	rdx
 	push	rsi
-	push	rcx
 	push	rdi
+	push	rcx
 
 	; rozwiąż ścieżkę do pliku
 	call	kernel_vfs_path_resolve
@@ -786,7 +790,7 @@ kernel_service:
 	test	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_directory
 	jz	.vfs_dir_not	; nie
 
-	; ustaw wskaźnik źródłowy na pierwszy blok danych katalogu
+	; pobierz ilość wpisów w katalogu i ustaw wskaźnik źródłowy na pierwszy blok danych
 	mov	rsi,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.data]
 
 	; oblicz rozmiar wymaganej przestrzeni dla wszystkich supłów
@@ -801,9 +805,56 @@ kernel_service:
 	call	kernel_memory_alloc_task
 	jc	.vfs_dir_end	; brak miejsca w pamięci
 
+	; ilość wpisów przekazanych do procesu
+	xor	ebx,	ebx
+
+	; zachowaj wskaźnik do przestrzeni
+	push	rdi
+
+.vfs_dir_reload:
+	; ilość wpisów na blok danych
+	mov	edx,	STATIC_STRUCTURE_BLOCK.link / KERNEL_VFS_STRUCTURE_KNOT.SIZE
+
 .vfs_dir_loop:
-	; supeł
-	xchg	bx,bx
+	; wpis zajęty?
+	test	word [rsi + KERNEL_VFS_STRUCTURE_KNOT.flags],	KERNEL_VFS_FILE_FLAGS_reserved
+	jz	.vfs_dir_next	; nie, sprawdź następny
+
+	; kopiuj informacje o suple do przestrzeni procesu
+	mov	ecx,	KERNEL_VFS_STRUCTURE_KNOT.SIZE
+	rep	movsb
+
+	; przekazano wpis
+	inc	rbx
+
+	; ustaw wskaźnik spowrotem na wpis
+	sub	rsi,	KERNEL_VFS_STRUCTURE_KNOT.SIZE
+
+.vfs_dir_next:
+	; przesuń wskaźnik na następny wpis
+	add	rsi,	KERNEL_VFS_STRUCTURE_KNOT.SIZE
+
+	; koniec wpisów w bloku?
+	dec	edx
+	jnz	.vfs_dir_loop	; nie
+
+	; załaduj następny blok danych katalogu
+	and	si,	STATIC_PAGE_mask
+	mov	rsi,	qword [rsi + STATIC_STRUCTURE_BLOCK.link]
+
+	; koniec bloków danych?
+	test	rsi,	rsi
+	jnz	.vfs_dir_reload	; nie
+
+	; przywróć wskaźnik do przestrzeni
+	pop	rdi
+
+	; zwróć ilość wpisów przekazanych do procesu
+	mov	qword [rsp],	rbx
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rdi	; oraz wskaźnik do przestrzeni
+
+	; koniec obsługi procedury
+	jmp	.vfs_dir_end
 
 .vfs_dir_not:
 	; ustaw wskaźnik źródłowy
@@ -833,6 +884,7 @@ kernel_service:
 	pop	rdi
 	pop	rsi
 	pop	rdx
+	pop	rbx
 	pop	rax
 
 	; koniec obsługi opcji
@@ -850,15 +902,10 @@ kernel_service:
 
 	; rozwiąż ścieżkę do pliku
 	call	kernel_vfs_path_resolve
-	jc	.vfs_touch_error	; błąd, niepoprawna ścieżka
+	jc	.vfa_touch_end	; błąd, niepoprawna ścieżka
 
 	; utwórz pusty plik
 	call	kernel_vfs_file_touch
-	jnc	.vfa_touch_end
-
-.vfs_touch_error:
-	; nie udało się utworzyć pliku
-	stc
 
 .vfa_touch_end:
 	; przywróć oryginalne rejestry

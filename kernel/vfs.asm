@@ -6,23 +6,6 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-KERNEL_VFS_FILE_MODE_suid				equ	0000100000000000b
-KERNEL_VFS_FILE_MODE_sgid				equ	0000010000000000b
-KERNEL_VFS_FILE_MODE_sticky				equ	0000001000000000b
-KERNEL_VFS_FILE_MODE_USER_read				equ	0000000100000000b
-KERNEL_VFS_FILE_MODE_USER_write				equ	0000000010000000b
-KERNEL_VFS_FILE_MODE_USER_execute_or_traverse		equ	0000000001000000b
-KERNEL_VFS_FILE_MODE_USER_full_control			equ	0000000111000000b
-KERNEL_VFS_FILE_MODE_GROUP_read				equ	0000000000100000b
-KERNEL_VFS_FILE_MODE_GROUP_write			equ	0000000000010000b
-KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse		equ	0000000000001000b
-KERNEL_VFS_FILE_MODE_GROUP_full_control			equ	0000000000111000b
-KERNEL_VFS_FILE_MODE_OTHER_read				equ	0000000000000100b
-KERNEL_VFS_FILE_MODE_OTHER_write			equ	0000000000000010b
-KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse		equ	0000000000000001b
-KERNEL_VFS_FILE_MODE_OTHER_full_control			equ	0000000000000111b
-KERNEL_VFS_FILE_MODE_UNKNOWN_execute			equ	KERNEL_VFS_FILE_MODE_USER_execute_or_traverse | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
-
 KERNEL_VFS_FILE_FLAGS_reserved				equ	00000001b
 
 KERNEL_VFS_ERROR_FILE_exists				equ	0x01
@@ -31,18 +14,6 @@ KERNEL_VFS_ERROR_FILE_name_long				equ	0x04
 KERNEL_VFS_ERROR_FILE_name_short			equ	0x05
 KERNEL_VFS_ERROR_FILE_low_memory			equ	0x06
 KERNEL_VFS_ERROR_FILE_overflow				equ	0x07	; np. niedozwolony znak przesyłany do urządzenia znakowego
-
-; struktura supła w drzewie katalogu głównego
-struc	KERNEL_VFS_STRUCTURE_KNOT
-	.data						resb	8
-	.size						resb	8
-	.type						resb	1
-	.flags						resb	2
-	.time_modified					resb	8
-	.length						resb	1
-	.name						resb	255
-	.SIZE:
-endstruc
 
 struc	KERNEL_VFS_STRUCTURE_META_CHARACTER_DEVICE
 	.width						resb	8
@@ -80,6 +51,8 @@ kernel_vfs_metadata_update:
 kernel_vfs_dir_symlinks:
 	; zachowaj oryginalne rejestry
 	push	rax
+	push	rcx
+	push	rdx
 	push	rsi
 	push	rdi
 
@@ -94,8 +67,8 @@ kernel_vfs_dir_symlinks:
 	mov	rax,	qword [rsp]
 	mov	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.data],	rax
 
-	; następne dowiązanie dotyczy super supła?
-	cmp	qword [rsp + STATIC_QWORD_SIZE_byte],	kernel_vfs_magicknot
+	; następne dowiązanie dotyczy samego siebie? /
+	cmp	qword [rsp + STATIC_QWORD_SIZE_byte],	rax
 	je	.end	; tak, brak dowiązania symbolicznego do katalogu nadrzędnego :)
 
 	;-----------------------------------------------------------------------
@@ -112,6 +85,8 @@ kernel_vfs_dir_symlinks:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rsi
+	pop	rdx
+	pop	rcx
 	pop	rax
 
 	; powrót z procedury
@@ -326,6 +301,7 @@ kernel_vfs_file_touch:
 	; zachowaj oryginalne rejestry
 	push	rcx
 	push	rsi
+	push	rdi
 	push	rax
 
 	; kod błędu: nazwa pliku za długa
@@ -383,6 +359,16 @@ kernel_vfs_file_touch:
 	; przywróć wskaźnik supła
 	mov	rdi,	rax
 
+	; zachowaj wskaźnik do nazwy katalogu
+	push	rsi
+
+	; utwórz podstawowe dowiązania symboliczne
+	mov	rsi,	qword [rsp + STATIC_QWORD_SIZE_byte]	; wskaźnik supła katalogu nadrzędnego
+	call	kernel_vfs_dir_symlinks
+
+	; przywróć wskaźnik do nazwy katalogu
+	pop	rsi
+
 .no_directory:
 	; ilość znaków w nazwie pliku
 	mov	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.length],	cl
@@ -399,6 +385,7 @@ kernel_vfs_file_touch:
 
 	; przywróć wskaźnik supła
 	pop	rdi
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rdi	; zwróć
 
 	; koniec procedury
 	jmp	.end
@@ -413,6 +400,7 @@ kernel_vfs_file_touch:
 .end:
 	; przywróć oryginalne rejestry
 	pop	rax
+	pop	rdi
 	pop	rsi
 	pop	rcx
 
