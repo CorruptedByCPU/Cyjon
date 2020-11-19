@@ -8,8 +8,12 @@
 
 ;===============================================================================
 kernel_service:
-	; zachowaj oryginalny rejestr
+	; zachowaj oryginalne rejestry
+	push	rbp
 	push	rax
+
+	; zresetuj Direction Flag
+	cld
 
 	; usługa związana z procesem?
 	cmp	al,	KERNEL_SERVICE_PROCESS
@@ -33,10 +37,11 @@ kernel_service:
 	pop	rax
 
 	; zwróć flagi do procesu
-	mov	qword [rsp + KERNEL_TASK_STRUCTURE_IRETQ.eflags + STATIC_QWORD_SIZE_byte],	rax
+	mov	qword [rsp + KERNEL_TASK_STRUCTURE_IRETQ.eflags + STATIC_QWORD_SIZE_byte * 0x02],	rax
 
-	; przywróć oryginalny rejestr
+	; przywróć oryginalne rejestry
 	pop	rax
+	pop	rbp
 
 	; koniec obsługi przerwania programowego
 	iretq
