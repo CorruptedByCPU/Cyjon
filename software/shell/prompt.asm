@@ -106,6 +106,20 @@ shell_prompt_internal:
 	int	KERNEL_SERVICE
 
 .no_exit:
+	;-----------------------------------------------------------------------
+	; prawdopodobnie polecenie: cd
+	cmp	rbx,	shell_command_cd_end - shell_command_cd
+	jne	.no_cd	; nie
+
+	; sprawdź czy polecenie "cd"
+	mov	ecx,	ebx	; rozmiar porównywanego ciągu
+	mov	rdi,	shell_command_cd
+	call	library_string_compare
+	jc	.no_cd	; ciągi różne
+
+	nop
+
+.no_cd:
 .end:
 	; przywróć oryginalne rejestry
 	pop	rdi

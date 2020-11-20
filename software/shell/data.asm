@@ -32,6 +32,8 @@ shell_command_clear				db	"clear"
 shell_command_clear_end:
 shell_command_exit				db	"exit"
 shell_command_exit_end:
+shell_command_cd				db	"cd"
+shell_command_cd_end:
 
 shell_command_unknown				db	STATIC_ASCII_SEQUENCE_COLOR_GREEN_LIGHT, ":?"
 shell_command_unknown_end:
