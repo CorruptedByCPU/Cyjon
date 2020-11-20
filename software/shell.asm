@@ -53,7 +53,7 @@ shell:
 	%include	"software/shell/input.asm"
 
 	; przetwórz polecenie
-	jmp	shell_prompt
+	jmp	shell_exec
 
 	macro_debug	"software: shell"
 
@@ -61,6 +61,7 @@ shell:
 	%include	"software/shell/data.asm"
 	%include	"software/shell/prompt.asm"
 	%include	"software/shell/event.asm"
+	%include	"software/shell/exec.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/input.asm"
 	%include	"library/string_trim.asm"

@@ -12,8 +12,9 @@ KERNEL_EXEC_FLAG_forward_out		equ	00000010b	; przekieruj wyjście rodzica na wej
 ;===============================================================================
 ; wejście:
 ;	rcx - ilość znaków reprezentujących nazwę uruchamianego programu
-;	rsi - wskaźnik do nazwy programu
+;	rsi - wskaźnik do nazwy programu wraz z argumentami
 ;	rdi - wskaźnik do supła pliku
+;	r8 - rozmiar argumentów w Bajtach
 ; wyjście:
 ;	Flaga CF - wystąpił błąd
 ;	rax - kod błędu, jeśli Flaga CF podniesiona
@@ -28,6 +29,7 @@ kernel_exec:
 	push	r11
 	push	r12
 	push	r13
+	push	r14
 	push	rax
 	push	rbx
 	push	rcx
@@ -40,8 +42,12 @@ kernel_exec:
 	; zachowaj rozmiar przestrzeni kodu w Bajtach
 	mov	r12,	rcx
 
-	; zarezerwuj ilość stron, niezbędną do inicjalizacji procesu
+	; ogranicz ilość przesyłanych argumentów do procesu
 	mov	eax,	KERNEL_ERROR_memory_low	; kod błędu
+	cmp	r8,	STATIC_PAGE_SIZE_byte	; zainicjowany rozmiar stosu procesu w Bajtach
+	ja	.error	; przepełnienie
+
+	; zarezerwuj ilość stron, niezbędną do inicjalizacji procesu
 	add	rcx,	15	; 14 stron na przestrzeń procesu, +1 do rozszerzenia serpentyny jeśli brak miejsca
 	call	kernel_page_secure
 	jc	.error	; brak wystarczającej ilości pamięci
@@ -52,7 +58,6 @@ kernel_exec:
 	; utwórz tablicę PML4 procesu
 	call	kernel_memory_alloc_page
 	call	kernel_page_drain
-
 
 	; wykorzystano stronę do stronicowania
 	inc	qword [kernel_page_paged_count]
@@ -105,6 +110,42 @@ kernel_exec:
 	jc	.error
 
 	;-----------------------------------------------------------------------
+	; zachowaj przesłane argumenty na stosie procesu
+
+	; rozmiar listy przesłanych argumentów w Bajtach
+	mov	rax,	qword [rsp + STATIC_QWORD_SIZE_byte * 0x08]
+
+	; adres fizyczny strony stosu kontekstu
+	mov	rdi,	qword [r8]
+	and	di,	STATIC_PAGE_mask	; usuń flagi z adresu
+
+	; przesuń wskaźnik N Bajtów w głąb przestrzeni
+	add	rdi,	STATIC_PAGE_SIZE_byte
+	sub	rdi,	rax
+	and	di,	0xFFF8	; wyrównaj wskaźnik do pełnego adresu
+
+	; miejsce na licznik rozmiaru danych na stosie procesu
+	sub	rdi,	STATIC_QWORD_SIZE_byte
+
+	; zapamiętaj adres szczytu stosu procesu
+	mov	r14,	-STATIC_PAGE_SIZE_byte
+	or	r14w,	di
+
+	; odłóż rozmiar danych na stosie dla procesu
+	stosq
+
+	; brak listy argumentów?
+	test	rax,	rax
+	jz	.no_arguments	; tak
+
+	; ustaw wskaźnik na początek listy argumentów
+	mov	rcx,	rax	; licznik danych do skopiowania
+	mov	rsi,	qword [rsp + STATIC_QWORD_SIZE_byte * 0x0A]
+	add	rsi,	qword [rsp + STATIC_QWORD_SIZE_byte]
+	rep	movsb	; kopiuj
+
+.no_arguments:
+	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod stos kontekstu (należy do jądra systemu)
 	mov	rax,	KERNEL_STACK_address
 	mov	rbx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
@@ -135,7 +176,7 @@ kernel_exec:
 	stosq	; zapisz
 
 	; RSP
-	mov	rax,	STATIC_EMPTY
+	mov	rax,	r14
 	stosq	; zapisz
 
 	; DS
@@ -198,6 +239,7 @@ kernel_exec:
 	pop	rcx
 	pop	rbx
 	pop	rax
+	pop	r14
 	pop	r13
 	pop	r12
 	pop	r11

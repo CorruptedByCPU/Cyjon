@@ -141,6 +141,7 @@ kernel_service:
 ;	bl - zachowanie strumienia procesu
 ;	rcx - ilość znaków w ścieżce do pliku
 ;	rsi - wskaźnik do ciągu znaków reprezentujących ścieżkę do pliku
+;	r8 - rozmiar argumentów w Bajtach
 ; wyjście:
 ;	rcx - PID uruchomionego procesu
 .process_run:
@@ -158,6 +159,10 @@ kernel_service:
 	jc	.process_run_error	; błąd, pliku nie znaleziono
 
 	; uruchom program
+	; rcx - ilość znaków reprezentujących nazwę uruchamianego programu
+	; rsi - wskaźnik do nazwy programu wraz z argumentami
+	; rdi - wskaźnik do supła pliku
+	; r8 - rozmiar argumentów w Bajtach
 	call	kernel_exec
 	jc	.process_run_error	; program dodany do kolejki zadań
 
@@ -879,6 +884,7 @@ kernel_service:
 
 	; przywróć wskaźnik przestrzeni danych procesu
 	pop	rdi
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rdi	; zwróć do procesu
 
 	; zwróć informacje o ilości przekazanych supłów
 	mov	qword [rsp],	0x01

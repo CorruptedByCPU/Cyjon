@@ -43,6 +43,7 @@
 	mov	bl,	KERNEL_SERVICE_PROCESS_RUN_FLAG_out_to_in_parent	; przekieruj wyjście potomka na wejście rodzica
 	mov	ecx,	console_shell_file_end - console_shell_file
 	mov	rsi,	console_shell_file
+	xor	r8,	r8	; brak przesyłanych argumentów
 	int	KERNEL_SERVICE
 	jc	console.close	; nie udało się uruchomić procesu powłoki
 

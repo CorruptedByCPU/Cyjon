@@ -33,8 +33,6 @@ ls:
 
 	; wczytaj listę plików z podanego katalogu
 	mov	ax,	KERNEL_SERVICE_VFS_dir
-	mov	ecx,	ls_path_local_end - ls_path_local
-	mov	rsi,	ls_path_local
 	int	KERNEL_SERVICE
 	jc	.error	; błędna ścieżka do katalogu lub pliku nie znaleziono
 
@@ -58,23 +56,30 @@ ls:
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
 	int	KERNEL_SERVICE
 
-	; wyświetl nazwę pliku
-	mov	cl,	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.length]
+	; ustaw wskaźnik na nazwę pliku
 	mov	rsi,	rdi
 	add	rsi,	KERNEL_VFS_STRUCTURE_KNOT.name
+
+	; plik jest ukryty?
+	cmp	byte [rsi],	STATIC_ASCII_DOT
+	je	.hidden	; tak
+
+	; wyświetl nazwę pliku
+	mov	cl,	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.length]
 	int	KERNEL_SERVICE
 
+	; wyświetl separator
+	mov	cl,	ls_string_separator_end - ls_string_separator
+	mov	rsi,	ls_string_separator
+	int	KERNEL_SERVICE
+
+.hidden:
 	; wyświetlono wszyskie pliki?
 	dec	rbx
 	jz	.end	; tak
 
 	; przesuń wskaźnik na następny plik
 	add	rdi,	KERNEL_VFS_STRUCTURE_KNOT.SIZE
-
-	; wyświetl separator
-	mov	cl,	ls_string_separator_end - ls_string_separator
-	mov	rsi,	ls_string_separator
-	int	KERNEL_SERVICE
 
 	; wyświetl pozostałe pliki
 	jmp	.loop
@@ -96,3 +101,4 @@ ls:
 	;-----------------------------------------------------------------------
 	%include	"software/ls/data.asm"
 	;-----------------------------------------------------------------------
+	%include	"library/string_trim.asm"
