@@ -129,7 +129,13 @@ shell_prompt_internal:
 	mov	ax,	KERNEL_SERVICE_PROCESS_dir_change
 	int	KERNEL_SERVICE
 
+	; wykonano polecenie
+	jmp	.end
+
 .no_cd:
+	; nie rozpoznano polecenia wewnętrznego
+	stc
+
 .end:
 	; przywróć oryginalne rejestry
 	pop	rcx

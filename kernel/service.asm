@@ -464,7 +464,6 @@ kernel_service:
 ;===============================================================================
 ; wejście:
 ;	bl - odczyt lub zapis
-;	rcx - ilość danych w Bajtach
 ;	rsi - wskaźnik źródłowy danych
 ;	lub
 ;	rdi - wskaźnik docelowy danych
@@ -472,83 +471,65 @@ kernel_service:
 	; zachowaj oryginalne rejestry
 	push	rbx
 	push	rcx
+	push	rdx
 	push	rsi
 	push	rdi
 
-	; rozmiar danych większy od przestrzeni meta?
-	cmp	rcx,	KERNEL_STREAM_META_SIZE_byte
-	ja	.process_stream_meta_error	; tak, błąd
+	; rozmiar przestrzeni meta
+	mov	rcx,	KERNEL_STREAM_META_SIZE_byte
 
-	; pobierz identyfikator strumienia procesu
+	; ustaw wskaźnik na właściwości procesu
 	call	kernel_task_active
 
+	; domyślny strumień: wyjście
+	mov	rdx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
+
+	; strumień wyjścia?
+	test	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_out
+	jnz	.process_stream_meta_selected	; tak
+
+	; wybierz strumień: wejście
+	mov	rdx,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
+
+.process_stream_meta_selected:
 	; zapisać dane?
 	test	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_set
-	jz	.process_stream_meta_not_save	; nie
+	jz	.process_stream_meta_read	; nie
 
-	; strumień wejścia?
-	test	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_in
-	jz	.process_stream_meta_save_out	; nie
-
-	; strumień wejścia
-	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
-
-	; kontynuuj
-	jmp	.process_stream_meta_save
-
-.process_stream_meta_save_out:
-	; strumień wyjścia
-	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
-
-.process_stream_meta_save:
 	; zapisz dane do meta strumienia
-	mov	rdi,	rbx
+	mov	rdi,	rdx
 	add	rdi,	KERNEL_STREAM_STRUCTURE_ENTRY.meta
 	rep	movsb
 
 	; podnieś flagę, meta dane aktualne
-	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_meta
+	or	byte [rdx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_meta
 
-	; koniec procedury
+	; koniec obsługi
 	jmp	.process_stream_meta_end
 
-.process_stream_meta_not_save:
-	; meta dane aktualne?
-	test	byte [rdi + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_meta
-	jnz	.process_stream_meta_error	; nie
-
-	; strumień wejścia?
-	test	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_in
-	jz	.process_stream_meta_read_out	; nie
-
-	; strumień wejścia
-	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
-
-	; kontynuuj
-	jmp	.process_stream_meta_read
-
-.process_stream_meta_read_out:
-	; strumień wyjścia
-	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
-
 .process_stream_meta_read:
+	; meta dane są aktualne?
+	test	byte [rdx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_meta
+	jz	.process_stream_meta_error
+
 	; wyślij do procesu meta dane
-	mov	rsi,	rbx
+	mov	rsi,	rdx
 	add	rsi,	KERNEL_STREAM_STRUCTURE_ENTRY.meta
 	mov	rdi,	qword [rsp]
 	rep	movsb
 
-	; koniec procedury
+	; koniec obsługi procedury
 	jmp	.process_stream_meta_end
 
 .process_stream_meta_error:
-	; Flaga CF, jeśli błąd
+	; flaga, błąd
 	stc
 
 .process_stream_meta_end:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rsi
+	pop	rdx
 	pop	rcx
 	pop	rbx
 
