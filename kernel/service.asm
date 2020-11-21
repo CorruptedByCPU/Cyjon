@@ -116,6 +116,10 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_PROCESS_release
 	je	.process_release	; tak
 
+	; zmienić katalog roboczy procesu?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_dir_change
+	je	.process_dir_change	; tak
+
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
 
@@ -438,13 +442,13 @@ kernel_service:
 	mov	ecx,	STATIC_BYTE_SIZE_byte
 	mov	rsi,	rsp
 
-.loop:
+.process_stream_out_char_loop:
 	; wyślij wartość na standardowe wyjście
 	call	kernel_stream_insert
 
 	; wysłano wszystkie kopie znaku?
 	dec	rdx
-	jnz	.loop	; nie
+	jnz	.process_stream_out_char_loop	; nie
 
 .process_stream_out_char_end:
 	; przywróć oryginalne rejestry
@@ -729,13 +733,13 @@ kernel_service:
 	; ustaw czas wybudzenia procesu
 	add	rcx,	qword [driver_rtc_microtime]
 
-.wait:
+.process_sleep_wait:
 	; wywłaszczenie
 	int	KERNEL_APIC_IRQ_number
 
 	; wybudzić proces?
 	cmp	rcx,	qword [driver_rtc_microtime]
-	ja	.wait	; nie
+	ja	.process_sleep_wait	; nie
 
 	; usuń informację o uśpieniu procesu
 	and	word [rdi + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_sleep
@@ -751,6 +755,67 @@ kernel_service:
 .process_release:
 	; wywłaszczenie
 	int	KERNEL_APIC_IRQ_number
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+;-------------------------------------------------------------------------------
+; wejście:
+;	rcx - ilość znaków w ciągu
+;	rsi - wskaźnik do ciągu znaków
+.process_dir_change:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; rozwiąż ścieżkę do pliku
+	call	kernel_vfs_path_resolve
+	jc	.process_dir_change_end	; nie udało sie rozwiązać ścieżki do ostatniego pliku
+
+	; odszukaj plik w katalogu docelowym
+	call	kernel_vfs_file_find
+	jc	.process_dir_change_end	; nie znaleziono podanego katalogu, lub plik nie jest katalogiem
+
+.process_dir_change_smybolic_link:
+	; odnaleziony plik jest dowiązaniem symbolicznym?
+	test	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_symbolic_link
+	jz	.process_dir_change_ok	; nie
+
+	; rozwiąż dowiązanie
+	mov	rdi,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.data]
+
+	; sprawdź raz jeszcze
+	jmp	.process_dir_change_smybolic_link
+
+.process_dir_change_ok:
+	; plik jest typu: katalog?
+	test	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_directory
+	jz	.process_dir_change_error	; nie
+
+	; zachowaj wskaźnik do supła katalogu
+	mov	rax,	rdi
+
+	; ustaw wskaźnik na zadanie procesora logicznego
+	call	kernel_task_active
+
+	; zachowaj informacje o nowym katalogu roboczym procesu
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.knot],	rax
+
+	; koniec obsługi polecenia
+	jmp	.process_dir_change_end
+
+.process_dir_change_error:
+	; flaga, błąd
+	stc
+
+.process_dir_change_end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rcx
+	pop	rax
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end

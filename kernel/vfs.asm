@@ -363,7 +363,7 @@ kernel_vfs_file_touch:
 	push	rsi
 
 	; utwórz podstawowe dowiązania symboliczne
-	mov	rsi,	qword [rsp + STATIC_QWORD_SIZE_byte]	; wskaźnik supła katalogu nadrzędnego
+	mov	rsi,	qword [rsp + STATIC_QWORD_SIZE_byte * 0x02]	; wskaźnik supła katalogu nadrzędnego
 	call	kernel_vfs_dir_symlinks
 
 	; przywróć wskaźnik do nazwy katalogu

@@ -9,7 +9,7 @@
 ls_string_init			db	STATIC_ASCII_SEQUENCE_CURSOR_DISABLE
 ls_string_init_end:
 
-ls_path_local			db	"/"
+ls_path_local			db	"."
 ls_path_local_end:
 
 ls_string_separator		db	STATIC_ASCII_SPACE
