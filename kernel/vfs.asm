@@ -895,6 +895,9 @@ kernel_vfs_file_append:
 ; wejście:
 ;	rsi - wskaźnik bezpośredni do supła pliku
 ;	rdi - adres docelowy danych pliku
+; wyjście:
+;	Flaga CF - jeśli błąd
+;	rcx - rozmiar załadowanych danych
 kernel_vfs_file_read:
 	; zachowaj oryginalne rejestry
 	push	rax

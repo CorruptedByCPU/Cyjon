@@ -815,8 +815,80 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_VFS_dir
 	je	.vfs_dir	; tak
 
+	; wczytać zawartość pliku?
+	cmp	ax,	KERNEL_SERVICE_VFS_read
+	je	.vfs_read	; tak
+
 	; brak obsługi podprocedury
 	jmp	kernel_service.error
+
+;-------------------------------------------------------------------------------
+; wejście:
+;	rcx - rozmiar ścieżki w Bajtach
+;	rsi - wskaźnik do ciągu reprezentującego ścieżkę
+; wyjście:
+;	rcx - rozmiar pliku w Bajtach
+;	rdi - wskaźnik do przestrzeni z danymi pliku
+.vfs_read:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rsi
+	push	rdi
+	push	rcx
+
+	; rozwiąż ścieżkę do pliku
+	call	kernel_vfs_path_resolve
+	jc	.vfs_read_error	; nie udało sie rozwiązać ścieżki do ostatniego pliku
+
+	; odszukaj plik w katalogu docelowym
+	call	kernel_vfs_file_find
+	jc	.vfs_read_error	; nie znaleziono podanego pliku
+
+	; ustaw wskaźnik źródłowy na supeł pliku
+	mov	rsi,	rdi
+
+	; pobierz rozmiar pliku w Bajtach/blokach
+	mov	rcx,	qword [rsi + KERNEL_VFS_STRUCTURE_KNOT.size]
+
+	; plik typu: zwykły plik?
+	test	byte [rsi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_regular_file
+	jnz	.vfs_read_regular_file	; tak
+
+	; zamień ilość bloków na Bajty
+	mov	rax,	STATIC_STRUCTURE_BLOCK.link
+	mul	rcx
+
+.vfs_read_regular_file:
+	; przygotuj przestrzeń dla ładowanego pliku w przestrzeni procesu
+	call	library_page_from_size
+	call	kernel_memory_alloc_task
+	jc	.vfs_read_error	; brak miejsca w pamięci
+
+
+	; załaduj zawartość pliku do przestrzeni pamięci procesu
+	call	kernel_vfs_file_read
+	jc	.vfs_read_error	; załadowano poprawnie
+
+	; zwróć informacje o rozmiarze i wskaźniku do danych pliku
+	mov	qword [rsp],	rcx
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rdi
+
+	; koniec obsługi procedury
+	jmp	.vfs_read_end
+
+.vfs_read_error:
+	; flaga, błąd
+	stc
+
+.vfs_read_end:
+	; przywróć oryginalne rejestry
+	pop	rcx
+	pop	rdi
+	pop	rsi
+	pop	rax
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
 
 ;-------------------------------------------------------------------------------
 ; wejście:
