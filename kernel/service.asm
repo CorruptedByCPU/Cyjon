@@ -854,16 +854,31 @@ kernel_service:
 	test	byte [rsi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_regular_file
 	jnz	.vfs_read_regular_file	; tak
 
-	; zamień ilość bloków na Bajty
-	mov	rax,	STATIC_STRUCTURE_BLOCK.link
-	mul	rcx
+	; ilość wykorzystanej przestrzeni dla bloków danych w Bajtach
+	xor	eax,	eax
+
+	; pobierz wskaźnik pierwszego bloku danych
+	mov	rcx,	qword [rsi + KERNEL_VFS_STRUCTURE_KNOT.data]
+
+.vfs_read_block:
+	; zwiększ rozmiar katalogu w Bajtach
+	add	rax,	STATIC_STRUCTURE_BLOCK.link
+
+	; pobierz wskaźnik następnego bloku danych
+	mov	rcx,	qword [rcx + STATIC_STRUCTURE_BLOCK.link]
+
+	; koniec bloków danych?
+	test	rcx,	rcx
+	jnz	.vfs_read_block	; nie
+
+	; zróć rozmiar pliku w Bajtach
+	mov	rcx,	rax
 
 .vfs_read_regular_file:
 	; przygotuj przestrzeń dla ładowanego pliku w przestrzeni procesu
 	call	library_page_from_size
 	call	kernel_memory_alloc_task
 	jc	.vfs_read_error	; brak miejsca w pamięci
-
 
 	; załaduj zawartość pliku do przestrzeni pamięci procesu
 	call	kernel_vfs_file_read

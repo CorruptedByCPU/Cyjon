@@ -399,13 +399,17 @@ library_terminal_char:
 	mov	rdi,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.pointer]
 
 .loop:
+	; znak "powrót karetki"?
+	cmp	ax,	STATIC_ASCII_RETURN
+	je	.return	; tak
+
 	; znak "nowej linii"?
 	cmp	ax,	STATIC_ASCII_NEW_LINE
-	je	.new_line
+	je	.new_line	; tak
 
 	; znak "backspace"?
 	cmp	ax,	STATIC_ASCII_BACKSPACE
-	je	.backspace
+	je	.backspace	; tak
 
 	; wyczyść przestrzeń znaku domyślnym kolorem tła
 	call	library_terminal_empty_char
@@ -482,6 +486,21 @@ library_terminal_char:
 	ret
 
 	macro_debug	"library_terminal_char"
+
+;-------------------------------------------------------------------------------
+.return:
+	; przesuń wskaźnik i wirtualny kursor na początek aktualnej linii
+	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.x],	STATIC_EMPTY
+	call	library_terminal_cursor_set
+
+	; koryguj pozyję wirtualnego kursora na osi X
+	xor	ebx,	ebx
+
+	; pobierz nowy wskaźnik pozycji wirtualnego kursora wprzestrzeni pamięci terminala
+	mov	rdi,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.pointer]
+
+	; powrót do głównej pętli
+	jmp	.continue
 
 ;-------------------------------------------------------------------------------
 .new_line:

@@ -924,9 +924,22 @@ kernel_vfs_file_read:
 	test	byte [rsi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_directory
 	jz	.regular_file	; nie
 
-	; określ ilość bloków danych pliku
-	mov	rcx,	STATIC_STRUCTURE_BLOCK.link
-	mul	rcx
+	; ilość wykorzystanej przestrzeni dla bloków danych w Bajtach
+	xor	eax,	eax
+
+	; pobierz wskaźnik pierwszego bloku danych
+	mov	rcx,	qword [rsi + KERNEL_VFS_STRUCTURE_KNOT.data]
+
+.block:
+	; zwiększ rozmiar katalogu w Bajtach
+	add	rax,	STATIC_STRUCTURE_BLOCK.link
+
+	; pobierz wskaźnik następnego bloku danych
+	mov	rcx,	qword [rcx + STATIC_STRUCTURE_BLOCK.link]
+
+	; koniec bloków danych?
+	test	rcx,	rcx
+	jnz	.block	; nie
 
 .regular_file:
 	; zachowaj rozmiar wczytanych danych

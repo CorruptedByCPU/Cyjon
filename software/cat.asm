@@ -55,8 +55,6 @@ cat:
 
 	;-----------------------------------------------------------------------
 
-	xchg	bx,bx
-
 	; zapamiętaj rozmiar wczytanego pliku
 	mov	rbx,	rcx
 
