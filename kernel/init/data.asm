@@ -64,33 +64,52 @@ kernel_init_vfs_directory_structure:
 kernel_init_vfs_files:
 						dq	kernel_init_vfs_file_shell
 						dq	kernel_init_vfs_file_shell_end - kernel_init_vfs_file_shell
+						dw	KERNEL_VFS_FILE_MODE_USER_full_control | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
 						db	10
 						db	"/bin/shell"
 
 						dq	kernel_init_vfs_file_hello
 						dq	kernel_init_vfs_file_hello_end - kernel_init_vfs_file_hello
+						dw	KERNEL_VFS_FILE_MODE_USER_full_control | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
 						db	10
 						db	"/bin/hello"
 
 						dq	kernel_init_vfs_file_tm
 						dq	kernel_init_vfs_file_tm_end - kernel_init_vfs_file_tm
+						dw	KERNEL_VFS_FILE_MODE_USER_full_control | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
 						db	7
 						db	"/bin/tm"
 
 						dq	kernel_init_vfs_file_console
 						dq	kernel_init_vfs_file_console_end - kernel_init_vfs_file_console
+						dw	KERNEL_VFS_FILE_MODE_USER_full_control | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
 						db	12
 						db	"/bin/console"
 
 						dq	kernel_init_vfs_file_ls
 						dq	kernel_init_vfs_file_ls_end - kernel_init_vfs_file_ls
+						dw	KERNEL_VFS_FILE_MODE_USER_full_control | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
 						db	7
 						db	"/bin/ls"
 
 						dq	kernel_init_vfs_file_cat
 						dq	kernel_init_vfs_file_cat_end - kernel_init_vfs_file_cat
+						dw	KERNEL_VFS_FILE_MODE_USER_full_control | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
 						db	8
 						db	"/bin/cat"
+
+						dq	kernel_init_vfs_file_hostname
+						dq	kernel_init_vfs_file_hostname_end - kernel_init_vfs_file_hostname
+						dw	KERNEL_VFS_FILE_MODE_USER_read | KERNEL_VFS_FILE_MODE_USER_read | KERNEL_VFS_FILE_MODE_USER_read | KERNEL_VFS_FILE_MODE_OTHER_read
+						db	13
+						db	"/etc/hostname"
+
+						dq	kernel_init_vfs_file_welcome
+						dq	kernel_init_vfs_file_welcome_end - kernel_init_vfs_file_welcome
+						dw	KERNEL_VFS_FILE_MODE_USER_read | KERNEL_VFS_FILE_MODE_USER_read | KERNEL_VFS_FILE_MODE_USER_read | KERNEL_VFS_FILE_MODE_OTHER_read
+						db	16
+						db	"/var/welcome.txt"
+
 
 						; koniec listy plików
 						dq	STATIC_EMPTY
@@ -107,6 +126,12 @@ kernel_init_vfs_file_ls				incbin	"build/ls"
 kernel_init_vfs_file_ls_end:
 kernel_init_vfs_file_cat			incbin	"build/cat"
 kernel_init_vfs_file_cat_end:
+
+kernel_init_vfs_file_hostname			incbin	"fs/etc/hostname"
+kernel_init_vfs_file_hostname_end:
+
+kernel_init_vfs_file_welcome			incbin	"fs/var/welcome.txt"
+kernel_init_vfs_file_welcome_end:
 
 kernel_init_boot_file:
 						incbin	"build/boot"

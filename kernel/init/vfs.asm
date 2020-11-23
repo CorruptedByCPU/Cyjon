@@ -9,6 +9,7 @@
 struc	KERNEL_INIT_STRUCTURE_VFS_FILE
 	.data_pointer	resb	8
 	.size		resb	8
+	.mode		resb	2
 	.length		resb	1
 	.path:
 	.SIZE:
