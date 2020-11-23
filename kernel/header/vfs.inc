@@ -29,16 +29,16 @@ KERNEL_VFS_FILE_MODE_OTHER_read				equ	0000000000000100b
 KERNEL_VFS_FILE_MODE_OTHER_write			equ	0000000000000010b
 KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse		equ	0000000000000001b
 KERNEL_VFS_FILE_MODE_OTHER_full_control			equ	0000000000000111b
-KERNEL_VFS_FILE_MODE_UNKNOWN_execute			equ	KERNEL_VFS_FILE_MODE_USER_execute_or_traverse | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
 
 ; struktura supła w drzewie katalogu głównego
 struc	KERNEL_VFS_STRUCTURE_KNOT
 	.data						resb	8
 	.size						resb	8
 	.type						resb	1
+	.length						resb	1
+	.mode						resb	2
 	.flags						resb	2
 	.time_modified					resb	8
-	.length						resb	1
 	.name						resb	255
 	.SIZE:
 endstruc
