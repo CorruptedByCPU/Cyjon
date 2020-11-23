@@ -363,7 +363,7 @@ kernel_vfs_file_touch:
 	push	rsi
 
 	; utwórz podstawowe dowiązania symboliczne
-	mov	rsi,	qword [rsp + STATIC_QWORD_SIZE_byte]	; wskaźnik supła katalogu nadrzędnego
+	mov	rsi,	qword [rsp + STATIC_QWORD_SIZE_byte * 0x02]	; wskaźnik supła katalogu nadrzędnego
 	call	kernel_vfs_dir_symlinks
 
 	; przywróć wskaźnik do nazwy katalogu
@@ -895,6 +895,9 @@ kernel_vfs_file_append:
 ; wejście:
 ;	rsi - wskaźnik bezpośredni do supła pliku
 ;	rdi - adres docelowy danych pliku
+; wyjście:
+;	Flaga CF - jeśli błąd
+;	rcx - rozmiar załadowanych danych
 kernel_vfs_file_read:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -921,9 +924,22 @@ kernel_vfs_file_read:
 	test	byte [rsi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_directory
 	jz	.regular_file	; nie
 
-	; określ ilość bloków danych pliku
-	mov	rcx,	STATIC_STRUCTURE_BLOCK.link
-	mul	rcx
+	; ilość wykorzystanej przestrzeni dla bloków danych w Bajtach
+	xor	eax,	eax
+
+	; pobierz wskaźnik pierwszego bloku danych
+	mov	rcx,	qword [rsi + KERNEL_VFS_STRUCTURE_KNOT.data]
+
+.block:
+	; zwiększ rozmiar katalogu w Bajtach
+	add	rax,	STATIC_STRUCTURE_BLOCK.link
+
+	; pobierz wskaźnik następnego bloku danych
+	mov	rcx,	qword [rcx + STATIC_STRUCTURE_BLOCK.link]
+
+	; koniec bloków danych?
+	test	rcx,	rcx
+	jnz	.block	; nie
 
 .regular_file:
 	; zachowaj rozmiar wczytanych danych

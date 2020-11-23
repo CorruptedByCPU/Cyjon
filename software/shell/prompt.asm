@@ -67,8 +67,8 @@ shell_prompt_clean:
 shell_prompt_internal:
 	; zachowaj oryginalne rejestry
 	push	rax
-	push	rcx
 	push	rdi
+	push	rcx
 
 	; prawdopodobnie polecenie: clear
 	cmp	rbx,	shell_command_clear_end - shell_command_clear
@@ -106,10 +106,40 @@ shell_prompt_internal:
 	int	KERNEL_SERVICE
 
 .no_exit:
+	;-----------------------------------------------------------------------
+	; prawdopodobnie polecenie: cd
+	cmp	rbx,	shell_command_cd_end - shell_command_cd
+	jne	.no_cd	; nie
+
+	; sprawdź czy polecenie "cd"
+	mov	ecx,	ebx	; rozmiar porównywanego ciągu
+	mov	rdi,	shell_command_cd
+	call	library_string_compare
+	jc	.no_cd	; ciągi różne
+
+	; ustaw rejestry na ścieżkę dostępu
+	mov	rcx,	qword [rsp]
+	sub	rcx,	rbx
+	add	rsi,	rbx
+
+	; usuń z ścieżki "białe znaku" znajdujące się na początku i końcu ciągu
+	call	library_string_trim
+
+	; zmień katalog roboczy
+	mov	ax,	KERNEL_SERVICE_PROCESS_dir_change
+	int	KERNEL_SERVICE
+
+	; wykonano polecenie
+	jmp	.end
+
+.no_cd:
+	; nie rozpoznano polecenia wewnętrznego
+	stc
+
 .end:
 	; przywróć oryginalne rejestry
-	pop	rdi
 	pop	rcx
+	pop	rdi
 	pop	rax
 
 	; powrót z procedury

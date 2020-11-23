@@ -56,8 +56,8 @@ console_ipc_data:
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 console_stream_meta:				dw	CONSOLE_WINDOW_WIDTH_char
 						dw	CONSOLE_WINDOW_HEIGHT_char
-						dw	STATIC_EMPTY
-						dw	STATIC_EMPTY
+						dw	STATIC_EMPTY	; x
+						dw	STATIC_EMPTY	; y
 
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 ;===============================================================================

@@ -116,6 +116,10 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_PROCESS_release
 	je	.process_release	; tak
 
+	; zmienić katalog roboczy procesu?
+	cmp	ax,	KERNEL_SERVICE_PROCESS_dir_change
+	je	.process_dir_change	; tak
+
 	; koniec obsługi podprocedury
 	jmp	kernel_service.error
 
@@ -438,13 +442,13 @@ kernel_service:
 	mov	ecx,	STATIC_BYTE_SIZE_byte
 	mov	rsi,	rsp
 
-.loop:
+.process_stream_out_char_loop:
 	; wyślij wartość na standardowe wyjście
 	call	kernel_stream_insert
 
 	; wysłano wszystkie kopie znaku?
 	dec	rdx
-	jnz	.loop	; nie
+	jnz	.process_stream_out_char_loop	; nie
 
 .process_stream_out_char_end:
 	; przywróć oryginalne rejestry
@@ -460,7 +464,6 @@ kernel_service:
 ;===============================================================================
 ; wejście:
 ;	bl - odczyt lub zapis
-;	rcx - ilość danych w Bajtach
 ;	rsi - wskaźnik źródłowy danych
 ;	lub
 ;	rdi - wskaźnik docelowy danych
@@ -468,83 +471,65 @@ kernel_service:
 	; zachowaj oryginalne rejestry
 	push	rbx
 	push	rcx
+	push	rdx
 	push	rsi
 	push	rdi
 
-	; rozmiar danych większy od przestrzeni meta?
-	cmp	rcx,	KERNEL_STREAM_META_SIZE_byte
-	ja	.process_stream_meta_error	; tak, błąd
+	; rozmiar przestrzeni meta
+	mov	rcx,	KERNEL_STREAM_META_SIZE_byte
 
-	; pobierz identyfikator strumienia procesu
+	; ustaw wskaźnik na właściwości procesu
 	call	kernel_task_active
 
+	; domyślny strumień: wyjście
+	mov	rdx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
+
+	; strumień wyjścia?
+	test	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_out
+	jnz	.process_stream_meta_selected	; tak
+
+	; wybierz strumień: wejście
+	mov	rdx,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
+
+.process_stream_meta_selected:
 	; zapisać dane?
 	test	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_set
-	jz	.process_stream_meta_not_save	; nie
+	jz	.process_stream_meta_read	; nie
 
-	; strumień wejścia?
-	test	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_in
-	jz	.process_stream_meta_save_out	; nie
-
-	; strumień wejścia
-	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
-
-	; kontynuuj
-	jmp	.process_stream_meta_save
-
-.process_stream_meta_save_out:
-	; strumień wyjścia
-	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
-
-.process_stream_meta_save:
 	; zapisz dane do meta strumienia
-	mov	rdi,	rbx
+	mov	rdi,	rdx
 	add	rdi,	KERNEL_STREAM_STRUCTURE_ENTRY.meta
 	rep	movsb
 
 	; podnieś flagę, meta dane aktualne
-	or	byte [rbx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_meta
+	or	byte [rdx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_meta
 
-	; koniec procedury
+	; koniec obsługi
 	jmp	.process_stream_meta_end
 
-.process_stream_meta_not_save:
-	; meta dane aktualne?
-	test	byte [rdi + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_meta
-	jnz	.process_stream_meta_error	; nie
-
-	; strumień wejścia?
-	test	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_in
-	jz	.process_stream_meta_read_out	; nie
-
-	; strumień wejścia
-	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
-
-	; kontynuuj
-	jmp	.process_stream_meta_read
-
-.process_stream_meta_read_out:
-	; strumień wyjścia
-	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
-
 .process_stream_meta_read:
+	; meta dane są aktualne?
+	test	byte [rdx + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_meta
+	jz	.process_stream_meta_error
+
 	; wyślij do procesu meta dane
-	mov	rsi,	rbx
+	mov	rsi,	rdx
 	add	rsi,	KERNEL_STREAM_STRUCTURE_ENTRY.meta
 	mov	rdi,	qword [rsp]
 	rep	movsb
 
-	; koniec procedury
+	; koniec obsługi procedury
 	jmp	.process_stream_meta_end
 
 .process_stream_meta_error:
-	; Flaga CF, jeśli błąd
+	; flaga, błąd
 	stc
 
 .process_stream_meta_end:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rsi
+	pop	rdx
 	pop	rcx
 	pop	rbx
 
@@ -729,13 +714,13 @@ kernel_service:
 	; ustaw czas wybudzenia procesu
 	add	rcx,	qword [driver_rtc_microtime]
 
-.wait:
+.process_sleep_wait:
 	; wywłaszczenie
 	int	KERNEL_APIC_IRQ_number
 
 	; wybudzić proces?
 	cmp	rcx,	qword [driver_rtc_microtime]
-	ja	.wait	; nie
+	ja	.process_sleep_wait	; nie
 
 	; usuń informację o uśpieniu procesu
 	and	word [rdi + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_sleep
@@ -755,6 +740,67 @@ kernel_service:
 	; koniec obsługi opcji
 	jmp	kernel_service.end
 
+;-------------------------------------------------------------------------------
+; wejście:
+;	rcx - ilość znaków w ciągu
+;	rsi - wskaźnik do ciągu znaków
+.process_dir_change:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; rozwiąż ścieżkę do pliku
+	call	kernel_vfs_path_resolve
+	jc	.process_dir_change_end	; nie udało sie rozwiązać ścieżki do ostatniego pliku
+
+	; odszukaj plik w katalogu docelowym
+	call	kernel_vfs_file_find
+	jc	.process_dir_change_end	; nie znaleziono podanego katalogu, lub plik nie jest katalogiem
+
+.process_dir_change_smybolic_link:
+	; odnaleziony plik jest dowiązaniem symbolicznym?
+	test	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_symbolic_link
+	jz	.process_dir_change_ok	; nie
+
+	; rozwiąż dowiązanie
+	mov	rdi,	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.data]
+
+	; sprawdź raz jeszcze
+	jmp	.process_dir_change_smybolic_link
+
+.process_dir_change_ok:
+	; plik jest typu: katalog?
+	test	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_directory
+	jz	.process_dir_change_error	; nie
+
+	; zachowaj wskaźnik do supła katalogu
+	mov	rax,	rdi
+
+	; ustaw wskaźnik na zadanie procesora logicznego
+	call	kernel_task_active
+
+	; zachowaj informacje o nowym katalogu roboczym procesu
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.knot],	rax
+
+	; koniec obsługi polecenia
+	jmp	.process_dir_change_end
+
+.process_dir_change_error:
+	; flaga, błąd
+	stc
+
+.process_dir_change_end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rcx
+	pop	rax
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
 ;===============================================================================
 .vfs:
 	; sprawdzić poprawność ścieżki?
@@ -769,8 +815,95 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_VFS_dir
 	je	.vfs_dir	; tak
 
+	; wczytać zawartość pliku?
+	cmp	ax,	KERNEL_SERVICE_VFS_read
+	je	.vfs_read	; tak
+
 	; brak obsługi podprocedury
 	jmp	kernel_service.error
+
+;-------------------------------------------------------------------------------
+; wejście:
+;	rcx - rozmiar ścieżki w Bajtach
+;	rsi - wskaźnik do ciągu reprezentującego ścieżkę
+; wyjście:
+;	rcx - rozmiar pliku w Bajtach
+;	rdi - wskaźnik do przestrzeni z danymi pliku
+.vfs_read:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rsi
+	push	rdi
+	push	rcx
+
+	; rozwiąż ścieżkę do pliku
+	call	kernel_vfs_path_resolve
+	jc	.vfs_read_error	; nie udało sie rozwiązać ścieżki do ostatniego pliku
+
+	; odszukaj plik w katalogu docelowym
+	call	kernel_vfs_file_find
+	jc	.vfs_read_error	; nie znaleziono podanego pliku
+
+	; ustaw wskaźnik źródłowy na supeł pliku
+	mov	rsi,	rdi
+
+	; pobierz rozmiar pliku w Bajtach/blokach
+	mov	rcx,	qword [rsi + KERNEL_VFS_STRUCTURE_KNOT.size]
+
+	; plik typu: zwykły plik?
+	test	byte [rsi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_regular_file
+	jnz	.vfs_read_regular_file	; tak
+
+	; ilość wykorzystanej przestrzeni dla bloków danych w Bajtach
+	xor	eax,	eax
+
+	; pobierz wskaźnik pierwszego bloku danych
+	mov	rcx,	qword [rsi + KERNEL_VFS_STRUCTURE_KNOT.data]
+
+.vfs_read_block:
+	; zwiększ rozmiar katalogu w Bajtach
+	add	rax,	STATIC_STRUCTURE_BLOCK.link
+
+	; pobierz wskaźnik następnego bloku danych
+	mov	rcx,	qword [rcx + STATIC_STRUCTURE_BLOCK.link]
+
+	; koniec bloków danych?
+	test	rcx,	rcx
+	jnz	.vfs_read_block	; nie
+
+	; zróć rozmiar pliku w Bajtach
+	mov	rcx,	rax
+
+.vfs_read_regular_file:
+	; przygotuj przestrzeń dla ładowanego pliku w przestrzeni procesu
+	call	library_page_from_size
+	call	kernel_memory_alloc_task
+	jc	.vfs_read_error	; brak miejsca w pamięci
+
+	; załaduj zawartość pliku do przestrzeni pamięci procesu
+	call	kernel_vfs_file_read
+	jc	.vfs_read_error	; załadowano poprawnie
+
+	; zwróć informacje o rozmiarze i wskaźniku do danych pliku
+	mov	qword [rsp],	rcx
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rdi
+
+	; koniec obsługi procedury
+	jmp	.vfs_read_end
+
+.vfs_read_error:
+	; flaga, błąd
+	stc
+
+.vfs_read_end:
+	; przywróć oryginalne rejestry
+	pop	rcx
+	pop	rdi
+	pop	rsi
+	pop	rax
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
 
 ;-------------------------------------------------------------------------------
 ; wejście:
