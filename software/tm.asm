@@ -104,6 +104,12 @@ tm:
 	jmp	.event
 
 .end:
+	; przesuń wirtualny kursor na koniec przestrzeni ekranu tekstowego
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	tm_string_end_of_work_end - tm_string_end_of_work
+	mov	rsi,	tm_string_end_of_work
+	int	KERNEL_SERVICE
+
 	; zakończ proces
 	xor	ax,	ax
 	int	KERNEL_SERVICE

@@ -57,6 +57,9 @@ tm_string_table_row_next_end:
 tm_string_menu					db	"^[t1;0;*]^[cA0]Q^[c07]uit ^[c80]K^[c08]ill ^[c80]F^[c08]ind"
 tm_string_menu_end:
 
+tm_string_end_of_work				db	"^[t1;*;*]"
+tm_string_end_of_work_end:
+
 tm_microtime					dq	STATIC_EMPTY
 
 tm_string_program_color				db	"^[c*7]"
