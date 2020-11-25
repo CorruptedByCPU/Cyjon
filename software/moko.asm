@@ -12,11 +12,15 @@
 	%include	"config.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/config.asm"
+	%include	"kernel/header/stream.inc"
 	%include	"kernel/header/service.inc"
 	%include	"kernel/header/vfs.inc"
+	%include	"kernel/header/ipc.inc"
+	%include	"kernel/header/wm.inc"
 	%include	"kernel/macro/debug.asm"
 	;-----------------------------------------------------------------------
 	%include	"software/moko/config.asm"
+	%include	"software/console/header.inc"
 	;-----------------------------------------------------------------------
 
 	; r8d	- szerokość przestrzeni dokumentu w znakach liczona od zera
@@ -39,8 +43,48 @@
 
 ;===============================================================================
 moko:
+	; przygotuj właściwości przestrzeni pod dokumentu
+	call	moko_document_area
+
+	; wyświetl interfejs użyszkodnika
+	call	moko_interface
+
+.loop:
+	; pobierz komunikat "znak z bufora klawiatury"
+	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
+	mov	rdi,	moko_ipc_data
+	int	KERNEL_SERVICE
+	jc	.loop	; brak komunikatu
+
+	; komunikat typu: klawiatura?
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
+	jne	.loop	; zignoruj
+
+	; pobierz kod klawisza
+	mov	ax,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
+
+	; sprawdź czy wywołano skrót klawiszowy
+	call	moko_key
+
+	; powrót do pętli głównej
+	jmp	.loop
+
+.end:
+	; przesuń kursor na koniec przestrzeni znakowej
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_close_end - moko_string_close
+	mov	rsi,	moko_string_close
+	int	KERNEL_SERVICE
+
 	; zakończ działanie programu
 	xor	ax,	ax
 	int	KERNEL_SERVICE
 
-moko_end:
+	macro_debug	"software: moko"
+
+	;-----------------------------------------------------------------------
+	%include	"software/moko/data.asm"
+	%include	"software/moko/document.asm"
+	%include	"software/moko/interface.asm"
+	%include	"software/moko/key.asm"
+	;-----------------------------------------------------------------------
