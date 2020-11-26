@@ -24,8 +24,10 @@ moko_document_line_begin_last			dq	STATIC_EMPTY
 moko_string_document_cursor			db	STATIC_SEQUENCE_CURSOR
 moko_string_document_cursor_end:
 
-moko_string_clear_and_cursor_at_menu		db	STATIC_SEQUENCE_CLEAR, "^[t1;0;*]"
-moko_string_clear_and_cursor_at_menu_end:
+moko_string_cursor_at_menu_and_clear_screen	db	STATIC_SEQUENCE_CLEAR, "^[t1;0;*]"
+moko_string_cursor_at_menu_and_clear_screen_end:
+moko_string_cursor_at_begin_of_line		db	STATIC_SCANCODE_RETURN
+moko_string_cursor_at_begin_of_line_end:
 
 moko_string_close				db	"^[t1;*;*]"
 moko_string_close_end:
@@ -37,3 +39,6 @@ moko_string_menu_end:
 
 moko_key_ctrl_semaphore				db	STATIC_FALSE
 moko_key_insert_semaphore			db	STATIC_FALSE
+
+moko_string_console_header			db	"^[h0;Moko]"
+moko_string_console_header_end:

@@ -15,8 +15,8 @@ moko_interface:
 
 	; wyczyść ekran i ustaw na pozycję przestrzeni menu
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	ecx,	moko_string_clear_and_cursor_at_menu_end - moko_string_clear_and_cursor_at_menu
-	mov	rsi,	moko_string_clear_and_cursor_at_menu
+	mov	ecx,	moko_string_cursor_at_menu_and_clear_screen_end - moko_string_cursor_at_menu_and_clear_screen
+	mov	rsi,	moko_string_cursor_at_menu_and_clear_screen
 	int	KERNEL_SERVICE
 
 	; wyświetl

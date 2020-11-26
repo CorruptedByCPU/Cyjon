@@ -10,6 +10,8 @@
 ; wejście:
 ;	ax - kod ASCII znaku
 ;	bl - aktualizowanie zmiennych globalnych == STATIC_EMPTY
+; wyjście:
+;	Flaga CF - jeśli znak nie jest drukowalny
 moko_document_insert:
 	; zachowaj oryginalne rejestry
 	push	rbx
@@ -17,6 +19,20 @@ moko_document_insert:
 	push	rsi
 	push	rdi
 
+	; znak drukowalny?
+	cmp	ax,	STATIC_SCANCODE_SPACE
+	jb	.error	; nie
+	cmp	ax,	STATIC_SCANCODE_TILDE
+	jb	.insert	; tak
+
+.error:
+	; flaga, błąd
+	stc
+
+	; koniec obsługi znaku
+	jmp	.end
+
+.insert:
 	; wstawić znak na koniec dokumentu?
 	cmp	r10,	qword [moko_document_end_address]
 	je	.at_end_of_document	; tak

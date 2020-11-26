@@ -43,11 +43,8 @@
 
 ;===============================================================================
 moko:
-	; przygotuj właściwości przestrzeni pod dokumentu
-	call	moko_document_area
-
-	; wyświetl interfejs użyszkodnika
-	call	moko_interface
+	; inicjalizuj środowisko pracy edytora tekstu
+	%include	"software/moko/init.asm"
 
 .loop:
 	; pobierz komunikat "znak z bufora klawiatury"
@@ -70,6 +67,10 @@ moko:
 	; wstaw znak do dokumentu
 	xor	bl,	bl	; aktualizuj wszystkie zmienne globalne
 	call	moko_document_insert
+	jc	.loop	; nie można załadować znaku
+
+	; wyświetl ponownie zawartość aktualnej linii na ekran
+	call	moko_line
 
 	; powrót do pętli głównej
 	jmp	.loop
@@ -92,4 +93,5 @@ moko:
 	%include	"software/moko/document.asm"
 	%include	"software/moko/interface.asm"
 	%include	"software/moko/key.asm"
+	%include	"software/moko/line.asm"
 	;-----------------------------------------------------------------------
