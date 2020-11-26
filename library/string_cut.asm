@@ -20,7 +20,7 @@ library_string_cut:
 
 .loop:
 	; koniec ciagu?
-	cmp	byte [rsi],	STATIC_ASCII_TERMINATOR
+	cmp	byte [rsi],	STATIC_SCANCODE_TERMINATOR
 	je	.end	; tak
 
 	; znaleziono separator

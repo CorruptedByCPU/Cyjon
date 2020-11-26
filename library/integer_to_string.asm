@@ -45,7 +45,7 @@ library_integer_to_string:
 	div	rbx
 
 	; zapisz resztę z dzielenia do zmiennych lokalnych
-	add	rdx,	STATIC_ASCII_DIGIT_0	; przemianuj cyfrę na kod ASCII
+	add	rdx,	STATIC_SCANCODE_DIGIT_0	; przemianuj cyfrę na kod ASCII
 	push	rdx
 
 	; zmniejsz rozmiar prefiksu

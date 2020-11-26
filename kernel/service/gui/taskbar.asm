@@ -429,7 +429,7 @@ kernel_gui_taskbar_margin:
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	STATIC_EMPTY	; brak akcji
 	;-----------------------------------------------------------------------
 	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.length],	0x01
-	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.string],	STATIC_ASCII_SPACE
+	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.string],	STATIC_SCANCODE_SPACE
 	add	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	0x01
 
 	; przesuń wskaźnik osi X

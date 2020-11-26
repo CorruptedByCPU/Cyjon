@@ -23,16 +23,16 @@ shell_exec:
 	; każdy uruchamiony program ma prawo do nowej linii
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_char
 	mov	ecx,	STATIC_BYTE_SIZE_byte	; wyślij jeden znak
-	mov	dl,	STATIC_ASCII_NEW_LINE	; nowej linii
+	mov	dl,	STATIC_SCANCODE_NEW_LINE	; nowej linii
 	int	KERNEL_SERVICE
 
 	; ilość znaków reprezentujących nazwę programu
 	mov	rcx,	rbx
 
 	; program został wyznaczony za pomocą ścieżki pośredniej/bezpośredniej?
-	cmp	byte [rsi],	STATIC_ASCII_DOT
+	cmp	byte [rsi],	STATIC_SCANCODE_DOT
 	je	.in_direct	; tak, pośredniej
-	cmp	byte [rsi],	STATIC_ASCII_SLASH
+	cmp	byte [rsi],	STATIC_SCANCODE_SLASH
 	je	.in_direct	; tak, bezpośredniej
 
 	; odszukaj program w katalogu wykonawczym

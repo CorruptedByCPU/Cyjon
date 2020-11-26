@@ -108,7 +108,7 @@ tm_task_show:
 	; przekształć wartość na ciąg
 	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
 	mov	ecx,	5	; uzupełnij wartośc o prefix do piętego miejsca
-	mov	dl,	STATIC_ASCII_SPACE	; prefix
+	mov	dl,	STATIC_SCANCODE_SPACE	; prefix
 	mov	rdi,	tm_string_value_format
 	call	library_integer_to_string
 

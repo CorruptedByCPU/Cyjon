@@ -18,11 +18,11 @@ console_sequence:
 	push	rdi
 
 	; rozmiar ciągu może zawierać sekwencje?
-	cmp	rcx,	STATIC_ASCII_SEQUENCE_length_min
+	cmp	rcx,	STATIC_SEQUENCE_length_min
 	jb	.error	; nie
 
 	; pierwszy znak należy do sekwencji?
-	cmp	byte [rsi],	STATIC_ASCII_CARET
+	cmp	byte [rsi],	STATIC_SCANCODE_CARET
 	jne	.error	; nie
 
 	; polecenie do wykonania?
@@ -86,7 +86,7 @@ console_sequence:
 	mov	eax,	dword [rdi + rax * STATIC_DWORD_SIZE_byte]
 	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.background_color],	eax
 
-%strlen	THIS_SEQUENCE_LENGTH STATIC_ASCII_SEQUENCE_COLOR_DEFAULT
+%strlen	THIS_SEQUENCE_LENGTH STATIC_SEQUENCE_COLOR_DEFAULT
 
 .color_ready:
 	; przetworzono sekwencję
@@ -102,18 +102,18 @@ console_sequence:
 
 .color_translate:
 	; wartość decymalna?
-	cmp	al,	STATIC_ASCII_DIGIT_9
+	cmp	al,	STATIC_SCANCODE_DIGIT_9
 	ja	.color_translate_hex
 
 	; zamień na cyfrę 0-9
-	sub	al,	STATIC_ASCII_DIGIT_0
+	sub	al,	STATIC_SCANCODE_DIGIT_0
 
 	; powrót z podprocedury
 	ret
 
 .color_translate_hex:
 	; zamień na literę A-F
-	sub	al,	(STATIC_ASCII_HIGH_CASE - (STATIC_ASCII_DIGIT_9 - STATIC_ASCII_DIGIT_0)) - 0x01
+	sub	al,	(STATIC_SCANCODE_HIGH_CASE - (STATIC_SCANCODE_DIGIT_9 - STATIC_SCANCODE_DIGIT_0)) - 0x01
 
 	; powrót z podprocedury
 	ret
@@ -127,7 +127,7 @@ console_sequence:
 	; wyczyść przestrzeń znakową konsoli
 	call	library_terminal_clear
 
-%strlen	THIS_SEQUENCE_LENGTH STATIC_ASCII_SEQUENCE_CLEAR
+%strlen	THIS_SEQUENCE_LENGTH STATIC_SEQUENCE_CLEAR
 
 	; przetworzono sekwencję
 	sub	rcx,	THIS_SEQUENCE_LENGTH
@@ -158,7 +158,7 @@ console_sequence:
 	ja	.terminal_cursor_position_column
 
 	; ustawić na ostatną kolumnę aktualnego wiersza?
-	cmp	byte [rsi],	STATIC_ASCII_ASTERISK
+	cmp	byte [rsi],	STATIC_SCANCODE_ASTERISK
 	jne	.terminal_cursor_position_column	; nie
 
 	; numer ostatniej kolumny
@@ -192,7 +192,7 @@ console_sequence:
 	ja	.terminal_cursor_position_row
 
 	; ustawić na ostatną kolumnę aktualnego wiersza?
-	cmp	byte [rsi],	STATIC_ASCII_ASTERISK
+	cmp	byte [rsi],	STATIC_SCANCODE_ASTERISK
 	jne	.terminal_cursor_position_row	; nie
 
 	; numer ostatniej kolumny

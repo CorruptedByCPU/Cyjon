@@ -39,7 +39,7 @@ kernel_gui_clock:
 	and	eax,	0xFF	; usuń informacje o godzinie, dniu, miesiącu... itp.
 	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
 	mov	ecx,	0x02	; wyświetl dwie cyfry (prefix)
-	mov	dl,	STATIC_ASCII_DIGIT_0	; prefix to cyfra "0"
+	mov	dl,	STATIC_SCANCODE_DIGIT_0	; prefix to cyfra "0"
 	mov	rdi,	kernel_gui_window_taskbar.element_label_clock_string_minute
 	call	library_integer_to_string
 
@@ -51,7 +51,7 @@ kernel_gui_clock:
 	;-----------------------------------------------------------------------
 	shr	rax,	STATIC_MOVE_HIGH_TO_AX_shift	; przesuń ilość godzin do rejestru AL
 	and	rax,	0xFF	; usuń informacje o dniu, miesiącu, roku... itp.
-	mov	dl,	STATIC_ASCII_SPACE	; prefix to "spacja"
+	mov	dl,	STATIC_SCANCODE_SPACE	; prefix to "spacja"
 	mov	rdi,	kernel_gui_window_taskbar.element_label_clock_string_hour
 	call	library_integer_to_string
 

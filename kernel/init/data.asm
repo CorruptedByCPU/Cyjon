@@ -9,12 +9,12 @@
 kernel_init_string_name				db	KERNEL_name
 kernel_init_string_name_end:
 
-kernel_init_string_error_memory			db	"Error: Memory map damaged.", STATIC_ASCII_TERMINATOR
-kernel_init_string_error_memory_low		db	"Error: Not enough memory.", STATIC_ASCII_TERMINATOR
-kernel_init_string_error_acpi_header		db	"Error: RSDP/XSDP not found.", STATIC_ASCII_TERMINATOR
-kernel_init_string_error_acpi			db	"Error: RSDT/XSDT not recognized.", STATIC_ASCII_TERMINATOR
-kernel_init_string_error_apic			db	"Error: APIC not found.", STATIC_ASCII_TERMINATOR
-kernel_init_string_error_ioapic			db	"Error: I/O APIC not found.", STATIC_ASCII_TERMINATOR
+kernel_init_string_error_memory			db	"Error: Memory map damaged.", STATIC_SCANCODE_TERMINATOR
+kernel_init_string_error_memory_low		db	"Error: Not enough memory.", STATIC_SCANCODE_TERMINATOR
+kernel_init_string_error_acpi_header		db	"Error: RSDP/XSDP not found.", STATIC_SCANCODE_TERMINATOR
+kernel_init_string_error_acpi			db	"Error: RSDT/XSDT not recognized.", STATIC_SCANCODE_TERMINATOR
+kernel_init_string_error_apic			db	"Error: APIC not found.", STATIC_SCANCODE_TERMINATOR
+kernel_init_string_error_ioapic			db	"Error: I/O APIC not found.", STATIC_SCANCODE_TERMINATOR
 
 kernel_init_string_storage_ide_hd_path		db	"/dev/hd"
 kernel_init_string_storage_ide_hd_letter	db	"a"

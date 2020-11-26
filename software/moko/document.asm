@@ -7,6 +7,113 @@
 ;===============================================================================
 
 ;===============================================================================
+; wejście:
+;	ax - kod ASCII znaku
+;	bl - aktualizowanie zmiennych globalnych == STATIC_EMPTY
+moko_document_insert:
+	; zachowaj oryginalne rejestry
+	push	rbx
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; wstawić znak na koniec dokumentu?
+	cmp	r10,	qword [moko_document_end_address]
+	je	.at_end_of_document	; tak
+
+	; wstawiamy znak nowej linii?
+	cmp	ax,	STATIC_SCANCODE_NEW_LINE
+	je	.no_insert_key	; zignoruj klawisz insert
+
+	; klawisz Insert aktywny?
+	cmp	byte [moko_key_insert_semaphore],	STATIC_FALSE
+	je	.no_insert_key	; nie
+
+	; aktualnie w tym miejscu znajduje się znak nowej linii?
+	cmp	byte [r10],	STATIC_SCANCODE_NEW_LINE
+	je	.no_insert_key	; zignoruj klawisz Insert
+
+	; podmień znak w linii
+	mov	byte [r10],	al
+
+	; koryguj zmienne
+	jmp	.inserted
+
+.no_insert_key:
+	; przesuń zawartość dokumentu względem wskaźnika o jeden znak w przód
+
+	; ilość znaków do przemieszczenia
+	mov	rcx,	qword [moko_document_end_address]
+	sub	rcx,	r10
+
+	; rozpocznij od ostatniego znaku w dokumencie
+	mov	rdi,	qword [moko_document_end_address]
+	mov	rsi,	rdi
+	dec	rsi
+
+	; wykonaj operację wstecz
+	std	; włącz Direction Flag
+	rep	movsb
+	cld	; wyłącz Direction Flag
+
+.at_end_of_document:
+	; zapisz znak do dokumentu
+	mov	byte [r10],	al
+
+	; ilość znaków w dokumencie +1
+	inc	qword [moko_document_size]
+
+	; ustaw wskaźnik końca dokumentu o jedną pozycję dalej
+	inc	qword [moko_document_end_address]
+
+	; nie modyfikować rozmiaru linii?
+	test	bl,	bl
+	jnz	.end	; tak
+
+	; zwiększ rozmiar linii
+	inc	r13
+
+.inserted:
+	; nie modyfikować właściwości aktualnej linii i kursora?
+	test	bl,	bl
+	jnz	.end	; tak
+
+	; przesuń wskaźnik pozycji kursora w przestrzeni dokumentu do następnej pozycji
+	inc	r10
+
+	; przestaw kursor do następnej kolumny
+	inc	r14
+
+	; przesuń wskaźnik pozycji wew. linii na następny znak
+	inc	r11
+
+	; zachowaj ostatni znany wskaźnik pozycji wew. linii
+	mov	qword [moko_document_line_index_last],	r11
+
+	; kursor wyszedł poza ekran?
+	cmp	r14,	r8
+	jbe	.end	; nie
+
+	; cofnij kursor do poprzedniej kolumny
+	dec	r14
+
+	; wyświetl zawartość linii od następnego znaku
+	inc	r12
+
+	; zachowaj ostatni znany wskaźnik początku wyświetlanej linii
+	mov	qword [moko_document_line_begin_last],	r12
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rcx
+	pop	rbx
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
 moko_document_area:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -31,7 +138,7 @@ moko_document_area:
 
 	; przygotuj miejsce pod pusty dokument (domyślnie 4 KiB ~ około 4000 znaków)
 	mov	ax,	KERNEL_SERVICE_PROCESS_memory_alloc
-	mov	rcx,	STATIC_PAGE_SIZE_byte
+	mov	rcx,	MOKO_DOCUMENT_AREA_SIZE_default
 	int	KERNEL_SERVICE
 	jc	moko.end	; brak wystarczającej ilości pamięci
 

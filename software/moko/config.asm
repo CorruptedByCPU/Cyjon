@@ -6,7 +6,9 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-%define	PROGRAM_NAME		"moko"
-%define	PROGRAM_VERSION		"0.37"
+%define	PROGRAM_NAME			"moko"
+%define	PROGRAM_VERSION			"0.37"
 
-MOKO_MENU_HEIGHT_char	equ	0x02
+MOKO_DOCUMENT_AREA_SIZE_default	equ	STATIC_PAGE_SIZE_byte
+
+MOKO_MENU_HEIGHT_char		equ	0x02

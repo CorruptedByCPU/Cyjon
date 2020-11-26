@@ -189,7 +189,7 @@ kernel_stream_receive:
 
 .load:
 	; przesłano znak nowej linii?
-	cmp	al,	STATIC_ASCII_NEW_LINE
+	cmp	al,	STATIC_SCANCODE_NEW_LINE
 	je	.close	; tak
 
 	; pobierz wartość z strumienia

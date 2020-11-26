@@ -63,8 +63,13 @@ moko:
 	; pobierz kod klawisza
 	mov	ax,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
 
-	; sprawdź czy wywołano skrót klawiszowy
+	; wywołano skrót klawiszowy?
 	call	moko_key
+	jnc	.loop	; tak
+
+	; wstaw znak do dokumentu
+	xor	bl,	bl	; aktualizuj wszystkie zmienne globalne
+	call	moko_document_insert
 
 	; powrót do pętli głównej
 	jmp	.loop

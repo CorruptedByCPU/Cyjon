@@ -30,15 +30,15 @@ library_string_word_next:
 	je	.not_found	; tak, koniec ciągu
 
 	; koniec lini?
-	cmp	byte [rsi],	STATIC_ASCII_NEW_LINE
+	cmp	byte [rsi],	STATIC_SCANCODE_NEW_LINE
 	je	.leave
 
 	; pomiń spacje przed słowem
-	cmp	byte [rsi],	STATIC_ASCII_SPACE
+	cmp	byte [rsi],	STATIC_SCANCODE_SPACE
 	je	.leave
 
 	; pomiń znak tabulacji przed słowem
-	cmp	byte [rsi],	STATIC_ASCII_TAB
+	cmp	byte [rsi],	STATIC_SCANCODE_TAB
 	jne	.char	; znaleziono pierwszy znak należący do słowa
 
 .leave:
@@ -67,15 +67,15 @@ library_string_word_next:
 	je	.ready	; tak, koniec słowa
 
 	; koniec lini?
-	cmp	byte [rsi],	STATIC_ASCII_NEW_LINE
+	cmp	byte [rsi],	STATIC_SCANCODE_NEW_LINE
 	je	.ready
 
 	; sprawdź czy koniec słowa
-	cmp	byte [rsi],	STATIC_ASCII_SPACE
+	cmp	byte [rsi],	STATIC_SCANCODE_SPACE
 	je	.ready
 
 	; sprawdź czy koniec słowa
-	cmp	byte [rsi],	STATIC_ASCII_TAB
+	cmp	byte [rsi],	STATIC_SCANCODE_TAB
 	je	.ready
 
 	; przesuń wskaźnik na następny znak w buforze polecenia

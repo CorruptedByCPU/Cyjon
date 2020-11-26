@@ -7,7 +7,7 @@
 ;	ax - kod klawisza
 moko_key:
 	; naciśnięto klawisz CTRL?
-	cmp	ax,	STATIC_ASCII_CTRL_LEFT
+	cmp	ax,	STATIC_SCANCODE_CTRL_LEFT
  	jne	.no_ctrl	; nie
 
  	; podnieś flagę
@@ -16,7 +16,7 @@ moko_key:
 
  .no_ctrl:
  	; puszczono klawisz CTRL?
- 	cmp	ax,	STATIC_ASCII_CTRL_LEFT + STATIC_ASCII_RELEASE_mask
+ 	cmp	ax,	STATIC_SCANCODE_CTRL_LEFT + STATIC_SCANCODE_RELEASE_mask
  	jne	.no_ctrl_release	; nie
 
  	; opuść flagę
@@ -24,6 +24,24 @@ moko_key:
  	jmp	.end	; obsłużono klawisz
 
 .no_ctrl_release:
+	; naciśnięto klawisz INSERT?
+	cmp	ax,	STATIC_SCANCODE_INSERT
+	jne	.no_insert	; nie
+
+	; podnieś flagę
+	mov	byte [moko_key_insert_semaphore],	STATIC_TRUE
+	jmp	.end	; obsłużono klawisz
+
+.no_insert:
+	; puszczono klawisz INSERT?
+	cmp	ax,	STATIC_SCANCODE_INSERT + STATIC_SCANCODE_RELEASE_mask
+	jne	.no_insert_release	; nie
+
+	; opuść flagę
+ 	mov	byte [moko_key_insert_semaphore],	STATIC_FALSE
+ 	jmp	.end	; obsłużono klawisz
+
+.no_insert_release:
 	; naciśnięto klawisz "x"?
 	cmp	ax,	"x"
 	jne	.no_exit	; nie

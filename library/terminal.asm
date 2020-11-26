@@ -400,22 +400,22 @@ library_terminal_char:
 
 .loop:
 	; znak "powrót karetki"?
-	cmp	ax,	STATIC_ASCII_RETURN
+	cmp	ax,	STATIC_SCANCODE_RETURN
 	je	.return	; tak
 
 	; znak "nowej linii"?
-	cmp	ax,	STATIC_ASCII_NEW_LINE
+	cmp	ax,	STATIC_SCANCODE_NEW_LINE
 	je	.new_line	; tak
 
 	; znak "backspace"?
-	cmp	ax,	STATIC_ASCII_BACKSPACE
+	cmp	ax,	STATIC_SCANCODE_BACKSPACE
 	je	.backspace	; tak
 
 	; wyczyść przestrzeń znaku domyślnym kolorem tła
 	call	library_terminal_empty_char
 
 	; wyświetl matrycę znaku na ekran
-	sub	ax,	STATIC_ASCII_SPACE	; macierz czcionki rozpoczyna się od znaku STATIC_ASCII_SPACE
+	sub	ax,	STATIC_SCANCODE_SPACE	; macierz czcionki rozpoczyna się od znaku STATIC_SCANCODE_SPACE
 	call	library_terminal_matrix
 
 	; przesuń kursor na osi X o jedną pozycję w prawo

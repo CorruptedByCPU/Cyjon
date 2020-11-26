@@ -61,7 +61,7 @@ ls:
 	add	rsi,	KERNEL_VFS_STRUCTURE_KNOT.name
 
 	; plik jest ukryty?
-	cmp	byte [rsi],	STATIC_ASCII_DOT
+	cmp	byte [rsi],	STATIC_SCANCODE_DOT
 	je	.hidden	; tak
 
 	; wyświetl nazwę pliku
