@@ -127,7 +127,7 @@ kernel_vfs_path_resolve:
 	mov	rdi,	kernel_vfs_magicknot
 
 	; ścieżka rozpoczyna się od znaku "/"?
-	cmp	byte [rsi],	STATIC_ASCII_SLASH
+	cmp	byte [rsi],	STATIC_SCANCODE_SLASH
 	je	.prefix	; tak
 
 	; ustaw wskaźnik na zadanie procesora logicznego
@@ -149,12 +149,12 @@ kernel_vfs_path_resolve:
 	jz	.root	; tak
 
 	; początek ścieżki ponownie posiada znak "/"
-	cmp	byte [rsi],	STATIC_ASCII_SLASH
+	cmp	byte [rsi],	STATIC_SCANCODE_SLASH
 	je	.prefix	; tak
 
 .suffix:
 	; ścieżka zakończona na znaku "/"?
-	cmp	byte [rsi + rcx - 0x01],	STATIC_ASCII_SLASH
+	cmp	byte [rsi + rcx - 0x01],	STATIC_SCANCODE_SLASH
 	jne	.cut	; nie
 
 	; skróć ścieżkę o znak "/"
@@ -166,7 +166,7 @@ kernel_vfs_path_resolve:
 
 .cut:
 	; szukaj znaku "/" od końca ścieżki
-	cmp	byte [rsi + rcx - STATIC_BYTE_SIZE_byte],	STATIC_ASCII_SLASH
+	cmp	byte [rsi + rcx - STATIC_BYTE_SIZE_byte],	STATIC_SCANCODE_SLASH
 	je	.loop
 
 	; skróć ścieżkę o ostatni plik
@@ -196,7 +196,7 @@ kernel_vfs_path_resolve:
 	mov	qword [rsp],	rcx
 
 	; pobierz nazwę katalogu
-	mov	al,	STATIC_ASCII_SLASH	; separator plików w ścieżce
+	mov	al,	STATIC_SCANCODE_SLASH	; separator plików w ścieżce
 	call	library_string_cut
 	jc	.ready	; przetworzono ścieżkę
 

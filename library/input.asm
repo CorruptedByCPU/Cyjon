@@ -64,23 +64,23 @@ library_input:
 	mov	dx,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
 
 	; klawisz typu Backspace?
-	cmp	dx,	STATIC_ASCII_BACKSPACE
+	cmp	dx,	STATIC_SCANCODE_BACKSPACE
 	je	.key_backspace
 
 	; klawisz typu Enter?
-	cmp	dx,	STATIC_ASCII_RETURN
+	cmp	dx,	STATIC_SCANCODE_RETURN
 	je	.key_enter
 
 	; klawisz typu ESC?
-	cmp	dx,	STATIC_ASCII_ESCAPE
+	cmp	dx,	STATIC_SCANCODE_ESCAPE
 	je	.empty	; zakończ libliotekę
 
 	; znak dozwolony?
 
 	; sprawdź czy pobrany znak jest możliwy do wyświetlenia
-	cmp	dx,	STATIC_ASCII_SPACE
+	cmp	dx,	STATIC_SCANCODE_SPACE
 	jb	.loop	; nie, zignoruj
-	cmp	dx,	STATIC_ASCII_TILDE
+	cmp	dx,	STATIC_SCANCODE_TILDE
 	ja	.loop	; nie, zignoruj
 
 	; bufor pełny?

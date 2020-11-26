@@ -8,6 +8,7 @@ nasm -f bin software/console.asm	-o build/console
 nasm -f bin software/shell.asm		-o build/shell
 nasm -f bin software/ls.asm		-o build/ls
 nasm -f bin software/cat.asm		-o build/cat
+nasm -f bin software/moko.asm		-o build/moko
 
 nasm -f bin kernel/init/boot.asm	-o build/boot
 nasm -f bin kernel.asm			-o build/kernel

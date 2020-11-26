@@ -34,7 +34,7 @@ tm_static:
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_char
 	movzx	ecx,	word [tm_stream_meta + CONSOLE_STRUCTURE_STREAM_META.width]
 	sub	ecx,	tm_string_header_end - tm_string_header
-	mov	dl,	STATIC_ASCII_SPACE
+	mov	dl,	STATIC_SCANCODE_SPACE
 	int	KERNEL_SERVICE
 
 	; wyświetl menu programu

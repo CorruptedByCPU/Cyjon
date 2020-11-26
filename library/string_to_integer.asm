@@ -30,7 +30,7 @@ library_string_to_integer:
 .loop:
 	; pobierz ostatnią cyfrę z ciągu
 	movzx	eax,	byte [rsi + rbx - 0x01]
-	sub	al,	STATIC_ASCII_DIGIT_0	; przekształć kod ASCII cyfry na wartość
+	sub	al,	STATIC_SCANCODE_DIGIT_0	; przekształć kod ASCII cyfry na wartość
 	mul	rcx	; zamień na wartość z danej podstawy dla cyfry
 
 	; dodaj do wyniku cząstkowego

@@ -25,11 +25,11 @@ library_string_trim:
 
 .prefix:
 	; spacja?
-	cmp	byte [rsi],	STATIC_ASCII_SPACE
+	cmp	byte [rsi],	STATIC_SCANCODE_SPACE
 	je	.prefix_found	; tak
 
 	; tabulator?
-	cmp	byte [rsi],	STATIC_ASCII_TAB
+	cmp	byte [rsi],	STATIC_SCANCODE_TAB
 	je	.prefix_found	; tak
 
 	; pusty znak?
@@ -53,11 +53,11 @@ library_string_trim:
 
 .suffix:
 	; spacja?
-	cmp	byte [rsi - STATIC_BYTE_SIZE_byte],	STATIC_ASCII_SPACE
+	cmp	byte [rsi - STATIC_BYTE_SIZE_byte],	STATIC_SCANCODE_SPACE
 	je	.suffix_found	; tak
 
 	; tabulator?
-	cmp	byte [rsi - STATIC_BYTE_SIZE_byte],	STATIC_ASCII_TAB
+	cmp	byte [rsi - STATIC_BYTE_SIZE_byte],	STATIC_SCANCODE_TAB
 	je	.suffix_found	; tak
 
 	; pusty znak?

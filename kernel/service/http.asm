@@ -10,9 +10,9 @@
 %define	SERVICE_HTTP_revision	"8"
 
 %macro	service_http_macro_foot	0
-	db	"<hr />", STATIC_ASCII_NEW_LINE
+	db	"<hr />", STATIC_SCANCODE_NEW_LINE
 	db	"Cyjon v", KERNEL_version, ".", KERNEL_revision, " (HTTP Service v", SERVICE_HTTP_version, ".", SERVICE_HTTP_revision, ")"
-	db	"<style>* { font: 12px/150% 'Courier New', 'DejaVu Sans Mono', Monospace, Verdana; color: #F5F5F5; } body { background-color: #282922; }</style>", STATIC_ASCII_NEW_LINE
+	db	"<style>* { font: 12px/150% 'Courier New', 'DejaVu Sans Mono', Monospace, Verdana; color: #F5F5F5; } body { background-color: #282922; }</style>", STATIC_SCANCODE_NEW_LINE
 %endmacro
 
 service_http_ipc_message:
@@ -62,16 +62,16 @@ service_http:
 service_http_get_root		db	"GET / "
 service_http_get_root_end:
 
-service_http_200_default	db	"HTTP/1.0 200 OK", STATIC_ASCII_NEW_LINE
-				db	"Content-Type: text/html", STATIC_ASCII_NEW_LINE
-				db	STATIC_ASCII_NEW_LINE
-				db	'<span style="color: #F62670;">Hello,</span> <span style="color: #A9DE40;">World!</span>', STATIC_ASCII_NEW_LINE
+service_http_200_default	db	"HTTP/1.0 200 OK", STATIC_SCANCODE_NEW_LINE
+				db	"Content-Type: text/html", STATIC_SCANCODE_NEW_LINE
+				db	STATIC_SCANCODE_NEW_LINE
+				db	'<span style="color: #F62670;">Hello,</span> <span style="color: #A9DE40;">World!</span>', STATIC_SCANCODE_NEW_LINE
 				service_http_macro_foot
 service_http_200_default_end:
 
-service_http_404		db	"HTTP/1.0 404 Not Found", STATIC_ASCII_NEW_LINE
-				db	"Content-Type: text/html", STATIC_ASCII_NEW_LINE
-				db	STATIC_ASCII_NEW_LINE
-				db	"404 Content not found.", STATIC_ASCII_NEW_LINE
+service_http_404		db	"HTTP/1.0 404 Not Found", STATIC_SCANCODE_NEW_LINE
+				db	"Content-Type: text/html", STATIC_SCANCODE_NEW_LINE
+				db	STATIC_SCANCODE_NEW_LINE
+				db	"404 Content not found.", STATIC_SCANCODE_NEW_LINE
 				service_http_macro_foot
 service_http_404_end:

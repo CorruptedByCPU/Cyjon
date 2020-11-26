@@ -49,7 +49,7 @@ tm_uptime:
 	push	rdx
 
 	; domyśny prefix
-	mov	edx,	STATIC_ASCII_SPACE
+	mov	edx,	STATIC_SCANCODE_SPACE
 
 	; brak dni?
 	test	rax,	rax
@@ -118,7 +118,7 @@ tm_uptime:
 	push	rdx
 
 	; domyśny prefix
-	mov	edx,	STATIC_ASCII_DIGIT_0
+	mov	edx,	STATIC_SCANCODE_DIGIT_0
 
 	; brak godzin?
 	test	rax,	rax
@@ -132,7 +132,7 @@ tm_uptime:
 	jnz	.hours_only	; tak
 
 	; prefix dla formatu bez dni
-	mov	dl,	STATIC_ASCII_SPACE
+	mov	dl,	STATIC_SCANCODE_SPACE
 
 .hours_only:
 	; ilość godzin większa od 10?
@@ -195,7 +195,7 @@ tm_uptime:
 	push	rdx
 
 	; domyśny prefix
-	mov	edx,	STATIC_ASCII_DIGIT_0
+	mov	edx,	STATIC_SCANCODE_DIGIT_0
 
 	; brak minut?
 	test	rax,	rax
@@ -209,7 +209,7 @@ tm_uptime:
 	jnz	.minutes_only	; tak
 
 	; prefix dla formatu bez godzin
-	mov	dl,	STATIC_ASCII_SPACE
+	mov	dl,	STATIC_SCANCODE_SPACE
 
 .minutes_only:
 	; ilość minut mniejsza od 10?
@@ -264,7 +264,7 @@ tm_uptime:
 	mov	ecx,	0x02
 
 	; domyśny prefix
-	mov	edx,	STATIC_ASCII_DIGIT_0
+	mov	edx,	STATIC_SCANCODE_DIGIT_0
 
 	; wyświetlono minuty?
 	test	r8,	TM_UPTIME_FLAG_minute
@@ -274,7 +274,7 @@ tm_uptime:
 	mov	ecx,	TM_TABLE_CELL_time_width - 0x01
 
 	; prefix dla formatu bez minut
-	mov	dl,	STATIC_ASCII_SPACE
+	mov	dl,	STATIC_SCANCODE_SPACE
 
 .second_overflow:
 	; konwertuj wartość na ciąg

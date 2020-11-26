@@ -47,5 +47,5 @@ shell_input:
 	call	shell_prompt_relocate
 
 	; pobierz rozmiar pierwszego "słowa" w ciągu
-	mov	bl,	STATIC_ASCII_SPACE	; separator
+	mov	bl,	STATIC_SCANCODE_SPACE	; separator
 	call	library_string_word_next

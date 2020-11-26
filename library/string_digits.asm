@@ -19,9 +19,9 @@ library_string_digits:
 
 .loop:
 	; znak spoza zakrecy cyfr?
-	cmp	byte [rsi],	STATIC_ASCII_DIGIT_0
+	cmp	byte [rsi],	STATIC_SCANCODE_DIGIT_0
 	jb	.error	; tak
-	cmp	byte [rsi],	STATIC_ASCII_DIGIT_9
+	cmp	byte [rsi],	STATIC_SCANCODE_DIGIT_9
 	ja	.error	; tak
 
 	; sprawdź następny znak

@@ -21,17 +21,17 @@
 ; 	mov	dl,	byte [rsi]
 ;
 ; 	; znak drukowalny?
-; 	cmp	dl,	STATIC_ASCII_TILDE
+; 	cmp	dl,	STATIC_SCANCODE_TILDE
 ; 	ja	.no	; nie
-; 	cmp	dl,	STATIC_ASCII_SPACE
+; 	cmp	dl,	STATIC_SCANCODE_SPACE
 ; 	jae	.yes	; tak
 ;
 ; 	; znak nowej linii?
-; 	cmp	dl,	STATIC_ASCII_NEW_LINE
+; 	cmp	dl,	STATIC_SCANCODE_NEW_LINE
 ; 	je	.yes	; tak, wyświetl
 ;
 ; 	; znak karetki?
-; 	cmp	dl,	STATIC_ASCII_ENTER
+; 	cmp	dl,	STATIC_SCANCODE_ENTER
 ; 	je	.yes	; tak, wyświetl
 ;
 ; .no:

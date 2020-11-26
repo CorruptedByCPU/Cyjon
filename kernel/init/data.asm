@@ -9,12 +9,12 @@
 kernel_init_string_name				db	KERNEL_name
 kernel_init_string_name_end:
 
-kernel_init_string_error_memory			db	"Error: Memory map damaged.", STATIC_ASCII_TERMINATOR
-kernel_init_string_error_memory_low		db	"Error: Not enough memory.", STATIC_ASCII_TERMINATOR
-kernel_init_string_error_acpi_header		db	"Error: RSDP/XSDP not found.", STATIC_ASCII_TERMINATOR
-kernel_init_string_error_acpi			db	"Error: RSDT/XSDT not recognized.", STATIC_ASCII_TERMINATOR
-kernel_init_string_error_apic			db	"Error: APIC not found.", STATIC_ASCII_TERMINATOR
-kernel_init_string_error_ioapic			db	"Error: I/O APIC not found.", STATIC_ASCII_TERMINATOR
+kernel_init_string_error_memory			db	"Error: Memory map damaged.", STATIC_SCANCODE_TERMINATOR
+kernel_init_string_error_memory_low		db	"Error: Not enough memory.", STATIC_SCANCODE_TERMINATOR
+kernel_init_string_error_acpi_header		db	"Error: RSDP/XSDP not found.", STATIC_SCANCODE_TERMINATOR
+kernel_init_string_error_acpi			db	"Error: RSDT/XSDT not recognized.", STATIC_SCANCODE_TERMINATOR
+kernel_init_string_error_apic			db	"Error: APIC not found.", STATIC_SCANCODE_TERMINATOR
+kernel_init_string_error_ioapic			db	"Error: I/O APIC not found.", STATIC_SCANCODE_TERMINATOR
 
 kernel_init_string_storage_ide_hd_path		db	"/dev/hd"
 kernel_init_string_storage_ide_hd_letter	db	"a"
@@ -98,6 +98,12 @@ kernel_init_vfs_files:
 						db	8
 						db	"/bin/cat"
 
+						dq	kernel_init_vfs_file_moko
+						dq	kernel_init_vfs_file_moko_end - kernel_init_vfs_file_moko
+						dw	KERNEL_VFS_FILE_MODE_USER_full_control | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
+						db	9
+						db	"/bin/moko"
+
 						dq	kernel_init_vfs_file_hostname
 						dq	kernel_init_vfs_file_hostname_end - kernel_init_vfs_file_hostname
 						dw	KERNEL_VFS_FILE_MODE_USER_read | KERNEL_VFS_FILE_MODE_USER_read | KERNEL_VFS_FILE_MODE_USER_read | KERNEL_VFS_FILE_MODE_OTHER_read
@@ -126,6 +132,8 @@ kernel_init_vfs_file_ls				incbin	"build/ls"
 kernel_init_vfs_file_ls_end:
 kernel_init_vfs_file_cat			incbin	"build/cat"
 kernel_init_vfs_file_cat_end:
+kernel_init_vfs_file_moko			incbin	"build/moko"
+kernel_init_vfs_file_moko_end:
 
 kernel_init_vfs_file_hostname			incbin	"fs/etc/hostname"
 kernel_init_vfs_file_hostname_end:

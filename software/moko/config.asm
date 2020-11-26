@@ -6,8 +6,9 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-cat_string_init		db	STATIC_SEQUENCE_CURSOR_DISABLE
-cat_string_init_end:
+%define	PROGRAM_NAME			"moko"
+%define	PROGRAM_VERSION			"0.37"
 
-cat_string_not_found	db	"File not selected.", STATIC_SCANCODE_NEW_LINE
-cat_string_not_found_end:
+MOKO_DOCUMENT_AREA_SIZE_default	equ	STATIC_PAGE_SIZE_byte
+
+MOKO_MENU_HEIGHT_char		equ	0x02

@@ -172,14 +172,14 @@ tm_ram:
 ; 	; zamień wartość całkowitą na ciąg
 ; 	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
 ; 	mov	ecx,	0x04	; maksymalny rozmiar prefiksu
-; 	mov	dl,	STATIC_ASCII_SPACE	; prefiks
+; 	mov	dl,	STATIC_SCANCODE_SPACE	; prefiks
 ; 	call	library_integer_to_string
 ;
 ; 	; zamień procent reszty na ciąg
 ; 	mov	rax,	qword [rsp]	; pobierz procent reszty
 ; 	add	rdi,	rcx	; przesuń wskaźnik za wartość całkowitą
 ; 	mov	ecx,	2	; maksymalny rozmiar prefiksu
-; 	mov	dl,	STATIC_ASCII_DIGIT_0	; prefiks
+; 	mov	dl,	STATIC_SCANCODE_DIGIT_0	; prefiks
 ; 	call	library_integer_to_string
 ;
 ; 	; przywróć oryginalne rejestry
