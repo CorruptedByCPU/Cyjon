@@ -38,12 +38,12 @@ kernel_gui_ipc_wm:
 	jc	.end	; brak akcji
 
 	; element posiada przypisaną procedurę obsługi akcji?
-	cmp	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	STATIC_EMPTY
+	cmp	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	STATIC_EMPTY
 	je	.end	; nie, koniec obsługi akcji
 
 	; wykonaj procedurę powiązaną z elementem
 	push	.end	; powrót z procedury
-	push	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.event]
+	push	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.event]
 	ret	; call
 
 .left_mouse_button_no_menu:

@@ -35,6 +35,7 @@ LIBRARY_BOSU_ELEMENT_TYPE_taskbar		equ	0x06
 LIBRARY_BOSU_ELEMENT_TYPE_button_close		equ	0x07
 LIBRARY_BOSU_ELEMENT_TYPE_button_minimize	equ	0x08
 LIBRARY_BOSU_ELEMENT_TYPE_button_maximize	equ	0x09
+LIBRARY_BOSU_ELEMENT_TYPE_corrupted		equ	0xFF
 
 LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel	equ	18
 LIBRARY_BOSU_ELEMENT_HEADER_PADDING_LEFT_pixel	equ	0x04
@@ -79,8 +80,12 @@ struc	LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA
 	.SIZE:
 endstruc
 
+struc	LIBRARY_BOSU_STRUCTURE_TYPE
+	.set					resb	4
+	.SIZE:
+endstruc
+
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT
-	.type					resb	4
 	.size					resb	8
 	.field					resb	LIBRARY_BOSU_STRUCTURE_FIELD.SIZE
 	.event					resb	8
@@ -88,12 +93,14 @@ struc	LIBRARY_BOSU_STRUCTURE_ELEMENT
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_HEADER
+	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
 	.element				resb	LIBRARY_BOSU_STRUCTURE_ELEMENT.SIZE
 	.length					resb	1
 	.string:
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL
+	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
 	.element				resb	LIBRARY_BOSU_STRUCTURE_ELEMENT.SIZE
 	.length					resb	1
 	.string:
@@ -101,6 +108,7 @@ struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON
+	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
 	.element				resb	LIBRARY_BOSU_STRUCTURE_ELEMENT.SIZE
 	.length					resb	1
 	.string:
@@ -108,27 +116,28 @@ struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON_CLOSE
-	.type					resb	4
+	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
 	.size					resb	8
 	.event					resb	8
 	.SIZE:
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON_MINIMIZE
-	.type					resb	4
+	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
 	.size					resb	8
 	.event					resb	8
 	.SIZE:
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON_MAXIMIZE
-	.type					resb	4
+	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
 	.size					resb	8
 	.event					resb	8
 	.SIZE:
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR
+	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
 	.element				resb	LIBRARY_BOSU_STRUCTURE_ELEMENT.SIZE
 	.background				resb	4
 	.length					resb	1
@@ -137,12 +146,13 @@ struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_DRAW
+	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
 	.element				resb	LIBRARY_BOSU_STRUCTURE_ELEMENT.SIZE
 	.SIZE:
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN
-	.type					resb	4
+	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
 	.size					resb	8	; rozmiar przestrzeni w Bajtach
 	.address				resb	8
 	.SIZE:

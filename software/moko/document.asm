@@ -108,7 +108,7 @@ moko_document_insert:
 
 	; kursor wyszedł poza ekran?
 	cmp	r14,	r8
-	jbe	.end	; nie
+	jbe	.ready	; nie
 
 	; cofnij kursor do poprzedniej kolumny
 	dec	r14
@@ -118,6 +118,10 @@ moko_document_insert:
 
 	; zachowaj ostatni znany wskaźnik początku wyświetlanej linii
 	mov	qword [moko_document_line_begin_last],	r12
+
+.ready:
+	; zaimportowano znak do dokumentu
+	clc
 
 .end:
 	; przywróć oryginalne rejestry
@@ -137,12 +141,13 @@ moko_document_area:
 	push	rcx
 	push	rdi
 
+.retry:
 	; pobierz informacje o strumieniu wyjścia
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_meta
 	mov	bl,	KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_get | KERNEL_SERVICE_PROCESS_STREAM_META_FLAG_out
 	mov	rdi,	moko_stream_meta
 	int	KERNEL_SERVICE
-	jc	moko_document_area	; brak aktualnych informacji, spróbuj raz jeszcze
+	jc	.retry	; brak aktualnych informacji, spróbuj raz jeszcze
 
 	; pobierz z meta danych strumienia
 	; informacje o szerokości i wysokości przestrzeni znakowej

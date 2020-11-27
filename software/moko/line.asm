@@ -38,14 +38,8 @@ moko_line:
 	test	rcx,	rcx
 	jz	.empty	; tak
 
-	; zachowaj ilość znaków wyświetlonych w linii
-	push	rcx
-
 	; wyświetl kolejno ciąg znaków o określonej długości
 	int	KERNEL_SERVICE
-
-	; przywróć ilość znaków wyświetlonych w linii
-	pop	rcx
 
 .empty:
 	; wyczyścić resztę linii?

@@ -37,6 +37,10 @@ console_sequence:
 	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x02],	"t"
 	je	.terminal	; tak
 
+	; zmiana nagłówka okna konsoli?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x02],	"h"
+	je	.header	; tak
+
 	xchg	bx,bx
 
 .error:
@@ -51,6 +55,51 @@ console_sequence:
 
 	; powrót z procedury
 	ret
+
+;-------------------------------------------------------------------------------
+.header:
+	; zachowaj oryginalne rejestry
+	push	rbx
+	push	rsi
+	push	rcx
+
+	; przesuń wskaźnik na nazwę nowego nagłówka okna oraz ogranicz rozmiar pozostałego ciągu
+	sub	rcx,	0x03
+	add	rsi,	0x03
+
+	; rozpoznaj nazwę nagłówka (ilośc znaków wchodzących w jego skład)
+	mov	bl,	"]"
+	call	library_string_word_next
+	jc	.header_error	; nie znaleziono końca sekwencji
+
+	; zmienić typ aktualnego elementu nagłówka na
+	; LIBRARY_BOSU_ELEMENT_TYPE_corrupted
+	; utworzyć nowy nagłówek w łańcuchu
+
+	; przetworzono sekwencję
+	inc	rbx	; zakończenie sekwencji
+	sub	rcx,	rbx
+	add	rsi,	rbx
+
+	; zwróć informacje o pozostałym ciągu do przetworzenia
+	mov	qword [rsp],	rcx
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rsi
+
+	; koniec obslugi sekwencji
+	jmp	.header_end
+
+.header_error:
+	; flaga błąd
+	stc
+
+.header_end:
+	; przywróć oryginalne rejestry
+	pop	rcx
+	pop	rsi
+	pop	rbx
+
+	; powrót z podprocedury
+	jmp	console_sequence.end
 
 ;-------------------------------------------------------------------------------
 .color:

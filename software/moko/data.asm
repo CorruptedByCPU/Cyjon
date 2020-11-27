@@ -40,5 +40,5 @@ moko_string_menu_end:
 moko_key_ctrl_semaphore				db	STATIC_FALSE
 moko_key_insert_semaphore			db	STATIC_FALSE
 
-moko_string_console_header			db	"^[h0;Moko]"
+moko_string_console_header			db	"^[hMoko]"
 moko_string_console_header_end:
