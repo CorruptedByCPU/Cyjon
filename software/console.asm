@@ -154,6 +154,7 @@ console:
 	; zatrzymaj dalsze wykonywanie kodu
 	jmp	.loop
 
+	; debug
 	macro_debug	"software: console"
 
 	;-----------------------------------------------------------------------

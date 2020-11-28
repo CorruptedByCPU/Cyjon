@@ -311,7 +311,7 @@ kernel_gui_taskbar:
 	push	rdi
 
 	; utwórz pierwszy element opisujący okno na początku paska zadań
-	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	LIBRARY_BOSU_ELEMENT_TYPE_taskbar
+	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.type + LIBRARY_BOSU_STRUCTURE_TYPE.set],	LIBRARY_BOSU_ELEMENT_TYPE_taskbar
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.SIZE
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	rdx
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	STATIC_EMPTY
@@ -377,7 +377,7 @@ kernel_gui_taskbar:
 	pop	qword [kernel_gui_window_taskbar.element_chain_0 + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.size]
 
 	; zakończ listę elementów łańcucha pustym rekordem
-	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	STATIC_EMPTY
+	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_TYPE.set],	LIBRARY_BOSU_ELEMENT_TYPE_none
 
 	; zwolnij dostęp do modyfikacji listy obiektów
 	mov	byte [kernel_wm_object_semaphore],	STATIC_FALSE
@@ -420,7 +420,7 @@ kernel_gui_taskbar:
 ;	rdi - wskaźnik następnej pozycji na liście elementów
 kernel_gui_taskbar_margin:
 	; wyczyść przestrzeń za pomocą pustej etykiety
-	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	LIBRARY_BOSU_ELEMENT_TYPE_label
+	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.type + LIBRARY_BOSU_STRUCTURE_TYPE.set],	LIBRARY_BOSU_ELEMENT_TYPE_label
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.SIZE
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	rdx
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	STATIC_EMPTY

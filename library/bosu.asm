@@ -141,6 +141,31 @@ library_bosu:
 
 ;===============================================================================
 ; wejście:
+;	rcx - ilość znaków reprezentujących nowy nagłówek
+;	rsi - wskaźnik do ciągu znaków
+;	rdi - wskaźnik do struktury okna
+library_bosu_header:
+
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do listy elementów
+library_bosu_clean:
+	; zachowaj oryginalne rejestry
+	push	rsi
+
+.loop:
+	; przywróć oryginalne rejestry
+	pop	rsi
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
 ;	rsi - wskaźnik do specyfikacji okna
 library_bosu_border_correction:
 	; zachowaj oryginalne rejestry
@@ -152,9 +177,13 @@ library_bosu_border_correction:
 
 .loop:
 	; koniec elementów do korekcji?
-	mov	eax,	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type]
-	cmp	eax,	STATIC_EMPTY
+	mov	eax,	dword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.set]
+	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_none
 	je	.ready	; tak
+
+	; element typu "header"?
+	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_header
+	je	.next	; tak, pomiń
 
 	; element typu "button close"?
 	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_button_close
@@ -173,12 +202,12 @@ library_bosu_border_correction:
 	je	.chain	; tak
 
 	; koryguj pozycję elementu o rozmiar krawędzi
-	add	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel
-	add	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel
+	add	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel
+	add	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel
 
 .next:
 	; przesuń wskaźnik na następny element
-	add	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+	add	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
 
 	; kontyuuj
 	jmp	.loop
@@ -199,7 +228,7 @@ library_bosu_border_correction:
 	pop	rsi
 
 	; przesuń wskaźnik na następny element
-	add	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+	add	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
 
 	; kontynuuj
 	jmp	.loop
@@ -247,7 +276,7 @@ library_bosu_element_button_close:
 	; ustaw wskaźnik na pozycję elementu
 	xor	rdi,	rdi
 
-	; pozycjq na osi X
+	; pozycja na osi X
 	mov	rax,	r8
 	sub	rax,	LIBRARY_BOSU_ELEMENT_BUTTON_CLOSE_width
 
@@ -353,16 +382,16 @@ library_bosu_elements_specification:
 
 .loop:
 	; koniec elementów?
-	cmp	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	STATIC_EMPTY
+	cmp	dword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.set],	LIBRARY_BOSU_ELEMENT_TYPE_none
 	je	.end	; tak
 
 	; element typu "łańcuch"?
-	cmp	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	LIBRARY_BOSU_ELEMENT_TYPE_chain
+	cmp	dword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.set],	LIBRARY_BOSU_ELEMENT_TYPE_chain
 	je	.next	; tak, pomiń
 
 	; pozycja elementu na osi X
-	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
-	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
+	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
 
 	; dalej niż poprzedni?
 	cmp	rax,	r8
@@ -373,8 +402,8 @@ library_bosu_elements_specification:
 
 .y:
 	; pozycja elementu na osi Y
-	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
-	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
+	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
 
 	; dalej niż poprzedni?
 	cmp	rax,	r9
@@ -385,7 +414,7 @@ library_bosu_elements_specification:
 
 .next:
 	; przesuń wskaźnik na następny element z listy
-	add	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+	add	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
 
 	; kontynuuj
 	jmp	.loop
@@ -419,8 +448,8 @@ library_bosu_elements:
 
 .loop:
 	; koniec elementów?
-	mov	eax,	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type]
-	cmp	eax,	STATIC_EMPTY
+	mov	eax,	dword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.set]
+	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_none
 	je	.ready	; tak
 
 	; element typu "draw"?
@@ -458,7 +487,7 @@ library_bosu_elements:
 
 .leave:
 	; przesuń wskaźnik na następny element
-	add	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+	add	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
 
 	; kontyuuj
 	jmp	.loop
@@ -601,8 +630,8 @@ library_bosu_element_chain:
 
 .loop:
 	; koniec elementów?
-	mov	eax,	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type]
-	cmp	eax,	STATIC_EMPTY
+	mov	eax,	dword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.set]
+	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_none
 	je	.ready	; tak
 
 	; element typu "draw"?
@@ -614,7 +643,7 @@ library_bosu_element_chain:
 
 .leave:
 	; przesuń wskaźnik na następny element
-	add	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+	add	rsi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
 
 	; kontyuuj
 	jmp	.loop
@@ -676,11 +705,12 @@ library_bosu_element_header:
 	; wylicz bezwzględny adres elementu w przestrzeni okna
 
 	; pozycja na osi Y
-	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_HEADER.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
+	mov	rax,	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel
 	mul	r10	; * scanline
 	add	rdi,	rax
+
 	; pozycja na osi X
-	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_HEADER.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
+	mov	rax,	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel
 	shl	rax,	KERNEL_VIDEO_DEPTH_shift
 	add	rdi,	rax
 
@@ -1118,14 +1148,14 @@ library_bosu_element_subroutine:
 	; sprawdzaj kolejno elementy okna
 
 	; koniec listy elementów?
-	cmp	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	STATIC_EMPTY
+	cmp	dword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.set],	LIBRARY_BOSU_ELEMENT_TYPE_none
 	je	.error	; tak
 
 	; pobierz rozmiar elementu
-	mov	rcx,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+	mov	rcx,	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
 
 	; element typu "łańcuch"?
-	cmp	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	LIBRARY_BOSU_ELEMENT_TYPE_chain
+	cmp	dword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.set],	LIBRARY_BOSU_ELEMENT_TYPE_chain
 	jne	.no_chain	; nie
 
 	; zachowaj wskaźnik do elementu łańcucha
@@ -1157,7 +1187,7 @@ library_bosu_element_subroutine:
 	push	rcx
 
 	; element typu: button close?
-	cmp	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.type],	LIBRARY_BOSU_ELEMENT_TYPE_button_close
+	cmp	dword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.set],	LIBRARY_BOSU_ELEMENT_TYPE_button_close
 	jne	.no_button_close	; nie
 
 	; pozycja elementu na osi X
@@ -1199,22 +1229,22 @@ library_bosu_element_subroutine:
 
 .no_button_close:
 	; porównaj pozycję wskaźnika z lewą krawędzią elementu
-	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
+	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
 	cmp	r8,	rax
 	jl	.next	; poza przestrzenią elementu
 
 	; porównaj pozycję wskaźnika z prawą krawędzią elementu
-	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
 	cmp	r8,	rax
 	jge	.next	; poza przestrzenią elementu
 
 	; porównaj pozycję wskaźnika z górną krawędzią elementu
-	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
+	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
 	cmp	r9,	rax
 	jl	.next	; poza przestrzenią elementu
 
 	; porównaj pozycję wskaźnika z dolną krawędzią elementu
-	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	add	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
 	cmp	r9,	rax
 	jge	.next	; poza przestrzenią elementu
 

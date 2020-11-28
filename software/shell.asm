@@ -34,12 +34,8 @@
 
 ;===============================================================================
 shell:
-	; pobierz PID rodzica
-	mov	ax,	KERNEL_SERVICE_PROCESS_pid_parent
-	int	KERNEL_SERVICE
-
-	; zachowaj PID rodzica
-	mov	qword [shell_pid_parent],	rcx
+	; inicjalizuj środowisko pracy powłoki
+	%include	"software/shell/init.asm"
 
 .restart:
 	; pobierz informacje o strumieniu wyjścia
@@ -49,18 +45,20 @@ shell:
 	int	KERNEL_SERVICE
 	jc	shell.restart	; brak aktualnych informacji
 
+	; pobierz od użyszkodnia polecenie
 	%include	"software/shell/input.asm"
 
-	; przetwórz polecenie
-	jmp	shell_exec
+	; przetwórz
+	%include	"software/shell/exec.asm"
 
+	; debug
 	macro_debug	"software: shell"
 
 	;-----------------------------------------------------------------------
 	%include	"software/shell/data.asm"
 	%include	"software/shell/prompt.asm"
 	%include	"software/shell/event.asm"
-	%include	"software/shell/exec.asm"
+	%include	"software/shell/header.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/input.asm"
 	%include	"library/string_trim.asm"

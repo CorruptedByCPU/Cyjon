@@ -1,5 +1,9 @@
 ;===============================================================================
-; Copyright (C) 2013+ by Andrzej Adamczyk at Wataha.net
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+; GPL-3.0 License
+;
+; Main developer:
+;	Andrzej Adamczyk
 ;===============================================================================
 
 ;===============================================================================

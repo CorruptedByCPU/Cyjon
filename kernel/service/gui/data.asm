@@ -78,7 +78,7 @@ kernel_gui_window_taskbar		dq	0	; pozycja na osi X
 .element_label_clock_end:		;---------------------------------------
 					; koniec elementów okna
 					;---------------------------------------
-					dd	STATIC_EMPTY
+					dd	LIBRARY_BOSU_ELEMENT_TYPE_none
 kernel_gui_window_taskbar_end:
 
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
@@ -122,5 +122,5 @@ kernel_gui_window_menu			dq	160	; pozycja na osi X względem wskaźnika kursora
 .element_label_0_end:			;---------------------------------------
 					; koniec elementów okna
 					;---------------------------------------
-					dd	STATIC_EMPTY
+					dd	LIBRARY_BOSU_ELEMENT_TYPE_none
 kernel_gui_window_menu_end:

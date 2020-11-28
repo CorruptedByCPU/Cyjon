@@ -7,26 +7,16 @@
 ;===============================================================================
 
 ;===============================================================================
-moko_interface:
+shell_header:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rcx
 	push	rsi
 
-	; wyczyść ekran i ustaw na pozycję przestrzeni menu
+	; poproś właściciela strumienia o zmianę tytułu okna (jeśli istnieje)
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	ecx,	moko_string_cursor_at_menu_and_clear_screen_end - moko_string_cursor_at_menu_and_clear_screen
-	mov	rsi,	moko_string_cursor_at_menu_and_clear_screen
-	int	KERNEL_SERVICE
-
-	; wyświetl
-	mov	ecx,	moko_string_menu_end - moko_string_menu
-	mov	rsi,	moko_string_menu
-	int	KERNEL_SERVICE
-
-	; ustaw kursor na początek dokumentu
-	mov	ecx,	moko_string_document_cursor_end - moko_string_document_cursor
-	mov	rsi,	moko_string_document_cursor
+	mov	ecx,	shell_string_console_header_end - shell_string_console_header
+	mov	rsi,	shell_string_console_header
 	int	KERNEL_SERVICE
 
 	; przywróć oryginalne rejestry
