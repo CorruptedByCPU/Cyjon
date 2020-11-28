@@ -6,6 +6,9 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
+tm_string_console_header			db	"^[hTask Manager]"
+tm_string_console_header_end:
+
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_EMPTY
 tm_stream_meta:
 	times	KERNEL_STREAM_META_SIZE_byte	db	STATIC_EMPTY

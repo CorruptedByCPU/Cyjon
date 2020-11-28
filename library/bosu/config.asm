@@ -23,6 +23,8 @@ LIBRARY_BOSU_WINDOW_FLAG_arbiter		equ	1 << 6	; nadobiekt
 LIBRARY_BOSU_WINDOW_FLAG_unregistered		equ	1 << 8	; nie rejestruj okna w menedżerze okien
 LIBRARY_BOSU_WINDOW_FLAG_header			equ	1 << 9	; pokaż nagłówek okna
 LIBRARY_BOSU_WINDOW_FLAG_border			equ	1 << 10	; rysuj krawędź wokół okna
+LIBRARY_BOSU_WINDOW_FLAG_BUTTON_close		equ	1 << 11 ; przycisk zamknięcia okna
+LIBRARY_BOSU_WINDOW_FLAG_BUTTON_min		equ	1 << 12 ; przycisk minimalizacji okna
 ;-------------------------------------------------------------------------------
 
 LIBRARY_BOSU_ELEMENT_TYPE_none			equ	0x00
@@ -94,7 +96,7 @@ endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_HEADER
 	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
-	.element				resb	LIBRARY_BOSU_STRUCTURE_ELEMENT.SIZE
+	.size					resb	8
 	.length					resb	1
 	.string:
 endstruc

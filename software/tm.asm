@@ -33,14 +33,8 @@
 
 ;===============================================================================
 tm:
-	; wyczyść przestrzeń znakową
-	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	ecx,	tm_string_init_end - tm_string_init
-	mov	rsi,	tm_string_init
-	int	KERNEL_SERVICE
-
-	; wyświetl niezmienne elementy interfejsu
-	call	tm_static
+	; inicjalizuj środowisko pracy menedżera zadań
+	%include	"software/tm/init.asm"
 
 .check:
 	; pobierz informacje o strumieniu wyjścia
@@ -114,6 +108,7 @@ tm:
 	xor	ax,	ax
 	int	KERNEL_SERVICE
 
+	; debug
 	macro_debug	"software: tm"
 
 	;-----------------------------------------------------------------------

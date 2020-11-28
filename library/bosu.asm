@@ -141,6 +141,31 @@ library_bosu:
 
 ;===============================================================================
 ; wejście:
+;	rcx - ilość znaków reprezentujących nowy nagłówek
+;	rsi - wskaźnik do ciągu znaków
+;	rdi - wskaźnik do struktury okna
+library_bosu_header:
+
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do listy elementów
+library_bosu_clean:
+	; zachowaj oryginalne rejestry
+	push	rsi
+
+.loop:
+	; przywróć oryginalne rejestry
+	pop	rsi
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
 ;	rsi - wskaźnik do specyfikacji okna
 library_bosu_border_correction:
 	; zachowaj oryginalne rejestry
@@ -155,6 +180,10 @@ library_bosu_border_correction:
 	mov	eax,	dword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.set]
 	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_none
 	je	.ready	; tak
+
+	; element typu "header"?
+	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_header
+	je	.next	; tak, pomiń
 
 	; element typu "button close"?
 	cmp	eax,	LIBRARY_BOSU_ELEMENT_TYPE_button_close
@@ -247,7 +276,7 @@ library_bosu_element_button_close:
 	; ustaw wskaźnik na pozycję elementu
 	xor	rdi,	rdi
 
-	; pozycjq na osi X
+	; pozycja na osi X
 	mov	rax,	r8
 	sub	rax,	LIBRARY_BOSU_ELEMENT_BUTTON_CLOSE_width
 
@@ -676,11 +705,12 @@ library_bosu_element_header:
 	; wylicz bezwzględny adres elementu w przestrzeni okna
 
 	; pozycja na osi Y
-	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_HEADER.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
+	mov	rax,	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel
 	mul	r10	; * scanline
 	add	rdi,	rax
+
 	; pozycja na osi X
-	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_HEADER.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
+	mov	rax,	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel
 	shl	rax,	KERNEL_VIDEO_DEPTH_shift
 	add	rdi,	rax
 

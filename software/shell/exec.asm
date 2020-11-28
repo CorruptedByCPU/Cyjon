@@ -77,6 +77,9 @@ shell_exec:
 	jmp	.wait_for_end
 
 .end:
+	; przywróć tytuł nagłówka
+	call	shell_header
+
 	; włącz kursor tekstowy
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
 	mov	ecx,	shell_string_cursor_enable_end - shell_string_cursor_enable

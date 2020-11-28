@@ -6,6 +6,9 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
+shell_string_console_header			db	"^[hShell]"
+shell_string_console_header_end:
+
 shell_pid_parent				dq	STATIC_EMPTY
 
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING

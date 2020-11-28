@@ -67,32 +67,33 @@ console_window					dq	STATIC_EMPTY	; pozycja na osi X
 						dq	CONSOLE_WINDOW_HEIGHT_pixel	; wysokość okna
 						dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna (uzupełnia Bosu)
 .extra:						dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach (uzupełnia Bosu)
-						dq	LIBRARY_BOSU_WINDOW_FLAG_header | LIBRARY_BOSU_WINDOW_FLAG_border
+						dq	LIBRARY_BOSU_WINDOW_FLAG_header | LIBRARY_BOSU_WINDOW_FLAG_border | LIBRARY_BOSU_WINDOW_FLAG_BUTTON_close
 						dq	STATIC_EMPTY	; identyfikator okna (uzupełnia Bosu)
 						db	7
 						db	"Console                "
 						dq	STATIC_EMPTY	; szerokość okna w Bajtach (uzupełnia Bosu)
-.elements:					;---------------------------------------
+.elements:					;-------------------------------
+; 						; element "łańcuch"
+; 						;-------------------------------
+; .element_chain:					dd	LIBRARY_BOSU_ELEMENT_TYPE_chain
+; 						dq	.element_chain_end - .element_chain
+; 						dq	STATIC_EMPTY	; brak przestrzeni pod łańcuch
+; .element_chain_end:				;-------------------------------
 						; element "nagłówek"
-						;---------------------------------------
+						;-------------------------------
 .element_header:				dd	LIBRARY_BOSU_ELEMENT_TYPE_header
 						dq	.element_header_end - .element_header	; rozmiar elementu
-						dq	0	; pozycja na osi X względem przestrzeni danych okna
-						dq	0	; pozycja na osi Y względem przestrzeni danych okna
-						dq	STATIC_EMPTY	; wartość ignorowana, nagłówek zawsze jest na całą szerokość okna (-krawędzie)
-						dq	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel	; wysokość elementu
-						dq	STATIC_EMPTY	; wskaźnik do procedury obsługi zdarzenia
 						db	.element_header_end - .element_header_string
 .element_header_string:				db	"Console"
-.element_header_end:				;---------------------------------------
+.element_header_end:				;-------------------------------
 .element_button_close:				; element "window close"
-						;---------------------------------------
+						;-------------------------------
 						dd	LIBRARY_BOSU_ELEMENT_TYPE_button_close
 						dq	.element_button_close_end - .element_button_close
 						dq	console.close
-.element_button_close_end:			;---------------------------------------
+.element_button_close_end:			;-------------------------------
 						; element "terminal"
-						;---------------------------------------
+						;-------------------------------
 .element_terminal:				dd	LIBRARY_BOSU_ELEMENT_TYPE_draw
 						dq	.element_terminal_end - .element_terminal
 						dq	0	; pozycja na osi X względem przestrzeni danych okna
@@ -100,9 +101,9 @@ console_window					dq	STATIC_EMPTY	; pozycja na osi X
 						dq	CONSOLE_WINDOW_WIDTH_pixel
 						dq	CONSOLE_WINDOW_HEIGHT_pixel - LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel
 						dq	STATIC_EMPTY	; brak akcji związanej z elementem
-.element_terminal_end:				;---------------------------------------
+.element_terminal_end:				;-------------------------------
 						; koniec elementów okna
-						;---------------------------------------
+						;-------------------------------
 						dd	STATIC_EMPTY
 console_window_end:
 

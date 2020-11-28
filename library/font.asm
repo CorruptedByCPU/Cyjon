@@ -19,7 +19,7 @@ align	STATIC_QWORD_SIZE_byte,	db	STATIC_NOTHING
 
 library_font_width_pixel	dq	LIBRARY_FONT_WIDTH_pixel
 library_font_height_pixel	dq	LIBRARY_FONT_HEIGHT_pixel
-library_font_width_byte		dq	LIBRARY_FONT_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift	; +
+library_font_width_byte		dq	LIBRARY_FONT_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift
 
 library_font_matrix:		db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 				db	0x00, 0x00, 0x00, 0x08, 0x08, 0x08, 0x08, 0x08, 0x00, 0x08, 0x00, 0x00

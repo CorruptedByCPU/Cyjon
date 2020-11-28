@@ -60,6 +60,7 @@ console_sequence:
 .header:
 	; zachowaj oryginalne rejestry
 	push	rbx
+	push	rdi
 	push	rsi
 	push	rcx
 
@@ -72,9 +73,9 @@ console_sequence:
 	call	library_string_word_next
 	jc	.header_error	; nie znaleziono końca sekwencji
 
-	; zmienić typ aktualnego elementu nagłówka na
-	; LIBRARY_BOSU_ELEMENT_TYPE_corrupted
-	; utworzyć nowy nagłówek w łańcuchu
+	; utwórz nowy nagłówek
+	mov	rdi,	console_window
+	call	library_bosu_header
 
 	; przetworzono sekwencję
 	inc	rbx	; zakończenie sekwencji
@@ -96,6 +97,7 @@ console_sequence:
 	; przywróć oryginalne rejestry
 	pop	rcx
 	pop	rsi
+	pop	rdi
 	pop	rbx
 
 	; powrót z podprocedury
