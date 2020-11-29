@@ -366,7 +366,7 @@ library_bosu_element_button_close:
 	add	rdi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
 
 	; kolor i rozmiar pierwszej kreski
-	mov	eax,	LIBRARY_BOSU_ELEMENT_BUTTON_FOREGROUND_color
+	mov	rax,	LIBRARY_BOSU_ELEMENT_BUTTON_FOREGROUND_color
 	mov	ecx,	0x08
 
 .left:
@@ -754,6 +754,14 @@ library_bosu_header_update:
 	sub	r11,	LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel << STATIC_MULTIPLE_BY_2_shift
 
 .no_border:
+	; przycisk kontrolny "zamknij"?
+	test	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_BUTTON_close
+	jz	.no_close	; nie
+
+	; koryguj szerokość elementu
+	sub	r11,	LIBRARY_BOSU_ELEMENT_BUTTON_CLOSE_width
+
+.no_close:
 	; ustaw wysokość i scanline nagłówka
 	mov	r12,	LIBRARY_BOSU_HEADER_HEIGHT_pixel
 	mov	r13,	r11
