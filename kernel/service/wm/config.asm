@@ -6,7 +6,7 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-KERNEL_WM_OBJECT_NAME_length				equ	23
+KERNEL_WM_OBJECT_NAME_length				equ	31
 
 KERNEL_WM_OBJECT_FLAG_visible				equ	1 << 0	; obiekt widoczny
 KERNEL_WM_OBJECT_FLAG_flush				equ	1 << 1	; obiekt został zaktualizowany
@@ -41,7 +41,7 @@ struc	KERNEL_WM_STRUCTURE_OBJECT_EXTRA
 	.id						resb	8
 	.length						resb	1
 	.name						resb	KERNEL_WM_OBJECT_NAME_length
-	;--- dane specyficzne dla Desu
+	;--- dane specyficzne dla WM
 	.pid						resb	8
 	.SIZE:
 endstruc

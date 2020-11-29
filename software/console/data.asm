@@ -70,22 +70,9 @@ console_window					dq	STATIC_EMPTY	; pozycja na osi X
 						dq	LIBRARY_BOSU_WINDOW_FLAG_header | LIBRARY_BOSU_WINDOW_FLAG_border | LIBRARY_BOSU_WINDOW_FLAG_BUTTON_close
 						dq	STATIC_EMPTY	; identyfikator okna (uzupełnia Bosu)
 						db	7
-						db	"Console                "
+						db	"Console                        "	; wypełnij do 31 Bajtów znakami STATIC_SCANCODE_SPACE
 						dq	STATIC_EMPTY	; szerokość okna w Bajtach (uzupełnia Bosu)
 .elements:					;-------------------------------
-; 						; element "łańcuch"
-; 						;-------------------------------
-; .element_chain:					dd	LIBRARY_BOSU_ELEMENT_TYPE_chain
-; 						dq	.element_chain_end - .element_chain
-; 						dq	STATIC_EMPTY	; brak przestrzeni pod łańcuch
-; .element_chain_end:				;-------------------------------
-						; element "nagłówek"
-						;-------------------------------
-.element_header:				dd	LIBRARY_BOSU_ELEMENT_TYPE_header
-						dq	.element_header_end - .element_header	; rozmiar elementu
-						db	.element_header_end - .element_header_string
-.element_header_string:				db	"Console"
-.element_header_end:				;-------------------------------
 .element_button_close:				; element "window close"
 						;-------------------------------
 						dd	LIBRARY_BOSU_ELEMENT_TYPE_button_close
@@ -97,9 +84,9 @@ console_window					dq	STATIC_EMPTY	; pozycja na osi X
 .element_terminal:				dd	LIBRARY_BOSU_ELEMENT_TYPE_draw
 						dq	.element_terminal_end - .element_terminal
 						dq	0	; pozycja na osi X względem przestrzeni danych okna
-						dq	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel
+						dq	LIBRARY_BOSU_HEADER_HEIGHT_pixel
 						dq	CONSOLE_WINDOW_WIDTH_pixel
-						dq	CONSOLE_WINDOW_HEIGHT_pixel - LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel
+						dq	CONSOLE_WINDOW_HEIGHT_pixel - LIBRARY_BOSU_HEADER_HEIGHT_pixel
 						dq	STATIC_EMPTY	; brak akcji związanej z elementem
 .element_terminal_end:				;-------------------------------
 						; koniec elementów okna
@@ -109,9 +96,9 @@ console_window_end:
 
 ;===============================================================================
 console_terminal_table				dq	CONSOLE_WINDOW_WIDTH_pixel	; szerokość w pikselach
-						dq	CONSOLE_WINDOW_HEIGHT_pixel - LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel	; wysokość w pikselach
+						dq	CONSOLE_WINDOW_HEIGHT_pixel - LIBRARY_BOSU_HEADER_HEIGHT_pixel	; wysokość w pikselach
 						dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych terminala
-						dq	(CONSOLE_WINDOW_WIDTH_pixel * (CONSOLE_WINDOW_HEIGHT_pixel - LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel)) << KERNEL_VIDEO_DEPTH_shift	; rozmiar przestrzeni w Bajtach
+						dq	(CONSOLE_WINDOW_WIDTH_pixel * (CONSOLE_WINDOW_HEIGHT_pixel - LIBRARY_BOSU_HEADER_HEIGHT_pixel)) << KERNEL_VIDEO_DEPTH_shift	; rozmiar przestrzeni w Bajtach
 						dq	CONSOLE_WINDOW_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift	; scanline_byte
 						dq	STATIC_EMPTY	; wskaźnik pozycji wirtualnego kursora w przestrzeni danych terminala
 						dq	STATIC_EMPTY	; szerokość terminala w znakach

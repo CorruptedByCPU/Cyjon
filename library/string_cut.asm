@@ -12,6 +12,7 @@
 ;	rcx - ilość znaków w ciągu
 ;	rsi - wskaźnik do ciągu
 ; wyjście:
+;	Flaga CF - brak separatora
 ;	rcx - ilość znaków w słowie
 library_string_cut:
 	; zachowaj oryginalne rejestry
@@ -33,6 +34,9 @@ library_string_cut:
 	; sprawdzić następny znak ciągu?
 	dec	rcx
 	jnz	.loop
+
+	; flaga, błąd
+	stc
 
 .end:
 	; zwróć ilość znaków w słowie

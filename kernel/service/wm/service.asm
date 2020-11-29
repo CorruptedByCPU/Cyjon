@@ -221,6 +221,8 @@ kernel_wm_irq:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rbx
+	push	rcx
+	push	rdi
 	push	rsi
 
 	; odszukaj obiekt o danym identyfikatorze
@@ -241,6 +243,18 @@ kernel_wm_irq:
 	mov	rax,	qword [rbx + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags]
 	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	rax
 
+	; ilość znaków reprezentujących nazwę okna
+	mov	cl,	byte [rbx + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.length]
+	mov	byte [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.length],	cl
+
+	; nazwa obiektu
+	mov	ecx,	KERNEL_WM_OBJECT_NAME_length
+	mov	rdi,	rsi
+	add	rdi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.name
+	mov	rsi,	rbx
+	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.name
+	rep	movsb
+
 	; zachowaj czas ostatniej modyfikacji listy
 	mov	rax,	qword [driver_rtc_microtime]
 	mov	qword [kernel_wm_object_list_modify_time],	rax
@@ -255,6 +269,8 @@ kernel_wm_irq:
 .window_flags_end:
 	; przywróć oryginalne rejestry
 	pop	rsi
+	pop	rdi
+	pop	rcx
 	pop	rbx
 	pop	rax
 
