@@ -35,8 +35,8 @@ kernel_gui_window_workbench		dq	0	; pozycja na osi X
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
 					dq	LIBRARY_BOSU_WINDOW_FLAG_fixed_xy | LIBRARY_BOSU_WINDOW_FLAG_fixed_z | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
 					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
-					db	16
-					db	"gui - workbench        "
+					db	9
+					db	"Workbench                      "	; wypełnij do 31 Bajtów znakami STATIC_SCANCODE_SPACE
 					dq	STATIC_EMPTY
 
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
@@ -51,8 +51,8 @@ kernel_gui_window_taskbar		dq	0	; pozycja na osi X
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
 					dq	LIBRARY_BOSU_WINDOW_FLAG_fixed_xy | LIBRARY_BOSU_WINDOW_FLAG_fixed_z | LIBRARY_BOSU_WINDOW_FLAG_arbiter | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush | LIBRARY_BOSU_WINDOW_FLAG_unregistered
 					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
-					db	14
-					db	"gui - taskbar          "
+					db	7
+					db	"Taskbar                        "	; wypełnij do 31 Bajtów znakami STATIC_SCANCODE_SPACE
 					dq	STATIC_EMPTY	; szerokość okna w Bajtach
 .elements:				;---------------------------------------
 					; element "łańcuch 0"
@@ -92,28 +92,16 @@ kernel_gui_window_menu			dq	160	; pozycja na osi X względem wskaźnika kursora
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
 					dq	LIBRARY_BOSU_WINDOW_FLAG_fragile | LIBRARY_BOSU_WINDOW_FLAG_unregistered | LIBRARY_BOSU_WINDOW_FLAG_border
 					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
-					db	11
-					db	"gui - menu             "
+					db	4
+					db	"Menu                           "	; wypełnij do 31 Bajtów znakami STATIC_SCANCODE_SPACE
 					dq	STATIC_EMPTY	; szerokosć okna w Bajtach
 .elements:				;---------------------------------------
-					; element "nagłówek"
-					;---------------------------------------
-.element_header:			dd	LIBRARY_BOSU_ELEMENT_TYPE_header
-					dq	.element_header_end - .element_header	; rozmiar elementu
-					dq	0	; pozycja na osi X względem przestrzeni danych okna
-					dq	0	; pozycja na osi Y względem przestrzeni danych okna
-					dq	STATIC_EMPTY	; wartość ignorowana, nagłówek zawsze jest na całą szerokość okna (-krawędzie)
-					dq	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel	; wysokość elementu
-					dq	STATIC_EMPTY
-					db	.element_header_end - .element_header_string
-.element_header_string:			db	"Menu"
-.element_header_end:			;---------------------------------------
 					; element "label 0"
 					;---------------------------------------
 .element_label_0:			dd	LIBRARY_BOSU_ELEMENT_TYPE_label
 					dq	.element_label_0_end - .element_label_0 ; rozmiar elementu w Bajtach
 					dq	0	; pozycja na osi X względem przestrzeni danych okna
-					dq	LIBRARY_BOSU_ELEMENT_HEADER_HEIGHT_pixel	; pozycja na osi Y względem przestrzeni danych okna
+					dq	LIBRARY_BOSU_HEADER_HEIGHT_pixel	; pozycja na osi Y względem przestrzeni danych okna
 					dq	((.element_label_0_end - .element_label_0_string) * LIBRARY_FONT_WIDTH_pixel)	; szerokość elementu
 					dq	0x10	; wysokość elementu
 					dq	kernel_gui_event_console

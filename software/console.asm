@@ -167,6 +167,7 @@ console:
 	%include	"library/integer_to_string.asm"
 	%include	"library/font.asm"
 	%include	"library/page_from_size.asm"
+	%include	"library/string_cut.asm"
 	%include	"library/string_compare.asm"
 	%include	"library/string_to_integer.asm"
 	%include	"library/string_word_next.asm"

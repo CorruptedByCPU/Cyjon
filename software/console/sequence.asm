@@ -59,7 +59,7 @@ console_sequence:
 ;-------------------------------------------------------------------------------
 .header:
 	; zachowaj oryginalne rejestry
-	push	rbx
+	push	rax
 	push	rdi
 	push	rsi
 	push	rcx
@@ -69,36 +69,28 @@ console_sequence:
 	add	rsi,	0x03
 
 	; rozpoznaj nazwę nagłówka (ilośc znaków wchodzących w jego skład)
-	mov	bl,	"]"
-	call	library_string_word_next
-	jc	.header_error	; nie znaleziono końca sekwencji
+	mov	al,	"]"
+	call	library_string_cut
+	jc	.header_end	; nie znaleziono końca sekwencji
 
 	; utwórz nowy nagłówek
 	mov	rdi,	console_window
-	call	library_bosu_header
+	call	library_bosu_header_set
 
 	; przetworzono sekwencję
-	inc	rbx	; zakończenie sekwencji
-	sub	rcx,	rbx
-	add	rsi,	rbx
+	inc	rcx	; zakończenie sekwencji
+	sub	qword [rsp],	rcx
+	add	rsi,	rcx
 
 	; zwróć informacje o pozostałym ciągu do przetworzenia
-	mov	qword [rsp],	rcx
 	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rsi
-
-	; koniec obslugi sekwencji
-	jmp	.header_end
-
-.header_error:
-	; flaga błąd
-	stc
 
 .header_end:
 	; przywróć oryginalne rejestry
 	pop	rcx
 	pop	rsi
 	pop	rdi
-	pop	rbx
+	pop	rax
 
 	; powrót z podprocedury
 	jmp	console_sequence.end
