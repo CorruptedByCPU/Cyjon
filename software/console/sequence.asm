@@ -77,13 +77,13 @@ console_sequence:
 	mov	rdi,	console_window
 	call	library_bosu_header_set
 
-	; przetworzono sekwencję
-	inc	rcx	; zakończenie sekwencji
-	sub	qword [rsp],	rcx
-	add	rsi,	rcx
+	; rozpoczęcie i zakończenie sekwencji
+	add	rcx,	0x04
 
+	; przetworzono sekwencję
+	sub	qword [rsp],	rcx
 	; zwróć informacje o pozostałym ciągu do przetworzenia
-	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rsi
+	add	qword [rsp + STATIC_QWORD_SIZE_byte],	rcx
 
 .header_end:
 	; przywróć oryginalne rejestry
