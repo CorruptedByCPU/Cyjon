@@ -13,12 +13,13 @@ LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel	equ	0x01
 LIBRARY_BOSU_WINDOW_BORDER_color		equ	0x0028282800303030
 
 ;-------------------------------------------------------------------------------
-LIBRARY_BOSU_WINDOW_FLAG_visible		equ	1 << 0	; okno widoczne
-LIBRARY_BOSU_WINDOW_FLAG_flush			equ	1 << 1	; okno wymaga przerysowania
+LIBRARY_BOSU_WINDOW_FLAG_flush			equ	1 << 0	; okno wymaga przerysowania
+							; powyżej 1, flagi inicjalizacyjne, interpretowane tylko raz
+LIBRARY_BOSU_WINDOW_FLAG_visible		equ	1 << 1	; okno widoczne
 LIBRARY_BOSU_WINDOW_FLAG_fixed_xy		equ	1 << 2	; okno nieruchome na osi X,Y
 LIBRARY_BOSU_WINDOW_FLAG_fixed_z		equ	1 << 3	; okno nieruchome na osi Z
 LIBRARY_BOSU_WINDOW_FLAG_fragile		equ	1 << 4	; okno ukrywane przy wystąpieniu akcji z LPM lub PPM
-LIBRARY_BOSU_WINDOW_FLAG_arbiter		equ	1 << 6	; nadobiekt
+LIBRARY_BOSU_WINDOW_FLAG_arbiter		equ	1 << 6	; nadobiekt, np. decyduje o trybie pełnoekranowym (domyślnie jest nim GUI)
 							; powyżej 7, przeznaczone dla GUI
 LIBRARY_BOSU_WINDOW_FLAG_unregistered		equ	1 << 8	; nie rejestruj okna w menedżerze okien
 LIBRARY_BOSU_WINDOW_FLAG_header			equ	1 << 9	; pokaż nagłówek okna
