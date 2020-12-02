@@ -50,7 +50,7 @@ kernel_wm_event:
  	call	kernel_wm_object_find
 	jc	.no_mouse_button_left_action	; brak obiektu
 
-	; ustaw obiekt jako aktywny
+	; zapamiętaj wskaźnik wybranego obiektu
 	mov	qword [kernel_wm_object_selected_pointer],	rsi
 
 	; wyślij komunikat do procesu "naciśnięcie lewego klawisza myszki"
@@ -81,8 +81,8 @@ kernel_wm_event:
 	or	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
 .fixed_z:
-	; ukryj obiekty z flagą "kruchy"
-	call	kernel_wm_object_hide
+	; ukryj obiekty oznaczone flagą FRAGILE
+	call	kernel_wm_object_hide_fragile
 
 .no_mouse_button_left_action:
 	; puszczono lewy przycisk myszki?
@@ -114,8 +114,8 @@ kernel_wm_event:
  	call	kernel_wm_object_find
 	jc	.no_mouse_button_right_action	; brak obiektu pod wskaźnikiem
 
-	; ukryj "kruche" obiekty
-	call	kernel_wm_object_hide
+	; ukryj obiekty oznaczone flagą FRAGILE
+	call	kernel_wm_object_hide_fragile
 
 	; wyślij komunikat do procesu "naciśnięcie prawego klawisza myszki"
 	mov	cl,	KERNEL_WM_IPC_MOUSE_btn_right_press
@@ -140,7 +140,7 @@ kernel_wm_event:
 
 .move:
 	; przetwórz strefę zajętą przez obiekt kursora
-	mov	rsi,	kernel_wm_object_cursor
+	mov	rax,	kernel_wm_object_cursor
 	call	kernel_wm_zone_insert_by_object
 
 	; aktualizuj specyfikacje obiektu kursora

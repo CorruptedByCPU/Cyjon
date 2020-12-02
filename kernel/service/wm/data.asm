@@ -27,10 +27,10 @@ kernel_wm_object_selected_pointer			dq	STATIC_EMPTY
 kernel_wm_object_privileged_pid				dq	STATIC_EMPTY
 
 kernel_wm_object_list_address				dq	STATIC_EMPTY
-servide_desu_object_list_size_page			dq	1
-kernel_wm_object_list_records				dq	STATIC_EMPTY
-kernel_wm_object_list_records_free			dq	STATIC_PAGE_SIZE_byte / (KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE)
+kernel_wm_object_list_length				dq	STATIC_EMPTY
 kernel_wm_object_list_modify_time			dq	STATIC_EMPTY
+
+kernel_wm_object_table_address				dq	STATIC_EMPTY
 
 kernel_wm_fill_list_address				dq	STATIC_EMPTY
 

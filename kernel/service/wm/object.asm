@@ -8,7 +8,7 @@
 
 ;===============================================================================
 ; wejście:
-;	rax - PID procesu
+;	rcx - PID procesu
 kernel_wm_object_drain:
 	; zachowaj oryginalne rejestry
 	push	rsi
@@ -33,36 +33,36 @@ kernel_wm_object_drain:
 
 ;===============================================================================
 ; wejście:
-;	rax - PID procesu
+;	rcx - PID procesu
 ; wyjście:
 ;	Flaga CF, jeśli nie znaleziono
 ;	rsi - wskaźnik do obiektu na liście
 kernel_wm_object_by_pid:
 	; zachowaj oryginalne rejestry
-	push	rcx
+	push	rax
 	push	rsi
 
 	; na liście znajdują się obiekty?
-	cmp	qword [kernel_wm_object_list_records],	STATIC_EMPTY
+	cmp	qword [kernel_wm_object_list_length],	STATIC_EMPTY
 	je	.error	; nie
-
-	; ilość obiektów na liście
-	mov	rcx,	qword [kernel_wm_object_list_records]
 
 	; pobierz wskaźnik początku listy obiektów
 	mov	rsi,	qword [kernel_wm_object_list_address]
 
 .loop:
-	; poszukiwany identyfikator?
-	cmp	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid],	rax
+	; pobierz wskaźnik obiektu z listy
+	lodsq
+
+	; koniec elementów na liście obiektów?
+	test	rax,	rax
+	jz	.error	; tak
+
+	; obiekt posiada poszukiwany PID procesu?
+	cmp	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid],	rcx
 	je	.found	; tak
 
-	; przesuń wskaźnik na następny obiekt
-	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
-
-	; koniec obiektów?
-	dec	rcx
-	jnz	.loop	; nie, szukaj dalej
+	; następny element listy obiektów
+	jmp	.loop
 
 .error:
 	; Flaga, błąd
@@ -73,12 +73,12 @@ kernel_wm_object_by_pid:
 
 .found:
 	; zwróć wskaźnik do obiektu
-	mov	qword [rsp],	rsi
+	mov	qword [rsp],	rax
 
 .end:
 	; przywróć oryginalne rejestry
 	pop	rsi
-	pop	rcx
+	pop	rax
 
 	; powrót z procedury
 	ret
@@ -94,30 +94,27 @@ kernel_wm_object_by_pid:
 ;	rsi - wskaźnik do obiektu na liście
 kernel_wm_object_by_id:
 	; zachowaj oryginalne rejestry
-	push	rcx
+	push	rax
 	push	rsi
 
 	; na liście znajdują się obiekty?
-	cmp	qword [kernel_wm_object_list_records],	STATIC_EMPTY
+	cmp	qword [kernel_wm_object_list_length],	STATIC_EMPTY
 	je	.error	; nie
-
-	; ilość obiektów na liście
-	mov	rcx,	qword [kernel_wm_object_list_records]
 
 	; pobierz wskaźnik początku listy obiektów
 	mov	rsi,	qword [kernel_wm_object_list_address]
 
 .loop:
-	; poszukiwany identyfikator?
-	cmp	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id],	rbx
+	; pobierz wskaźnik obiektu z listy
+	lodsq
+
+	; obiekt posiada poszukiwany identyfikator?
+	cmp	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id],	rbx
 	je	.found	; tak
 
-	; przesuń wskaźnik na następny obiekt
-	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
-
-	; koniec obiektów?
-	dec	rcx
-	jnz	.loop	; nie, szukaj dalej
+	; koniec elementów na liście obiektów?
+	cmp	qword [rsi],	STATIC_EMPTY
+	jnz	.loop	; nie
 
 .error:
 	; Flaga, błąd
@@ -128,12 +125,12 @@ kernel_wm_object_by_id:
 
 .found:
 	; zwróć wskaźnik do obiektu
-	mov	qword [rsp],	rsi
+	mov	qword [rsp],	rax
 
 .end:
 	; przywróć oryginalne rejestry
 	pop	rsi
-	pop	rcx
+	pop	rax
 
 	; powrót z procedury
 	ret
@@ -158,15 +155,15 @@ kernel_wm_object_insert:
 	macro_lock	kernel_wm_object_semaphore,	0
 
 	; brak miejsca?
-	cmp	qword [kernel_wm_object_list_records_free],	STATIC_EMPTY
+	cmp	qword [kernel_wm_object_list_length],	(STATIC_PAGE_SIZE_BYTE / KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE) - 0x01
 	je	.end	; tak
 
 	; ustaw wskaźnik na listę obiektów
 	mov	rdi,	qword [kernel_wm_object_list_address]
 
 	; oblicz pozycję względną za ostatnim obiektem na liście
-	mov	rax,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
-	mul	qword [kernel_wm_object_list_records]
+	mov	rax,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
+	mul	qword [kernel_wm_object_list_length]
 
 	; koryguj pozycje wskaźnika
 	add	rdi,	rax
@@ -228,53 +225,54 @@ kernel_wm_object_insert:
 ;===============================================================================
 kernel_wm_object:
 	; zachowaj oryginalne rejestry
-	push	rbx
+	push	rax
 	push	rsi
-
-	; ilość obiektów na liście
-	mov	rbx,	qword [kernel_wm_object_list_records]
 
 	; ustaw wskaźnik na początek listy obiektów
 	mov	rsi,	qword [kernel_wm_object_list_address]
 
 .loop:
+	; pobierz wskaźnik obiektu z listy
+	lodsq
+
+	; koniec wpisów?
+	test	rax,	rax
+	jz	.end	; tak
+
 	; przerysować zawartość pod obiektem?
-	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
-	jnz	.redraw	; tak
+	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
+	jnz	.undraw	; tak
 
 	; obiekt widoczny?
-	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
-	jz	.next	; nie
+	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	jz	.loop	; nie
 
 	; obiekt aktualizował swoją zawartość?
-	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
-	jz	.next	; nie
+	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
+	jz	.loop	; nie
 
-.redraw:
+.undraw:
 	; przetwórz strefę
+	; rax - wskaźnik do obiektu
 	call	kernel_wm_zone_insert_by_object
 
 	; wyłącz flagę aktualizacji obiektu lub przerysowania zawartości pod obiektem
-	and	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_flush & ~KERNEL_WM_OBJECT_FLAG_undraw
+	and	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_flush & ~KERNEL_WM_OBJECT_FLAG_undraw
 
 	; wymuś aktualizacje obiektu kursora
 	or	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
-.next:
-	; przesuń wskaźnik na następny obiekt
-	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
+	; kontynuuj
+	jmp	.loop
 
-	; pozostały obiekty do sprawdzenia?
-	dec	rbx
-	jnz	.loop	; tak
-
+.ready:
 	; przetwórz strefy
 	call	kernel_wm_zone
 
 .end:
 	; przywróć oryginalne rejestry
 	pop	rsi
-	pop	rbx
+	pop	rax
 
 	; powrót z procedury
 	ret
@@ -312,67 +310,68 @@ kernel_wm_object_find:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rcx
-	push	rdx
 	push	rsi
 
-	; na liście znajdują się obiekty?
-	cmp	qword [kernel_wm_object_list_records],	STATIC_EMPTY
-	je	.error	; nie
+	; na liście znajdują się elementy?
+	cmp	qword [kernel_wm_object_list_length],	STATIC_EMPTY
+	jz	.error	; nie
 
-	; ilość obiektów na liście
-	mov	rcx,	qword [kernel_wm_object_list_records]
+	; ustaw wskaźnik za ostatni element listy obiektów
+	mov	rax,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE	; rozmiar jednego elementu listy
+	mov	rsi,	qword [kernel_wm_object_list_address]	; adres listy elementów
+	mul	qword [kernel_wm_object_list_length]	; ilość elementów na liście
+	add	rsi,	rax	; adres bezpośredni
 
-	; oblicz adres względny za ostatnim rekordem listy obiektów
-	mov	rax,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
-	mul	rcx
+	xchg	bx,bx
 
-	; ustaw wskaźnik na adres bezwzględny początku listy obiektów
-	mov	rsi,	qword [kernel_wm_object_list_address]
-	add	rsi,	rax	; przesuń wskaźnik na koniec
+	; cofamy się na liście elementów
+	std	; Direction Flag
 
-.next:
-	; cofnij wskaźnik na poprzedni obiekt
-	sub	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
+	; pomiń pusty obiekt kończący listę
+	lodsq
+
+.loop:
+	; koniec listy obiektów?
+	cmp	rsi,	qword [kernel_wm_object_list_address]
+	jb	.error	; tak
+
+	; pobierz wskaźnik obiektu rozpatrywanego
+	lodsq
 
 	; obiekt widoczny?
-	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
-	jz	.fail	; nie
+	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	jz	.loop	; nie
 
 	;-----------------------------------------------------------------------
 	; wskaźnik w przestrzeni obiektu względem lewej krawędzi?
-	cmp	r8,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
-	jl	.fail	; nie
+	cmp	r8,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	jl	.loop	; nie
 
 	; wskaźnik w przestrzeni obiektu względem górnej krawędzi?
-	cmp	r9,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
-	jl	.fail	; nie
+	cmp	r9,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	jl	.loop	; nie
 
 	; wskaźnik w przestrzeni obiektu względem prawej krawędzi?
-	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
-	add	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	cmp	r8,	rax
-	jge	.fail	; nie
+	mov	rcx,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	add	rcx,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	cmp	r8,	rcx
+	jge	.loop	; nie
 
 	; wskaźnik w przestrzeni obiektu względem dolnej krawędzi?
-	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
-	add	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
-	cmp	r9,	rax
-	jge	.fail	; nie
+	mov	rcx,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	add	rcx,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	cmp	r9,	rcx
+	jge	.loop	; nie
 	;-----------------------------------------------------------------------
 
 	; zwróć wskaźnik do obiektu
-	mov	qword [rsp],	rsi
+	mov	qword [rsp],	rax
 
-	; flaga, sukces
-	clc
+	; wyłącz Direction Flag
+	cld
 
 	; koniec
 	jmp	.end
-
-.fail:
-	; istnieją pozostałe obiekty do sprawdzenia?
-	dec	rcx
-	jnz	.next	; tak
 
 .error:
 	; flaga, błąd
@@ -381,7 +380,6 @@ kernel_wm_object_find:
 .end:
 	; przywróć oryginalne rejestry
 	pop	rsi
-	pop	rdx
 	pop	rcx
 	pop	rax
 
@@ -396,32 +394,50 @@ kernel_wm_object_find:
 ; wyjście:
 ;	rsi - nowy wskaźnik do obiektu
 kernel_wm_object_up:
+	; zachowaj oryginalny rejestr
+	push	rax
+	push	rsi
+	push	rdi
+
 	; przesunięcie obiektu na liście, nie jest równoznaczne z jego modyfikacją
 	push	qword [kernel_wm_object_list_modify_time]
 
-	; zachowaj wskaźnik do aktualnego obiektu
-	push	rsi
+	; zachowaj wskaźnik obiektu z listy
+	push	qword [rsi]
 
-	; dodaj kopię obiektu na listę
-	call	kernel_wm_object_insert
+	; przemieszczaj kolejne elementy listy obiektów na wcześniejszą pozycję
+	mov	rdi,	rsi
+	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
 
-	; koryguj PID właścieciela
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid],	rax
+.loop:
+	; koniec elementów na liście obiektów?
+	cmp	qword [rsi],	STATIC_EMPTY
+	je	.last	; tak
 
-	; zwróć nowy wskaźnik do obiektu
-	xchg	rsi,	qword [rsp]
+	; pobierz wskaźnik obiektu z listy
+	mov	rax,	qword [rsi]
 
-	; usuń stary obiekt z listy
-	call	kernel_wm_object_remove
+	; obiekt jest arbitrem?
+	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_arbiter
+	jnz	.last	; tak
 
-	; zwróć wskaźni do nowego obiektu
-	pop	rsi
+	; przesuń obiekt na poprzednią pozycję
+	movsq
 
-	; koryguj pozycje
-	sub	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
+	; kontynuj
+	jmp	.loop
+
+.last:
+	; wstaw obiekt na ostatnią pozycję (lub przed arbitrem)
+	pop	qword [rdi]
 
 	; przywróć oryginalny czas ostatniej modyfikacji listy obiektów
 	pop	qword [kernel_wm_object_list_modify_time]
+
+	; przywróć oryginalny rejestr
+	pop	rdi
+	pop	rsi
+	pop	rax
 
 	; powrót z procedury
 	ret
@@ -628,51 +644,46 @@ kernel_wm_object_move:
 	macro_debug	"kernel_wm_object_move"
 
 ;===============================================================================
-kernel_wm_object_hide:
+kernel_wm_object_hide_fragile:
 	; zachowaj oryginalne rejestry
-	push	rbx
-	push	rcx
+	push	rax
 	push	rsi
-
-	; ilość obiektów na liście
-	mov	rcx,	qword [kernel_wm_object_list_records]
 
 	; ustaw wskaźnik na początek listy obiektów
 	mov	rsi,	qword [kernel_wm_object_list_address]
 
 .loop:
-	; obiekt widoczny?
-	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
-	jz	.next	; nie
+	; pobierz wskaźnik do obiektu
+	lodsq
 
-	; obiekt "kruchy"?
-	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_fragile
-	jz	.next	; nie
+	; koniec wpisów?
+	test	rax,	rax
+	jz	.end	; tak
 
-	; wyłącz flagę "widoczny"
-	and	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_visible
+	; obiekt VISIBLE?
+	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	jz	.loop	; nie
 
-	; dodaj strefę do przetworzenia
-	call	kernel_wm_zone_insert_by_object
+	; obiekt FRAGILE?
+	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_fragile
+	jz	.loop	; nie
 
-.next:
-	; przesuń wskaźnik na następny obiekt
-	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
+	; wyłącz flagę VISIBLE, ustaw flagę UNDRAW
+	and	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_visible
+	or	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
 
-	; pozostały obiekty do sprawdzenia?
-	dec	rcx
-	jnz	.loop	; tak
+	; kontynuuj
+	jmp	.loop
 
 .end:
 	; przywróć oryginalne rejestry
 	pop	rsi
-	pop	rcx
-	pop	rbx
+	pop	rax
 
 	; powrót z podprocedury
 	ret
 
-	macro_debug	"kernel_wm_object_hide"
+	macro_debug	"kernel_wm_object_hide_fragile"
 
 ;===============================================================================
 ; wyjście:

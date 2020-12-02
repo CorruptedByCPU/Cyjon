@@ -291,7 +291,7 @@ kernel_wm_fill:
 
 .overflow:
 	; przetwórz ponownie fragment jako strefę
-	mov	rsi,	qword [rsp]
+	mov	rax,	qword [rsp]
 	call	kernel_wm_zone_insert_by_object
 	call	kernel_wm_zone
 

@@ -10,7 +10,7 @@
 	call	kernel_task_active_pid
 	mov	qword [kernel_wm_pid],	rax
 
-	; odwróć kanała alfa obiektu
+	; odwróć kanała alfa obiektu kursora
 	mov	ecx,	kernel_wm_object_cursor.end - kernel_wm_object_cursor.data
 	mov	rsi,	kernel_wm_object_cursor.data
 	call	library_color_alpha_invert
@@ -37,6 +37,11 @@
 	call	kernel_page_drain	; wyczyść
 	mov	qword [kernel_wm_object_list_address],	rdi
 
+	; przygotuj przestrzeń dla tablicy obiektów
+	call	kernel_memory_alloc_page
+	call	kernel_page_drain	; wyczyść
+	mov	qword [kernel_wm_object_table_address],	rdi
+
 	; przygotuj przestrzeń dla listy wypełnień
 	call	kernel_memory_alloc_page
 	call	kernel_page_drain	; wyczyść
@@ -58,5 +63,5 @@
 
 .wait:
 	; zarejestrowano na liście obiekty?
-	cmp	qword [kernel_wm_object_list_records],	STATIC_EMPTY
+	cmp	qword [kernel_wm_object_list_length],	STATIC_EMPTY
 	je	.wait	; nie, czekaj

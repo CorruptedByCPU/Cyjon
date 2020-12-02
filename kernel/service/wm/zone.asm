@@ -10,7 +10,7 @@
 
 ;===============================================================================
 ; wejście:
-;	rsi - wskaźnik do obiektu
+;	rax - wskaźnik do obiektu
 kernel_wm_zone_insert_by_object:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -198,8 +198,8 @@ kernel_wm_zone:
 	;-----------------------------------------------------------------------
 
 	; wskaźnik pośredni na koniec listy obiektów
-	mov	eax,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
-	mul	qword [kernel_wm_object_list_records]	; pozycja za ostatnim obiektem listy
+	mov	eax,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
+	mul	qword [kernel_wm_object_list_length]	; pozycja za ostatnim obiektem listy
 
 	; wskaźnik bezpośredni końca listy obiektów
 	mov	rsi,	qword [kernel_wm_object_list_address]
@@ -207,7 +207,7 @@ kernel_wm_zone:
 
 .object:
 	; ustaw wskaźnik na rozpatrywany obiekt
-	sub	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
+	sub	rsi,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
 
 	; rozpatrywany obiekt jest pierwszy na liście?
 	cmp	rsi,	qword [kernel_wm_object_list_address]

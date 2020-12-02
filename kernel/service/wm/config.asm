@@ -21,6 +21,11 @@ KERNEL_WM_OBJECT_FLAG_undraw				equ	1 << 7	; przerysuj przestrzeń pod obiektem
 KERNEL_WM_FILL_LIST_limit				equ	(STATIC_PAGE_SIZE_byte / KERNEL_WM_STRUCTURE_FILL.SIZE) - 0x01
 KERNEL_WM_ZONE_LIST_limit				equ	(STATIC_PAGE_SIZE_byte / KERNEL_WM_STRUCTURE_ZONE.SIZE) - 0x01
 
+struc	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY
+	.object_address					resb	8
+	.SIZE:
+endstruc
+
 struc	KERNEL_WM_STRUCTURE_FIELD
 	.x						resb	8
 	.y						resb	8

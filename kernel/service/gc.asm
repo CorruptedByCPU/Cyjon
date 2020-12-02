@@ -12,7 +12,7 @@ kernel_gc:
 	call	kernel_gc_search
 
 	; zamknij wszystkie okna utworzone przez proces
-	mov	rax,	qword [rsi + KERNEL_TASK_STRUCTURE.pid]
+	mov	rcx,	qword [rsi + KERNEL_TASK_STRUCTURE.pid]
 	call	kernel_wm_object_drain
 
 	; pobierz identyfikator strumienia wejścia procesu
