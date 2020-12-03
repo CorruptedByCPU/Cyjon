@@ -20,6 +20,8 @@ kernel_wm:
 	%include	"kernel/service/wm/init.asm"
 
 .loop:
+	xchg	bx,bx
+
 	;-----------------------------------------------------------------------
 	; sprawdź zdarzenia od myszki i klawiatury
 	;-----------------------------------------------------------------------

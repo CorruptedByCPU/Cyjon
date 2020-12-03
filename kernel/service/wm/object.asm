@@ -6,6 +6,243 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
+;===============================================================================+
+; wejście:
+;	rsi - wskaźnik do obiektu
+; wyjście:
+;	rsi - wskaźnik do rekordu w tablicy obiektów
+kernel_wm_object_insert:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rdi
+	push	rsi
+
+	; zablokuj dostęp do modyfikacji listy obiektów
+	macro_lock	kernel_wm_object_semaphore,	0
+
+	xchg	bx,bx
+
+	; lista posiada wolne elementy?
+	cmp	qword [kernel_wm_object_list_length],	KERNEL_WM_OBJECT_LIST_limit
+	je	.error	; brak miejsca
+
+	; znajdź wolny rekord w tablicy
+	call	kernel_wm_object_table_entry
+	jc	.error	 ; brak miejsca
+
+	; zachowaj wskaźnik początku rekordu w tablicy
+	push	rdi
+
+	; załaduj obiekt
+	mov	rcx,	(KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE) >> STATIC_DIVIDE_BY_QWORD_shift
+	rep	movsq
+
+	; pobierz wskaźnik początku rekordu w tablicy
+	mov	rdi,	qword [rsp]
+
+	; pobierz PID procesu (właściciel okna)
+	call	kernel_task_active_pid
+	mov	qword [rdi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid],	rax
+
+	;-----------------------------------------------------------------------
+
+	; ilość elementów listy obiektów
+	mov	rcx,	qword [kernel_wm_object_list_length]
+
+	; ustaw wskaźnik na początek listy obiektów
+	mov	rsi,	qword [kernel_wm_object_list_address]
+
+	; wstaw zarejestrowany obiekt przed arbitrem (jeśli istnieje)
+
+.loop:
+	; pobierz wskaźnik obiektu przechowywany w elemencie listy obiektów
+	lodsq
+
+	; element pusty?
+	test	rax,	rax
+	jz	.found	; tak
+
+	; pozostało N elementów do sprawdzenia
+	dec	rcx
+
+	; obiekt jest arbitrem?
+	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_arbiter
+	jz	.loop	; nie, szukaj dalej
+
+	; przemieść wszystkie elementy listy o jedną pozycję dalej
+	mov	rdi,	rsi
+	sub	rdi,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
+
+	; zapamiętaj pozycję elementu dla zarejestrowanego obiektu
+	push	rdi
+
+	; wykonaj przesunięcie
+	rep	movsq
+
+.found:
+	; przywróć wskaźnik zarejestrowanego obiektu
+	pop	rdi
+
+	; zachowaj wskaźnik w elemencie listy obiektów
+	mov	qword [rsi - KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE],	rdi
+
+	; zwróć wskaźnik zarejestrowanego obiektu
+	mov	qword [rsp],	rdi
+
+	; zarejestowano obiekt na liście
+	inc	qword [kernel_wm_object_list_length]
+
+	; koniec procedury
+	jmp	.end
+
+.error:
+	; flaga, błąd
+	stc
+
+.end:
+	; zwolnij dostęp do modyfikacji listy obiektów
+	mov	byte [kernel_wm_object_semaphore],	STATIC_FALSE
+
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rdi
+	pop	rcx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"kernel_wm_object_insert"
+
+;===============================================================================
+; wyjście:
+;	Flaga CF - jeśli brak wolnych rekordów
+;	rdi - wskaźnik do wolnego rekordu tablicy
+kernel_wm_object_table_entry:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; ustaw wskaźnik na początek tablicy obiektów
+	mov	rsi,	qword [kernel_wm_object_table_address]
+
+.block:
+	; ilość obiektów na blok danych tablicy obiektów
+	mov	rcx,	STATIC_STRUCTURE_BLOCK.link / (KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE)
+
+.loop:
+	; rekord wolny?
+	cmp	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.address],	STATIC_EMPTY
+	je	.found	; tak
+
+	; koniec rekordów w bloku danych tablicy obiektów?
+	dec	rcx
+	jnz	.loop	; nie
+
+	; koniec dostępnych bloków danych tablicy obiektów?
+	and	si,	STATIC_PAGE_mask
+	cmp	qword [rsi + STATIC_STRUCTURE_BLOCK.link],	STATIC_EMPTY
+	je	.resize	; tak
+
+.continue:
+	; załaduj następny blok danych tablicy obiektów
+	mov	rsi,	qword [STATIC_STRUCTURE_BLOCK.link]
+
+	; kontynuuj przetwarzanie
+	jmp	.block
+
+.resize:
+	; przygotuj nowy blok danych dla tablicy obiektów
+	call	kernel_memory_alloc_page
+	jc	.error	; brak miejsca
+
+	; podłącz blok danych na koniec tablicy obiektów
+	mov	qword [rsi + STATIC_STRUCTURE_BLOCK.link],	rdi
+
+	; załaduj nowy blok danych tablicy obiektów
+	jmp	.continue
+
+.found:
+	; zwróć wskaźnik wolnego rekordu tablicy obiektów
+	mov	qword [rsp],	rsi
+
+	; koniec procedury
+	jmp	.end
+
+.error:
+	; flaga, błąd
+	stc
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rcx
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"kernel_wm_object_table_entry"
+
+;===============================================================================
+kernel_wm_object:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rsi
+
+	; ustaw wskaźnik na początek listy obiektów
+	mov	rsi,	qword [kernel_wm_object_list_address]
+
+.loop:
+	; pobierz wskaźnik obiektu z listy
+	lodsq
+
+	; koniec wpisów?
+	test	rax,	rax
+	jz	.end	; tak
+
+	; przerysować zawartość pod obiektem?
+	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
+	jnz	.undraw	; tak
+
+	; obiekt widoczny?
+	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	jz	.loop	; nie
+
+	; obiekt aktualizował swoją zawartość?
+	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
+	jz	.loop	; nie
+
+.undraw:
+	; przetwórz strefę
+	; rax - wskaźnik do obiektu
+	call	kernel_wm_zone_insert_by_object
+
+	; wyłącz flagę aktualizacji obiektu lub przerysowania zawartości pod obiektem
+	and	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_flush & ~KERNEL_WM_OBJECT_FLAG_undraw
+
+	; wymuś aktualizacje obiektu kursora
+	or	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
+
+	; kontynuuj
+	jmp	.loop
+
+.ready:
+	; przetwórz strefy
+	call	kernel_wm_zone
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"kernel_wm_object"
+
 ;===============================================================================
 ; wejście:
 ;	rcx - PID procesu
@@ -138,146 +375,6 @@ kernel_wm_object_by_id:
 	; informacja dla Bochs
 	macro_debug	"kernel_wm_object_by_id"
 
-;===============================================================================+
-; wejście:
-;	rsi - wskaźnik do obiektu
-; wyjście:
-;	rsi - wskaźnik do rekordu na liście
-kernel_wm_object_insert:
-	; zachowaj oryginalne rejestry
-	push	rax
-	push	rdx
-	push	rdi
-	push	rcx
-	push	rsi
-
-	; zablokuj dostęp do modyfikacji listy obiektów
-	macro_lock	kernel_wm_object_semaphore,	0
-
-	; brak miejsca?
-	cmp	qword [kernel_wm_object_list_length],	(STATIC_PAGE_SIZE_BYTE / KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE) - 0x01
-	je	.end	; tak
-
-	; ustaw wskaźnik na listę obiektów
-	mov	rdi,	qword [kernel_wm_object_list_address]
-
-	; oblicz pozycję względną za ostatnim obiektem na liście
-	mov	rax,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
-	mul	qword [kernel_wm_object_list_length]
-
-	; koryguj pozycje wskaźnika
-	add	rdi,	rax
-
-	; zwróć bezpośredni wskaźnik na liście do wstawianego obiektu
-	mov	qword [rsp],	rdi
-
-	; rejestrowany obiekt będzie arbitrem?
-	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_arbiter
-	jz	.insert	; nie
-
-	; nie pozwól na zarejestrowanie kolejnego arbitra
-	cmp	byte [kernel_wm_object_arbiter_semaphore],	STATIC_FALSE
-	jne	.insert	; istnieje już, zignoruj
-
-	; zablokuj dostęp do arbitra
-	mov	byte [kernel_wm_object_arbiter_semaphore],	STATIC_TRUE
-
-.insert:
-	; zachowaj wskaźniki do obiektów
-	push	rsi
-	push	rdi
-
-	; załaduj na koniec listy
-	mov	rcx,	(KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE) >> STATIC_DIVIDE_BY_QWORD_shift
-	rep	movsq
-
-	; ilość obiektów na liście
-	inc	qword [kernel_wm_object_list_records]
-
-	; przywróć wskaźniki do obiektów
-	pop	rdi
-	pop	rsi
-
-	; pobierz PID procesu właściciela okna
-	call	kernel_task_active_pid
-	mov	qword [rdi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid],	rax
-
-	; zachowaj czas ostatniej modyfikacji listy
-	mov	rax,	qword [driver_rtc_microtime]
-	mov	qword [kernel_wm_object_list_modify_time],	rax
-
-.end:
-	; zwolnij dostęp do modyfikacji listy obiektów
-	mov	byte [kernel_wm_object_semaphore],	STATIC_FALSE
-
-	; przywróć oryginalne rejestry
-	pop	rsi
-	pop	rcx
-	pop	rdi
-	pop	rdx
-	pop	rax
-
-	; powrót z procedury
-	ret
-
-	macro_debug	"kernel_wm_object_insert"
-
-;===============================================================================
-kernel_wm_object:
-	; zachowaj oryginalne rejestry
-	push	rax
-	push	rsi
-
-	; ustaw wskaźnik na początek listy obiektów
-	mov	rsi,	qword [kernel_wm_object_list_address]
-
-.loop:
-	; pobierz wskaźnik obiektu z listy
-	lodsq
-
-	; koniec wpisów?
-	test	rax,	rax
-	jz	.end	; tak
-
-	; przerysować zawartość pod obiektem?
-	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
-	jnz	.undraw	; tak
-
-	; obiekt widoczny?
-	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
-	jz	.loop	; nie
-
-	; obiekt aktualizował swoją zawartość?
-	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
-	jz	.loop	; nie
-
-.undraw:
-	; przetwórz strefę
-	; rax - wskaźnik do obiektu
-	call	kernel_wm_zone_insert_by_object
-
-	; wyłącz flagę aktualizacji obiektu lub przerysowania zawartości pod obiektem
-	and	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_flush & ~KERNEL_WM_OBJECT_FLAG_undraw
-
-	; wymuś aktualizacje obiektu kursora
-	or	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
-
-	; kontynuuj
-	jmp	.loop
-
-.ready:
-	; przetwórz strefy
-	call	kernel_wm_zone
-
-.end:
-	; przywróć oryginalne rejestry
-	pop	rsi
-	pop	rax
-
-	; powrót z procedury
-	ret
-
-	macro_debug	"kernel_wm_object"
 
 ;===============================================================================
 ; wyjście:
@@ -470,7 +567,7 @@ kernel_wm_object_remove:
 	jne	.loop	; tak
 
 	; ilość rekordów na liście
-	dec	qword [kernel_wm_object_list_records]
+	dec	qword [kernel_wm_object_list_length]
 
 	; zachowaj czas ostatniej modyfikacji listy
 	mov	rcx,	qword [driver_rtc_microtime]
