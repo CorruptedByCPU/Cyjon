@@ -48,7 +48,7 @@ kernel_wm_event:
 
 	; sprawdź, który obiekt znajduje się pod wskaźnikiem kursora
  	call	kernel_wm_object_find
-	jc	.no_mouse_button_left_action	; brak obiektu
+	jc	.no_mouse_button_left_action	; brak elementu opisującego rekord w tablicy obiektów
 
 	; zapamiętaj wskaźnik wybranego obiektu
 	mov	qword [kernel_wm_object_selected_pointer],	rsi
@@ -62,11 +62,7 @@ kernel_wm_event:
 	jnz	.fixed_z	; tak
 
 	; przesuń obiekt na koniec listy
-	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid]
 	call	kernel_wm_object_up
-
-	; aktualizuj wskaźnik obiektu aktywnego
-	mov	qword [kernel_wm_object_selected_pointer],	rsi
 
 	; tutaj można by się pokusić o sprawdzenie, który fragment obiektu nie jest widoczny
 	; zamiast przerysowywać cały... todo
@@ -95,7 +91,7 @@ kernel_wm_event:
 
 .no_mouse_button_left_action_release_selected:
 	; usuń informacje o aktywnym obiekcie
-	; mov	qword [kernel_wm_object_selected_pointer],	STATIC_EMPTY
+	mov	qword [kernel_wm_object_selected_pointer],	STATIC_EMPTY
 
 .no_mouse_button_left_release:
 	;-----------------------------------------------------------------------

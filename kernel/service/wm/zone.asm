@@ -66,19 +66,16 @@ kernel_wm_zone_insert_by_object:
 
 ;===============================================================================
 ; wejście:
-;	rdi - wskaźnik do strefy
+;	rdi - wskaźnik do rekordu tablicy obiektów
 ;	r8 - pozycja na osi X
 ;	r9 - pozycja na osi Y
 ;	r10 - szerokość strefy
 ;	r11 - wysokość strefy
-; wyjście:
-;	rdi - nowa pozycja, jeśli zoptymalizowano listę stref
 kernel_wm_zone_insert_by_register:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rdx
 	push	rsi
-	push	rdi
 
 	; zablokuj dostęp do modyfikacji listy stref
 	macro_lock	kernel_wm_zone_semaphore,	0
@@ -115,7 +112,6 @@ kernel_wm_zone_insert_by_register:
 	mov	byte [kernel_wm_zone_semaphore],	STATIC_FALSE
 
 	; przywróć oryginalne rejestry
-	pop	rdi
 	pop	rsi
 	pop	rdx
 	pop	rax

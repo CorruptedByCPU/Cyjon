@@ -20,8 +20,6 @@ kernel_wm:
 	%include	"kernel/service/wm/init.asm"
 
 .loop:
-	xchg	bx,bx
-
 	;-----------------------------------------------------------------------
 	; sprawdź zdarzenia od myszki i klawiatury
 	;-----------------------------------------------------------------------
@@ -31,7 +29,6 @@ kernel_wm:
 	; sprawdź, które obiekty aktualizowały ostatnio swoją zawartość
 	;-----------------------------------------------------------------------
 	call	kernel_wm_object
-
 
 	;-----------------------------------------------------------------------
 	; przetwórz wszystkie zarejestrowane strefy
@@ -48,7 +45,9 @@ kernel_wm:
 	;-----------------------------------------------------------------------
 	call	kernel_wm_cursor
 
+	;-----------------------------------------------------------------------
 	; zwolnij pozostały czas procesora
+	;-----------------------------------------------------------------------
 	call	kernel_sleep
 
 	; powróć do głównej pętli

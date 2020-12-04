@@ -10,6 +10,7 @@
 ; wejście:
 ;	rsi - wskaźnik do obiektu
 ; wyjście:
+;	Flaga CF - jeśli brak miejsca
 ;	rsi - wskaźnik do rekordu w tablicy obiektów
 kernel_wm_object_insert:
 	; zachowaj oryginalne rejestry
@@ -17,11 +18,6 @@ kernel_wm_object_insert:
 	push	rcx
 	push	rdi
 	push	rsi
-
-	; zablokuj dostęp do modyfikacji listy obiektów
-	macro_lock	kernel_wm_object_semaphore,	0
-
-	xchg	bx,bx
 
 	; lista posiada wolne elementy?
 	cmp	qword [kernel_wm_object_list_length],	KERNEL_WM_OBJECT_LIST_limit
@@ -47,13 +43,14 @@ kernel_wm_object_insert:
 
 	;-----------------------------------------------------------------------
 
+	; zablokuj dostęp do modyfikacji listy obiektów
+	macro_lock	kernel_wm_object_semaphore,	0
+
 	; ilość elementów listy obiektów
 	mov	rcx,	qword [kernel_wm_object_list_length]
 
 	; ustaw wskaźnik na początek listy obiektów
 	mov	rsi,	qword [kernel_wm_object_list_address]
-
-	; wstaw zarejestrowany obiekt przed arbitrem (jeśli istnieje)
 
 .loop:
 	; pobierz wskaźnik obiektu przechowywany w elemencie listy obiektów
@@ -66,32 +63,62 @@ kernel_wm_object_insert:
 	; pozostało N elementów do sprawdzenia
 	dec	rcx
 
+	; wstaw zarejestrowany obiekt przed arbitrem (jeśli istnieje)
+
 	; obiekt jest arbitrem?
 	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_arbiter
 	jz	.loop	; nie, szukaj dalej
 
-	; przemieść wszystkie elementy listy o jedną pozycję dalej
+	; wbrak elementów do przesunięcia?
+	test	rcx,	rcx
+	jz	.moved	; tak
+
+	; przesuń wszystkie kolejne elementy listy obiektów o pozycję dalej
+	shl	rcx,	KERNEL_WM_OBJECT_LIST_ENTRY_SIZE_shift
+
+	; ustaw wskaźnik na ostani i następny element
+	add	rsi,	rcx
+
+	; koryguj pozycję wskaźników
 	mov	rdi,	rsi
-	sub	rdi,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
+	sub	rsi,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
 
-	; zapamiętaj pozycję elementu dla zarejestrowanego obiektu
-	push	rdi
+	; zachowaj oryginalne flagi procesora
+	pushf
 
-	; wykonaj przesunięcie
+	; zamień wskaźnik pośredni na licznik
+	shr	rcx,	KERNEL_WM_OBJECT_LIST_ENTRY_SIZE_shift
+	inc	rcx	; przesuń wraz z arbitrem
+
+	; przesuń elementy
+	std	; wstecz
 	rep	movsq
 
+	; przywróć oryginalne flagi procesora
+	popf
+
+	; koryguj wskaźnik po operacji
+	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
+
+.moved:
+	; koryguj wskaźnik względem arbitra
+	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
+
 .found:
-	; przywróć wskaźnik zarejestrowanego obiektu
-	pop	rdi
+	; przywróć wskaźnik pozycji rekordu w tablicy obiektów
+	pop	rax
 
 	; zachowaj wskaźnik w elemencie listy obiektów
-	mov	qword [rsi - KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE],	rdi
+	mov	qword [rsi - KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE],	rax
 
 	; zwróć wskaźnik zarejestrowanego obiektu
-	mov	qword [rsp],	rdi
+	mov	qword [rsp],	rax
 
 	; zarejestowano obiekt na liście
 	inc	qword [kernel_wm_object_list_length]
+
+	; zwolnij dostęp do modyfikacji listy obiektów
+	mov	byte [kernel_wm_object_semaphore],	STATIC_FALSE
 
 	; koniec procedury
 	jmp	.end
@@ -101,9 +128,6 @@ kernel_wm_object_insert:
 	stc
 
 .end:
-	; zwolnij dostęp do modyfikacji listy obiektów
-	mov	byte [kernel_wm_object_semaphore],	STATIC_FALSE
-
 	; przywróć oryginalne rejestry
 	pop	rsi
 	pop	rdi
@@ -139,8 +163,15 @@ kernel_wm_object_table_entry:
 
 	; koniec rekordów w bloku danych tablicy obiektów?
 	dec	rcx
-	jnz	.loop	; nie
+	jz	.loop	; nie
 
+	; przesuń wskaźnik na następny rekord
+	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
+
+	; szukaj dalej
+	jmp	.loop
+
+.next:
 	; koniec dostępnych bloków danych tablicy obiektów?
 	and	si,	STATIC_PAGE_mask
 	cmp	qword [rsi + STATIC_STRUCTURE_BLOCK.link],	STATIC_EMPTY
@@ -228,10 +259,6 @@ kernel_wm_object:
 
 	; kontynuuj
 	jmp	.loop
-
-.ready:
-	; przetwórz strefy
-	call	kernel_wm_zone
 
 .end:
 	; przywróć oryginalne rejestry
@@ -402,7 +429,8 @@ kernel_wm_object_id_get:
 ;	r8w - pozycja kursora na osi X
 ;	r9w - pozycja kursora na osi Y
 ; wyjście:
-;	rsi - wskaźnik do obiektu znajdującego się pod współrzędnymi kursora
+;	Flaga CF - jeśli nie znaleziono elementu z wskaźnikiem obiektu
+;	rsi - wskaźnik do rekordu tablicy obiektów znajdującego się pod współrzędnymi kursora
 kernel_wm_object_find:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -411,29 +439,24 @@ kernel_wm_object_find:
 
 	; na liście znajdują się elementy?
 	cmp	qword [kernel_wm_object_list_length],	STATIC_EMPTY
-	jz	.error	; nie
+	je	.error	; nie
 
-	; ustaw wskaźnik za ostatni element listy obiektów
-	mov	rax,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE	; rozmiar jednego elementu listy
-	mov	rsi,	qword [kernel_wm_object_list_address]	; adres listy elementów
-	mul	qword [kernel_wm_object_list_length]	; ilość elementów na liście
-	add	rsi,	rax	; adres bezpośredni
-
-	xchg	bx,bx
-
-	; cofamy się na liście elementów
-	std	; Direction Flag
-
-	; pomiń pusty obiekt kończący listę
-	lodsq
+	; ustaw wskaźnik na ostatni element listy obiektów
+	mov	rsi,	qword [kernel_wm_object_list_length]
+	shl	rsi,	KERNEL_WM_OBJECT_LIST_ENTRY_SIZE_shift
+	; zamień na adres bezpośredni
+	add	rsi,	qword [kernel_wm_object_list_address]
 
 .loop:
+	; ustaw wskaźnik na element do sprawdzenia
+	sub	rsi,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
+
 	; koniec listy obiektów?
 	cmp	rsi,	qword [kernel_wm_object_list_address]
 	jb	.error	; tak
 
-	; pobierz wskaźnik obiektu rozpatrywanego
-	lodsq
+	; pobierz wskaźnik do obiektu z elementu listy
+	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.object_address]
 
 	; obiekt widoczny?
 	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
@@ -464,8 +487,8 @@ kernel_wm_object_find:
 	; zwróć wskaźnik do obiektu
 	mov	qword [rsp],	rax
 
-	; wyłącz Direction Flag
-	cld
+	; flaga, sukces
+	clc
 
 	; koniec
 	jmp	.end
@@ -487,53 +510,78 @@ kernel_wm_object_find:
 
 ;===============================================================================
 ; wejście:
-;	rsi - wskaźnik do obiektu
-; wyjście:
-;	rsi - nowy wskaźnik do obiektu
+;	rsi - wskaźnik do rekordu z tablicy obiektów
 kernel_wm_object_up:
 	; zachowaj oryginalny rejestr
 	push	rax
-	push	rsi
+	push	rcx
 	push	rdi
+	push	rsi
 
-	; przesunięcie obiektu na liście, nie jest równoznaczne z jego modyfikacją
+	; zablokuj dostęp do modyfikacji listy obiektów
+	macro_lock	kernel_wm_object_semaphore,	0
+
+	; przesunięcie elementu na liście obiektów, nie jest równoznaczne z modyfikacją rekordu w tablicy obiektów
 	push	qword [kernel_wm_object_list_modify_time]
 
-	; zachowaj wskaźnik obiektu z listy
-	push	qword [rsi]
+	; odszukaj element opisujący rekord tablicy obiektów
+	mov	rcx,	qword [kernel_wm_object_list_length]
+	mov	rdi,	qword [kernel_wm_object_list_address]
 
-	; przemieszczaj kolejne elementy listy obiektów na wcześniejszą pozycję
-	mov	rdi,	rsi
+.search:
+	; znaleziono?
+	cmp	rsi,	qword [rdi + KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.object_address]
+	je	.found	; tak
+
+	; przesuń wskaźnik na następny element listy obiektów
+	add	rdi,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
+
+	; koniec elementów?
+	dec	rcx
+	jnz	.search	; nie
+
+	; flaga, błąd krytyczny
+	stc
+
+	; koniec obsługi procedury
+	jmp	.end
+
+.found:
+	; zachowaj wskaźnik obiektu rekordu tablicy
+	push	rsi
+
+	; przemieść pozostałe elementy listy obiektów na poprzednią pozycję
+	mov	rsi,	rdi
 	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
 
 .loop:
-	; koniec elementów na liście obiektów?
-	cmp	qword [rsi],	STATIC_EMPTY
-	je	.last	; tak
-
-	; pobierz wskaźnik obiektu z listy
+	; element wskazuje na obiekt arbitra?
 	mov	rax,	qword [rsi]
-
-	; obiekt jest arbitrem?
 	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_arbiter
 	jnz	.last	; tak
 
-	; przesuń obiekt na poprzednią pozycję
+	; przesuń element na poprzednią pozycję
 	movsq
 
-	; kontynuj
-	jmp	.loop
+	; koniec elementów listy obiektów?
+	dec	rcx
+	jnz	.loop	; nie
 
 .last:
-	; wstaw obiekt na ostatnią pozycję (lub przed arbitrem)
+	; wstaw wskaźnik obiektu do elementu na ostatnią pozycję (lub przed arbitrem)
 	pop	qword [rdi]
 
+.end:
 	; przywróć oryginalny czas ostatniej modyfikacji listy obiektów
 	pop	qword [kernel_wm_object_list_modify_time]
 
+	; zwolnij dostęp do modyfikacji listy obiektów
+	mov	byte [kernel_wm_object_semaphore],	STATIC_FALSE
+
 	; przywróć oryginalny rejestr
-	pop	rdi
 	pop	rsi
+	pop	rdi
+	pop	rcx
 	pop	rax
 
 	; powrót z procedury
@@ -592,7 +640,6 @@ kernel_wm_object_remove:
 ;	r15 - delta osi Y
 kernel_wm_object_move:
 	; zachowaj oryginalne rejestry
-	push	rbx
 	push	rsi
 	push	rdi
 	push	r8
@@ -604,11 +651,11 @@ kernel_wm_object_move:
 	push	r14
 	push	r15
 
-	; pobierz wskaźnik domyślnego obiektu wypełniającego strefę
-	mov	rbx,	qword [kernel_wm_object_list_address]
-
 	; ustaw wskaźnik na wybrany obiekt
 	mov	rsi,	qword [kernel_wm_object_selected_pointer]
+
+	; pobierz wskaźnik domyślnego obiektu wypełniającego strefę
+	mov	rdi,	qword [kernel_wm_object_table_address]
 
 	; obiekt można przemieszczać?
 	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_fixed_xy
@@ -637,8 +684,8 @@ kernel_wm_object_move:
 
 	; szerokość strefy
 	mov	r10,	r14
+
 	; zarejestruj
-	mov	rdi,	rbx
 	call	kernel_wm_zone_insert_by_register
 
 	; koryguj pozycję strefy na osi X
@@ -656,8 +703,8 @@ kernel_wm_object_move:
 	add	r8,	r10
 	sub	r8,	r14
 	mov	r10,	r14
+
 	; zarejestruj
-	mov	rdi,	rbx
 	call	kernel_wm_zone_insert_by_register
 
 	; koryguj pozycję strefy na osi X
@@ -686,8 +733,8 @@ kernel_wm_object_move:
 
 	; wysokość strefy
 	mov	r11,	r15
+
 	; zarejestruj
-	mov	rdi,	rbx
 	call	kernel_wm_zone_insert_by_register
 
 	; koryguj pozycję strefy na osi Y
@@ -705,8 +752,8 @@ kernel_wm_object_move:
 	add	r9,	r11
 	sub	r9,	r15
 	mov	r11,	r15
+
 	; zarejestruj
-	mov	rdi,	rbx
 	call	kernel_wm_zone_insert_by_register
 
 	; koryguj pozycję strefy na osi Y
@@ -733,7 +780,6 @@ kernel_wm_object_move:
 	pop	r8
 	pop	rdi
 	pop	rsi
-	pop	rbx
 
 	; powrót z procedury
 	ret
@@ -750,7 +796,7 @@ kernel_wm_object_hide_fragile:
 	mov	rsi,	qword [kernel_wm_object_list_address]
 
 .loop:
-	; pobierz wskaźnik do obiektu
+	; pobierz z elementu wskaźnik do rekordu tablicy obiektów
 	lodsq
 
 	; koniec wpisów?
