@@ -10,13 +10,13 @@
 
 ;===============================================================================
 ; wejście:
-;	rax - wskaźnik do obiektu
+;	rax - wskaźnik do rekordu tablicy obiektów
 kernel_wm_zone_insert_by_object:
 	; zachowaj oryginalne rejestry
-	push	rax
 	push	rdx
 	push	rdi
 	push	rsi
+	push	rax
 
 	; zablokuj dostęp do modyfikacji listy stref
 	macro_lock	kernel_wm_zone_semaphore,	0
@@ -33,7 +33,8 @@ kernel_wm_zone_insert_by_object:
 	mov	eax,	KERNEL_WM_STRUCTURE_ZONE.SIZE
 	mul	qword [kernel_wm_zone_list_records]	; pozycja za ostatnią strefą listy
 
-	; wskaźnik bezpośredni końca listy stref
+	; ustaw wskaźniki na miejsca
+	mov	rsi,	qword [rsp]
 	mov	rdi,	qword [kernel_wm_zone_list_address]
 	add	rdi,	rax
 
@@ -54,10 +55,10 @@ kernel_wm_zone_insert_by_object:
 	mov	byte [kernel_wm_zone_semaphore],	STATIC_FALSE
 
 	; przywróć oryginalne rejestry
+	pop	rax
 	pop	rsi
 	pop	rdi
 	pop	rdx
-	pop	rax
 
 	; powrót z procedury
 	ret
@@ -125,7 +126,6 @@ kernel_wm_zone_insert_by_register:
 kernel_wm_zone:
 	; zachowaj oryginalne rejestry
 	push	rax
-	push	rdx
 	push	rsi
 	push	rdi
 	push	r8
@@ -194,40 +194,40 @@ kernel_wm_zone:
 	;-----------------------------------------------------------------------
 
 	; wskaźnik pośredni na koniec listy obiektów
-	mov	eax,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
-	mul	qword [kernel_wm_object_list_length]	; pozycja za ostatnim obiektem listy
-
-	; wskaźnik bezpośredni końca listy obiektów
-	mov	rsi,	qword [kernel_wm_object_list_address]
-	add	rsi,	rax
+	mov	rsi,	qword [kernel_wm_object_list_length]
+	shl	rsi,	KERNEL_WM_OBJECT_LIST_ENTRY_SIZE_shift	; pozycja za ostatnim obiektem listy
+	add	rsi,	qword [kernel_wm_object_list_address]
 
 .object:
 	; ustaw wskaźnik na rozpatrywany obiekt
 	sub	rsi,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
+
+	; pobierz wskaźnik rekordu tablicy obiektów
+	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.object_address]
 
 	; rozpatrywany obiekt jest pierwszy na liście?
 	cmp	rsi,	qword [kernel_wm_object_list_address]
 	je	.fill	; tak
 
 	; obiekt widoczny?
-	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
 	jz	.object	; nie
 
 	; wystąpiła interferencja z obiektem przetwarzanym? (samym sobą)
-	cmp	rsi,	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.object]
+	cmp	rax,	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.object]
 	je	.fill	; tak
 
 	; pobierz współrzędne obiektu
 
 	; lewa krawędź na oxi X
-	mov	r12,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	mov	r12,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
 	; górna krawędź na osi Y
-	mov	r13,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	mov	r13,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
 	; prawa krawędź na osi X
-	mov	r14,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	mov	r14,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
 	add	r14,	r12
 	; dolna krawędź na osi Y
-	mov	r15,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	mov	r15,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
 	add	r15,	r13
 
 	;--------------------------------
@@ -377,6 +377,7 @@ kernel_wm_zone:
 	cmp	r10,	STATIC_EMPTY
 	jle	.loop
 
+	; zarejestruj do wypełnienia
 	call	kernel_wm_fill_insert_by_register
 
 	; kontynuuj
@@ -397,7 +398,6 @@ kernel_wm_zone:
 	pop	r8
 	pop	rdi
 	pop	rsi
-	pop	rdx
 	pop	rax
 
 	; powrót z procedury
