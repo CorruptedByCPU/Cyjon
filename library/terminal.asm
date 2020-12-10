@@ -502,6 +502,8 @@ library_terminal_char:
 	; powrót do głównej pętli
 	jmp	.continue
 
+	macro_debug	"library_terminal_char.return"
+
 ;-------------------------------------------------------------------------------
 .new_line:
 	; zachowaj oryginalne rejestry

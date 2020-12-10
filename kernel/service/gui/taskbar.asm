@@ -30,20 +30,19 @@ kernel_gui_taskbar_reload:
 	mov	rdi,	qword [kernel_gui_taskbar_list_address]
 
 .loop:
+	; pobierz wskaźnik rekordu tablicy obiektów
+	lodsq
+
 	; koniec listy okien?
-	cmp	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	STATIC_EMPTY
-	je	.registered	; tak
+	test	rax,	rax
+	jz	.registered	; tak
 
 	; zarejestrowane okno należy do nas?
-	cmp	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid],	rcx
-	je	.next	; tak, pomiń okno
+	cmp	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid],	rcx
+	je	.loop	; tak, pomiń okno
 
 	; dodaj do listy
 	call	.insert
-
-.next:
-	; przesuń wskaźnik na następną pozycję obiektu
-	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
 
 	; kontynuuj
 	jmp	.loop
@@ -54,7 +53,7 @@ kernel_gui_taskbar_reload:
 	push	rdi
 
 	; identyfikator okna
-	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id]
+	mov	rax,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id]
 
 	; ilość identyfikatorów okien na liście
 	mov	rcx,	qword [kernel_gui_taskbar_list_count]

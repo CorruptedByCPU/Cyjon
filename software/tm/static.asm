@@ -45,3 +45,5 @@ tm_static:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"software: tm_static"

@@ -41,8 +41,6 @@ console_sequence:
 	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x02],	"h"
 	je	.header	; tak
 
-	xchg	bx,bx
-
 .error:
 	; brak obsługi sekwencji
 	stc

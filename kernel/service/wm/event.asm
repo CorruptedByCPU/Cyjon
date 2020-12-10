@@ -52,6 +52,7 @@ kernel_wm_event:
 
 	; zapamiętaj wskaźnik wybranego obiektu
 	mov	qword [kernel_wm_object_selected_pointer],	rsi
+	mov	qword [kernel_wm_object_active_pointer],	rsi
 
 	; wyślij komunikat do procesu "naciśnięcie lewego klawisza myszki"
 	mov	cl,	KERNEL_WM_IPC_MOUSE_btn_left_press
@@ -91,13 +92,14 @@ kernel_wm_event:
 
 .no_mouse_button_left_action_release_selected:
 	; usuń informacje o aktywnym obiekcie
-	mov	qword [kernel_wm_object_selected_pointer],	STATIC_EMPTY
+	; mov	qword [kernel_wm_object_selected_pointer],	STATIC_EMPTY
 
 .no_mouse_button_left_release:
 	;-----------------------------------------------------------------------
 	; naciśnięto prawy przycisk myszki?
 	bt	word [driver_ps2_mouse_state],	DRIVER_PS2_DEVICE_MOUSE_PACKET_RMB_bit
 	jnc	.no_mouse_button_right_action	; nie
+
 
 	; prawy przycisk myszki był już naciśnięty?
 	cmp	byte [kernel_wm_mouse_button_right_semaphore],	STATIC_TRUE

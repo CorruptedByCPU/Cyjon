@@ -23,6 +23,7 @@ kernel_wm_object_id					dq	0x01	; wartość podstawowa
 
 align	STATIC_QWORD_SIZE_byte,				db	STATIC_NOTHING
 
+kernel_wm_object_active_pointer				dq	STATIC_EMPTY
 kernel_wm_object_selected_pointer			dq	STATIC_EMPTY
 kernel_wm_object_privileged_pid				dq	STATIC_EMPTY
 

@@ -44,6 +44,8 @@ tm_task:
 	; powrót z procedury
 	ret
 
+	macro_debug	"software: tm_task"
+
 ;===============================================================================
 ; wejście:
 ;	rbx-  rozmiar całkowity elementów na liście w Bajtach
@@ -284,6 +286,8 @@ tm_task_show:
 	; powrót z procedury
 	ret
 
+	macro_debug	"software: tm_task_show"
+
 ;===============================================================================
 ; wejście:
 ;	rbx - rozmiar wszystkich elmentów na liście w Bajtach
@@ -354,6 +358,8 @@ tm_task_sort:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"software: tm_task_sort"
 
 ;===============================================================================
 ; wejście:
@@ -448,3 +454,5 @@ tm_task_replace:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"software: tm_task_replace"

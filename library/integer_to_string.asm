@@ -117,3 +117,5 @@ library_integer_to_string:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_integer_to_string"

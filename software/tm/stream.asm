@@ -18,3 +18,5 @@ tm_stream_info:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"software: tm_stream_info"

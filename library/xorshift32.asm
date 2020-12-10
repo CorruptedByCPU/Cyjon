@@ -30,3 +30,5 @@ library_xorshift32:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_xorshift32"

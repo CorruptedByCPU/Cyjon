@@ -42,3 +42,5 @@ tm_percent:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"software: tm_percent"

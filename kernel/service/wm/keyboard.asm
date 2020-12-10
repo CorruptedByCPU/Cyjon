@@ -16,7 +16,7 @@ kernel_wm_keyboard:
 	jz	.end	; brak
 
 	; pobierz wskaźnik do aktywnego obiektu, który otrzyma komunikat
-	mov	rsi,	qword [kernel_wm_object_selected_pointer]
+	mov	rsi,	qword [kernel_wm_object_active_pointer]
 
 	; brak wybranego obiektu?
 	test	rsi,	rsi

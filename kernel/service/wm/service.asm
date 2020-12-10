@@ -163,6 +163,9 @@ kernel_wm_irq:
 	mov	rsi,	rdx
 	call	kernel_wm_object_insert
 
+	; oznacz obiekt jako aktywny
+	mov	qword [kernel_wm_object_active_pointer],	rsi
+
 	; zachowaj wskaźnik do przestrzeni procesu
 	mov	rsi,	rdi
 

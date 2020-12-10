@@ -285,15 +285,14 @@ kernel_wm_object_drain:
 	; usuń obiekt
 	call	kernel_wm_object_delete
 
-	; wykonaj dla pozostałych obiektów należących do procesu
-	jmp	.next
-
 .end:
 	; przywróć oryginalne rejestry
 	pop	rsi
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_wm_object_drain"
 
 ;===============================================================================
 ; wejście:
@@ -310,11 +309,11 @@ kernel_wm_object_by_pid:
 	cmp	qword [kernel_wm_object_list_length],	STATIC_EMPTY
 	je	.error	; nie
 
-	; pobierz wskaźnik początku listy obiektów
+	; przeszukaj listę obiektów
 	mov	rsi,	qword [kernel_wm_object_list_address]
 
 .loop:
-	; pobierz wskaźnik obiektu z listy
+	; pobierz wskaźnik do rekordu tablicy obiektów
 	lodsq
 
 	; koniec elementów na liście obiektów?
@@ -323,21 +322,18 @@ kernel_wm_object_by_pid:
 
 	; obiekt posiada poszukiwany PID procesu?
 	cmp	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid],	rcx
-	je	.found	; tak
-
-	; następny element listy obiektów
-	jmp	.loop
-
-.error:
-	; Flaga, błąd
-	stc
-
-	; koniec obsługi procedury
-	jmp	.end
+	jne	.loop	; nie
 
 .found:
 	; zwróć wskaźnik do obiektu
 	mov	qword [rsp],	rax
+
+	; koniec obsługi procedury
+	jmp	.end
+
+.error:
+	; Flaga, błąd
+	stc
 
 .end:
 	; przywróć oryginalne rejestry
@@ -555,6 +551,10 @@ kernel_wm_object_up:
 	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
 
 .loop:
+	; koniec elementów na liście obiektów?
+	dec	rcx
+	jz	.last	; tak
+
 	; element wskazuje na obiekt arbitra?
 	mov	rax,	qword [rsi]
 	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_arbiter
@@ -591,7 +591,7 @@ kernel_wm_object_up:
 
 ;===============================================================================
 ; wejście:
-;	rsi - wskaźnik rekordu do usunięcia
+;	rsi - wskaźnik do rekordu tablicy obiektów
 kernel_wm_object_remove:
 	; zachowaj oryginalne rejestry
 	push	rcx
@@ -601,19 +601,37 @@ kernel_wm_object_remove:
 	; zablokuj dostęp do modyfikacji listy obiektów
 	macro_lock	kernel_wm_object_semaphore,	0
 
+	; odszukaj wskaźnik w elemencie listy obiektów
+	mov	rcx,	qword [kernel_wm_object_list_length]
+	mov	rdi,	qword [kernel_wm_object_list_address]
+
+.search:
+	; znaleziono element?
+	cmp	rsi,	qword [rdi + KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.object_address]
+	je	.found	; tak
+
+	; przesuń wskaźnik na nastepny element z listy obiektów
+	add	rdi,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
+
+	; koniec listy elementów?
+	dec	rcx
+	jnz	.search	; nie
+
+	; flaga, błąd
+	stc
+
+	; koniec obsługi procedury
+	jmp	.end
+
+.found:
 	; ustaw wskaźnik źródłowy i docelowy
-	mov	rdi,	rsi
-	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
+	mov	rsi,	rdi
+	add	rsi,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
 
-.loop:
-	; kopiuj następny rekord w miejsce aktualnego
-	mov	rcx,	KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.SIZE
-	rep	movsb
+	; przesuń wszystkie pozostałe elementy o pozycję wstecz
+	rep	movsq
 
-	; pozostały inne rekordy do prdesunięcia?
-	cmp	qword [rdi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width],	STATIC_EMPTY
-	jne	.loop	; tak
-
+.end:
 	; ilość rekordów na liście
 	dec	qword [kernel_wm_object_list_length]
 
@@ -847,11 +865,11 @@ kernel_wm_object_id_new:
 	; powrót z procedury
 	ret
 
-	macro_debug	"kernel_wm_object_id"
+	macro_debug	"kernel_wm_object_id_new"
 
 ;===============================================================================
 ; wejście:
-;	rsi - wskaźnik rekordu do usunięcia
+;	rsi - wskaźnik do rekordu tablicy obiektów
 kernel_wm_object_delete:
 	; zachowaj oryginalne rejestry
 	push	rcx
@@ -861,10 +879,8 @@ kernel_wm_object_delete:
 	mov	rcx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size]
 	call	library_page_from_size
 
-	; pobierz wskaźnik do przestrzeni obiektu
+	; zwolnij przestrzeń obiektu
 	mov	rdi,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.address]
-
-	; usuń obiekt z przestrzeni pamięci
 	call	kernel_memory_release
 
 	; przerysuj przestrzeń pod obiektem
