@@ -55,4 +55,4 @@ library_string_compare:
 	; powrót z procedury
 	ret
 
-	; macro_debug	"library_string_compare"
+	macro_debug	"library_string_compare"

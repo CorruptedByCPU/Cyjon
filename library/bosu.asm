@@ -142,6 +142,8 @@ library_bosu:
 	; powrót z liblioteki
 	ret
 
+	macro_debug	"library_bosu"
+
 ;===============================================================================
 ; wejście:
 ;	cl - ilość znaków reprezentujących nowy nagłówek
@@ -218,6 +220,8 @@ library_bosu_header_set:
 	; powrót z procedury
 	ret
 
+	macro_debug	"library_bosu_header_set"
+
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do listy elementów
@@ -231,6 +235,8 @@ library_bosu_clean:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_bosu_clean"
 
 ;===============================================================================
 ; wejście:
@@ -305,6 +311,8 @@ library_bosu_border_correction:
 	; powrót z procedury
 	ret
 
+	macro_debug	"library_bosu_border_correction"
+
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do właściwości okna
@@ -321,6 +329,8 @@ library_bosu_close:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_bosu_close"
 
 ;===============================================================================
 ; wejście:
@@ -406,6 +416,8 @@ library_bosu_element_button_close:
 	; powrót z procedury
 	ret
 
+	macro_debug	"library_bosu_element_button_close"
+
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do właściwości okna
@@ -415,6 +427,8 @@ library_bosu_element_button_minimize:
 	; powrót z procedury
 	ret
 
+	macro_debug	"library_bosu_element_button_minimize"
+
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do właściwości okna
@@ -423,6 +437,8 @@ library_bosu_element_button_maximize:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_bosu_element_button_maximize"
 
 ;===============================================================================
 ; wejście:
@@ -490,6 +506,8 @@ library_bosu_elements_specification:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_bosu_elements_specification"
 
 ;===============================================================================
 ; wejście:
@@ -565,6 +583,8 @@ library_bosu_elements:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_bosu_elements"
 
 ;===============================================================================
 ; wejście:
@@ -668,6 +688,8 @@ library_bosu_element_taskbar:
 	; powrót z procedry
 	ret
 
+	macro_debug	"library_bosu_element_taskbar"
+
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do elementu "łańcuch"
@@ -723,6 +745,8 @@ library_bosu_element_chain:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_bosu_element_chain"
 
 ;===============================================================================
 ; wejście:
@@ -815,6 +839,8 @@ library_bosu_header_update:
 	; powrót z procedry
 	ret
 
+	macro_debug	"library_bosu_header_update"
+
 ;===============================================================================
 ; wejście:
 ;	ebx - kolor czcionki
@@ -864,6 +890,8 @@ library_bosu_string:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_bosu_string"
 
 ;===============================================================================
 ; wejście:
@@ -976,6 +1004,8 @@ library_bosu_char:
 	; powrót z procedury
 	ret
 
+	macro_debug	"library_bosu_char"
+
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do elementu
@@ -1054,6 +1084,8 @@ library_bosu_element_button:
 	; powrót z procedry
 	ret
 
+	macro_debug	"library_bosu_element_button"
+
 ;===============================================================================
 ; wejście:
 ;	eax - kolor tła interfejsu
@@ -1090,6 +1122,8 @@ library_bosu_element_drain:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_bosu_element_drain"
 
 ;===============================================================================
 ; wejście:
@@ -1169,6 +1203,8 @@ library_bosu_element_label:
 	; powrót z procedry
 	ret
 
+	macro_debug	"library_bosu_element_label"
+
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do struktury okna
@@ -1202,6 +1238,8 @@ library_bosu_element:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_bosu_element"
 
 ;===============================================================================
 library_bosu_element_subroutine:
@@ -1354,3 +1392,5 @@ library_bosu_element_subroutine:
 
 	; powrót z podprocedury
 	ret
+
+	macro_debug	"library_bosu_element_subroutine"

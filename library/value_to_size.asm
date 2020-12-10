@@ -75,3 +75,5 @@ library_value_to_size:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"library_value_to_size"

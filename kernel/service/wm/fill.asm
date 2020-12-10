@@ -8,7 +8,7 @@
 
 ;===============================================================================
 ; wejście:
-;	rsi - wskaźnik do obiektu wypełniającego
+;	rax - wskaźnik do obiektu wypełniającego
 ;	r8 - pozycja na osi X
 ;	r9 - pozycja na osi Y
 ;	r10 - szerokość strefy
@@ -36,7 +36,7 @@ kernel_wm_fill_insert_by_register:
 	mov	qword [rdi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.height],	r11
 
 	; oraz jej obiekt zależny
-	mov	qword [rdi + KERNEL_WM_STRUCTURE_FILL.object],	rsi
+	mov	qword [rdi + KERNEL_WM_STRUCTURE_FILL.object],	rax
 
 	; zrealizowano
 	jmp	.end
@@ -291,7 +291,7 @@ kernel_wm_fill:
 
 .overflow:
 	; przetwórz ponownie fragment jako strefę
-	mov	rsi,	qword [rsp]
+	mov	rax,	qword [rsp]
 	call	kernel_wm_zone_insert_by_object
 	call	kernel_wm_zone
 

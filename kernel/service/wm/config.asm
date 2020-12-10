@@ -8,9 +8,9 @@
 
 KERNEL_WM_OBJECT_NAME_length				equ	31
 
-KERNEL_WM_OBJECT_FLAG_visible				equ	1 << 0	; obiekt widoczny
-KERNEL_WM_OBJECT_FLAG_flush				equ	1 << 1	; obiekt został zaktualizowany
-; poniższe flagi są zarezerwowane dla GUI
+KERNEL_WM_OBJECT_FLAG_flush				equ	1 << 0	; obiekt został zaktualizowany
+							; poniższe flagi są zarezerwowane dla GUI
+KERNEL_WM_OBJECT_FLAG_visible				equ	1 << 1	; obiekt widoczny
 KERNEL_WM_OBJECT_FLAG_fixed_xy				equ	1 << 2	; obiekt nieruchomy na osi X,Y
 KERNEL_WM_OBJECT_FLAG_fixed_z				equ	1 << 3	; obiekt nieruchomy na osi Z
 KERNEL_WM_OBJECT_FLAG_fragile				equ	1 << 4	; obiekt ukrywany przy wystąpieniu akcji z LPM lub PPM
@@ -18,8 +18,17 @@ KERNEL_WM_OBJECT_FLAG_pointer				equ	1 << 5	; obiekt typu "kursor"
 KERNEL_WM_OBJECT_FLAG_arbiter				equ	1 << 6	; nadobiekt
 KERNEL_WM_OBJECT_FLAG_undraw				equ	1 << 7	; przerysuj przestrzeń pod obiektem
 
+; ostatni element listy zawsze pusty
+KERNEL_WM_OBJECT_LIST_limit				equ	(STATIC_PAGE_SIZE_byte / KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE) - 0x01
 KERNEL_WM_FILL_LIST_limit				equ	(STATIC_PAGE_SIZE_byte / KERNEL_WM_STRUCTURE_FILL.SIZE) - 0x01
 KERNEL_WM_ZONE_LIST_limit				equ	(STATIC_PAGE_SIZE_byte / KERNEL_WM_STRUCTURE_ZONE.SIZE) - 0x01
+
+KERNEL_WM_OBJECT_LIST_ENTRY_SIZE_shift			equ	STATIC_MULTIPLE_BY_8_shift
+
+struc	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY
+	.object_address					resb	8
+	.SIZE:
+endstruc
 
 struc	KERNEL_WM_STRUCTURE_FIELD
 	.x						resb	8

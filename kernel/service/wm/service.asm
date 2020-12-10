@@ -163,6 +163,9 @@ kernel_wm_irq:
 	mov	rsi,	rdx
 	call	kernel_wm_object_insert
 
+	; oznacz obiekt jako aktywny
+	mov	qword [kernel_wm_object_active_pointer],	rsi
+
 	; zachowaj wskaźnik do przestrzeni procesu
 	mov	rsi,	rdi
 
@@ -239,10 +242,14 @@ kernel_wm_irq:
 	; aktualizuj właściwości okna
 	mov	rbx,	qword [rsp]
 
-	; flagi
-	mov	rax,	qword [rbx + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags]
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	rax
+	; zawartość danych obiektu została zmieniona?
+	test	qword [rbx + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
+	jz	.unchanged	; nie
 
+	; zachowaj informację
+	or	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
+
+.unchanged:
 	; ilość znaków reprezentujących nazwę okna
 	mov	cl,	byte [rbx + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.length]
 	mov	byte [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.length],	cl

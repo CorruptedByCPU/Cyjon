@@ -67,7 +67,7 @@ console_window					dq	STATIC_EMPTY	; pozycja na osi X
 						dq	CONSOLE_WINDOW_HEIGHT_pixel	; wysokość okna
 						dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna (uzupełnia Bosu)
 .extra:						dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach (uzupełnia Bosu)
-						dq	LIBRARY_BOSU_WINDOW_FLAG_header | LIBRARY_BOSU_WINDOW_FLAG_border | LIBRARY_BOSU_WINDOW_FLAG_BUTTON_close
+						dq	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_header | LIBRARY_BOSU_WINDOW_FLAG_border | LIBRARY_BOSU_WINDOW_FLAG_BUTTON_close
 						dq	STATIC_EMPTY	; identyfikator okna (uzupełnia Bosu)
 						db	7
 						db	"Console                        "	; wypełnij do 31 Bajtów znakami STATIC_SCANCODE_SPACE

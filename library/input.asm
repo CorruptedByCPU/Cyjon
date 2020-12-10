@@ -152,3 +152,5 @@ library_input:
 
 	; powrót z biblioteki
 	ret
+
+	macro_debug	"library_input"

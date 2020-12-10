@@ -48,10 +48,11 @@ kernel_wm_event:
 
 	; sprawdź, który obiekt znajduje się pod wskaźnikiem kursora
  	call	kernel_wm_object_find
-	jc	.no_mouse_button_left_action	; brak obiektu
+	jc	.no_mouse_button_left_action	; brak elementu opisującego rekord w tablicy obiektów
 
-	; ustaw obiekt jako aktywny
+	; zapamiętaj wskaźnik wybranego obiektu
 	mov	qword [kernel_wm_object_selected_pointer],	rsi
+	mov	qword [kernel_wm_object_active_pointer],	rsi
 
 	; wyślij komunikat do procesu "naciśnięcie lewego klawisza myszki"
 	mov	cl,	KERNEL_WM_IPC_MOUSE_btn_left_press
@@ -62,11 +63,7 @@ kernel_wm_event:
 	jnz	.fixed_z	; tak
 
 	; przesuń obiekt na koniec listy
-	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid]
 	call	kernel_wm_object_up
-
-	; aktualizuj wskaźnik obiektu aktywnego
-	mov	qword [kernel_wm_object_selected_pointer],	rsi
 
 	; tutaj można by się pokusić o sprawdzenie, który fragment obiektu nie jest widoczny
 	; zamiast przerysowywać cały... todo
@@ -81,8 +78,8 @@ kernel_wm_event:
 	or	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
 .fixed_z:
-	; ukryj obiekty z flagą "kruchy"
-	call	kernel_wm_object_hide
+	; ukryj obiekty oznaczone flagą FRAGILE
+	call	kernel_wm_object_hide_fragile
 
 .no_mouse_button_left_action:
 	; puszczono lewy przycisk myszki?
@@ -103,6 +100,7 @@ kernel_wm_event:
 	bt	word [driver_ps2_mouse_state],	DRIVER_PS2_DEVICE_MOUSE_PACKET_RMB_bit
 	jnc	.no_mouse_button_right_action	; nie
 
+
 	; prawy przycisk myszki był już naciśnięty?
 	cmp	byte [kernel_wm_mouse_button_right_semaphore],	STATIC_TRUE
 	je	.no_mouse_button_right_action	; tak, zignoruj
@@ -114,8 +112,8 @@ kernel_wm_event:
  	call	kernel_wm_object_find
 	jc	.no_mouse_button_right_action	; brak obiektu pod wskaźnikiem
 
-	; ukryj "kruche" obiekty
-	call	kernel_wm_object_hide
+	; ukryj obiekty oznaczone flagą FRAGILE
+	call	kernel_wm_object_hide_fragile
 
 	; wyślij komunikat do procesu "naciśnięcie prawego klawisza myszki"
 	mov	cl,	KERNEL_WM_IPC_MOUSE_btn_right_press
@@ -140,7 +138,7 @@ kernel_wm_event:
 
 .move:
 	; przetwórz strefę zajętą przez obiekt kursora
-	mov	rsi,	kernel_wm_object_cursor
+	mov	rax,	kernel_wm_object_cursor
 	call	kernel_wm_zone_insert_by_object
 
 	; aktualizuj specyfikacje obiektu kursora

@@ -10,20 +10,20 @@
 	call	kernel_task_active_pid
 	mov	qword [kernel_wm_pid],	rax
 
-	; odwróć kanała alfa obiektu
+	; odwróć kanała alfa obiektu kursora
 	mov	ecx,	kernel_wm_object_cursor.end - kernel_wm_object_cursor.data
 	mov	rsi,	kernel_wm_object_cursor.data
 	call	library_color_alpha_invert
 
 	; pobierz rozmiar przestrzeni pamięci karty graficznej w pikselach i Bajtach
 	mov	rbx,	qword [kernel_video_width_pixel]
-	mov	rcx,	qword [kernel_video_size_byte]
-	mov	rdx,	qword [kernel_video_height_pixel]
+	mov	rcx,	qword [kernel_video_height_pixel]
+	mov	rdx,	qword [kernel_video_size_byte]
 
 	; aktualizuj właściwości bufora
-	mov	qword [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size],	rcx
 	mov	qword [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width],	rbx
-	mov	qword [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height],	rdx
+	mov	qword [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height],	rcx
+	mov	qword [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size],	rdx
 
 	; dla większej wydajności w wirtualizacji, rezygnujemy z podwójnego buforowania
 	; buforem będzie dla nasz bezpośrednio przestrzeń pamięci karty graficznej
@@ -36,6 +36,11 @@
 	call	kernel_memory_alloc_page
 	call	kernel_page_drain	; wyczyść
 	mov	qword [kernel_wm_object_list_address],	rdi
+
+	; przygotuj przestrzeń dla tablicy obiektów
+	call	kernel_memory_alloc_page
+	call	kernel_page_drain	; wyczyść
+	mov	qword [kernel_wm_object_table_address],	rdi
 
 	; przygotuj przestrzeń dla listy wypełnień
 	call	kernel_memory_alloc_page
@@ -58,5 +63,5 @@
 
 .wait:
 	; zarejestrowano na liście obiekty?
-	cmp	qword [kernel_wm_object_list_records],	STATIC_EMPTY
+	cmp	qword [kernel_wm_object_list_length],	STATIC_EMPTY
 	je	.wait	; nie, czekaj

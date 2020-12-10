@@ -313,3 +313,5 @@ tm_uptime:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"software: tm_uptime"

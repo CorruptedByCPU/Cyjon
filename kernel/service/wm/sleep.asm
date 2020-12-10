@@ -9,7 +9,7 @@
 ;===============================================================================
 kernel_wm_sleep:
 	; brak obiektów na liście?
-	cmp	qword [kernel_wm_object_list_records],	STATIC_EMPTY
+	cmp	qword [kernel_wm_object_list_length],	STATIC_EMPTY
 	je	.end	; tak
 
 	; kontynuuj oczekiwanie
@@ -20,4 +20,4 @@ kernel_wm_sleep:
 	ret
 
 	; informacja dla Bochs
-	macro_debug	"service DESU sleep"
+	macro_debug	"kernel_wm_sleep"
