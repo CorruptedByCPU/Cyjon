@@ -47,7 +47,7 @@ shell_exec:
 
 	; uruchom program przesyłając wszystkie podane wraz z nim agrumenty
 	mov	ax,	KERNEL_SERVICE_PROCESS_run
-	mov	bl,	KERNEL_SERVICE_PROCESS_RUN_FLAG_copy_out_of_parent
+	mov	bl,	KERNEL_SERVICE_PROCESS_RUN_FLAG_out_default
 	pop	r8	; rozmiar listy argumentów w Bajtach
 	int	KERNEL_SERVICE
 	jc	shell.restart	; nie udało się uruchomić programu

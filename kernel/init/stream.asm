@@ -21,4 +21,4 @@ kernel_init_stream:
 	call	kernel_stream
 
 	; zachowaj wskaźnik do domyślnego potoku wyjściowego
-	mov	qword [kernel_stream_out_default],	rbx
+	mov	qword [kernel_stream_out_default],	rsi

@@ -15,7 +15,7 @@ kernel_gui_event_console:
 
 	; uruchom program "Console"
 	mov	ax,	KERNEL_SERVICE_PROCESS_run
-	mov	ebx,	KERNEL_SERVICE_PROCESS_RUN_FLAG_default
+	mov	ebx,	KERNEL_SERVICE_PROCESS_RUN_FLAG_out_default
 	mov	ecx,	kernel_gui_event_console_file_end - kernel_gui_event_console_file
 	mov	rsi,	kernel_gui_event_console_file
 	xor	r8,	r8	; brak przesyłanych argumentów

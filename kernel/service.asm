@@ -156,11 +156,11 @@ kernel_service:
 
 	; rozwiąż ścieżkę do programu
 	call	kernel_vfs_path_resolve
-	jc	.process_run_error	; błąd, niepoprawna ścieżka
+	jc	.process_run_end	; błąd, niepoprawna ścieżka
 
 	; odszukaj program w danym katalogu
 	call	kernel_vfs_file_find
-	jc	.process_run_error	; błąd, pliku nie znaleziono
+	jc	.process_run_end	; błąd, pliku nie znaleziono
 
 	; uruchom program
 	; rcx - ilość znaków reprezentujących nazwę uruchamianego programu
@@ -168,83 +168,14 @@ kernel_service:
 	; rdi - wskaźnik do supła pliku
 	; r8 - rozmiar argumentów w Bajtach
 	call	kernel_exec
-	jc	.process_run_error	; program dodany do kolejki zadań
+	jc	.process_run_end	; program dodany do kolejki zadań
 
 	; zwróć identyfikator uruchomionego procesu
 	mov	qword [rsp],	rcx
 
-	; utwórz potok wejścia procesu
-	call	kernel_stream
-	jc	.process_run_no_memory	; brak wystarczającej przestrzeni pamięci
-
-	; zachowaj wskaźnik strumienia wejście procesu
-	mov	qword [rdi + KERNEL_TASK_STRUCTURE.in],	rsi
-
-	; użyć tego samego strumienia wyjścia co rodzic?
-	test	bl,	KERNEL_SERVICE_PROCESS_RUN_FLAG_copy_out_of_parent
-	jz	.process_run_no_copy_out_to_parent	; nie
-
-	; zachowaj wskaźnik struktury procesu
-	push	rdi
-
-	; pobierz identyfikator strumienia wyjścia rodzica
-	call	kernel_task_active
-	mov	rsi,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
-
-	; przywróć wskaźnik struktury procesu
-	pop	rdi
-
-	; strumień wyjścia został odziedziczony
-	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_stream_out
-
-	; kontynuuj
-	jmp	.process_run_ready
-
-.process_run_no_memory:
-	; kod błędu
-	mov	eax,	KERNEL_ERROR_memory_low
-
-.process_run_revoke:
-	; oznacz proces jako zamknięty
-	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_closed
-
-.process_run_error:
-	; zwróć kod błędu
-	mov	qword [rsp],	rax
-
-	; koniec obsługi procedury
-	jmp	.process_run_end
-
-.process_run_no_copy_out_to_parent:
-	; przygotuj strumień wyjścia procesu
-	call	kernel_stream
-	jc	.process_run_no_memory	; brak wystarczającej przestrzeni pamięci
-
-	; przekierować wyjście dziecka na wejście rodzica?
-	test	bl,	KERNEL_SERVICE_PROCESS_RUN_FLAG_out_to_in_parent
-	jz	.process_run_ready	; nie
-
-	; zwolnij przygotowany potok
-	xchg	rsi,	rdi
-	call	kernel_stream_release
-	xchg	rdi,	rsi
-
-	; zachowaj wskaźnik struktury procesu
-	push	rdi
-
-	; pobierz identyfikator strumienia wejścia rodzica
-	call	kernel_task_active
-	mov	rsi,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
-
-	; przywróć wskaźnik struktury procesu
-	pop	rdi
-
-	; strumień wyjścia został przekierowany
-	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_stream_out
-
-.process_run_ready:
-	; załaduj identyfikator strumienia na wyjście procesu
-	mov	qword [rdi + KERNEL_TASK_STRUCTURE.out],	rsi
+	; przygotuj potoki
+	call	kernel_stream_set
+	jc	.process_run_end	; nie udało się podłączyć strumieni we/wy
 
 	; oznacz proces jako gotowy do przetwarzania
 	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active

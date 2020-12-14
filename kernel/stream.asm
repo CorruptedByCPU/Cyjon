@@ -6,7 +6,8 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-KERNEL_STREAM_FLAG_meta		equ	00000001b	; meta dane są aktualne
+KERNEL_STREAM_FLAG_active	equ	00000001b	; strumień jest wykorzystywany
+KERNEL_STREAM_FLAG_meta		equ	00000010b	; meta dane są aktualne
 
 struc	KERNEL_STREAM_STRUCTURE_ENTRY
 	.address		resb	8
@@ -16,6 +17,7 @@ struc	KERNEL_STREAM_STRUCTURE_ENTRY
 	.free			resb	2
 	.flags			resb	1
 	.semaphore		resb	1
+	.lock			resb	8
 	.meta			resb	KERNEL_STREAM_META_SIZE_byte
 	.SIZE:
 endstruc
@@ -25,6 +27,98 @@ kernel_stream_semaphore		db	STATIC_FALSE
 kernel_stream_address		dq	STATIC_EMPTY
 
 kernel_stream_out_default	dq	STATIC_EMPTY
+
+;===============================================================================
+; wejście:
+;	bl -
+;	rdi - wskaźnik do zadania w kolejce
+kernel_stream_set:
+	; zachowaj oryginalne rejestry
+	push	rsi
+	push	rdi
+
+	; utwórz potok wejścia procesu
+	call	kernel_stream
+	jc	.process_run_no_memory	; brak wystarczającej przestrzeni pamięci
+
+	; zachowaj wskaźnik strumienia wejścia procesu
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.in],	rsi
+
+	; ilość procesów korzystających z strumienia
+	inc	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.lock]
+
+	; użyć tego samego strumienia wyjścia co rodzic?
+	test	bl,	KERNEL_SERVICE_PROCESS_RUN_FLAG_out_default
+	jz	.process_run_no_copy_out_to_parent	; nie
+
+	; zachowaj wskaźnik struktury procesu
+	push	rdi
+
+	; pobierz identyfikator strumienia wyjścia rodzica
+	call	kernel_task_active
+	mov	rsi,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
+
+	; przywróć wskaźnik struktury procesu
+	pop	rdi
+
+	; kontynuuj
+	jmp	.process_run_ready
+
+	.process_run_no_memory:
+	; kod błędu
+	mov	eax,	KERNEL_ERROR_memory_low
+
+	.process_run_revoke:
+	; oznacz proces jako zamknięty
+	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_closed
+
+	.process_run_error:
+	; zwróć kod błędu
+	mov	qword [rsp],	rax
+
+	; koniec obsługi procedury
+	jmp	.process_run_end
+
+	.process_run_no_copy_out_to_parent:
+	; przygotuj strumień wyjścia procesu
+	call	kernel_stream
+	jc	.process_run_no_memory	; brak wystarczającej przestrzeni pamięci
+
+	; przekierować wyjście dziecka na wejście rodzica?
+	test	bl,	KERNEL_SERVICE_PROCESS_RUN_FLAG_out_to_in_parent
+	jz	.process_run_ready	; nie
+
+	; zwolnij przygotowany potok
+	xchg	rsi,	rdi
+	call	kernel_stream_release
+	xchg	rdi,	rsi
+
+	; zachowaj wskaźnik struktury procesu
+	push	rdi
+
+	; pobierz identyfikator strumienia wejścia rodzica
+	call	kernel_task_active
+	mov	rsi,	qword [rdi + KERNEL_TASK_STRUCTURE.in]
+
+	; przywróć wskaźnik struktury procesu
+	pop	rdi
+
+	; strumień wyjścia został przekierowany
+	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_stream_out
+
+	.process_run_ready:
+	; załaduj identyfikator strumienia na wyjście procesu
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.out],	rsi
+
+	; ilość procesów korzystających z strumienia
+	inc	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.lock]
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+
+	; powrót z procedury
+	ret
 
 ;===============================================================================
 ; wyjście:
@@ -48,8 +142,8 @@ kernel_stream:
 
 .search:
 	; strumień wolny?
-	cmp	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.address],	STATIC_EMPTY
-	je	.found	; tak
+	test	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_active
+	jz	.found	; tak, brak procesów korzystających z niego
 
 	; przesuń wskaźnik na następny strumień w tablicy
 	add	rsi,	KERNEL_STREAM_STRUCTURE_ENTRY.SIZE
@@ -111,11 +205,14 @@ kernel_stream:
 	; strumień nie posiada danych
 	mov	word [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.free],	KERNEL_STREAM_SIZE_byte
 
-	; zresetuj flagi stanu strumienia
-	mov	byte [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	STATIC_EMPTY
-
 	; odblokuj dostęp do strumienia
 	mov	byte [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.semaphore],	STATIC_FALSE
+
+	; ilość procesów korzystających ze strumienia
+	mov	qword [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.lock],	STATIC_EMPTY
+
+	; strumień zarejestrowany
+	mov	byte [rsi + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	KERNEL_STREAM_FLAG_active
 
 	; zwróć "identyfikator" strumienia
 	mov	qword [rsp],	rsi
@@ -139,15 +236,21 @@ kernel_stream_release:
 	; zachowaj oryginalne rejestry
 	push	rdi
 
+	; zablokuj dostęp do modyfikacji tablicy strumieni
+	macro_lock	kernel_stream_semaphore, 0
+
 	; zwolnij przestrzeń strumienia
 	mov	rdi,	qword [rdi + KERNEL_STREAM_STRUCTURE_ENTRY.address]
 	call	kernel_memory_release_page
 
+	; zwolnij wpis w tablicy strumieni
+	mov	qword [rdi + KERNEL_STREAM_STRUCTURE_ENTRY.flags],	STATIC_EMPTY
+
+	; odblokuj dostęp do modyfikacji tablicy strumieni
+	mov	byte [kernel_stream_semaphore],	STATIC_FALSE
+
 	; przywróć oryginalne rejestry
 	pop	rdi
-
-	; zwolnij wpis w tablicy strumieni
-	mov	qword [rdi + KERNEL_STREAM_STRUCTURE_ENTRY.address],	STATIC_EMPTY
 
 	; powrót z procedury
 	ret
