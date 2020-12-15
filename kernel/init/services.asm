@@ -75,6 +75,13 @@ kernel_init_services:
 	push	rcx	; zapamiętaj ilość znaków w nazwie procesu
 	call	kernel_task_add
 
+	; podepnij domyślny strumień wyjścia
+	mov	rax,	qword [kernel_stream_out_default]
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.out],	rax
+
+	; ilość procesów korzystających z strumienia
+	inc	qword [rax + KERNEL_STREAM_STRUCTURE_ENTRY.lock]
+
 	; oznacz zadanie jako aktywne i usługa
 	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_service
 

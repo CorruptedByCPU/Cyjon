@@ -18,9 +18,12 @@ kernel_gc:
 	; pobierz identyfikator strumienia wejścia procesu
 	mov	rdi,	qword [rsi + KERNEL_TASK_STRUCTURE.in]
 
-	; strumień wejścia jest własnością procesu?
-	test	word [rsi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_stream_in
-	jnz	.stream_not_unique	; nie
+	; ilość procesów korzystających z strumienia
+	dec	qword [rdi + KERNEL_STREAM_STRUCTURE_ENTRY.lock]
+
+	; ze strumienia korzysta tylko jeden proces?
+	cmp	qword [rdi + KERNEL_STREAM_STRUCTURE_ENTRY.lock],	STATIC_EMPTY
+	jne	.stream_not_unique	; nie
 
 	; zwolnij strumień
 	call	kernel_stream_release
@@ -29,9 +32,12 @@ kernel_gc:
 	; pobierz identyfikator strumienia wyjścia procesu
 	mov	rdi,	qword [rsi + KERNEL_TASK_STRUCTURE.out]
 
-	; strumień wyjścia jest własnością procesu?
-	test	word [rsi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_stream_out
-	jnz	.stream_out_unique	; nie
+	; ilość procesów korzystających z strumienia
+	dec	qword [rdi + KERNEL_STREAM_STRUCTURE_ENTRY.lock]
+
+	; ze strumienia korzysta tylko jeden proces?
+	cmp	qword [rdi + KERNEL_STREAM_STRUCTURE_ENTRY.lock],	STATIC_EMPTY
+	jne	.stream_out_unique	; nie
 
 	; zwolnij strumień
 	call	kernel_stream_release

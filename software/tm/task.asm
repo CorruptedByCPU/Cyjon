@@ -70,7 +70,7 @@ tm_task_show:
 	xor	r9,	r9
 
 	; posortuj listę elementów względem kolumny %CPU od najmniejszej wartości
-	call	tm_task_sort
+	; call	tm_task_sort
 
 	; rbx - rozmiar całkowity elementów na liście w Bajtach
 	; rsi - wskaźnik do listy
