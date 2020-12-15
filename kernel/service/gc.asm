@@ -73,6 +73,19 @@ kernel_gc:
 	; strona odzyskana z tablic stronicowania
 	dec	qword [kernel_page_paged_count]
 
+.child:
+	; odszukaj proces potomny lub wątek rodzica
+	call	kernel_task_child
+	jc	.end	; brak procesów potomnych/wątków
+
+	; wymuś zamknięcie procesu
+	and	word [rdi + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_active
+	or	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_closed
+
+	; odszukaj pozostałe procesy
+	jmp	.child
+
+.end:
 	; zwolnij wpis w kolejce zadań
 	mov	word [rsi + KERNEL_TASK_STRUCTURE.flags],	STATIC_EMPTY
 

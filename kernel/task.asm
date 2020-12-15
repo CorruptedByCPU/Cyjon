@@ -230,6 +230,68 @@ kernel_task:
 
 ;===============================================================================
 ; wejście:
+;	rdi - wskaźnik do procesu rodzica
+kernel_task_child:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rdi
+
+	; poszukiwany PID rodzica
+	mov	rax,	qword [rsi + KERNEL_TASK_STRUCTURE.pid]
+
+	; przeszukaj od początku kolejkę za procesem potomnym
+	mov	rdi,	qword [kernel_task_address]
+
+.restart:
+	; ilość wpisów na blok danych kolejki zadań
+	mov	rcx,	STATIC_STRUCTURE_BLOCK.link / KERNEL_TASK_STRUCTURE.SIZE
+
+.search:
+	; znaleziono proces potomny/wątek?
+	cmp	qword [rdi + KERNEL_TASK_STRUCTURE.parent],	rax
+	jne	.next	; nie
+
+	; proces jest aktywny?
+	test	word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active
+	jz	.next	; nie
+
+	; zwróć wskaźnik do procesu potomnego/wątku
+	mov	qword [rsp],	rdi
+
+	; koniec obsługi
+	jmp	.end
+
+.next:
+	; przesuń wskaźnik na następny wpis
+	add	rdi,	KERNEL_TASK_STRUCTURE.SIZE
+
+	; pozostały wpisy w bloku?
+	dec	rcx
+	jnz	.search
+
+	; pobierz adres następnego bloku kolejki
+	and	di,	STATIC_PAGE_mask
+	mov	rdi,	qword [rdi + STATIC_STRUCTURE_BLOCK.link]
+
+	; powróciliśmy na początek kolejki?
+	cmp	rdi,	qword [kernel_task_address]
+	jne	.restart	; nie
+
+	; flaga, błąd
+	stc
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rcx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
 ;	cl - ilość znaków w nazwie procesu
 ;	rsi - wskaźni do nazwy procesu
 ;	r11 - adres tablicy PML4 zadania
@@ -339,7 +401,7 @@ kernel_task_queue:
 	lock	bts word [rdi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_secured_bit
 	jnc	.found	; tak
 
-	; prdesuń wskaźnik na następny wpis
+	; przesuń wskaźnik na następny wpis
 	add	rdi,	KERNEL_TASK_STRUCTURE.SIZE
 
 	; pozostały wpisy w bloku?
