@@ -13,3 +13,5 @@ kernel_sleep:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_sleep"

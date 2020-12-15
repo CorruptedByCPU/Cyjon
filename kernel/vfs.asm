@@ -44,6 +44,8 @@ kernel_vfs_metadata_update:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_vfs_metadata_update"
+
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do supła katalogu nadrzędnego

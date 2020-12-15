@@ -231,6 +231,9 @@ kernel_task:
 ;===============================================================================
 ; wejście:
 ;	rdi - wskaźnik do procesu rodzica
+; wyjście:
+;	Flaga CF - jeśli brak procesów potomnych/wątków
+;	rdi - wskaźnik do procesu potomka/wątku
 kernel_task_child:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -289,6 +292,8 @@ kernel_task_child:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_task_child"
 
 ;===============================================================================
 ; wejście:
@@ -625,4 +630,4 @@ kernel_task_kill:
 	; zatrzymaj dalsze wykonywanie kodu wątku
 	jmp	$
 
-	macro_debug	"kernel_task_kill_me"
+	macro_debug	"kernel_task_kill"

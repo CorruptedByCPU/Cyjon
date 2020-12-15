@@ -46,6 +46,8 @@ kernel_memory_secure:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_memory_secure"
+
 ;===============================================================================
 ; wejście:
 ;	rbp - ilość stron zarezerowanych do wykorzystania
@@ -680,6 +682,8 @@ kernel_memory_alloc_task:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_memory_alloc_task"
 
 ;===============================================================================
 ; wejście:
