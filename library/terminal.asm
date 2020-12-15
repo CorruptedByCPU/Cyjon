@@ -589,22 +589,38 @@ library_terminal_char:
 ;	r8 - wskaźnik do struktury terminala
 library_terminal_scroll:
 	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
 	push	rcx
+	push	rdx
 	push	rsi
 	push	rdi
 
 	; wyłącz wirtualny kursor
 	call	library_terminal_cursor_disable
 
-	; rozmiar przemieszczanej przestrzeni
-	mov	rcx,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.size_byte]
-	sub	rcx,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.scanline_char]
-	shr	rcx,	KERNEL_VIDEO_DEPTH_shift
+	; ilość linii do przesunięcia
+	mov	rdx,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.height_char]
+	dec	rdx
 
 	; rozpocznij przewijanie z linii 1 do 0
 	mov	rdi,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.address]
 	mov	rsi,	rdi
 	add	rsi,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.scanline_char]
+
+.line:
+	; wysokość linii w pikselach
+	mov	edx,	LIBRARY_FONT_HEIGHT_pixel
+
+	; przesuń pierwszy wiersz aktualnej linii
+	mov	rcx,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.width]
+	rep	movsd
+
+	; rozmiar przemieszczanej przestrzeni
+	mov	rcx,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.size_byte]
+	sub	rcx,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.scanline_char]
+	shr	rcx,	KERNEL_VIDEO_DEPTH_shift
+
 	rep	movsd
 
 	; wyczyść ostatnią linię znaków na ekranie
