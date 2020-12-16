@@ -32,6 +32,11 @@ moko_string_cursor_at_begin_of_line_end:
 moko_string_close				db	"^[t1;*;*]"
 moko_string_close_end:
 
+moko_string_cursor_save				db	STATIC_SEQUENCE_CURSOR_PUSH
+moko_string_cursor_save_end:
+moko_string_cursor_restore			db	STATIC_SEQUENCE_CURSOR_POP
+moko_string_cursor_restore_end:
+
 moko_string_menu:
 					.exit	db	"^[c70]^x^[c07] Exit ", STATIC_SEQUENCE_COLOR_DEFAULT
 					.exit_end:

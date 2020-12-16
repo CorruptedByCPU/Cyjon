@@ -41,6 +41,18 @@ moko_line:
 	; wyświetl kolejno ciąg znaków o określonej długości
 	int	KERNEL_SERVICE
 
+	; zachowaj pozostały rozmiar linii
+	push	rcx
+
+	; zapamiętaj pozycję kursora
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_cursor_save_end - moko_string_cursor_save
+	mov	rsi,	moko_string_cursor_save
+	int	KERNEL_SERVICE
+
+	; przywróć pozostały rozmiar linii
+	pop	rcx
+
 .empty:
 	; wyczyścić resztę linii?
 	cmp	r8,	rcx
@@ -60,12 +72,11 @@ moko_line:
 	pop	rdx
 
 .no:
-	; ; ustaw pozycję kursora na aktualną pozycję
-	; mov	ax,	KERNEL_SERVICE_VIDEO_cursor_set
-	; mov	rbx,	r15
-	; shl	rbx,	STATIC_MOVE_EAX_TO_HIGH_shift
-	; add	rbx,	r14
-	; int	KERNEL_SERVICE
+	; ustaw pozycję kursora na aktualną pozycję
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_cursor_restore_end - moko_string_cursor_restore
+	mov	rsi,	moko_string_cursor_restore
+	int	KERNEL_SERVICE
 
 	; przywróć oryginalne rejestry
 	pop	rsi
