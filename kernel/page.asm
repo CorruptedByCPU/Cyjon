@@ -66,6 +66,8 @@ kernel_page_empty:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_page_empty"
+
 ;===============================================================================
 ; wejście:
 ;	rdi - adres strony do wyczyszczenia
@@ -82,6 +84,8 @@ kernel_page_drain:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_page_drain"
 
 ;-------------------------------------------------------------------------------
 ; uwagi:
@@ -104,7 +108,7 @@ kernel_page_drain:
 	; powrót z podprocedury
 	ret
 
-	macro_debug	"kernel_page_drain"
+	macro_debug	"kernel_page_drain.proceed"
 
 ;===============================================================================
 ; wejście:

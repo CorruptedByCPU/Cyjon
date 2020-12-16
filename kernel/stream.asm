@@ -115,6 +115,8 @@ kernel_stream_set:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_stream_set"
+
 ;===============================================================================
 ; wyjście:
 ;	Flaga CF, jeśli brak miejsca
@@ -224,6 +226,8 @@ kernel_stream:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_stream"
+
 ;===============================================================================
 ; wejście:
 ;	rdi - identyfikator strumienia
@@ -243,6 +247,8 @@ kernel_stream_release:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_stream_release"
 
 ;===============================================================================
 ; wejście:
@@ -337,6 +343,8 @@ kernel_stream_receive:
 	; powrót z procedury
 	ret
 
+	macro_debug	"kernel_stream_receive"
+
 ;===============================================================================
 ; wejście:
 ;	rbx - identyfikator potoku
@@ -415,3 +423,5 @@ kernel_stream_insert:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"kernel_stream_insert"

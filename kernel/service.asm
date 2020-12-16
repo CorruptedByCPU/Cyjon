@@ -46,6 +46,8 @@ kernel_service:
 	; koniec obsługi przerwania programowego
 	iretq
 
+	macro_debug	"kernel_service"
+
 ;===============================================================================
 .process:
 	; zakończ pracę procesu?
@@ -140,6 +142,8 @@ kernel_service:
 	; koniec obsługi opcji
 	jmp	kernel_service.end
 
+	macro_debug	"kernel_service.process_pid_parent"
+
 ;-------------------------------------------------------------------------------
 ; wejście:
 ;	bl - zachowanie strumienia procesu
@@ -189,6 +193,8 @@ kernel_service:
 	; koniec obsługi opcji
 	jmp	kernel_service.end
 
+	macro_debug	"kernel_service.process_run"
+
 ;-------------------------------------------------------------------------------
 .process_check:
 	; odszukaj proces w kolejce zadań
@@ -196,6 +202,8 @@ kernel_service:
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
+
+	macro_debug	"kernel_service.process_check"
 
 ;-------------------------------------------------------------------------------
 ; wejście:
@@ -234,6 +242,8 @@ kernel_service:
 	; koniec obsługi opcji
 	jmp	kernel_service.end
 
+	macro_debug	"kernel_service.process_memory_alloc"
+
 ;-------------------------------------------------------------------------------
 ; wejście:
 ;	rdi - wskaźnik miejsca przeznaczenia komunikatu
@@ -245,6 +255,8 @@ kernel_service:
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
+
+	macro_debug	"kernel_service.process_ipc_receive"
 
 ;-------------------------------------------------------------------------------
 ; wejście:
@@ -259,6 +271,8 @@ kernel_service:
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
+
+	macro_debug	"kernel_service.process_ipc_send"
 
 ;-------------------------------------------------------------------------------
 ; wejście:
@@ -283,6 +297,8 @@ kernel_service:
 	; koniec obsługi opcji
 	jmp	kernel_service.end
 
+	macro_debug	"kernel_service.process_ipc_send_parent"
+
 ;-------------------------------------------------------------------------------
 ; wyjście:
 ;	rax - pid procesu
@@ -295,6 +311,8 @@ kernel_service:
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
+
+	macro_debug	"kernel_service.process_pid"
 
 ;-------------------------------------------------------------------------------
 ; wejście:
@@ -324,6 +342,8 @@ kernel_service:
 	; koniec obsługi opcji
 	jmp	kernel_service.end
 
+	macro_debug	"kernel_service.process_stream_out"
+
 ;-------------------------------------------------------------------------------
 ; wejście:
 ;	rdi - wskaźnik do przestrzeni bufora
@@ -351,6 +371,8 @@ kernel_service:
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
+
+	macro_debug	"kernel_service.process_stream_in"
 
 ;-------------------------------------------------------------------------------
 ; wejście:
@@ -391,6 +413,8 @@ kernel_service:
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
+
+	macro_debug	"kernel_service.process_stream_out_char"
 
 ;===============================================================================
 ; wejście:
@@ -466,6 +490,8 @@ kernel_service:
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
+
+	macro_debug	"kernel_service.process_stream_meta"
 
 ;-------------------------------------------------------------------------------
 ; wyjście:
@@ -595,6 +621,8 @@ kernel_service:
 	; koniec obsługi opcji
 	jmp	kernel_service.end
 
+	macro_debug	"kernel_service.process_list"
+
 ;===============================================================================
 ; wejście:
 ;	rcx - rozmiar przestrzeni w Bajtach
@@ -626,6 +654,8 @@ kernel_service:
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
+
+	macro_debug	"kernel_service.process_memory_release"
 
 ;-------------------------------------------------------------------------------
 ; wejście:
@@ -663,6 +693,8 @@ kernel_service:
 	; koniec obsługi opcji
 	jmp	kernel_service.end
 
+	macro_debug	"kernel_service.process_sleep"
+
 ;-------------------------------------------------------------------------------
 .process_release:
 	; wywłaszczenie
@@ -670,6 +702,8 @@ kernel_service:
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
+
+	macro_debug	"kernel_service.process_release"
 
 ;-------------------------------------------------------------------------------
 ; wejście:
@@ -731,6 +765,8 @@ kernel_service:
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
+
+	macro_debug	"kernel_service.process_dir_change"
 
 ;===============================================================================
 .vfs:
@@ -835,6 +871,8 @@ kernel_service:
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
+
+	macro_debug	"kernel_service.vfs_read"
 
 ;-------------------------------------------------------------------------------
 ; wejście:
@@ -965,6 +1003,8 @@ kernel_service:
 	; koniec obsługi opcji
 	jmp	kernel_service.end
 
+	macro_debug	"kernel_service.vfs_dir"
+
 ;-------------------------------------------------------------------------------
 ; wejście:
 ;	rcx - ilość znaków w ścieżce do pliku
@@ -989,6 +1029,8 @@ kernel_service:
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
+
+	macro_debug	"kernel_service.vfs_touch"
 
 ;-------------------------------------------------------------------------------
 .vfs_exist:
@@ -1019,6 +1061,8 @@ kernel_service:
 	; koniec obsługi opcji
 	jmp	kernel_service.end
 
+	macro_debug	"kernel_service.vfs_exist"
+
 ;===============================================================================
 .system:
 	; zwrócić właściwości pamięci RAM
@@ -1042,6 +1086,8 @@ kernel_service:
 	; powrót do procesu
 	jmp	kernel_service.end
 
+	macro_debug	"kernel_service.system_memory"
+
 ;-------------------------------------------------------------------------------
 .system_time:
 	; zwróć uptime systemu (1 sekunda to 1024 tyknięcia)
@@ -1050,3 +1096,5 @@ kernel_service:
 
 	; koniec obsługi opcji
 	jmp	kernel_service.end
+
+	macro_debug	"kernel_service.system_time"

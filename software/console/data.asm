@@ -99,7 +99,7 @@ console_terminal_table				dq	CONSOLE_WINDOW_WIDTH_pixel	; szerokość w pikselac
 						dq	CONSOLE_WINDOW_HEIGHT_pixel - LIBRARY_BOSU_HEADER_HEIGHT_pixel	; wysokość w pikselach
 						dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych terminala
 						dq	(CONSOLE_WINDOW_WIDTH_pixel * (CONSOLE_WINDOW_HEIGHT_pixel - LIBRARY_BOSU_HEADER_HEIGHT_pixel)) << KERNEL_VIDEO_DEPTH_shift	; rozmiar przestrzeni w Bajtach
-						dq	CONSOLE_WINDOW_WIDTH_pixel << KERNEL_VIDEO_DEPTH_shift	; scanline_byte
+						dq	STATIC_NOTHING	; scanline w Bajtach - uzupełniane podczas inicjalizacji programu
 						dq	STATIC_EMPTY	; wskaźnik pozycji wirtualnego kursora w przestrzeni danych terminala
 						dq	STATIC_EMPTY	; szerokość terminala w znakach
 						dq	STATIC_EMPTY	; wysokość terminala w znakach
