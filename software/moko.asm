@@ -60,14 +60,19 @@ moko:
 	; pobierz kod klawisza
 	mov	ax,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
 
-	; wywołano skrót klawiszowy?
+	; wywołano skrót klawiszowy lub klawisz funkcyjny?
 	call	moko_key
 	jnc	.loop	; tak
+
+	; znak drukowalny?
+	cmp	ax,	STATIC_SCANCODE_SPACE
+	jb	.loop	; nie
+	cmp	ax,	STATIC_SCANCODE_TILDE
+	ja	.loop	; tak
 
 	; wstaw znak do dokumentu
 	xor	bl,	bl	; aktualizuj wszystkie zmienne globalne
 	call	moko_document_insert
-	jc	.loop	; nie można załadować znaku
 
 	; wyświetl ponownie zawartość aktualnej linii na ekran
 	call	moko_line

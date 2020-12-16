@@ -333,7 +333,7 @@ console_sequence:
 	mov	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.lock],	STATIC_EMPTY
 
 	; włącz kursor
-	call	library_terminal_cursor_switch
+	call	library_terminal_cursor_enable
 
 	; powrót z podprocedury
 	jmp	.terminal_cursor_visibility_end

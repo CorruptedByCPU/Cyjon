@@ -58,18 +58,12 @@ moko_line:
 	cmp	r8,	rcx
 	je	.no	; nie
 
-	; zachowaj oryginalny rejestr
-	push	rdx
-
 	; pozostałą część linii za pomocą znaku spacji
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_char
 	sub	rcx,	r8
 	not	rcx	; zamień na wartość bezwzględną
 	mov	dl,	STATIC_SCANCODE_SPACE
 	int	KERNEL_SERVICE
-
-	; przywróć oryginalny rejestr
-	pop	rdx
 
 .no:
 	; ustaw pozycję kursora na aktualną pozycję

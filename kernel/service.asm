@@ -386,6 +386,10 @@ kernel_service:
 	push	rdi
 	push	rdx	; pozostaw znak na stosie
 
+	; brak znków do wysłania na strumień?
+	test	rcx,	rcx
+	jz	.process_stream_out_char_end	; tak
+
 	; pobierz identyfikator strumienia wyjścia procesu
 	call	kernel_task_active
 	mov	rbx,	qword [rdi + KERNEL_TASK_STRUCTURE.out]
