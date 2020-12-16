@@ -131,6 +131,7 @@ STATIC_SEQUENCE_length_min				equ	0x05
 %define	STATIC_SEQUENCE_CURSOR_DISABLE				"^[t2;1]"	; wyłącz kursor tekstowy
 %define	STATIC_SEQUENCE_CURSOR_PUSH				"^[t2;2]"	; zapamiętaj pozycję
 %define	STATIC_SEQUENCE_CURSOR_POP				"^[t2;3]"	; przywróć pozycję
+%define	STATIC_SEQUENCE_CURSOR_RESET				"^[t2;4]"	; resetuj blokadę kursora (wymuś pokazanie kursora)
 %define	STATIC_SEQUENCE_CLEAR_LINE				"^[t3]"		; wyczyść aktualną linię
 %define	STATIC_SEQUENCE_COLOR_DEFAULT				"^[c07]"	; kolor jasno-szary na czarnym tle
 %define	STATIC_SEQUENCE_COLOR_BLACK				"^[c*0]"

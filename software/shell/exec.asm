@@ -82,8 +82,8 @@ shell_exec:
 
 	; włącz kursor tekstowy
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	ecx,	shell_string_cursor_enable_end - shell_string_cursor_enable
-	mov	rsi,	shell_string_cursor_enable
+	mov	ecx,	shell_string_cursor_reset_end - shell_string_cursor_reset
+	mov	rsi,	shell_string_cursor_reset
 	int	KERNEL_SERVICE
 
 	; powrót do pętli głównej

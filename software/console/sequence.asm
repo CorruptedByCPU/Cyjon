@@ -312,6 +312,10 @@ console_sequence:
 	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"3"
 	je	.terminal_cursor_visibility_restore	; tak
 
+	; odblokować kursor? (wymusić włączenie)
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"4"
+	je	.terminal_cursor_visibility_reset	; tak
+
 	; nie rozpoznano sekwencji lub uszkodzona
 	jmp	console_sequence.error
 
@@ -322,6 +326,17 @@ console_sequence:
 
 	; powrót z podprocedury
 	jmp	console_sequence.end
+
+;-------------------------------------------------------------------------------
+.terminal_cursor_visibility_reset:
+	; zresetuj licznik blokady
+	mov	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.lock],	STATIC_EMPTY
+
+	; włącz kursor
+	call	library_terminal_cursor_switch
+
+	; powrót z podprocedury
+	jmp	.terminal_cursor_visibility_end
 
 ;-------------------------------------------------------------------------------
 .terminal_cursor_visibility_hide:
