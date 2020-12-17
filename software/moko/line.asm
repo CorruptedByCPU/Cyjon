@@ -32,6 +32,7 @@ moko_line:
 
 	; wyświetl maksymalną ilość znaków na ekran
 	mov	rcx,	r8
+	dec	rcx	; ostatnia kolumna zawsze pusta
 
 .visible:
 	; linia jest pusta?
@@ -41,13 +42,22 @@ moko_line:
 	; wyświetl kolejno ciąg znaków o określonej długości
 	int	KERNEL_SERVICE
 
+	; zachowaj pozostały rozmiar linii
+	push	rcx
+
+	; zapamiętaj pozycję kursora
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_cursor_save_end - moko_string_cursor_save
+	mov	rsi,	moko_string_cursor_save
+	int	KERNEL_SERVICE
+
+	; przywróć pozostały rozmiar linii
+	pop	rcx
+
 .empty:
 	; wyczyścić resztę linii?
 	cmp	r8,	rcx
 	je	.no	; nie
-
-	; zachowaj oryginalny rejestr
-	push	rdx
 
 	; pozostałą część linii za pomocą znaku spacji
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out_char
@@ -56,16 +66,12 @@ moko_line:
 	mov	dl,	STATIC_SCANCODE_SPACE
 	int	KERNEL_SERVICE
 
-	; przywróć oryginalny rejestr
-	pop	rdx
-
 .no:
-	; ; ustaw pozycję kursora na aktualną pozycję
-	; mov	ax,	KERNEL_SERVICE_VIDEO_cursor_set
-	; mov	rbx,	r15
-	; shl	rbx,	STATIC_MOVE_EAX_TO_HIGH_shift
-	; add	rbx,	r14
-	; int	KERNEL_SERVICE
+	; ustaw pozycję kursora na aktualną pozycję
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_cursor_restore_end - moko_string_cursor_restore
+	mov	rsi,	moko_string_cursor_restore
+	int	KERNEL_SERVICE
 
 	; przywróć oryginalne rejestry
 	pop	rsi

@@ -19,20 +19,6 @@ moko_document_insert:
 	push	rsi
 	push	rdi
 
-	; znak drukowalny?
-	cmp	ax,	STATIC_SCANCODE_SPACE
-	jb	.error	; nie
-	cmp	ax,	STATIC_SCANCODE_TILDE
-	jb	.insert	; tak
-
-.error:
-	; flaga, błąd
-	stc
-
-	; koniec obsługi znaku
-	jmp	.end
-
-.insert:
 	; wstawić znak na koniec dokumentu?
 	cmp	r10,	qword [moko_document_end_address]
 	je	.at_end_of_document	; tak
@@ -108,7 +94,7 @@ moko_document_insert:
 
 	; kursor wyszedł poza ekran?
 	cmp	r14,	r8
-	jbe	.ready	; nie
+	jb	.end	; nie
 
 	; cofnij kursor do poprzedniej kolumny
 	dec	r14
@@ -118,10 +104,6 @@ moko_document_insert:
 
 	; zachowaj ostatni znany wskaźnik początku wyświetlanej linii
 	mov	qword [moko_document_line_begin_last],	r12
-
-.ready:
-	; zaimportowano znak do dokumentu
-	clc
 
 .end:
 	; przywróć oryginalne rejestry

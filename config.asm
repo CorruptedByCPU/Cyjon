@@ -129,6 +129,13 @@ STATIC_SEQUENCE_length_min				equ	0x05
 %define	STATIC_SEQUENCE_CURSOR_END				"^[t1;*;*]"	; ustaw kursor na koniec ostatniego wiersza
 %define	STATIC_SEQUENCE_CURSOR_ENABLE				"^[t2;0]"	; włącz kursor tekstowy
 %define	STATIC_SEQUENCE_CURSOR_DISABLE				"^[t2;1]"	; wyłącz kursor tekstowy
+%define	STATIC_SEQUENCE_CURSOR_PUSH				"^[t2;2]"	; zapamiętaj pozycję
+%define	STATIC_SEQUENCE_CURSOR_POP				"^[t2;3]"	; przywróć pozycję
+%define	STATIC_SEQUENCE_CURSOR_RESET				"^[t2;4]"	; resetuj blokadę kursora (wymuś pokazanie kursora)
+%define	STATIC_SEQUENCE_CURSOR_UP				"^[t2;C]"	; przesuń kursor o pozycję w górę
+%define	STATIC_SEQUENCE_CURSOR_DOWN				"^[t2;D]"	; przesuń kursor o pozycję w dół
+%define	STATIC_SEQUENCE_CURSOR_LEFT				"^[t2;E]"	; przesuń kursor o pozycję w lewo
+%define	STATIC_SEQUENCE_CURSOR_RIGHT				"^[t2;F]"	; przesuń kursor o pozycję w prawo
 %define	STATIC_SEQUENCE_CLEAR_LINE				"^[t3]"		; wyczyść aktualną linię
 %define	STATIC_SEQUENCE_COLOR_DEFAULT				"^[c07]"	; kolor jasno-szary na czarnym tle
 %define	STATIC_SEQUENCE_COLOR_BLACK				"^[c*0]"

@@ -55,6 +55,7 @@ console_sequence:
 	ret
 
 ;-------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------
 .header:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -93,6 +94,7 @@ console_sequence:
 	; powrót z podprocedury
 	jmp	console_sequence.end
 
+;-------------------------------------------------------------------------------
 ;-------------------------------------------------------------------------------
 .color:
 	; zachowaj oryginalne rejestry
@@ -160,11 +162,48 @@ console_sequence:
 	ret
 
 ;-------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------
 .terminal:
 	; wyczyścić przestrzeń znakową?
 	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"0"
-	jne	.terminal_no_clear	; nie
+	je	.terminal_clear	; tak
 
+	; ustawić kursor na nową pozycję w przestrzeni znakowej?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"1"
+	je	.terminal_cursor_position	; tak
+
+	; przełączyć widoczność kursora?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"2"
+	je	.terminal_cursor_visibility	; tak
+
+	; wyczyścić linię w miejscu kursora?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"3"
+	je	.terminal_line_clear	; tak
+
+	; nie rozpoznano sekwencji lub uszkodzona
+	jmp	console_sequence.error
+
+;-------------------------------------------------------------------------------
+.terminal_line_clear:
+	; zachowaj oryginalne rejestr
+	push	rcx
+
+	; numer linii do wyczyszczenia
+	mov	ecx,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y]
+	call	library_terminal_empty_line
+
+	; przywróć oryginalny rejestr
+	pop	rcx
+
+	; przetworzono sekwencję
+	sub	rcx,	0x05
+	add	rsi,	0x05
+
+	; powrót z podprocedury
+	jmp	console_sequence.end
+
+;-------------------------------------------------------------------------------
+.terminal_clear:
 	; wyczyść przestrzeń znakową konsoli
 	call	library_terminal_clear
 
@@ -177,17 +216,11 @@ console_sequence:
 	; powrót z podprocedury
 	jmp	console_sequence.end
 
-.terminal_no_clear:
-	;-----------------------------------------------------------------------
-	;-----------------------------------------------------------------------
-	; ustawić kursor na nową pozycję w przestrzeni znakowej?
-	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"1"
-	jne	.terminal_no_cursor_position	; nie
-
+;-------------------------------------------------------------------------------
+.terminal_cursor_position:
 	; przesuń wskaźnik na pozycję X kursora
 	sub	rcx,	0x05
 	add	rsi,	0x05
-
 
 	; pobierz rozmiar liczby
 	mov	bl,	";"
@@ -227,7 +260,6 @@ console_sequence:
 	call	library_string_word_next
 	jc	console_sequence.error	; uszkodzona sekwencja
 
-
 	; rozmiar wartości większy większy od cyfry?
 	cmp	rbx,	0x01
 	ja	.terminal_cursor_position_row
@@ -251,7 +283,6 @@ console_sequence:
 	; ustaw kursor tekstowy na danej kolumnie
 	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y],	eax
 
-.terminal_safe_row:
 	; przesuń wskaźnik za sekwencję
 	inc	rbx	; pomiń zamknięcie sekwencji "]"
 	sub	rcx,	rbx
@@ -263,62 +294,164 @@ console_sequence:
 	; powrót z podprocedury
 	jmp	console_sequence.end
 
-.terminal_no_cursor_position:
-	;-----------------------------------------------------------------------
-	;-----------------------------------------------------------------------
-	; przełączyć widoczność kursora?
-	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"2"
-	jne	.terminal_no_cursor_visibility	; nie
+;-------------------------------------------------------------------------------
+.terminal_cursor_visibility:
+	; włączyć kursor?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"0"
+	je	.terminal_cursor_visibility_hide	; tak
 
-	; ukryj?
+	; wyłączyć kursor?
 	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"1"
-	jne	.terminal_show_cursor	; nie
+	je	.terminal_cursor_visibility_show	; tak
 
+	; zapamiętać pozycję?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"2"
+	je	.terminal_cursor_visibility_remember	; tak
+
+	; przywrócić pozycję?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"3"
+	je	.terminal_cursor_visibility_restore	; tak
+
+	; odblokować kursor? (wymusić włączenie)
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"4"
+	je	.terminal_cursor_visibility_reset	; tak
+
+	; przesunąć kursor o pozycję w górę?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"C"
+	je	.terminal_cursor_visibility_move_up	; tak
+
+	; przesunąć kursor o pozycję w dół?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"D"
+	je	.terminal_cursor_visibility_move_down	; tak
+
+	; przesunąć kursor o pozycję w lewo?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"E"
+	je	.terminal_cursor_visibility_move_left	; tak
+
+	; przesunąć kursor o pozycję w prawo?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"F"
+	je	.terminal_cursor_visibility_move_right	; tak
+
+	; nie rozpoznano sekwencji lub uszkodzona
+	jmp	console_sequence.error
+
+.terminal_cursor_visibility_end:
+	; przetworzono sekwencję
+	sub	rcx,	0x07
+	add	rsi,	0x07
+
+	; powrót z podprocedury
+	jmp	console_sequence.end
+
+;-------------------------------------------------------------------------------
+.terminal_cursor_visibility_reset:
+	; zresetuj licznik blokady
+	mov	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.lock],	STATIC_EMPTY
+
+	; włącz kursor
+	call	library_terminal_cursor_enable
+
+	; powrót z podprocedury
+	jmp	.terminal_cursor_visibility_end
+
+;-------------------------------------------------------------------------------
+.terminal_cursor_visibility_hide:
 	; ukryj kursor tekstowy
 	call	library_terminal_cursor_disable
 
-	; przetworzono sekwencję
-	sub	rcx,	0x07
-	add	rsi,	0x07
-
 	; powrót z podprocedury
-	jmp	console_sequence.end
+	jmp	.terminal_cursor_visibility_end
 
-.terminal_show_cursor:
+;-------------------------------------------------------------------------------
+.terminal_cursor_visibility_show:
 	; pokaż kursor tekstowy
 	call	library_terminal_cursor_enable
 
-	; przetworzono sekwencję
-	sub	rcx,	0x07
-	add	rsi,	0x07
+	; powrót z podprocedury
+	jmp	.terminal_cursor_visibility_end
+
+;-------------------------------------------------------------------------------
+.terminal_cursor_visibility_remember:
+	; pobierz aktualną pozycję kursora w przestrzeni terminala
+	mov	rax,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor]
+
+	; zachowaj
+	mov	qword [console_terminal_cursor_position_save],	rax
 
 	; powrót z podprocedury
-	jmp	console_sequence.end
+	jmp	.terminal_cursor_visibility_end
 
-.terminal_no_cursor_visibility:
-	;-----------------------------------------------------------------------
-	;-----------------------------------------------------------------------
-	; wyczyścić linię w miejscu kursora?
-	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"3"
-	jne	.terminal_no_line_clear	; nie
+;-------------------------------------------------------------------------------
+.terminal_cursor_visibility_restore:
+	; ukryj kursor tekstowy
+	call	library_terminal_cursor_disable
 
-	; zachowaj oryginalne rejestr
-	push	rcx
+	; pobierz zapamiętaną pozycję kursora
+	mov	rax,	qword [console_terminal_cursor_position_save]
 
-	; numer linii do wyczyszczenia
-	mov	ecx,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y]
-	call	library_terminal_empty_line
+	; poinformuj terminal
+	mov	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor],	rax
+	call	library_terminal_cursor_set
 
-	; przywróć oryginalny rejestr
-	pop	rcx
-
-	; przetworzono sekwencję
-	sub	rcx,	0x05
-	add	rsi,	0x05
+	; pokaż kursor tekstowy
+	call	library_terminal_cursor_enable
 
 	; powrót z podprocedury
-	jmp	console_sequence.end
+	jmp	.terminal_cursor_visibility_end
 
-.terminal_no_line_clear:
-	; nie rozpoznano polecenia
-	jmp	console_sequence.error
+;-------------------------------------------------------------------------------
+.terminal_cursor_visibility_move_up:
+	; pobierz aktualną pozycję kursora na osi Y
+	mov	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y]
+
+	; przesuń o pozycję w górę
+	dec	eax
+	jns	.terminal_cursor_visibility_move_up_ok	; brak przepełnienia
+
+	; zablokuj kursor w pierwszym wierszu
+	xor	eax,	eax
+
+.terminal_cursor_visibility_move_up_ok:
+	; zachowaj nową pozycję kursora na osi Y
+	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y],	eax
+
+	; powrót z podprocedury
+	jmp	.terminal_cursor_visibility_end
+
+;-------------------------------------------------------------------------------
+.terminal_cursor_visibility_move_down:
+	; pobierz aktualną pozycję kursora na osi Y
+	mov	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y]
+
+	; przesuń o pozycję w dół
+	inc	eax
+
+	; kursor wyszedł poza przestrzeń terminala?
+	cmp	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.height]
+	jb	.terminal_cursor_visibility_move_down_ok	; nie
+
+	; brak przesunięcia kursora w przestrzeni terminala
+
+	; przewiń zawartość terminala o linię w górę
+	call	library_terminal_scroll
+
+	; powrót z podprocedury
+	jmp	.terminal_cursor_visibility_end
+
+.terminal_cursor_visibility_move_down_ok:
+	; zachowaj nową pozycję kursora na osi Y
+	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y],	eax
+
+	; powrót z podprocedury
+	jmp	.terminal_cursor_visibility_end
+
+;-------------------------------------------------------------------------------
+.terminal_cursor_visibility_move_left:
+
+	; powrót z podprocedury
+	jmp	.terminal_cursor_visibility_end
+;-------------------------------------------------------------------------------
+.terminal_cursor_visibility_move_right:
+
+	; powrót z podprocedury
+	jmp	.terminal_cursor_visibility_end

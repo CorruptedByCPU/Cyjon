@@ -108,3 +108,5 @@ console_terminal_table				dq	CONSOLE_WINDOW_WIDTH_pixel	; szerokość w pikselac
 						dq	STATIC_EMPTY	; blokada wirtualnego kursora
 						dd	STATIC_COLOR_default	; kolor czcionki
 						dd	STATIC_COLOR_BACKGROUND_default	; kolor tła
+
+console_terminal_cursor_position_save		dq	STATIC_EMPTY

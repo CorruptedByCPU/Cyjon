@@ -15,8 +15,8 @@ align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 shell_ipc_data:
 	times KERNEL_IPC_STRUCTURE.SIZE		db	STATIC_EMPTY
 
-shell_string_cursor_enable			db	STATIC_SEQUENCE_CURSOR_ENABLE
-shell_string_cursor_enable_end:
+shell_string_cursor_reset			db	STATIC_SEQUENCE_CURSOR_RESET
+shell_string_cursor_reset_end:
 
 shell_string_prompt_with_new_line		db	STATIC_SCANCODE_NEW_LINE
 shell_string_prompt				db	STATIC_SEQUENCE_COLOR_RED_LIGHT
