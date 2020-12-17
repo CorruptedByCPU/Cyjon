@@ -316,6 +316,22 @@ console_sequence:
 	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"4"
 	je	.terminal_cursor_visibility_reset	; tak
 
+	; przesunąć kursor o pozycję w górę?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"C"
+	je	.terminal_cursor_visibility_move_up	; tak
+
+	; przesunąć kursor o pozycję w dół?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"D"
+	je	.terminal_cursor_visibility_move_down	; tak
+
+	; przesunąć kursor o pozycję w lewo?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"E"
+	je	.terminal_cursor_visibility_move_left	; tak
+
+	; przesunąć kursor o pozycję w prawo?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"F"
+	je	.terminal_cursor_visibility_move_right	; tak
+
 	; nie rozpoznano sekwencji lub uszkodzona
 	jmp	console_sequence.error
 
@@ -379,6 +395,63 @@ console_sequence:
 
 	; pokaż kursor tekstowy
 	call	library_terminal_cursor_enable
+
+	; powrót z podprocedury
+	jmp	.terminal_cursor_visibility_end
+
+;-------------------------------------------------------------------------------
+.terminal_cursor_visibility_move_up:
+	; pobierz aktualną pozycję kursora na osi Y
+	mov	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y]
+
+	; przesuń o pozycję w górę
+	dec	eax
+	jns	.terminal_cursor_visibility_move_up_ok	; brak przepełnienia
+
+	; zablokuj kursor w pierwszym wierszu
+	xor	eax,	eax
+
+.terminal_cursor_visibility_move_up_ok:
+	; zachowaj nową pozycję kursora na osi Y
+	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y],	eax
+
+	; powrót z podprocedury
+	jmp	.terminal_cursor_visibility_end
+
+;-------------------------------------------------------------------------------
+.terminal_cursor_visibility_move_down:
+	; pobierz aktualną pozycję kursora na osi Y
+	mov	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y]
+
+	; przesuń o pozycję w dół
+	inc	eax
+
+	; kursor wyszedł poza przestrzeń terminala?
+	cmp	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.height]
+	jb	.terminal_cursor_visibility_move_down_ok	; nie
+
+	; brak przesunięcia kursora w przestrzeni terminala
+
+	; przewiń zawartość terminala o linię w górę
+	call	library_terminal_scroll
+
+	; powrót z podprocedury
+	jmp	.terminal_cursor_visibility_end
+
+.terminal_cursor_visibility_move_down_ok:
+	; zachowaj nową pozycję kursora na osi Y
+	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y],	eax
+
+	; powrót z podprocedury
+	jmp	.terminal_cursor_visibility_end
+
+;-------------------------------------------------------------------------------
+.terminal_cursor_visibility_move_left:
+
+	; powrót z podprocedury
+	jmp	.terminal_cursor_visibility_end
+;-------------------------------------------------------------------------------
+.terminal_cursor_visibility_move_right:
 
 	; powrót z podprocedury
 	jmp	.terminal_cursor_visibility_end

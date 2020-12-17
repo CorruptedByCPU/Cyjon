@@ -60,7 +60,11 @@ moko:
 	; pobierz kod klawisza
 	mov	ax,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
 
-	; wywołano skrót klawiszowy lub klawisz funkcyjny?
+	; wywołano skrót klawiszowy?
+	call	moko_shortcut
+	jnc	.loop	; tak
+
+	; klawisz funkcyjny?
 	call	moko_key
 	jnc	.loop	; tak
 
@@ -100,4 +104,5 @@ moko:
 	%include	"software/moko/interface.asm"
 	%include	"software/moko/key.asm"
 	%include	"software/moko/line.asm"
+	%include	"software/moko/shortcut.asm"
 	;-----------------------------------------------------------------------

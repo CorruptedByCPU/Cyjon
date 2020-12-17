@@ -7,7 +7,7 @@
 ;===============================================================================
 
 %define	PROGRAM_NAME			"console"
-%define	PROGRAM_VERSION			"0.26"
+%define	PROGRAM_VERSION			"0.27"
 
 CONSOLE_WINDOW_WIDTH_char	equ	46
 CONSOLE_WINDOW_HEIGHT_char	equ	16

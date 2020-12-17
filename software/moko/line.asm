@@ -32,6 +32,7 @@ moko_line:
 
 	; wyświetl maksymalną ilość znaków na ekran
 	mov	rcx,	r8
+	dec	rcx	; ostatnia kolumna zawsze pusta
 
 .visible:
 	; linia jest pusta?

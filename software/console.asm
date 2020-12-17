@@ -113,6 +113,9 @@ console:
 	; przywróć wskaźnik do struktury terminala
 	mov	r8,	console_terminal_table
 
+	; wyłącz kursor w terminalu
+	call	library_terminal_cursor_disable
+
 .parse:
 	; koniec ciągu?
 	test	rcx,	rcx
@@ -145,6 +148,9 @@ console:
 	jnz	.parse	; tak
 
 .flush:
+	; włącz kursor w terminalu
+	call	library_terminal_cursor_enable
+
 	; aktualizuj zawartość okna
 	mov	al,	KERNEL_WM_WINDOW_update
 	mov	rsi,	console_window

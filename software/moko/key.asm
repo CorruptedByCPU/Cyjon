@@ -16,61 +16,56 @@ moko_key:
 
 	; naciśnięto klawisz CTRL?
 	cmp	ax,	STATIC_SCANCODE_CTRL_LEFT
- 	jne	.no_ctrl	; nie
+ 	je	.ctrl	; tak
 
- 	; podnieś flagę
- 	mov	byte [moko_key_ctrl_semaphore],	STATIC_TRUE
- 	jmp	.end	; obsłużono klawisz
-
- .no_ctrl:
  	; puszczono klawisz CTRL?
  	cmp	ax,	STATIC_SCANCODE_CTRL_LEFT + STATIC_SCANCODE_RELEASE_mask
- 	jne	.no_ctrl_release	; nie
+ 	je	.ctrl_release	; tak
 
- 	; opuść flagę
- 	mov	byte [moko_key_ctrl_semaphore],	STATIC_FALSE
- 	jmp	.end	; obsłużono klawisz
-
-.no_ctrl_release:
 	; naciśnięto klawisz INSERT?
 	cmp	ax,	STATIC_SCANCODE_INSERT
-	jne	.no_insert	; nie
+	je	.insert	; tak
 
-	; podnieś flagę
-	mov	byte [moko_key_insert_semaphore],	STATIC_TRUE
-	jmp	.end	; obsłużono klawisz
-
-.no_insert:
 	; puszczono klawisz INSERT?
 	cmp	ax,	STATIC_SCANCODE_INSERT + STATIC_SCANCODE_RELEASE_mask
-	jne	.no_insert_release	; nie
+	je	.insert_release	; tak
 
-	; opuść flagę
- 	mov	byte [moko_key_insert_semaphore],	STATIC_FALSE
- 	jmp	.end	; obsłużono klawisz
+.no_key:
+	; brak obsługi klawisza
+	stc
 
-.no_insert_release:
-	; naciśnięto klawisz "x"?
-	cmp	ax,	"x"
-	jne	.no_key	; nie
+	; koniec procedury
+	ret
 
-	; przytrzymano klawisz CTRL?
-	cmp	byte [moko_key_ctrl_semaphore],	STATIC_FALSE
-	je	.no_key	; nie
+.changed:
+	; zachowaj ostatni znany wskaźnik pozycji wew. linii
+	mov	qword [moko_document_line_index_last],	r11
 
-	; koniec działania programu
-	jmp	moko.end
+	; zachowaj ostatnio znany początek wyświetlonej linii
+	mov	qword [moko_document_line_begin_last],	r12
+
+	; wyświemtl ponownie zawartość linii
+	call	moko_line
+
+	; klawisz funkcyjny, obsłużony
+	clc
+
+.end:
+	; powrót z procedury
+	ret
+
 
 ;-------------------------------------------------------------------------------
 .key_enter:
 	; wstaw znak nowej linii do dokumentu w aktualnej pozycji wskaźnika
+	mov	ax,	STATIC_SCANCODE_NEW_LINE
 	mov	bl,	STATIC_FALSE	; nie modyfikuj właściwości aktualnej linii
 	call	moko_document_insert
 
 	; ilość linii w dokumencie zwiększa się
 	inc	qword [moko_document_line_count]
 
-	; zachowaj informacje o pozostałym rozmiarze linii
+	; zachowaj informacje o pozostałym rozmiarze linii, jeśli została ucięta
 	mov	rdx,	r13
 	sub	rdx,	r11
 
@@ -98,6 +93,12 @@ moko_key:
 .key_enter_not_last:
 	; ustaw kursor w nowym wierszu
 	inc	r15
+
+	; przesuń wirtualny kursor do następnej linii
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_cursor_to_row_next_end - moko_string_cursor_to_row_next
+	mov	rsi,	moko_string_cursor_to_row_next
+	int	KERNEL_SERVICE
 
 	; wirtualny kursor znajduje się w przedostatniej linii dokumentu na ekranie?
 	cmp	r9,	r15
@@ -132,28 +133,25 @@ moko_key:
 	jmp	.changed
 
 ;-------------------------------------------------------------------------------
-.no_key:
-	; brak obsługi klawisza
-	stc
+.ctrl:
+	; podnieś flagę
+	mov	byte [moko_key_ctrl_semaphore],	STATIC_TRUE
+	jmp	.end	; obsłużono klawisz
 
-	; koniec procedury
-	ret
+;-------------------------------------------------------------------------------
+.ctrl_release:
+	; opuść flagę
+	mov	byte [moko_key_ctrl_semaphore],	STATIC_FALSE
+	jmp	.end	; obsłużono klawisz
 
-.changed:
-	; zachowaj ostatni znany wskaźnik pozycji wew. linii
-	mov	qword [moko_document_line_index_last],	r11
+;-------------------------------------------------------------------------------
+.insert:
+	; podnieś flagę
+	mov	byte [moko_key_insert_semaphore],	STATIC_TRUE
+	jmp	.end	; obsłużono klawisz
 
-	; zachowaj ostatnio znany początek wyświetlonej linii
-	mov	qword [moko_document_line_begin_last],	r12
-
-.refresh:
-	; wyświetl ponownie zawartość linii
-	call	moko_line
-
-.done:
-	; klawisz funkcyjny, obsłużony
-	clc
-
-.end:
-	; powrót z procedury
-	ret
+;-------------------------------------------------------------------------------
+.insert_release:
+	; opuść flagę
+	mov	byte [moko_key_insert_semaphore],	STATIC_FALSE
+	jmp	.end	; obsłużono klawisz
