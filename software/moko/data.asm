@@ -23,10 +23,16 @@ moko_document_line_begin_last			dq	STATIC_EMPTY
 moko_document_line_count			dq	STATIC_EMPTY
 moko_document_show_from_line			dq	STATIC_EMPTY
 
-moko_string_document_cursor			db	STATIC_SEQUENCE_CURSOR
+moko_string_document_cursor			db	"^[t1;"
+						dd	STATIC_EMPTY
+						dd	STATIC_EMPTY
+						db	"]"
 moko_string_document_cursor_end:
 
-moko_string_cursor_at_menu_and_clear_screen	db	STATIC_SEQUENCE_CLEAR, "^[t1;0;*]"
+moko_string_cursor_at_menu_and_clear_screen	db	STATIC_SEQUENCE_CLEAR, "^[t1;"
+						dd	STATIC_EMPTY
+						dd	STATIC_MAX_unsigned
+						db	"]"
 moko_string_cursor_at_menu_and_clear_screen_end:
 moko_string_cursor_at_begin_of_line		db	STATIC_SCANCODE_RETURN
 moko_string_cursor_at_begin_of_line_end:
@@ -39,7 +45,10 @@ moko_string_cursor_to_col_previous_end:
 moko_string_cursor_to_col_next			db	STATIC_SEQUENCE_CURSOR_RIGHT
 moko_string_cursor_to_col_next_end:
 
-moko_string_close				db	"^[t1;*;*]"
+moko_string_close				db	STATIC_SEQUENCE_CLEAR, "^[t1;"
+						dd	STATIC_MAX_unsigned
+						dd	STATIC_MAX_unsigned
+						db	"]"
 moko_string_close_end:
 
 moko_string_cursor_save				db	STATIC_SEQUENCE_CURSOR_PUSH
