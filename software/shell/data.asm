@@ -15,7 +15,10 @@ align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 shell_ipc_data:
 	times KERNEL_IPC_STRUCTURE.SIZE		db	STATIC_EMPTY
 
-shell_string_cursor_reset			db	STATIC_SEQUENCE_CURSOR_RESET
+shell_string_cursor_reset			db	"^[t1;"
+					.c:	dd	STATIC_MAX_unsigned
+					.y:	dd	STATIC_MAX_unsigned
+						db	"]", STATIC_SCANCODE_NEW_LINE, STATIC_SEQUENCE_CURSOR_RESET
 shell_string_cursor_reset_end:
 
 shell_string_prompt_with_new_line		db	STATIC_SCANCODE_NEW_LINE

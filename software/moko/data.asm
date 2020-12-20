@@ -45,7 +45,7 @@ moko_string_cursor_to_col_previous_end:
 moko_string_cursor_to_col_next			db	STATIC_SEQUENCE_CURSOR_RIGHT
 moko_string_cursor_to_col_next_end:
 
-moko_string_close				db	STATIC_SEQUENCE_CLEAR, "^[t1;"
+moko_string_close				db	"^[t1;"
 						dd	STATIC_MAX_unsigned
 						dd	STATIC_MAX_unsigned
 						db	"]"
@@ -60,6 +60,18 @@ moko_string_menu:
 					.exit	db	"^[c70]^x^[c07] Exit ", STATIC_SEQUENCE_COLOR_DEFAULT
 					.exit_end:
 moko_string_menu_end:
+
+moko_string_scroll_up				db	"^[t1;"
+					.c:	dd	STATIC_EMPTY
+					.y:	dd	STATIC_EMPTY
+						db	"]"
+moko_string_scroll_up_end:
+
+moko_string_scroll_down				db	"^[t1;"
+					.c:	dd	STATIC_EMPTY
+					.y:	dd	STATIC_EMPTY
+						db	"]"
+moko_string_scroll_down_end:
 
 moko_key_ctrl_semaphore				db	STATIC_FALSE
 moko_key_insert_semaphore			db	STATIC_FALSE
