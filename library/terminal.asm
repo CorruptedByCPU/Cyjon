@@ -411,6 +411,12 @@ library_terminal_char:
 	cmp	ax,	STATIC_SCANCODE_BACKSPACE
 	je	.backspace	; tak
 
+	; nieobsługiwany znak specjalny?
+	cmp	ax,	STATIC_SCANCODE_SPACE
+	jb	.omit	; tak
+	cmp	ax,	STATIC_SCANCODE_TILDE
+	ja	.omit	; tak
+
 	; wyczyść przestrzeń znaku domyślnym kolorem tła
 	call	library_terminal_empty_char
 
@@ -472,6 +478,7 @@ library_terminal_char:
 	; zachowaj aktualną pozycję wskaźnika w przestrzeni pamięci trybu tekstowego
 	mov	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.pointer],	rdi
 
+.omit:
 	; włącz kursor
 	call	library_terminal_cursor_enable
 
@@ -660,6 +667,119 @@ library_terminal_scroll:
 	ret
 
 	macro_debug	"library_terminal_scroll"
+
+;===============================================================================
+; wejście:
+;	al - flaga kierunku, STATIC_TRUE == UP
+;	rbx - ilość linii do przesunięcia
+;	rcx - linia bazowa
+;	r8 - wskaźnik do struktury terminala
+library_terminal_scroll_special:
+	; zachowaj oryginalne rejestry
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+	push	rdi
+	push	r9
+	push	rax
+
+	; wyłącz wirtualny kursor
+	call	library_terminal_cursor_disable
+
+	xchg	bx,bx
+
+	; przesunięcie w górę?
+	cmp	byte [rsp],	STATIC_TRUE
+	jne	.down	; nie
+
+	; rozpocznij przewijanie od linii RCX
+	mov	rsi,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.address]
+	mov	rax,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.scanline_char]
+	mul	rcx
+	add	rsi,	rax
+
+	; w kierunku linii następnej
+	mov	rdi,	rsi
+	sub	rdi,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.scanline_char]
+
+	; kontynuuj
+	jmp	.continue
+
+.down:
+	; rozpocznij przewijanie od linii RCX
+	mov	rdi,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.address]
+	mov	rax,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.scanline_char]
+	add	rcx,	rbx
+	mul	rcx
+	add	rdi,	rax
+
+	; w kierunku linii poprzedniej
+	mov	rsi,	rdi
+	add	rsi,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.scanline_char]
+
+.continue:
+	; rozmiar linii przestrzeni terminala w Bajtach
+	mov	rax,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.width]
+	shl	rax,	KERNEL_VIDEO_DEPTH_shift
+
+	; scanline przestrzeni wyświetlania
+	mov	r9,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.scanline_byte]
+
+.row:
+	; wysokość linii w pikselach
+	mov	edx,	LIBRARY_FONT_HEIGHT_pixel
+
+.line:
+	; przesuń pierwszy wiersz aktualnej linii
+	mov	rcx,	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.width]
+	rep	movsd
+
+	; koryguj wskaźniki na kolejną linię
+	cmp	byte [rsp],	STATIC_TRUE
+	jne	.previous
+
+	; przesuń wskaźniki na następną linię
+	sub	rdi,	rax
+	add	rdi,	r9
+	sub	rsi,	rax
+	add	rsi,	r9
+
+	; kontynuuj
+	jmp	.left
+
+.previous:
+	; przesuń wskaźniki na następną linię
+	sub	rdi,	rax
+	sub	rdi,	r9
+	sub	rsi,	rax
+	sub	rsi,	r9
+
+.left:
+	; przesunięto wszystkie linie pierwszego wiersza?
+	dec	edx
+	jnz	.line	; nie
+
+	; przesunięto wszystkie wiersze?
+	dec	rbx
+	jnz	.row	; nie
+
+	; włącz wirtualny kursor
+	call	library_terminal_cursor_enable
+
+	; przywróć oryginalne rejestry
+	pop	rax
+	pop	r9
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"library_terminal_scroll_special"
 
 ;===============================================================================
 ; wejście:

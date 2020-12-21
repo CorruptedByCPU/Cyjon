@@ -78,11 +78,13 @@ moko_key:
 	cmp	r15,	r9
 	jb	.key_enter_not_last	; nie
 
-	; ; przesuń wiersze 1..N o linię w górę
-	; mov	ax,	KERNEL_SERVICE_VIDEO_scroll_up
-	; mov	ebx,	1	; zacznij od wiersza 2-go
-	; mov	rcx,	r9	; razem z wszystkimi pozostałymi
-	; int	KERNEL_SERVICE
+	; przesuń wiersze 1..N o linię w górę
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_scroll_up_end - moko_string_scroll_up
+	mov	rsi,	moko_string_scroll_ups
+	mov	word [moko_string_scroll_up.y],	1	; zacznij od wiersza 2-go
+	mov	word [moko_string_scroll_up.c],	r9w	; razem z wszystkimi pozostałymi
+	int	KERNEL_SERVICE
 
 	; wyświetl dokument od następnej linii
 	inc	qword [moko_document_show_from_line]
@@ -104,12 +106,14 @@ moko_key:
 	cmp	r9,	r15
 	je	.key_enter_continue	; tak
 
-	; ; przesuń pozostałe wiersze dokumentu w dół
-	; mov	ax,	KERNEL_SERVICE_VIDEO_scroll_down
-	; mov	rbx,	r15	; zaczynając od nowej pozycji kursora
-	; mov	rcx,	r9
-	; sub	rcx,	r15
-	; int	KERNEL_SERVICE
+	; przesuń pozostałe wiersze dokumentu w dół
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_scroll_down_end - moko_string_scroll_down
+	mov	rsi,	moko_string_scroll_down
+	mov	word [moko_string_scroll_down.y],	r15w	; zacznij od wiersza 2-go
+	mov	word [moko_string_scroll_down.c],	r9w	; razem z wszystkimi pozostałymi
+	sub	word [moko_string_scroll_down.c],	r15w
+	int	KERNEL_SERVICE
 
 .key_enter_continue:
 	; aktualizuj informacje o nowej linii dokumentu

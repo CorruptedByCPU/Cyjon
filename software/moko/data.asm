@@ -24,14 +24,14 @@ moko_document_line_count			dq	STATIC_EMPTY
 moko_document_show_from_line			dq	STATIC_EMPTY
 
 moko_string_document_cursor			db	"^[t1;"
-						dd	STATIC_EMPTY
-						dd	STATIC_EMPTY
+						dw	STATIC_EMPTY
+						dw	STATIC_EMPTY
 						db	"]"
 moko_string_document_cursor_end:
 
 moko_string_cursor_at_menu_and_clear_screen	db	STATIC_SEQUENCE_CLEAR, "^[t1;"
-						dd	STATIC_EMPTY
-						dd	STATIC_MAX_unsigned
+						dw	STATIC_EMPTY
+						dw	STATIC_MAX_unsigned
 						db	"]"
 moko_string_cursor_at_menu_and_clear_screen_end:
 moko_string_cursor_at_begin_of_line		db	STATIC_SCANCODE_RETURN
@@ -46,8 +46,8 @@ moko_string_cursor_to_col_next			db	STATIC_SEQUENCE_CURSOR_RIGHT
 moko_string_cursor_to_col_next_end:
 
 moko_string_close				db	"^[t1;"
-						dd	STATIC_MAX_unsigned
-						dd	STATIC_MAX_unsigned
+						dw	STATIC_MAX_unsigned
+						dw	STATIC_MAX_unsigned
 						db	"]"
 moko_string_close_end:
 
@@ -61,15 +61,15 @@ moko_string_menu:
 					.exit_end:
 moko_string_menu_end:
 
-moko_string_scroll_up				db	"^[t1;"
-					.c:	dd	STATIC_EMPTY
-					.y:	dd	STATIC_EMPTY
+moko_string_scroll_up				db	"^[t4;"
+					.c:	dw	STATIC_EMPTY
+					.y:	dw	STATIC_EMPTY
 						db	"]"
 moko_string_scroll_up_end:
 
-moko_string_scroll_down				db	"^[t1;"
-					.c:	dd	STATIC_EMPTY
-					.y:	dd	STATIC_EMPTY
+moko_string_scroll_down				db	"^[t5;"
+					.c:	dw	STATIC_EMPTY
+					.y:	dw	STATIC_EMPTY
 						db	"]"
 moko_string_scroll_down_end:
 

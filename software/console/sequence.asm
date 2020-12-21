@@ -180,11 +180,51 @@ console_sequence:
 	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"3"
 	je	.terminal_line_clear	; tak
 
+	; przesunąć zawartość terminala w górę?
+	mov	al,	STATIC_TRUE	; flaga, przewiń w górę
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"4"
+	je	.terminal_scroll	; tak
+
+	; przesunąć zawartość terminala w dół?
+	mov	al,	STATIC_FALSE	; flaga, przewiń w dół
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"5"
+	je	.terminal_scroll	; tak
+
 	; nie rozpoznano sekwencji lub uszkodzona
 	jmp	console_sequence.error
 
 ;-------------------------------------------------------------------------------
+; wejście:
+;	al - flaga kierunku, STATIC_TRUE == UP
+.terminal_scroll:
+	%strlen	THIS_SEQUENCE_LENGTH STATIC_SEQUENCE_SCROOL_UP	; STATIC_SEQUENCE_SCROOL_DOWN ma tą samą długość
+
+	; zachowaj rozmiar ciągu
+	push	rcx
+
+	; pobierz ilość linii do przesunięcia
+	movzx	ebx,	word [rsi + 0x05]
+
+	; pobierz numer linii od której rozpocząć przesunięcie
+	movzx	rcx,	word [rsi + 0x05 + STATIC_WORD_SIZE_byte]
+
+	; wykonaj
+	call	library_terminal_scroll_special
+
+	; przywróć rozmiar ciągu
+	pop	rcx
+
+	; przetworzono sekwencję
+	sub	rcx,	THIS_SEQUENCE_LENGTH
+	add	rsi,	THIS_SEQUENCE_LENGTH
+
+	; powrót z podprocedury
+	jmp	console_sequence.end
+
+;-------------------------------------------------------------------------------
 .terminal_line_clear:
+	%strlen	THIS_SEQUENCE_LENGTH STATIC_SEQUENCE_CLEAR
+
 	; zachowaj oryginalne rejestr
 	push	rcx
 
@@ -196,8 +236,8 @@ console_sequence:
 	pop	rcx
 
 	; przetworzono sekwencję
-	sub	rcx,	0x05
-	add	rsi,	0x05
+	sub	rcx,	THIS_SEQUENCE_LENGTH
+	add	rsi,	THIS_SEQUENCE_LENGTH
 
 	; powrót z podprocedury
 	jmp	console_sequence.end
@@ -229,7 +269,7 @@ console_sequence:
 	jne	console_sequence.error	; nie
 
 	; pobierz pozycję na osi X
-	mov	eax,	dword [rsi + 0x05]
+	movzx	eax,	word [rsi + 0x05]
 	cmp	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.width_char]	; poza obszarem?
 	jb	.terminal_cursor_poistion_x_ok	; nie
 
@@ -242,7 +282,7 @@ console_sequence:
 	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.x],	eax
 
 	; pobierz pozycję na osi Y
-	mov	eax,	dword [rsi + 0x05 + STATIC_DWORD_SIZE_byte]
+	movzx	eax,	word [rsi + 0x05 + STATIC_WORD_SIZE_byte]
 	cmp	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.height_char]	; poza obszarem?
 	jb	.terminal_cursor_poistion_y_ok	; nie
 
