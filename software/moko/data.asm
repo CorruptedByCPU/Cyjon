@@ -23,10 +23,16 @@ moko_document_line_begin_last			dq	STATIC_EMPTY
 moko_document_line_count			dq	STATIC_EMPTY
 moko_document_show_from_line			dq	STATIC_EMPTY
 
-moko_string_document_cursor			db	STATIC_SEQUENCE_CURSOR
+moko_string_document_cursor			db	"^[t1;"
+					.x:	dw	STATIC_EMPTY
+					.y:	dw	STATIC_EMPTY
+						db	"]"
 moko_string_document_cursor_end:
 
-moko_string_cursor_at_menu_and_clear_screen	db	STATIC_SEQUENCE_CLEAR, "^[t1;0;*]"
+moko_string_cursor_at_menu_and_clear_screen	db	STATIC_SEQUENCE_CLEAR, "^[t1;"
+						dw	STATIC_EMPTY
+						dw	STATIC_MAX_unsigned
+						db	"]"
 moko_string_cursor_at_menu_and_clear_screen_end:
 moko_string_cursor_at_begin_of_line		db	STATIC_SCANCODE_RETURN
 moko_string_cursor_at_begin_of_line_end:
@@ -39,7 +45,10 @@ moko_string_cursor_to_col_previous_end:
 moko_string_cursor_to_col_next			db	STATIC_SEQUENCE_CURSOR_RIGHT
 moko_string_cursor_to_col_next_end:
 
-moko_string_close				db	"^[t1;*;*]"
+moko_string_close				db	"^[t1;"
+						dw	STATIC_MAX_unsigned
+						dw	STATIC_MAX_unsigned
+						db	"]"
 moko_string_close_end:
 
 moko_string_cursor_save				db	STATIC_SEQUENCE_CURSOR_PUSH
@@ -51,6 +60,18 @@ moko_string_menu:
 					.exit	db	"^[c70]^x^[c07] Exit ", STATIC_SEQUENCE_COLOR_DEFAULT
 					.exit_end:
 moko_string_menu_end:
+
+moko_string_scroll_up				db	"^[t4;"
+					.c:	dw	STATIC_EMPTY
+					.y:	dw	STATIC_EMPTY
+						db	"]"
+moko_string_scroll_up_end:
+
+moko_string_scroll_down				db	"^[t5;"
+					.c:	dw	STATIC_EMPTY
+					.y:	dw	STATIC_EMPTY
+						db	"]"
+moko_string_scroll_down_end:
 
 moko_key_ctrl_semaphore				db	STATIC_FALSE
 moko_key_insert_semaphore			db	STATIC_FALSE

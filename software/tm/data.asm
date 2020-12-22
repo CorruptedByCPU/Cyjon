@@ -18,7 +18,10 @@ tm_string_init_end:
 
 tm_string_uptime				db	STATIC_SEQUENCE_COLOR_DEFAULT, "Up:"
 tm_string_uptime_end:
-tm_string_uptime_position_and_color		db	"^[t1;3;0]^[c0F]"
+tm_string_uptime_position_and_color		db	"^[t1;"
+					.c:	dw	0x0003
+					.y:	dw	STATIC_EMPTY
+						db	"]^[c0F]"
 tm_string_uptime_position_and_color_end:
 tm_string_uptime_seconds			db	STATIC_SEQUENCE_COLOR_DEFAULT, " s"
 tm_string_uptime_seconds_end:
@@ -28,17 +31,29 @@ tm_string_uptime_hours				db	STATIC_SEQUENCE_COLOR_DEFAULT, " h    "
 tm_string_uptime_hours_end:
 tm_string_uptime_days				db	STATIC_SEQUENCE_COLOR_DEFAULT, " days "
 tm_string_uptime_days_end:
-tm_string_tasks					db	"^[t1;0;1]Tasks: "
+tm_string_tasks					db	"^[t1;"
+					.c:	dw	STATIC_EMPTY
+					.y:	dw	0x0001
+						db	"]Tasks: "
 tm_string_tasks_end:
-tm_string_tasks_position_and_color		db	"^[t1;7;1]", STATIC_SEQUENCE_COLOR_WHITE
+tm_string_tasks_position_and_color		db	"^[t1;"
+					.c:	dw	0x0007
+					.y:	dw	0x0001
+						db	"]", STATIC_SEQUENCE_COLOR_WHITE
 tm_string_tasks_position_and_color_end:
 tm_string_tasks_total				db	STATIC_SEQUENCE_COLOR_DEFAULT, ", ^[c0A]"
 tm_string_tasks_total_end:
 tm_string_tasks_threads				db	" thr"
 tm_string_tasks_threads_end:
-tm_string_memory				db	"^[t1;0;2]KiB Mem: "
+tm_string_memory				db	"^[t1;"
+					.c:	dw	STATIC_EMPTY
+					.y:	dw	0x0002
+						db	"]KiB Mem: "
 tm_string_memory_end:
-tm_string_memory_total_position_and_color	db	"^[t1;9;2]", STATIC_SEQUENCE_COLOR_WHITE
+tm_string_memory_total_position_and_color	db	"^[t1;"
+					.c:	dw	0x0009
+					.y:	dw	0x0002
+						db	"]", STATIC_SEQUENCE_COLOR_WHITE
 tm_string_memory_total_position_and_color_end:
 tm_string_memory_total				db	STATIC_SEQUENCE_COLOR_DEFAULT, " [t], ", STATIC_SEQUENCE_COLOR_WHITE
 tm_string_memory_total_end:
@@ -46,21 +61,33 @@ tm_string_memory_free				db	STATIC_SEQUENCE_COLOR_DEFAULT, " [f], ", STATIC_SEQU
 tm_string_memory_free_end:
 tm_string_memory_used				db	STATIC_SEQUENCE_COLOR_DEFAULT, " [u] "
 tm_string_memory_used_end:
-tm_string_header_position			db	"^[t1;0;4]"
+tm_string_header_position			db	"^[t1;"
+					.c:	dw	STATIC_EMPTY
+					.y:	dw	0x0004
+						db	"]"
 tm_string_header_position_end:
 tm_string_header_position_and_color		db	"^[cA0]"
 tm_string_header_position_and_color_end:
 tm_string_header				db	"  PID %CPU %Mem Time+ Process"
 tm_string_header_end:
-tm_string_first_row_position			db	"^[t1;0;5]"
+tm_string_first_row_position			db	"^[t1;"
+					.c:	dw	STATIC_EMPTY
+					.y:	dw	0x0005
+						db	"]"
 tm_string_first_row_position_end:
 tm_string_table_row_next			db	STATIC_SCANCODE_NEW_LINE, STATIC_SEQUENCE_CLEAR_LINE
 tm_string_table_row_next_end:
 
-tm_string_menu					db	"^[t1;0;*]^[cA0]Q^[c07]uit ^[c80]K^[c08]ill ^[c80]F^[c08]ind"
+tm_string_menu					db	"^[t1;"
+					.c:	dw	STATIC_EMPTY
+					.y:	dw	STATIC_MAX_unsigned
+						db	"]^[cA0]Q^[c07]uit ^[c80]K^[c08]ill ^[c80]F^[c08]ind"
 tm_string_menu_end:
 
-tm_string_end_of_work				db	"^[t1;*;*]", STATIC_SEQUENCE_CURSOR_ENABLE
+tm_string_end_of_work				db	"^[t1;"
+					.c:	dw	STATIC_MAX_unsigned
+					.y:	dw	STATIC_MAX_unsigned
+						db	"]", STATIC_SEQUENCE_CURSOR_ENABLE
 tm_string_end_of_work_end:
 
 tm_microtime					dq	STATIC_EMPTY

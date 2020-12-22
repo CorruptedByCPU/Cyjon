@@ -105,7 +105,15 @@ STATIC_SCANCODE_LOW_CASE				equ	0x61
 STATIC_SCANCODE_TILDE					equ	0x7E
 STATIC_SCANCODE_DELETE					equ	0x7F
 STATIC_SCANCODE_ALT_LEFT				equ	0xE038
+STATIC_SCANCODE_HOME					equ	0xE047
+STATIC_SCANCODE_UP					equ	0xE048
+STATIC_SCANCODE_LEFT					equ	0xE04B
+STATIC_SCANCODE_RIGHT					equ	0xE04D
+STATIC_SCANCODE_END					equ	0xE04F
+STATIC_SCANCODE_DOWN					equ	0xE050
 STATIC_SCANCODE_INSERT					equ	0xE052
+STATIC_SCANCODE_SHIFT_LEFT				equ	0xE0AA
+STATIC_SCANCODE_SHIFT_RIGHT				equ	0xE0B6
 
 STATIC_TRUE						equ	0x00
 STATIC_FALSE						equ	0x01
@@ -125,8 +133,7 @@ STATIC_NUMBER_SYSTEM_hexadecimal			equ	0x10
 STATIC_SEQUENCE_length_min				equ	0x05
 
 %define STATIC_SEQUENCE_CLEAR					"^[t0]"	; wyczyść przestrzeń konsoli/terminala
-%define STATIC_SEQUENCE_CURSOR					"^[t1;0;0]"	; ustaw kursor na pozycji 0(x),0(y)
-%define	STATIC_SEQUENCE_CURSOR_END				"^[t1;*;*]"	; ustaw kursor na koniec ostatniego wiersza
+%define STATIC_SEQUENCE_CURSOR					"^[t1;__--]"	; ustaw kursor na pozycji xxxx(16),yyyy(16)
 %define	STATIC_SEQUENCE_CURSOR_ENABLE				"^[t2;0]"	; włącz kursor tekstowy
 %define	STATIC_SEQUENCE_CURSOR_DISABLE				"^[t2;1]"	; wyłącz kursor tekstowy
 %define	STATIC_SEQUENCE_CURSOR_PUSH				"^[t2;2]"	; zapamiętaj pozycję
@@ -137,6 +144,8 @@ STATIC_SEQUENCE_length_min				equ	0x05
 %define	STATIC_SEQUENCE_CURSOR_LEFT				"^[t2;E]"	; przesuń kursor o pozycję w lewo
 %define	STATIC_SEQUENCE_CURSOR_RIGHT				"^[t2;F]"	; przesuń kursor o pozycję w prawo
 %define	STATIC_SEQUENCE_CLEAR_LINE				"^[t3]"		; wyczyść aktualną linię
+%define	STATIC_SEQUENCE_SCROOL_UP				"^[t4;__--]"	; przewiń zawartość terminala o "__" linii w górę, zaczynając od linii "--"
+%define	STATIC_SEQUENCE_SCROOL_DOWN				"^[t5;__--]"	; przewiń zawartość terminala o "__" linii w dół, zaczynając od linii "--"
 %define	STATIC_SEQUENCE_COLOR_DEFAULT				"^[c07]"	; kolor jasno-szary na czarnym tle
 %define	STATIC_SEQUENCE_COLOR_BLACK				"^[c*0]"
 %define	STATIC_SEQUENCE_COLOR_RED				"^[c*1]"

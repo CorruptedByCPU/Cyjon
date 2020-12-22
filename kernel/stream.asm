@@ -286,10 +286,6 @@ kernel_stream_receive:
 	xor	r8,	r8
 
 .load:
-	; przesłano znak nowej linii?
-	cmp	al,	STATIC_SCANCODE_NEW_LINE
-	je	.close	; tak
-
 	; pobierz wartość z strumienia
 	mov	al,	byte [rsi + rdx]
 

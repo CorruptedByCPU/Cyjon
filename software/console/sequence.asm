@@ -97,6 +97,8 @@ console_sequence:
 ;-------------------------------------------------------------------------------
 ;-------------------------------------------------------------------------------
 .color:
+	%strlen	THIS_SEQUENCE_LENGTH STATIC_SEQUENCE_COLOR_DEFAULT
+
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rdi
@@ -128,8 +130,6 @@ console_sequence:
 	call	.color_translate
 	mov	eax,	dword [rdi + rax * STATIC_DWORD_SIZE_byte]
 	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.background_color],	eax
-
-%strlen	THIS_SEQUENCE_LENGTH STATIC_SEQUENCE_COLOR_DEFAULT
 
 .color_ready:
 	; przetworzono sekwencję
@@ -180,34 +180,90 @@ console_sequence:
 	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"3"
 	je	.terminal_line_clear	; tak
 
+	; przesunąć zawartość terminala w górę?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"4"
+	je	.terminal_scroll_up	; tak
+
+	; przesunąć zawartość terminala w dół?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"5"
+	je	.terminal_scroll_down	; tak
+
 	; nie rozpoznano sekwencji lub uszkodzona
 	jmp	console_sequence.error
 
 ;-------------------------------------------------------------------------------
-.terminal_line_clear:
-	; zachowaj oryginalne rejestr
+.terminal_scroll_up:
+	%strlen	THIS_SEQUENCE_LENGTH STATIC_SEQUENCE_SCROOL_UP
+
+	; zachowaj rozmiar ciągu
 	push	rcx
 
-	; numer linii do wyczyszczenia
-	mov	ecx,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y]
-	call	library_terminal_empty_line
+	; pobierz ilość linii do przesunięcia
+	movzx	ebx,	word [rsi + 0x05]
 
-	; przywróć oryginalny rejestr
+	; pobierz numer linii od której rozpocząć przesunięcie
+	movzx	rcx,	word [rsi + 0x05 + STATIC_WORD_SIZE_byte]
+
+	; wykonaj
+	call	library_terminal_scroll_up
+
+	; przywróć rozmiar ciągu
 	pop	rcx
 
 	; przetworzono sekwencję
-	sub	rcx,	0x05
-	add	rsi,	0x05
+	sub	rcx,	THIS_SEQUENCE_LENGTH
+	add	rsi,	THIS_SEQUENCE_LENGTH
+
+	; powrót z podprocedury
+	jmp	console_sequence.end
+
+;-------------------------------------------------------------------------------
+.terminal_scroll_down:
+	%strlen	THIS_SEQUENCE_LENGTH STATIC_SEQUENCE_SCROOL_DOWN
+
+	; zachowaj rozmiar ciągu
+	push	rcx
+
+	; pobierz ilość linii do przesunięcia
+	movzx	ebx,	word [rsi + 0x05]
+
+	; pobierz numer linii od której rozpocząć przesunięcie
+	movzx	rcx,	word [rsi + 0x05 + STATIC_WORD_SIZE_byte]
+
+	; wykonaj
+	call	library_terminal_scroll_down
+
+	; przywróć rozmiar ciągu
+	pop	rcx
+
+	; przetworzono sekwencję
+	sub	rcx,	THIS_SEQUENCE_LENGTH
+	add	rsi,	THIS_SEQUENCE_LENGTH
+
+	; powrót z podprocedury
+	jmp	console_sequence.end
+
+;-------------------------------------------------------------------------------
+.terminal_line_clear:
+	%strlen	THIS_SEQUENCE_LENGTH STATIC_SEQUENCE_CLEAR
+
+	; numer linii do wyczyszczenia
+	mov	ebx,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y]
+	call	library_terminal_empty_line
+
+	; przetworzono sekwencję
+	sub	rcx,	THIS_SEQUENCE_LENGTH
+	add	rsi,	THIS_SEQUENCE_LENGTH
 
 	; powrót z podprocedury
 	jmp	console_sequence.end
 
 ;-------------------------------------------------------------------------------
 .terminal_clear:
+	%strlen	THIS_SEQUENCE_LENGTH STATIC_SEQUENCE_CLEAR
+
 	; wyczyść przestrzeń znakową konsoli
 	call	library_terminal_clear
-
-%strlen	THIS_SEQUENCE_LENGTH STATIC_SEQUENCE_CLEAR
 
 	; przetworzono sekwencję
 	sub	rcx,	THIS_SEQUENCE_LENGTH
@@ -218,75 +274,45 @@ console_sequence:
 
 ;-------------------------------------------------------------------------------
 .terminal_cursor_position:
-	; przesuń wskaźnik na pozycję X kursora
-	sub	rcx,	0x05
-	add	rsi,	0x05
+	%strlen	THIS_SEQUENCE_LENGTH STATIC_SEQUENCE_CURSOR
 
-	; pobierz rozmiar liczby
-	mov	bl,	";"
-	call	library_string_word_next
-	jc	console_sequence.error	; uszkodzona sekwencja
+	; rozmiar sekwencji prawidłowy?
+	cmp	rcx,	THIS_SEQUENCE_LENGTH
+	jb	console_sequence.error	; nie
 
-	; rozmiar wartości większy większy od cyfry?
-	cmp	rbx,	0x01
-	ja	.terminal_cursor_position_column
+	; sekwencja zakończona poprawnie?
+	cmp	byte [rsi + THIS_SEQUENCE_LENGTH - STATIC_BYTE_SIZE_byte],	"]"
+	jne	console_sequence.error	; nie
 
-	; ustawić na ostatną kolumnę aktualnego wiersza?
-	cmp	byte [rsi],	STATIC_SCANCODE_ASTERISK
-	jne	.terminal_cursor_position_column	; nie
+	; pobierz pozycję na osi X
+	movzx	eax,	word [rsi + 0x05]
+	cmp	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.width_char]	; poza obszarem?
+	jb	.terminal_cursor_poistion_x_ok	; nie
 
-	; numer ostatniej kolumny
+	; koryguj pozyję na ostatnią kolumnę terminala
 	mov	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.width_char]
 	dec	eax
 
-	; kontynuuj
-	jmp	.terminal_cursor_position_column_set
-
-.terminal_cursor_position_column:
-	; zamień ciąg cyfr na wartość
-	call	library_string_to_integer
-
-.terminal_cursor_position_column_set:
-	; ustaw kursor tekstowy na danej kolumnie
+.terminal_cursor_poistion_x_ok:
+	; zachowaj pozycję kursora na osi X
 	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.x],	eax
 
-	; przesuń wskaźnik na pozycję Y kursora
-	inc	rbx	; pomiń separator ";"
-	sub	rcx,	rbx
-	add	rsi,	rbx
+	; pobierz pozycję na osi Y
+	movzx	eax,	word [rsi + 0x05 + STATIC_WORD_SIZE_byte]
+	cmp	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.height_char]	; poza obszarem?
+	jb	.terminal_cursor_poistion_y_ok	; nie
 
-	; pobierz rozmiar liczby
-	mov	bl,	"]"
-	call	library_string_word_next
-	jc	console_sequence.error	; uszkodzona sekwencja
-
-	; rozmiar wartości większy większy od cyfry?
-	cmp	rbx,	0x01
-	ja	.terminal_cursor_position_row
-
-	; ustawić na ostatną kolumnę aktualnego wiersza?
-	cmp	byte [rsi],	STATIC_SCANCODE_ASTERISK
-	jne	.terminal_cursor_position_row	; nie
-
-	; numer ostatniej kolumny
+	; koryguj pozyję na ostatni wiersz terminala
 	mov	eax,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.height_char]
 	dec	eax
 
-	; kontynuuj
-	jmp	.terminal_cursor_position_row_set
-
-.terminal_cursor_position_row:
-	; zamień ciąg cyfr na wartość
-	call	library_string_to_integer
-
-.terminal_cursor_position_row_set:
-	; ustaw kursor tekstowy na danej kolumnie
+.terminal_cursor_poistion_y_ok:
+	; zachowaj pozycję kursora na osi X
 	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y],	eax
 
-	; przesuń wskaźnik za sekwencję
-	inc	rbx	; pomiń zamknięcie sekwencji "]"
-	sub	rcx,	rbx
-	add	rsi,	rbx
+	; zamknij obsługę sekwencji
+	sub	rcx,	THIS_SEQUENCE_LENGTH
+	add	rsi,	THIS_SEQUENCE_LENGTH
 
 	; zaktualizuj pozycję kursora tekstowego w konsoli
 	call	library_terminal_cursor_set
@@ -416,7 +442,7 @@ console_sequence:
 	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y],	eax
 
 	; powrót z podprocedury
-	jmp	.terminal_cursor_visibility_end
+	jmp	.terminal_cursor_visibility_moved
 
 ;-------------------------------------------------------------------------------
 .terminal_cursor_visibility_move_down:
@@ -443,7 +469,7 @@ console_sequence:
 	mov	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y],	eax
 
 	; powrót z podprocedury
-	jmp	.terminal_cursor_visibility_end
+	jmp	.terminal_cursor_visibility_moved
 
 ;-------------------------------------------------------------------------------
 .terminal_cursor_visibility_move_left:
@@ -452,6 +478,14 @@ console_sequence:
 	jmp	.terminal_cursor_visibility_end
 ;-------------------------------------------------------------------------------
 .terminal_cursor_visibility_move_right:
+
+	; powrót z podprocedury
+	jmp	.terminal_cursor_visibility_end
+
+;-------------------------------------------------------------------------------
+.terminal_cursor_visibility_moved:
+	; ustaw kursor na pozycji
+	call	library_terminal_cursor_set
 
 	; powrót z podprocedury
 	jmp	.terminal_cursor_visibility_end
