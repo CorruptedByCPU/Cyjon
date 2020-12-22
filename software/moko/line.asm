@@ -11,6 +11,7 @@ moko_line:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rcx
+	push	rdx
 	push	rsi
 
 	; ustaw kursor na początek aktualnego wiersza przestrzeni znakowej
@@ -42,18 +43,6 @@ moko_line:
 	; wyświetl kolejno ciąg znaków o określonej długości
 	int	KERNEL_SERVICE
 
-	; zachowaj pozostały rozmiar linii
-	push	rcx
-
-	; zapamiętaj pozycję kursora
-	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	ecx,	moko_string_cursor_save_end - moko_string_cursor_save
-	mov	rsi,	moko_string_cursor_save
-	int	KERNEL_SERVICE
-
-	; przywróć pozostały rozmiar linii
-	pop	rcx
-
 .empty:
 	; wyczyścić resztę linii?
 	cmp	r8,	rcx
@@ -67,14 +56,17 @@ moko_line:
 	int	KERNEL_SERVICE
 
 .no:
-	; ustaw pozycję kursora na aktualną pozycję
+	; ustaw kursor na pozycję
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	ecx,	moko_string_cursor_restore_end - moko_string_cursor_restore
-	mov	rsi,	moko_string_cursor_restore
+	mov	ecx,	moko_string_document_cursor_end - moko_string_document_cursor
+	mov	rsi,	moko_string_document_cursor
+	mov	word [moko_string_document_cursor.x],	r14w
+	mov	word [moko_string_document_cursor.y],	r15w
 	int	KERNEL_SERVICE
 
 	; przywróć oryginalne rejestry
 	pop	rsi
+	pop	rdx
 	pop	rcx
 	pop	rax
 

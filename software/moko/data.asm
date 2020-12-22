@@ -24,8 +24,8 @@ moko_document_line_count			dq	STATIC_EMPTY
 moko_document_show_from_line			dq	STATIC_EMPTY
 
 moko_string_document_cursor			db	"^[t1;"
-						dw	STATIC_EMPTY
-						dw	STATIC_EMPTY
+					.x:	dw	STATIC_EMPTY
+					.y:	dw	STATIC_EMPTY
 						db	"]"
 moko_string_document_cursor_end:
 

@@ -14,6 +14,50 @@ moko_key:
 	cmp	ax,	STATIC_SCANCODE_RETURN
 	je	.key_enter	; tak
 
+	; naciśnięto klawisz HOME?
+	cmp	ax,	STATIC_SCANCODE_HOME
+	je	.key_home	; tak
+
+	; naciśnięto klawisz END?
+	cmp	ax,	STATIC_SCANCODE_END
+	je	.key_end	; tak
+
+	; ; naciśnięto klawisz strzałki w lewo?
+	; cmp	ax,	STATIC_SCANCODE_ARROW_LEFT
+	; je	.key_arrow_left	; tak
+	;
+	; ; naciśnięto klawisz strzałki w prawo?
+	; cmp	ax,	STATIC_SCANCODE_ARROW_RIGHT
+	; je	.key_arrow_right	; tak
+	;
+	; ; naciśnięto klawisz strzałki w górę?
+	; cmp	ax,	STATIC_SCANCODE_ARROW_UP
+	; je	.key_arrow_up	; tak
+	;
+	; ; naciśnięto klawisz strzałki w dół?
+	; cmp	ax,	STATIC_SCANCODE_ARROW_DOWN
+	; je	.key_arrow_down	; tak
+	;
+	; ; naciśnięto klawisz PageUp?
+	; cmp	ax,	STATIC_SCANCODE_PAGE_UP
+	; je	.key_page_up	; tak
+	;
+	; ; naciśnięto klawisz PageDown?
+	; cmp	ax,	STATIC_SCANCODE_PAGE_DOWN
+	; je	.key_page_down	; tak
+	;
+	; ; naciśnięto klawisz Backspace?
+	; cmp	ax,	STATIC_SCANCODE_BACKSPACE
+	; je	.key_backspace	; tak
+	;
+	; ; naciśnięto klawisz Delete?
+	; cmp	ax,	STATIC_SCANCODE_DELETE
+	; je	.key_delete	; tak
+
+	; naciśnięto klawisz INSERT?
+	cmp	ax,	STATIC_SCANCODE_INSERT
+	je	.insert	; tak
+
 	; naciśnięto klawisz CTRL?
 	cmp	ax,	STATIC_SCANCODE_CTRL_LEFT
  	je	.ctrl	; tak
@@ -21,14 +65,6 @@ moko_key:
  	; puszczono klawisz CTRL?
  	cmp	ax,	STATIC_SCANCODE_CTRL_LEFT + STATIC_SCANCODE_RELEASE_mask
  	je	.ctrl_release	; tak
-
-	; naciśnięto klawisz INSERT?
-	cmp	ax,	STATIC_SCANCODE_INSERT
-	je	.insert	; tak
-
-	; puszczono klawisz INSERT?
-	cmp	ax,	STATIC_SCANCODE_INSERT + STATIC_SCANCODE_RELEASE_mask
-	je	.insert_release	; tak
 
 .no_key:
 	; brak obsługi klawisza
@@ -54,6 +90,50 @@ moko_key:
 	; powrót z procedury
 	ret
 
+;-------------------------------------------------------------------------------
+.key_home:
+	; ustaw wskaźnik pozycji kursora w przestrzeni dokumentu na początek aktualnej linii
+	sub	r10,	r11
+
+	; ustaw przesunięcie wew. linii na początek linii
+	xor	r11,	r11
+
+	; wyświetl linię od początku
+	xor	r12,	r12
+
+	; ustaw kursor na osi X w pierwszej kolumnie
+	xor	r14,	r14
+
+	; obsłużono klawisz
+	jmp	.changed
+
+;-------------------------------------------------------------------------------
+.key_end:
+	; ustaw wskaźnik pozycji kursora w przestrzeni dokumentu na koniec aktualnej linii
+	sub	r10,	r11	; cofnij o przesunięcie wew. linii
+	add	r10,	r13	; przesuń do przodu o rozmiar linii w znakach
+
+	; ustaw przesunięcie wew. linii o rozmiar linii w znakach
+	mov	r11,	r13
+
+	; ustaw kursor w kolumnie odpowiadającej końcu linii
+	mov	r14,	r13
+
+	; wyświetlony koniec linii znajdzie się poza ekranem?
+	cmp	r14,	r8
+	jbe	.changed	; nie
+
+	; rozpocznij wyświetlanie linii od ostatnich r8 znaków
+	mov	r12,	r13	; od rozmiaru linii
+	sub	r12,	r8	; odejmij szerokość ekranu w znakach
+	inc	r12
+
+	; kursor ustaw na ostatniej kolumnie aktualnej linii
+	mov	r14,	r8
+	dec	r14
+
+	; obsłużono klawisz
+	jmp	.changed
 
 ;-------------------------------------------------------------------------------
 .key_enter:
@@ -81,7 +161,7 @@ moko_key:
 	; przesuń wiersze 1..N o linię w górę
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
 	mov	ecx,	moko_string_scroll_up_end - moko_string_scroll_up
-	mov	rsi,	moko_string_scroll_ups
+	mov	rsi,	moko_string_scroll_up
 	mov	word [moko_string_scroll_up.y],	1	; zacznij od wiersza 2-go
 	mov	word [moko_string_scroll_up.c],	r9w	; razem z wszystkimi pozostałymi
 	int	KERNEL_SERVICE
@@ -102,7 +182,7 @@ moko_key:
 	mov	rsi,	moko_string_cursor_to_row_next
 	int	KERNEL_SERVICE
 
-	; wirtualny kursor znajduje się w przedostatniej linii dokumentu na ekranie?
+	; wirtualny kursor znajduje się w ostatniej linii dokumentu na ekranie?
 	cmp	r9,	r15
 	je	.key_enter_continue	; tak
 
@@ -135,6 +215,7 @@ moko_key:
 
 	; obsłużono klawisz Enter
 	jmp	.changed
+
 
 ;-------------------------------------------------------------------------------
 .ctrl:
