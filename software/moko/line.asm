@@ -7,6 +7,129 @@
 ;===============================================================================
 
 ;===============================================================================
+; wyjście:
+;	Flaga CF, jeśli początek dokumentu
+;	rcx - rozmiar poprzedniej linii
+;	rsi - wskaźnik początku poprzedniej linii w dokumencie
+moko_line_previous:
+	; zachowaj oryginalne rejestry
+	push	rsi
+
+	; ustaw wskaźnik przed znakiem nowej linii na podstawie aktualnej linii
+	mov	rsi,	r10
+	sub	rsi,	r11
+
+	; początek dokumentu?
+	cmp	rsi,	qword [moko_document_start_address]
+	ja	.ok	; nie
+
+	; flaga, błąd
+	stc
+
+	; koniec
+	jmp	.end
+
+.ok:
+	; rozpocznij przed znakiem nowej linii
+	dec	rsi
+
+	; określ pozycję i rozmiar poprzedniej linii
+	xor	ecx,	ecx	; rozmiar
+
+.loop:
+	; początek dokumentu?
+	cmp	rsi,	qword [moko_document_start_address]
+	je	.found	; tak
+
+	; koniec poprzedniej linii?
+	cmp	byte [rsi - STATIC_BYTE_SIZE_byte],	STATIC_SCANCODE_NEW_LINE
+	je	.found	; tak
+
+	; ilość znaków +1
+	inc	rcx
+
+	; następny (poprzedni) znak w linii
+	dec	rsi
+
+	; koniec dokumentu?
+	cmp	rsi,	qword [moko_document_start_address]
+	jne	.loop	; nie
+
+.found:
+	; zwróć informacje o pozycji początku poprzedniej linii w dokumencie
+	mov	qword [rsp],	rsi
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wyjście:
+;	Flaga CF - jeśli koniec dokumentu
+;	rcx - rozmiar linii w znakach
+;	rsi - wskaźnik początku następnej linii
+moko_line_next:
+	; zachowaj oryginalne rejestry
+	push	rsi
+
+	; ustaw wskaźnik przed znakiem nowej linii na podstawie aktualnej linii
+	mov	rsi,	r10
+	sub	rsi,	r11
+	add	rsi,	r13
+
+	; koniec dokumentu?
+	cmp	rsi,	qword [moko_document_end_address]
+	jb	.ok	; nie
+
+	; flaga, błąd
+	stc
+
+	; koniec
+	jmp	.end
+
+.ok:
+	; rozpocznij za znakiem nowej linii
+	inc	rsi
+
+	; określ pozycję i rozmiar poprzedniej linii
+	xor	ecx,	ecx	; rozmiar
+
+.loop:
+	; koniec dokumentu?
+	cmp	rsi,	qword [moko_document_end_address]
+	je	.found	; tak
+
+	; koniec następnej linii?
+	cmp	byte [rsi],	STATIC_SCANCODE_NEW_LINE
+	je	.found	; tak
+
+	; ilość znaków +1
+	inc	rcx
+
+	; następny znak w linii
+	inc	rsi
+
+	; kontynuuj
+	jmp	.loop
+
+.found:
+	; ustaw wskaźnik na początek linii
+	sub	rsi,	rcx
+
+	; zwróć informacje o pozycji początku następnej linii w dokumencie
+	mov	qword [rsp],	rsi
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
 moko_line:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -16,8 +139,10 @@ moko_line:
 
 	; ustaw kursor na początek aktualnego wiersza przestrzeni znakowej
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	ecx,	moko_string_cursor_at_begin_of_line_end - moko_string_cursor_at_begin_of_line
-	mov	rsi,	moko_string_cursor_at_begin_of_line
+	mov	ecx,	moko_string_document_cursor_end - moko_string_document_cursor
+	mov	rsi,	moko_string_document_cursor
+	mov	word [moko_string_document_cursor.x],	STATIC_EMPTY
+	mov	word [moko_string_document_cursor.y],	r15w
 	int	KERNEL_SERVICE
 
 	; ustaw wskaźnik na początek/fragment linii do wyświetlenia

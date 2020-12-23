@@ -22,13 +22,13 @@ moko_key:
 	cmp	ax,	STATIC_SCANCODE_END
 	je	.key_end	; tak
 
-	; ; naciśnięto klawisz strzałki w lewo?
-	; cmp	ax,	STATIC_SCANCODE_ARROW_LEFT
-	; je	.key_arrow_left	; tak
-	;
-	; ; naciśnięto klawisz strzałki w prawo?
-	; cmp	ax,	STATIC_SCANCODE_ARROW_RIGHT
-	; je	.key_arrow_right	; tak
+	; naciśnięto klawisz strzałki w lewo?
+	cmp	ax,	STATIC_SCANCODE_LEFT
+	je	.key_arrow_left	; tak
+
+	; naciśnięto klawisz strzałki w prawo?
+	cmp	ax,	STATIC_SCANCODE_RIGHT
+	je	.key_arrow_right	; tak
 	;
 	; ; naciśnięto klawisz strzałki w górę?
 	; cmp	ax,	STATIC_SCANCODE_ARROW_UP
@@ -83,12 +83,200 @@ moko_key:
 	; wyświemtl ponownie zawartość linii
 	call	moko_line
 
+.done:
 	; klawisz funkcyjny, obsłużony
 	clc
 
 .end:
 	; powrót z procedury
 	ret
+
+;-------------------------------------------------------------------------------
+.key_arrow_left:
+	; wskaźnik pozycji kursora wew. dokumentu znajduje się na początku ów dokumentu?
+	cmp	r10,	qword [moko_document_start_address]
+	je	.done	; tak, zignoruj
+
+	; kursor znajduje się w pierwszej kolumnie?
+	test	r14,	r14
+	jnz	.key_arrow_left_other_column	; nie
+
+	; linia wyświetlona od początku?
+	test	r12,	r12
+	jnz	.key_arrow_left_start_of_line	; nie
+
+	; kursor znajduje się w pierwszym wierszu?
+	test	r15,	r15
+	jnz	.key_arrow_left_other_row	; nie
+
+	; przesuń wszystkie wiersze dokumentu w dół
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_scroll_down_end - moko_string_scroll_down
+	mov	rsi,	moko_string_scroll_down
+	mov	word [moko_string_scroll_down.y],	STATIC_EMPTY	; zacznij od wiersza 1-go
+	mov	word [moko_string_scroll_down.c],	r9w	; razem z wszystkimi pozostałymi
+	sub	word [moko_string_scroll_down.c],	MOKO_MENU_HEIGHT_char	; oprócz przestrzeni menu
+	dec	word [moko_string_scroll_down.c]	; bez ostatniej linii dokumntu
+	int	KERNEL_SERVICE
+
+	; wyświetl dokument od poprzedniej linii
+	dec	qword [moko_document_show_from_line]
+
+	; kontynuuj, jakbyś przechodził wiersz wyżej na ekranie
+	jmp	.key_arrow_left_other_row_omit_cursor
+
+.key_arrow_left_other_row:
+	; przesuń kursor o wiersz w górę
+	dec	r15
+
+.key_arrow_left_other_row_omit_cursor:
+	; pobierz informacje o poprzedniej linii
+	call	moko_line_previous
+
+	; aktualizuj właściwości aktualnej linii i kursora
+
+	; wskaźnik pozycji kursora w przestrzeni dokumentu
+	dec	r10
+
+	; przesunięcie wew. linii
+	mov	r11,	rcx
+
+	; wyświetl linię od pierwszego znaku
+	xor	r12,	r12
+
+	; rozmiar linii w znakach
+	mov	r13,	rcx
+
+	; kursor ustaw za ostatnim znakiem w linii
+	mov	r14,	rcx
+
+	; rozmiar linii jest większy od szerokości przestrzeni dokumentu na ekranie?
+	cmp	rcx,	r8
+	jbe	.changed	; nie
+
+	; wyświetl ostatnie N znaków linii
+	mov	r12,	rcx
+	sub	r12,	r8
+
+	; kursor ustaw w ostatniej kolumnie
+	mov	r14,	r8
+
+	; obsłużono klawisz
+	jmp	.changed
+
+.key_arrow_left_other_column:
+	; wskaźnik pozycji kursora w przestrzeni dokumentu o pozycję w lewo
+	dec	r10
+
+	; przesunięcie wew. linii o pozycje w lewo
+	dec	r11
+
+	; cofnij pozycje kursora w lewo
+	dec	r14
+
+	; obsłużono klawisz
+	jmp	.changed
+
+.key_arrow_left_start_of_line:
+	; wskaźnik pozycji kursora w przestrzeni dokumentu o pozycję w lewo
+	dec	r10
+
+	; przesunięcie wew. linii o pozycje w lewo
+	dec	r11
+
+	; wyświetl linię od poprzedniego znaku
+	dec	r12
+
+	; obsłużono klawisz
+	jmp	.changed
+
+;-------------------------------------------------------------------------------
+.key_arrow_right:
+	; wskaźnik pozycji kursora wew. dokumentu znajduje się na końcu ów dokumentu?
+	cmp	r10,	qword [moko_document_end_address]
+	je	.done	; tak, zignoruj
+
+	; przesunięcie wew. linii znaduje się na końcu linii?
+	cmp	r11,	r13
+	je	.key_arrow_right_last_char	; tak
+
+	; wzkaśnik pozycji kursora w przestrzeni dokumentu przesuń na następny znak
+	inc	r10
+
+	; przesunięcie wew. linii o pozycje w prawo
+	inc	r11
+
+	; kursor znajduje się w ostatniej kolumnie?
+	cmp	r14,	r8
+	je	.key_arrow_right_last_column	; tak
+
+	; przesuń kursor do następnej kolumny
+	inc	r14
+
+	; obsłużono klawisz
+	jmp	.changed
+
+.key_arrow_right_last_column:
+	; wyświetl linię od następnego znaku
+	inc	r12
+
+	; obsłużono klawisz
+	jmp	.changed
+
+.key_arrow_right_last_char:
+	; cała aktualna linia jest widoczna?
+	test	r12,	r12
+	jz	.key_arrow_right_line_visible	; tak
+
+	; wyświetl linię od pocżątku
+	xor	r12,	r12
+	call	moko_line
+
+.key_arrow_right_line_visible:
+	; kursor znajduje się w ostatnim wierszu?
+	cmp	r15,	r9
+	jb	.key_arrow_right_not_last_row	; nie
+
+	; przesuń wiersze 1..N o linię w górę
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_scroll_up_end - moko_string_scroll_up
+	mov	rsi,	moko_string_scroll_up
+	mov	word [moko_string_scroll_up.y],	1	; zacznij od wiersza 1-go
+	mov	word [moko_string_scroll_up.c],	r9w	; razem z wszystkimi pozostałymi
+	sub	word [moko_string_scroll_up.c],	MOKO_MENU_HEIGHT_char	; oprócz przestrzeni menu
+	int	KERNEL_SERVICE
+
+	; wyświetl dokument od następnej linii
+	inc	qword [moko_document_show_from_line]
+
+	; pozostaw kursor w aktualnym wierszu
+	jmp	.key_arrow_right_last_row
+
+.key_arrow_right_not_last_row:
+	; przesuń kursor do następnego wiersza
+	inc	r15
+
+.key_arrow_right_last_row:
+	; pobierz właściwości następnej linii dokumentu
+	call	moko_line_next
+
+	; wskaźnik pozycji kursora w przestrzeni dokumentu
+	mov	r10,	rsi
+
+	; przesunięcie wew. linii
+	xor	r11,	r11
+
+	; wyświetl zawartość linii od pierwszego znaku
+	xor	r12,	r12
+
+	; rozmiar nowej linii
+	mov	r13,	rcx
+
+	; kursor ustaw w pierwszej kolumnie
+	xor	r14,	r14
+
+	; obsłużono klawisz
+	jmp	.changed
 
 ;-------------------------------------------------------------------------------
 .key_home:
