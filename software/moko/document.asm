@@ -7,6 +7,41 @@
 ;===============================================================================
 
 ;===============================================================================
+moko_document_remove:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; ilość znaków do przesunięcia
+	mov	rdi,	r10
+	sub	rdi,	qword [moko_document_start_address]
+	mov	rcx,	qword [moko_document_size]
+	sub	rcx,	rdi
+
+	; rozpocznij w
+	mov	rdi,	r10
+	mov	rsi,	rdi
+	inc	rsi
+
+	; wykonaj operacje
+	rep	movsb
+
+	; ilość znaków w dokumencie mniejszyła się
+	dec	qword [moko_document_size]
+
+	; przesuń wskaźnik końca dokumentu
+	dec	qword [moko_document_end_address]
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rcx
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
 ; wejście:
 ;	ax - kod ASCII znaku
 ;	bl - aktualizowanie zmiennych globalnych == STATIC_EMPTY
