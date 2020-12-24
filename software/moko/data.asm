@@ -24,6 +24,7 @@ moko_document_line_count			dq	STATIC_EMPTY
 moko_document_show_from_line			dq	STATIC_EMPTY
 
 moko_string_document_cursor			db	"^[t1;"
+					.joint:
 					.x:	dw	STATIC_EMPTY
 					.y:	dw	STATIC_EMPTY
 						db	"]"
@@ -55,6 +56,9 @@ moko_string_cursor_save				db	STATIC_SEQUENCE_CURSOR_PUSH
 moko_string_cursor_save_end:
 moko_string_cursor_restore			db	STATIC_SEQUENCE_CURSOR_POP
 moko_string_cursor_restore_end:
+
+moko_string_line_clean_next			db	STATIC_SEQUENCE_CURSOR_DOWN, STATIC_SEQUENCE_CLEAR_LINE
+moko_string_line_clean_next_end:
 
 moko_string_menu:
 					.exit	db	"^[c70]^x^[c07] Exit ", STATIC_SEQUENCE_COLOR_DEFAULT

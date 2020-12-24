@@ -38,13 +38,13 @@ moko_key:
 	cmp	ax,	STATIC_SCANCODE_DOWN
 	je	.key_arrow_down	; tak
 
-	; ; naciśnięto klawisz PageUp?
-	; cmp	ax,	STATIC_SCANCODE_PAGE_UP
-	; je	.key_page_up	; tak
+	; naciśnięto klawisz PageUp?
+	cmp	ax,	STATIC_SCANCODE_PAGE_UP
+	je	.key_page_up	; tak
 
-	; ; naciśnięto klawisz PageDown?
-	; cmp	ax,	STATIC_SCANCODE_PAGE_DOWN
-	; je	.key_page_down	; tak
+	; naciśnięto klawisz PageDown?
+	cmp	ax,	STATIC_SCANCODE_PAGE_DOWN
+	je	.key_page_down	; tak
 
 	; naciśnięto klawisz Backspace?
 	cmp	ax,	STATIC_SCANCODE_BACKSPACE
@@ -91,6 +91,145 @@ moko_key:
 .end:
 	; powrót z procedury
 	ret
+
+;-------------------------------------------------------------------------------
+.key_page_up:
+	; wskaźnik wew. dokumentu znajduje się w pierwszej linii?
+	mov	rax,	r10
+	sub	rax,	r11
+	cmp	rax,	qword [moko_document_start_address]
+	je	.done	; tak, zignoruj
+
+	; aktualna linia wyświetlona jest od pierwszego znaku?
+	test	r12,	r12
+	jz	.key_page_up_first_char	; tak
+
+	; wyświetl linię ponownie zaczynając od pierwszego znaku
+	xor	r12,	r12
+	call	moko_line
+
+.key_page_up_first_char:
+	; dokument wyświetlony jest od pierwszej linii?
+	cmp	qword [moko_document_show_from_line],	STATIC_EMPTY
+	ja	.key_page_up_from_other_line	; nie
+
+	; ustaw kursor w pierwszej linii przestrzeni ekranu
+	xor	r15,	r15
+
+	; pobierz informacje o pierwszej linii dokumentu
+	xor	rcx,	rcx
+	call	moko_line_this
+
+	; ustaw nowe właściwości aktualnej linii
+	call	moko_line_update
+
+	; obsłużono klawisz
+	jmp	.refresh
+
+.key_page_up_from_other_line:
+	; dokument wyświetlony od ponad pełnej wysokości przestrzeni dokumentu?
+	cmp	qword [moko_document_show_from_line],	r9
+	ja	.key_page_up_more_than_page	; tak
+
+	; wyświetl zawartość dokumentu od pierwszej linii
+	mov	qword [moko_document_show_from_line],	STATIC_EMPTY
+
+	; pobierz informacje o linii na podstawie pozycji kursora (wiersz)
+	mov	rcx,	r15
+	call	moko_line_this
+
+.key_page_up_from_other_page:
+	; odśwież przestrzeń dokumentu na ekranie
+	call	moko_document_reload
+
+	; ustaw nowe właściwości aktualnej linii
+	call	moko_line_update
+
+	; obzłużono klawisz
+	jmp	.refresh
+
+.key_page_up_more_than_page:
+	; wyświetl dokument od poprzednich N linii
+	mov	rcx,	r9
+	inc	rcx
+	sub	qword [moko_document_show_from_line],	rcx
+
+	; pobierz informacje o linii N wierszy wstecz
+	mov	rcx,	qword [moko_document_show_from_line]
+	add	rcx,	r15
+	call	moko_line_this
+
+	; kontynuuj
+	jmp	.key_page_up_from_other_page
+
+;-------------------------------------------------------------------------------
+.key_page_down:
+	; wskaźnik wew. dokumentu znajduje się w ostatniej linii?
+	mov	rax,	r10
+	sub	rax,	r11
+	add	rax,	r13
+	cmp	rax,	qword [moko_document_end_address]
+	je	.done	; tak, zignoruj
+
+	; aktualna linia wyświetlona jest od pierwszego znaku?
+	test	r12,	r12
+	jz	.key_page_down_first_char	; tak
+
+	; wyświetl linię ponownie zaczynając od pierwszego znaku
+	xor	r12,	r12
+	call	moko_line
+
+.key_page_down_first_char:
+	; wyświetlono zawartość ostatnich linii dokumentu w przestrzeni ekranu?
+	mov	rax,	qword [moko_document_line_count]
+	sub	rax,	qword [moko_document_show_from_line]
+	cmp	rax,	r9
+	ja	.key_page_down_from_other_line	; nie
+
+	; ustaw kursor w ostatniej linii przestrzeni ekranu
+	mov	r15,	rax
+
+	; pobierz informacje o ostatniej linii dokumentu
+	mov	rcx,	qword [moko_document_line_count]
+	call	moko_line_this
+
+	; ustaw nowe właściwości aktualnej linii
+	call	moko_line_update
+
+	; obsłużono klawisz
+	jmp	.refresh
+
+.key_page_down_from_other_line:
+	; wyświetl kolejne N linii dokumentu
+	mov	rcx,	r9
+	inc	rcx
+	add	qword [moko_document_show_from_line],	rcx
+
+	; czy istnieje linia dokumentu na podstawie aktualnej pozycji kursora w wierszu?
+	mov	rcx,	qword [moko_document_show_from_line]
+	add	rcx,	r15
+	cmp	rcx,	qword [moko_document_line_count]
+	jbe	.key_page_down_row_exist	; tak
+
+	; wybierz ostatnią widoczną linię dokumentu
+	mov	rcx,	qword [moko_document_line_count]
+
+	; ustaw kursora w wierszu ostatniej widocznej linii
+	mov	r15,	qword [moko_document_line_count]
+	sub	r15,	qword [moko_document_show_from_line]
+
+.key_page_down_row_exist:
+	; odśwież przestrzeń dokumentu na ekranie
+	call	moko_document_reload
+
+	; pobierz informacje o tej linii
+	call	moko_line_this
+
+	; ustaw nowe właściwości aktualnej linii
+	call	moko_line_update
+
+	; obzłużono klawisz
+	jmp	.refresh
 
 ;-------------------------------------------------------------------------------
 .key_backspace:

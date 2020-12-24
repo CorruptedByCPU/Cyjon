@@ -7,6 +7,65 @@
 ;===============================================================================
 
 ;===============================================================================
+moko_document_reload:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rcx
+	push	rsi
+
+	; rozpocznij dokument od podanych linii
+	xor	ebx,	ebx
+	mov	rcx,	qword [moko_document_show_from_line]
+
+	; rozpocznij
+	jmp	.init
+
+.loop:
+	; wyświetl kolejną linię dokumentu
+	inc	rbx
+	inc	rcx
+
+.init:
+	; wyświetl "pierwszą" linię dokumentu
+	call	moko_line_number
+	jc	.ready	; wyświetlono pozostałe linie dokumentu
+
+	; koniec przestrzeni dokumentu?
+	cmp	rbx,	r9
+	jb	.loop	; nie
+
+.ready:
+	; wyczyść kolejne linie dokumentu
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_line_clean_next_end - moko_string_line_clean_next
+	mov	rsi,	moko_string_line_clean_next
+
+.clean:
+	; wyczyszczono pozostałe linie dokumentu?
+	cmp	rbx,	r9
+	ja	.end	; tak
+
+	; wyczyść
+	int	KERNEL_SERVICE
+
+	; następna linia dokumentu
+	inc	rbx
+
+	; kontynuuj
+	jmp	.clean
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rcx
+	pop	rbx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
 moko_document_remove:
 	; zachowaj oryginalne rejestry
 	push	rcx
