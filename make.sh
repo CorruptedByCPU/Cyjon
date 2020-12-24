@@ -1,6 +1,6 @@
 # select a resolution supported by the BIOS
-WIDTH=800
-HEIGHT=600
+WIDTH=1280
+HEIGHT=720
 
 nasm -f bin software/tm.asm		-o build/tm
 nasm -f bin software/hello.asm		-o build/hello
