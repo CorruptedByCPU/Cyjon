@@ -7,6 +7,122 @@
 ;===============================================================================
 
 ;===============================================================================
+; wejście:
+;	rcx - rozmiar dokumentu w Bajtach
+;	rdi - wskaźnik początku dokumentu
+moko_document_analyze:
+	; resetuj zmienne lokalne i globalne do domyślnych wartości
+	mov	qword [moko_document_show_from_line],	STATIC_EMPTY
+	mov	qword [moko_document_line_begin_last],	STATIC_EMPTY
+	mov	qword [moko_document_line_index_last],	STATIC_EMPTY
+	mov	qword [moko_document_line_count],	STATIC_EMPTY
+	mov	r10,	qword [moko_document_start_address]
+	xor	r11,	r11
+	xor	r12,	r12
+	xor	r14,	r14
+	xor	r15,	r15
+
+	; usuń z dokumentu znaki "karetki", domyślnie Moko ich nie obsługuje
+	mov	rsi,	rdi
+	call	moko_document_enter_remove
+
+	; ustaw rozmiar dokumentu w Bajtach
+	mov	qword [moko_document_size],		rcx
+
+	; zachowaj wskaźnik końca dokumentu
+	add	rdi,	rcx
+	mov	qword [moko_document_end_address],	rdi
+
+	; pobierz informacje o pierwszej linii dokumentu
+	xor	ecx,	ecx
+	call	moko_line_this
+	jc	.end	; pusty dokument
+
+	; rozmiar aktualnej linii w znakach
+	mov	r13,	rcx
+
+	; przesuń wskaźnik za pierwszą linię dokumentu
+	add	rsi,	r13
+	mov	rcx,	qword [moko_document_size]
+	sub	rcx,	r13
+
+.loop:
+	; koniec dokumentu?
+	cmp	rsi,	rdi
+	je	.end	; tak
+
+	; zlicz ilość linii w dokumencie
+	cmp	byte [rsi],	STATIC_SCANCODE_NEW_LINE
+	jne	.next	; następny
+
+	; znaleziono koniec linii
+	inc	qword [moko_document_line_count]
+
+.next:
+	; następny znak z dokumentu
+	inc	rsi
+
+	; znaleziono wszystkie?
+	dec	rcx
+	jnz	.loop	; nie
+
+.end:
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rcx - rozmiar dokumentu w Bajtach
+;	rsi - wskaźnik początku dokumentu
+moko_document_enter_remove:
+	; zachowaj oryginalne rejestry
+	push	rsi
+	push	rdi
+	push	rcx
+
+.loop:
+	; znak "karetki"?
+	cmp	byte [rsi],	STATIC_SCANCODE_RETURN
+	jne	.next	; nie
+
+	; zachowaj wskaźnik i rozmiar pozostałego dokumentu do przetworzenia
+	push	rcx
+	push	rsi
+
+	; usuń znak "karetki" z dokumentu
+	mov	rdi,	rsi
+	inc	rsi
+	rep	movsb
+
+	; przywróć wskaźnik i rozmiar pozostałego dokumentu do przetworzenia
+	pop	rsi
+	pop	rcx
+
+	; rozmiar dokumentu zmniejszył się
+	dec	qword [rsp]
+
+	; kontynuuj
+	jmp	.return
+
+.next:
+	; przesuń wskaźnik na następny znak
+	inc	rsi
+
+.return:
+	; dokument przetworzony?
+	dec	rcx
+	jnz	.loop	; nie
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rcx
+	pop	rdi
+	pop	rsi
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
 moko_document_reload:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -210,6 +326,9 @@ moko_document_insert:
 	ret
 
 ;===============================================================================
+; wejście:
+;	rcx - rozmiar listy argumentów w Bajtach
+;	rsi - wskaźnik do ciągu argumentów
 moko_document_area:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -233,12 +352,44 @@ moko_document_area:
 	; zmniejsz przestrzeń dokumentu o menu oraz zmień wartość na liczoną od zera
 	sub	r9,	MOKO_MENU_HEIGHT_char + STATIC_BYTE_SIZE_byte
 
+	; przesłano argumenty?
+	test	rcx,	rcx
+	jz	.no_args	; nie
+
+	; usuń z początku i końca listy wszystkie białe znaki
+	call	library_string_trim
+	jc	.no_args	; ciąg znaków jest pusty (białe znaki)
+
+	; załaduj podany plik
+	mov	ax,	KERNEL_SERVICE_VFS_read
+	int	KERNEL_SERVICE
+	jc	.no_args	; pliku nie znaleziono lub nie udało się wczytać
+
+	; analizuj zawartość dokumentu
+	mov	qword [moko_document_start_address],	rdi
+	call	moko_document_analyze
+
+	; wyświetl zawartość dokumentu
+	call	moko_document_reload
+
+	; ustaw kursor na początek dokumentu
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_document_cursor_end - moko_string_document_cursor
+	mov	rsi,	moko_string_document_cursor
+	mov	dword [moko_string_document_cursor.joint],	STATIC_EMPTY
+	int	KERNEL_SERVICE
+
+	; kontynuuj
+	jmp	.end
+
+.no_args:
 	; przygotuj miejsce pod pusty dokument (domyślnie 4 KiB ~ około 4000 znaków)
 	mov	ax,	KERNEL_SERVICE_PROCESS_memory_alloc
 	mov	rcx,	MOKO_DOCUMENT_AREA_SIZE_default
 	int	KERNEL_SERVICE
 	jc	moko.end	; brak wystarczającej ilości pamięci
 
+.set_up:
 	; aktualizuj właściwości dokumentu
 	mov	qword [moko_document_start_address],	rdi
 	mov	qword [moko_document_end_address],	rdi
@@ -246,6 +397,7 @@ moko_document_area:
 	; aktualizuj pozycje kursora wew. dokumentu
 	mov	r10,	rdi
 
+.end:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rcx
