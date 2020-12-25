@@ -106,3 +106,5 @@ moko:
 	%include	"software/moko/line.asm"
 	%include	"software/moko/shortcut.asm"
 	;-----------------------------------------------------------------------
+	%include	"library/string_trim.asm"
+	;-----------------------------------------------------------------------

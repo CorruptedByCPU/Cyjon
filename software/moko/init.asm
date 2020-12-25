@@ -12,8 +12,19 @@
 	mov	rsi,	moko_string_console_header
 	int	KERNEL_SERVICE
 
-	; przygotuj właściwości przestrzeni pod dokument
-	call	moko_document_area
-
 	; wyświetl interfejs użyszkodnika
 	call	moko_interface
+
+	; pobierz rozmiar listy argumentów przesłanych do procesu
+	pop	rcx
+
+	; przesłano argumenty do procesu?
+	test	rcx,	rcx
+	jz	.no_arguments	; nie
+
+	; ustaw wskaźnik na listę argumentów
+	mov	rsi,	rsp
+
+.no_arguments:
+	; przygotuj właściwości przestrzeni pod dokument
+	call	moko_document_area

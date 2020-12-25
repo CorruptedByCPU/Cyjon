@@ -798,6 +798,7 @@ kernel_service:
 ;	rcx - rozmiar ścieżki w Bajtach
 ;	rsi - wskaźnik do ciągu reprezentującego ścieżkę
 ; wyjście:
+;	Flaga CF - jeśli nie udało się wczytać pliku lub nie znaleziono
 ;	rcx - rozmiar pliku w Bajtach
 ;	rdi - wskaźnik do przestrzeni z danymi pliku
 .vfs_read:
@@ -809,11 +810,11 @@ kernel_service:
 
 	; rozwiąż ścieżkę do pliku
 	call	kernel_vfs_path_resolve
-	jc	.vfs_read_error	; nie udało sie rozwiązać ścieżki do ostatniego pliku
+	jc	.vfs_read_end	; nie udało sie rozwiązać ścieżki do ostatniego pliku
 
 	; odszukaj plik w katalogu docelowym
 	call	kernel_vfs_file_find
-	jc	.vfs_read_error	; nie znaleziono podanego pliku
+	jc	.vfs_read_end	; nie znaleziono podanego pliku
 
 	; ustaw wskaźnik źródłowy na supeł pliku
 	mov	rsi,	rdi
@@ -849,11 +850,11 @@ kernel_service:
 	; przygotuj przestrzeń dla ładowanego pliku w przestrzeni procesu
 	call	library_page_from_size
 	call	kernel_memory_alloc_task
-	jc	.vfs_read_error	; brak miejsca w pamięci
+	jc	.vfs_read_end	; brak miejsca w pamięci
 
 	; załaduj zawartość pliku do przestrzeni pamięci procesu
 	call	kernel_vfs_file_read
-	jc	.vfs_read_error	; załadowano poprawnie
+	jc	.vfs_read_end	; załadowano poprawnie
 
 	; zwróć informacje o rozmiarze i wskaźniku do danych pliku
 	mov	qword [rsp],	rcx
@@ -861,10 +862,6 @@ kernel_service:
 
 	; koniec obsługi procedury
 	jmp	.vfs_read_end
-
-.vfs_read_error:
-	; flaga, błąd
-	stc
 
 .vfs_read_end:
 	; przywróć oryginalne rejestry
