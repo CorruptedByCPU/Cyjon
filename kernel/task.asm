@@ -390,10 +390,6 @@ kernel_task_queue:
 	push	rsi
 	push	rdi
 
-	; istnieją wolne rekordy w kolejce zadań?
-	cmp	qword [kernel_task_free],	STATIC_EMPTY
-	je	.error	; nie
-
 	; przeszukaj od początku kolejkę za wolnym rekordem
 	mov	rdi,	qword [kernel_task_address]
 
@@ -439,8 +435,8 @@ kernel_task_queue:
 	; rozmiar kolejki zadań rozszerzono o 1 stronę
 	inc	qword [kernel_task_size_page]
 
-	; w nowym bloku automatycznie znajduje się wolny wpis
-	jmp	.found
+	; zablokuj nowy wpis
+	jmp	.next
 
 .error:
 	; brak wolnego miejsca w kolejce
