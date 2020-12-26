@@ -16,6 +16,8 @@ set PASS=0
 ..\nasm -f bin software/ls.asm		-o build/ls		&& echo. || set PASS=1
 ..\nasm -f bin software/cat.asm		-o build/cat		&& echo. || set PASS=1
 ..\nasm -f bin software/moko.asm	-o build/moko		&& echo. || set PASS=1
+..\nasm -f bin software/redia.asm	-o build/redia		&& echo. || set PASS=1
+..\nasm -f bin software/soler.asm	-o build/soler		&& echo. || set PASS=1
 
 ..\nasm -f bin kernel/init/boot.asm	-o build/boot		&& echo. || set PASS=1
 ..\nasm -f bin kernel.asm		-o build/kernel		&& echo. || set PASS=1
