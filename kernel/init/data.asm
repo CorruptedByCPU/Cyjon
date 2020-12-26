@@ -116,6 +116,12 @@ kernel_init_vfs_files:
 						db	10
 						db	"/bin/soler"
 
+						dq	kernel_init_vfs_file_taris
+						dq	kernel_init_vfs_file_taris_end - kernel_init_vfs_file_taris
+						dw	KERNEL_VFS_FILE_MODE_USER_full_control | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
+						db	10
+						db	"/bin/taris"
+
 						dq	kernel_init_vfs_file_hostname
 						dq	kernel_init_vfs_file_hostname_end - kernel_init_vfs_file_hostname
 						dw	KERNEL_VFS_FILE_MODE_USER_read | KERNEL_VFS_FILE_MODE_USER_read | KERNEL_VFS_FILE_MODE_USER_read | KERNEL_VFS_FILE_MODE_OTHER_read
@@ -150,6 +156,8 @@ kernel_init_vfs_file_redia			incbin	"build/redia"
 kernel_init_vfs_file_redia_end:
 kernel_init_vfs_file_soler			incbin	"build/soler"
 kernel_init_vfs_file_soler_end:
+kernel_init_vfs_file_taris			incbin	"build/taris"
+kernel_init_vfs_file_taris_end:
 
 kernel_init_vfs_file_hostname			incbin	"fs/etc/hostname"
 kernel_init_vfs_file_hostname_end:
