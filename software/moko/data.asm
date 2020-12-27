@@ -14,6 +14,10 @@ align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 moko_ipc_data:
 	times KERNEL_IPC_STRUCTURE.SIZE		db	STATIC_EMPTY
 
+
+moko_cache_address				dq	STATIC_EMPTY
+moko_cache_size_byte				dq	STATIC_EMPTY
+
 moko_document_start_address			dq	STATIC_EMPTY
 moko_document_end_address			dq	STATIC_EMPTY
 moko_document_area_size				dq	MOKO_DOCUMENT_AREA_SIZE_default
@@ -57,13 +61,16 @@ moko_string_cursor_save_end:
 moko_string_cursor_restore			db	STATIC_SEQUENCE_CURSOR_POP
 moko_string_cursor_restore_end:
 
-moko_string_line_clean_next			db	STATIC_SEQUENCE_CURSOR_DOWN, STATIC_SEQUENCE_CLEAR_LINE
+moko_string_line_clean_next			db	STATIC_SEQUENCE_CURSOR_DOWN
+moko_string_line_clean				db	STATIC_SEQUENCE_CLEAR_LINE
+moko_string_line_clean_end:
 moko_string_line_clean_next_end:
 
-moko_string_menu:
-					.exit	db	"^[c70]^x^[c07] Exit ", STATIC_SEQUENCE_COLOR_DEFAULT
-					.exit_end:
+moko_string_menu				db	"^[c70]^x^[c07] Exit ^[c70]^r^[c07] Read ", STATIC_SEQUENCE_COLOR_DEFAULT
 moko_string_menu_end:
+
+moko_string_menu_read				db	"File: "
+moko_string_menu_read_end:
 
 moko_string_scroll_up				db	"^[t4;"
 					.c:	dw	STATIC_EMPTY
