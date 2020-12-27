@@ -1034,6 +1034,9 @@ kernel_service:
 	macro_debug	"kernel_service.vfs_touch"
 
 ;-------------------------------------------------------------------------------
+; wejście:
+;	rcx - ilość znaków w ciągu
+;	rsi - wskaźnik do ciągu reprezentujący nazwę/ścieżkę pliku
 .vfs_exist:
 	; kod błędu, brak
 	xor	eax,	eax

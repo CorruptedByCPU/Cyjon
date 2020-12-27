@@ -7,31 +7,19 @@
 ;===============================================================================
 
 ;===============================================================================
-; wejście:
-;	ax - kod klawisza
-moko_shortcut:
-	; przytrzymano klawisz CTRL?
-	cmp	byte [moko_key_ctrl_semaphore],	STATIC_FALSE
-	je	.no_key	; nie
+; wyjście:
+;	Flaga CF - jeśli błąd
+;	rcx - ilość znaków w nazwie pliku
+;	rsi - wskaźnik do ciągu przechowującego nazwę/ścieżkę pliku
+moko_shortcut_file:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rdx
+	push	rdi
+	push	rsi
+	push	rcx
 
-	; naciśnięto klawisz "x"?
-	cmp	ax,	"x"
-	je	moko.end	; tak
-
-	; naciśnięto klawisz "r"?
-	cmp	ax,	"r"
-	je	.read_file	; tak
-
-.no_key:
-	; nie rozpoznano skrótu klawiszowego
-	stc
-
-.end:
-	; powrót z procedury
-	ret
-
-;-------------------------------------------------------------------------------
-.read_file:
 	; zwolnij klawisz CTRL
 	mov	byte [moko_key_ctrl_semaphore],	STATIC_FALSE
 
@@ -62,37 +50,8 @@ moko_shortcut:
 	mov	rdi,	moko_ipc_data
 	call	library_input
 
-	; zachowaj stan flagi CF
+	; zachowaj oryginalne rejestry oraz stan flagi CF
 	pushf
-
-	; wyczyść zapytanie
-	call	.read_file_clean
-
-	; przywróć stan flagi CF
-	popf
-
-	; nie pobrano nazwy pliku/ścieżki?
-	jc	.read_file_error	; tak
-
-	; usuń z ciągu "białe znaki"
-	call	library_string_trim
-	jc	.read_file_error	; ciąg jest pusty
-
-	; przetwórz dokument/plik
-	call	moko_document_format
-	jnc	moko_shortcut.end
-
-.read_file_error:
-	; przywróć pozycję kursora
-	mov	ecx,	moko_string_cursor_restore_end - moko_string_cursor_restore
-	mov	rsi,	moko_string_cursor_restore
-	int	KERNEL_SERVICE
-
-	; koniec obsługi skrótu klawiszowego
-	jmp	moko_shortcut.end
-
-.read_file_clean:
-	; zachowaj oryginalne rejestry
 	push	rcx
 	push	rsi
 
@@ -101,9 +60,103 @@ moko_shortcut:
 	mov	rsi,	moko_string_line_clean
 	int	KERNEL_SERVICE
 
-	; przywróć oryginalne rejestry
+	; przywróć oryginalne rejestry oraz stan flagi CF
 	pop	rsi
 	pop	rcx
+	popf
 
-	; powrót z podprocedury
+	; nie pobrano nazwy pliku/ścieżki?
+	jc	.end	; tak
+
+	; usuń z ciągu "białe znaki"
+	call	library_string_trim
+	jc	.end	; pusty ciąg
+
+	; zwróć informacje o ciągu
+	mov	qword [rsp],	rcx
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rsi
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rcx
+	pop	rsi
+	pop	rdi
+	pop	rdx
+	pop	rbx
+	pop	rax
+
+	; powrót z procedury
 	ret
+
+;===============================================================================
+; wejście:
+;	ax - kod klawisza
+moko_shortcut:
+	; przytrzymano klawisz CTRL?
+	cmp	byte [moko_key_ctrl_semaphore],	STATIC_FALSE
+	je	.no_key	; nie
+
+	; naciśnięto klawisz "x"?
+	cmp	ax,	"x"
+	je	moko.end	; tak
+
+	; naciśnięto klawisz "r"?
+	cmp	ax,	"r"
+	je	.read_file	; tak
+
+	; naciśnięto klawisz "o"?
+	cmp	ax,	"o"
+	je	.save_file	; tak
+
+	; nie rozpoznano skrótu klawiszowego
+	jmp	.no_key
+
+.restore_cursor:
+	; przywróć pozycję kursora
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_cursor_restore_end - moko_string_cursor_restore
+	mov	rsi,	moko_string_cursor_restore
+	int	KERNEL_SERVICE
+
+.no_key:
+	; nie rozpoznano skrótu klawiszowego
+	stc
+
+.end:
+	; powrót z procedury
+	ret
+
+;-------------------------------------------------------------------------------
+.save_file:
+	; pobierrz nazwę pliku od użyszkodnika
+	call	moko_shortcut_file
+	jc	moko_shortcut.restore_cursor	; nie podano nazwy pliku
+
+	; debug
+	jmp	moko_shortcut.end
+
+	; zapisz zawartość dokumentu do pliku o podanej nazwie
+	mov	ax,	KERNEL_SERVICE_VFS_write
+	mov	rdx,	qword [moko_document_size]
+	mov	rdi,	qword [moko_document_start_address]
+	int	KERNEL_SERVICE
+
+	; todo
+
+	; koniec obsługi skrótu klawiszowego
+	jmp	moko_shortcut.end
+
+;-------------------------------------------------------------------------------
+.read_file:
+	; pobierz nazwę pliku od użyszkodnika
+	call	moko_shortcut_file
+	jc	moko_shortcut.restore_cursor	; nie podano nazwy pliku
+
+	; przetwórz dokument/plik
+	call	moko_document_format
+	jnc	moko_shortcut.end
+
+	; todo
+
+	; koniec obsługi skrótu klawiszowego
+	jmp	moko_shortcut.end
