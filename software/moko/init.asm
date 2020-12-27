@@ -28,3 +28,13 @@
 .no_arguments:
 	; przygotuj właściwości przestrzeni pod dokument
 	call	moko_document_area
+
+	; rozmiar bufora: szerokość_terminala - ilość znaków w moko_string_menu_read - 0x01
+	mov	rax,	r8
+	sub	rax,	moko_string_menu_read_end - moko_string_menu_read
+	dec	rax
+
+	; zachowaj informacje o buforze
+	sub	rsp,	rax
+	mov	qword [moko_cache_size_byte],	rax
+	mov	qword [moko_cache_address],	rsp

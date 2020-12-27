@@ -356,31 +356,9 @@ moko_document_area:
 	test	rcx,	rcx
 	jz	.no_args	; nie
 
-	; usuń z początku i końca listy wszystkie białe znaki
-	call	library_string_trim
-	jc	.no_args	; ciąg znaków jest pusty (białe znaki)
-
-	; załaduj podany plik
-	mov	ax,	KERNEL_SERVICE_VFS_read
-	int	KERNEL_SERVICE
-	jc	.no_args	; pliku nie znaleziono lub nie udało się wczytać
-
-	; analizuj zawartość dokumentu
-	mov	qword [moko_document_start_address],	rdi
-	call	moko_document_analyze
-
-	; wyświetl zawartość dokumentu
-	call	moko_document_reload
-
-	; ustaw kursor na początek dokumentu
-	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	ecx,	moko_string_document_cursor_end - moko_string_document_cursor
-	mov	rsi,	moko_string_document_cursor
-	mov	dword [moko_string_document_cursor.joint],	STATIC_EMPTY
-	int	KERNEL_SERVICE
-
-	; kontynuuj
-	jmp	.end
+	; wczytaj i przetwórz zawartość pliku
+	call	moko_document_format
+	jnc	.end	; wykonano poprawnie
 
 .no_args:
 	; przygotuj miejsce pod pusty dokument (domyślnie 4 KiB ~ około 4000 znaków)
@@ -402,6 +380,65 @@ moko_document_area:
 	pop	rdi
 	pop	rcx
 	pop	rbx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	Flaga CF - jeśli nie przetworzono nowego dokumentu
+;	rcx - ilość znaków w ciągu
+;	rsi - wskaźnik do ciągu
+moko_document_format:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; usuń z początku i końca listy wszystkie białe znaki
+	call	library_string_trim
+	jc	.end	; ciąg znaków jest pusty (białe znaki)
+
+	; załaduj podany plik
+	mov	ax,	KERNEL_SERVICE_VFS_read
+	int	KERNEL_SERVICE
+	jc	.end	; pliku nie znaleziono lub nie udało się wczytać
+
+	; zamień zawartość zmiennych globalnych
+	xchg	qword [moko_document_size],	rcx
+	xchg	qword [moko_document_start_address],	rdi
+
+	; zwolnić przestrzeń starego dokumentu?
+	test	rdi,	rdi
+	jz	.no	; nie
+
+	; zwolnij przestrzeń starego dokumentu
+	mov	ax,	KERNEL_SERVICE_PROCESS_memory_release
+	int	KERNEL_SERVICE
+
+.no:
+	; analizuj zawartość dokumentu
+	mov	rcx,	qword [moko_document_size]
+	mov	rdi,	qword [moko_document_start_address]
+	call	moko_document_analyze
+
+	; wyświetl zawartość dokumentu
+	call	moko_document_reload
+
+	; ustaw kursor na początek dokumentu
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_document_cursor_end - moko_string_document_cursor
+	mov	rsi,	moko_string_document_cursor
+	mov	dword [moko_string_document_cursor.joint],	STATIC_EMPTY
+	int	KERNEL_SERVICE
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rsi
+	pop	rcx
 	pop	rax
 
 	; powrót z procedury

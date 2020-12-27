@@ -105,6 +105,8 @@ moko:
 	%include	"software/moko/key.asm"
 	%include	"software/moko/line.asm"
 	%include	"software/moko/shortcut.asm"
+	%include	"software/moko/ipc.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/string_trim.asm"
+	%include	"library/input.asm"
 	;-----------------------------------------------------------------------
