@@ -612,10 +612,6 @@ kernel_service:
 	shl	rcx,	STATIC_MULTIPLE_BY_PAGE_shift
 	mov	qword [rsp],	rcx
 
-	; zwróć rozmiar wszystkich elementów listy w Bajtach
-	mov	rbx,	rdi
-	sub	rbx,	rsi
-
 .process_list_end:
 	; przywróć oryginalne rejestry
 	pop	rcx
