@@ -1107,6 +1107,9 @@ kernel_service:
 ; wejście:
 ;	rcx - ilość znaków w ciągu
 ;	rsi - wskaźnik do ciągu reprezentujący nazwę/ścieżkę pliku
+; wyjście:
+;	Flaga CF - jeśli plik nie istnieje
+;	bl - typ pliku
 .vfs_exist:
 	; kod błędu, brak
 	xor	eax,	eax
@@ -1122,6 +1125,9 @@ kernel_service:
 
 	; odszukaj program w danym katalogu
 	call	kernel_vfs_file_find
+
+	; zwróć informacje o typie pliku
+	mov	bl,	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.type]
 
 .vfs_exist_not:
 	; przywróć oryginalne rejestry

@@ -191,8 +191,11 @@ moko_shortcut:
 	int	KERNEL_SERVICE
 	jnc	moko_shortcut.restore_cursor
 
-	; debug
-	xchg	bx,bx
+	; wyświetl komunikat błędu
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_menu_failed_write_end - moko_string_menu_failed_write
+	mov	rsi,	moko_string_menu_failed_write
+	int	KERNEL_SERVICE
 
 	; koniec obsługi skrótu klawiszowego
 	jmp	moko_shortcut.restore_cursor
@@ -209,10 +212,13 @@ moko_shortcut:
 	call	moko_document_format
 	jnc	moko_shortcut.end
 
-	; debug
-	xchg	bx,bx
+	; wyświetl informacje o braku pliku do odczytu
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_menu_not_found_end - moko_string_menu_not_found
+	mov	rsi,	moko_string_menu_not_found
+	int	KERNEL_SERVICE
 
 	; koniec obsługi skrótu klawiszowego
-	jmp	moko_shortcut.end
+	jmp	moko_shortcut.restore_cursor
 
 	macro_debug	"moko_shortcut.read_file"
