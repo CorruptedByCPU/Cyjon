@@ -288,8 +288,10 @@ moko_key:
 	inc	word [moko_string_scroll_up.y]	; zacznij od następnego wiersza
 	mov	word [moko_string_scroll_up.c],	r9w	; razem z wszystkimi pozostałymi
 	sub	word [moko_string_scroll_up.c],	r15w
-	inc	word [moko_string_scroll_up.c]	; wyczyść ostatnią linię (za pomocą pustej przestrzeni Menu)
 	int	KERNEL_SERVICE
+
+	; wyczyść ostatnią linię dokumentu
+	call	moko_line_clear_last
 
 .key_backspace_last_line:
 	; wyświetl linię dokumentu odpowiadającą ostatniemu wierszowi przestrzeni ekranu (jeśli istnieje) lub wyczyść wiersz
@@ -383,10 +385,12 @@ moko_key:
 	inc	word [moko_string_scroll_up.y]	; zacznij od następnego wiersza
 	mov	word [moko_string_scroll_up.c],	r9w	; razem z wszystkimi pozostałymi
 	sub	word [moko_string_scroll_up.c],	r15w
-	inc	word [moko_string_scroll_up.c]	; wyczyść ostatnią linię (za pomocą pustej przestrzeni Menu)
 	int	KERNEL_SERVICE
 
-	; wyświetl linię dokumentu - odpowiadający ostatniemu wierszowi przestrzeni ekranu (jeśli istnieje) lub wyczyść wiersz
+	; wyczyść ostatnią linię dokumentu
+	call	moko_line_clear_last
+
+	; wyświetl linię dokumentu - odpowiadający ostatniemu wierszowi przestrzeni ekranu (jeśli istnieje)
 	mov	rbx,	r9	; ostatni wiersz przestrzeni ekranu
 	mov	rcx,	r9
 	add	rcx,	qword [moko_document_show_from_line]

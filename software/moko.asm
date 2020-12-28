@@ -53,6 +53,9 @@ moko:
 	int	KERNEL_SERVICE
 	jc	.loop	; brak komunikatu
 
+	; aktualizuj pasek stanu dokumentu
+	call	moko_status
+
 	; komunikat typu: klawiatura?
 	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
 	jne	.loop	; zignoruj
@@ -106,6 +109,7 @@ moko:
 	%include	"software/moko/line.asm"
 	%include	"software/moko/shortcut.asm"
 	%include	"software/moko/ipc.asm"
+	%include	"software/moko/status.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/string_trim.asm"
 	%include	"library/input.asm"

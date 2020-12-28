@@ -7,6 +7,34 @@
 ;===============================================================================
 
 ;===============================================================================
+moko_line_clear_last:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rsi
+
+	; ustaw kursor na ostatnią linię dokumentu
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_document_cursor_end - moko_string_document_cursor
+	mov	rsi,	moko_string_document_cursor
+	mov	word [moko_string_document_cursor.x],	STATIC_EMPTY
+	mov	word [moko_string_document_cursor.y],	r9w
+	int	KERNEL_SERVICE
+
+	; wyczyść
+	mov	ecx,	moko_string_line_clean_end - moko_string_line_clean
+	mov	rsi,	moko_string_line_clean
+	int	KERNEL_SERVICE
+
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rcx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
 ; wejście:
 ;	rcx - numer linii do sprawdzenia
 ; wyjście:

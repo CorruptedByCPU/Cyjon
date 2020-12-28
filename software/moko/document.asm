@@ -208,6 +208,9 @@ moko_document_remove:
 	; przesuń wskaźnik końca dokumentu
 	dec	qword [moko_document_end_address]
 
+	; zmodyfikowano status dokumentu
+	mov	byte [moko_modified_semaphore],	STATIC_TRUE
+
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rsi
@@ -316,6 +319,9 @@ moko_document_insert:
 	mov	qword [moko_document_line_begin_last],	r12
 
 .end:
+	; zmodyfikowano status dokumentu
+	mov	byte [moko_modified_semaphore],	STATIC_TRUE
+
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rsi
@@ -397,10 +403,22 @@ moko_document_format:
 	push	rsi
 	push	rdi
 
-	; usuń z początku i końca listy wszystkie białe znaki
-	call	library_string_trim
-	jc	.end	; ciąg znaków jest pusty (białe znaki)
+	; pobierz typ pliku
+	mov	ax,	KERNEL_SERVICE_VFS_exist
+	int	KERNEL_SERVICE
+	jc	.end	; pliku nie znaleziono
 
+	; zwykły plik tekstowy?
+	cmp	bl,	KERNEL_VFS_FILE_TYPE_regular_file
+	je	.regular_file	; tak
+
+	; brak obsługi
+	stc
+
+	; koniec obsługi
+	jmp	.end
+
+.regular_file:
 	; załaduj podany plik
 	mov	ax,	KERNEL_SERVICE_VFS_read
 	int	KERNEL_SERVICE
@@ -433,6 +451,9 @@ moko_document_format:
 	mov	rsi,	moko_string_document_cursor
 	mov	dword [moko_string_document_cursor.joint],	STATIC_EMPTY
 	int	KERNEL_SERVICE
+
+	; zapamiętaj informację o wyświetleniu komunikatu
+	mov	byte [moko_status_semaphore],	STATIC_TRUE
 
 .end:
 	; przywróć oryginalne rejestry
