@@ -790,8 +790,78 @@ kernel_service:
 	cmp	ax,	KERNEL_SERVICE_VFS_read
 	je	.vfs_read	; tak
 
+	; zapisać ciąg danych do pliku?
+	cmp	ax,	KERNEL_SERVICE_VFS_write
+	je	.vfs_write	; tak
+
 	; brak obsługi podprocedury
 	jmp	kernel_service.error
+
+;-------------------------------------------------------------------------------
+; wejście:
+;	rcx - rozmiar ścieżki w Bajtach
+;	rdx - ilość danych w Bajtach
+;	rsi - wskaźnik do ciągu reprezentującego ścieżkę
+;	rdi - wskaźnik do danych
+.vfs_write:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rsi
+	push	rdx
+	push	rdi
+
+	; zmienna lokalna
+	push	STATIC_FALSE
+
+	xchg	bx,bx
+
+
+	; rozwiąż ścieżkę do pliku
+	call	kernel_vfs_path_resolve
+	jc	.vfs_write_end	; nie udało sie rozwiązać ścieżki do ostatniego pliku
+
+	; odszukaj plik w katalogu docelowym
+	call	kernel_vfs_file_find
+	jnc	.vfs_write_ready	; nie znaleziono podanego pliku
+
+	; utwórz pusty plik o danej nazwie
+	mov	dl,	KERNEL_VFS_FILE_TYPE_regular_file
+	call	kernel_vfs_file_touch
+	jc	.vfs_write_end	; nie udało się utworzyć pliku
+
+	; utworzono pusty plik
+	mov	qword [rsp],	STATIC_TRUE
+
+.vfs_write_ready:
+	; zapisz dane do pliku
+	mov	rcx,	qword [rsp + STATIC_QWORD_SIZE_byte * 0x02]
+	mov	rsi,	qword [rsp + STATIC_QWORD_SIZE_byte]
+	call	kernel_vfs_file_write
+	jnc	.vfs_write_end	; pomyślnie zapisano dane do pliku
+
+	; utworzono pusty plik
+	cmp	byte [rsp],	STATIC_FALSE
+	je	.vfs_write_end	; nie
+
+	; debug
+	xchg	bx,bx
+
+.vfs_write_end:
+	; zwolnij zmienną lokalną
+	add	rsp,	STATIC_QWORD_SIZE_byte
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rdx
+	pop	rsi
+	pop	rcx
+	pop	rax
+
+	; koniec obsługi opcji
+	jmp	kernel_service.end
+
+	macro_debug	"kernel_service.vfs_write"
 
 ;-------------------------------------------------------------------------------
 ; wejście:

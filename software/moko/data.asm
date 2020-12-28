@@ -66,11 +66,17 @@ moko_string_line_clean				db	STATIC_SEQUENCE_CLEAR_LINE
 moko_string_line_clean_end:
 moko_string_line_clean_next_end:
 
-moko_string_menu				db	"^[c70]^x^[c07] Exit ^[c70]^r^[c07] Read ", STATIC_SEQUENCE_COLOR_DEFAULT
+moko_string_menu				db	"^[c70]^x^[c07] Exit ^[c70]^r^[c07] Read ^[c70]^o^[c07] Write", STATIC_SEQUENCE_COLOR_DEFAULT
 moko_string_menu_end:
 
 moko_string_menu_read				db	"File: "
 moko_string_menu_read_end:
+
+moko_string_menu_overwrite			db	STATIC_SCANCODE_RETURN, "File already exist, overwrite?", STATIC_SEQUENCE_CURSOR_DISABLE
+moko_string_menu_overwrite_end:
+
+moko_string_menu_answer				db	STATIC_SEQUENCE_CLEAR_LINE, STATIC_SEQUENCE_CURSOR_POP, STATIC_SEQUENCE_CURSOR_ENABLE
+moko_string_menu_answer_end:
 
 moko_string_scroll_up				db	"^[t4;"
 					.c:	dw	STATIC_EMPTY

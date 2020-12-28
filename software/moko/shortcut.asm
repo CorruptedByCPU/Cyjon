@@ -132,19 +132,72 @@ moko_shortcut:
 	call	moko_shortcut_file
 	jc	moko_shortcut.restore_cursor	; nie podano nazwy pliku
 
-	; debug
-	jmp	moko_shortcut.end
+	; zachowaj właściwości pliku
+	push	rcx
+	push	rsi
+	push	STATIC_FALSE	; zmienna lokalna
+
+	; sprawdź czy plik o podanej nazwie już istnieje
+	mov	ax,	KERNEL_SERVICE_VFS_exist
+	int	KERNEL_SERVICE
+	jc	.write_file_ready	; nie istnieje
+
+	; zapytaj czy nadpisać plik
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_menu_overwrite_end - moko_string_menu_overwrite
+	mov	rsi,	moko_string_menu_overwrite
+	int	KERNEL_SERVICE
+
+.write_file_wait:
+	; pobierz komunikat "znak z bufora klawiatury"
+	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
+	mov	rdi,	moko_ipc_data
+	int	KERNEL_SERVICE
+	jc	.write_file_wait	; brak komunikatu
+
+	; komunikat typu: klawiatura?
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
+	jne	.write_file_wait	; tak
+
+	; klawisz "Enter"?
+	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	STATIC_SCANCODE_RETURN
+	je	.write_file_answer	; tak
+
+	; klawisz "Esc"?
+	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	STATIC_SCANCODE_ESCAPE
+	jne	.write_file_wait	; nie, czekaj dalej
+
+.write_file_answer:
+	; usuń zapytanie o nadpisanie pliku
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	moko_string_menu_answer_end - moko_string_menu_answer
+	mov	rsi,	moko_string_menu_answer
+	int	KERNEL_SERVICE
+
+.write_file_ready:
+	; przywróć właściwości pliku
+	add	rsp,	STATIC_QWORD_SIZE_byte	; zwolnij zmienną lokalną
+	pop	rsi
+	pop	rcx
+
+	; odpowiedź negatywna?
+	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	STATIC_SCANCODE_ESCAPE
+	je	moko_shortcut.restore_cursor
 
 	; zapisz zawartość dokumentu do pliku o podanej nazwie
 	mov	ax,	KERNEL_SERVICE_VFS_write
 	mov	rdx,	qword [moko_document_size]
 	mov	rdi,	qword [moko_document_start_address]
 	int	KERNEL_SERVICE
+	jnc	moko_shortcut.restore_cursor
 
-	; todo
+	; debug
+	xchg	bx,bx
 
 	; koniec obsługi skrótu klawiszowego
-	jmp	moko_shortcut.end
+	jmp	moko_shortcut.restore_cursor
+
+	macro_debug	"moko_shortcut.save_file"
 
 ;-------------------------------------------------------------------------------
 .read_file:
@@ -156,7 +209,10 @@ moko_shortcut:
 	call	moko_document_format
 	jnc	moko_shortcut.end
 
-	; todo
+	; debug
+	xchg	bx,bx
 
 	; koniec obsługi skrótu klawiszowego
 	jmp	moko_shortcut.end
+
+	macro_debug	"moko_shortcut.read_file"
