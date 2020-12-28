@@ -77,6 +77,12 @@ shell_exec:
 	jmp	.wait_for_end
 
 .end:
+	; zresetuj stan kursora (widoczność)
+	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
+	mov	ecx,	shell_string_cursor_reset_end - shell_string_cursor_reset
+	mov	rsi,	shell_string_cursor_reset
+	int	KERNEL_SERVICE
+
 	; przywróć tytuł nagłówka
 	call	shell_header
 

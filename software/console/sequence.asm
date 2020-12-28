@@ -324,11 +324,11 @@ console_sequence:
 .terminal_cursor_visibility:
 	; włączyć kursor?
 	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"0"
-	je	.terminal_cursor_visibility_hide	; tak
+	je	.terminal_cursor_visibility_show	; tak
 
 	; wyłączyć kursor?
 	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"1"
-	je	.terminal_cursor_visibility_show	; tak
+	je	.terminal_cursor_visibility_hide	; tak
 
 	; zapamiętać pozycję?
 	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x05],	"2"
