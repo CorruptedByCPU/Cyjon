@@ -76,12 +76,12 @@ tm_string_first_row_position			db	"^[t1;"
 						db	"]"
 tm_string_first_row_position_end:
 
-tm_string_table_row_next			db	STATIC_SCANCODE_RETURN, STATIC_SEQUENCE_CURSOR_DOWN, STATIC_SEQUENCE_CLEAR_LINE
+tm_string_table_row_next			db	STATIC_SCANCODE_NEW_LINE, STATIC_SEQUENCE_CLEAR_LINE
 tm_string_table_row_next_end:
 
 tm_string_number:				db	"^[t6;"
 				.base:		db	STATIC_NUMBER_SYSTEM_decimal
-				.prefix:	db	TM_TABLE_CELL_pid_width
+				.prefix:	db	STATIC_EMPTY
 				.ascii:		db	STATIC_SCANCODE_SPACE
 				.value:		dq	STATIC_EMPTY
 						db	"]"

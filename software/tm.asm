@@ -88,6 +88,14 @@ tm:
 	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	"q"
 	je	.end	; tak, zakończ działanie procesu
 
+	; naciśnięto klawisz "d"?
+	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	"d"
+	jne	.no_event	; tak, zakończ działanie procesu
+
+	; włącz tryb debugowania (Bochs)
+	xchg	bx,bx
+	jmp	.loop
+
 .no_event:
 	; zwolnij pozostały czas procesora
 	mov	ax,	KERNEL_SERVICE_PROCESS_sleep
