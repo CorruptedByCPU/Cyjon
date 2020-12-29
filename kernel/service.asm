@@ -816,9 +816,6 @@ kernel_service:
 	; zmienna lokalna
 	push	STATIC_FALSE
 
-	xchg	bx,bx
-
-
 	; rozwiąż ścieżkę do pliku
 	call	kernel_vfs_path_resolve
 	jc	.vfs_write_end	; nie udało sie rozwiązać ścieżki do ostatniego pliku

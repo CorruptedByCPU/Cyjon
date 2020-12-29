@@ -25,6 +25,9 @@
 	; ustaw wskaźnik na listę argumentów
 	mov	rsi,	rsp
 
+	; usuń białe znaki z początku i końca ciągu
+	call	library_string_trim
+
 .no_arguments:
 	; przygotuj właściwości przestrzeni pod dokument
 	call	moko_document_area
