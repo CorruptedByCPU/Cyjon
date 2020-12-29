@@ -434,9 +434,16 @@ moko_document_format:
 	test	rdi,	rdi
 	jz	.no	; nie
 
+	; jeśli rozmiar dokumentu nie został zainicjowany
+	test	rcx,	rcx
+	jnz	.sized	; został
+
+	; ustaw domyślny
+	mov	ecx,	STATIC_PAGE_SIZE_byte
+
+.sized:
 	; zwolnij przestrzeń starego dokumentu
 	mov	ax,	KERNEL_SERVICE_PROCESS_memory_release
-	mov	ecx,	STATIC_PAGE_SIZE_byte
 	int	KERNEL_SERVICE
 
 .no:
