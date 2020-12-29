@@ -188,8 +188,40 @@ console_sequence:
 	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"5"
 	je	.terminal_scroll_down	; tak
 
+	; wyświetlić wartość?
+	cmp	byte [rsi + STATIC_BYTE_SIZE_byte * 0x03],	"6"
+	je	.terminal_number	; tak
+
 	; nie rozpoznano sekwencji lub uszkodzona
 	jmp	console_sequence.error
+
+;-------------------------------------------------------------------------------
+.terminal_number:
+	%strlen	THIS_SEQUENCE_LENGTH STATIC_SEQUENCE_NUMBER
+
+	; sekwencja poprawnie zakończona?
+	cmp	byte [rsi + THIS_SEQUENCE_LENGTH - STATIC_BYTE_SIZE_byte],	"]"
+	jne	console_sequence.error
+
+	; zachowaj rozmiar ciągu
+	push	rcx
+
+	; wyświetl wartość na terminal
+	mov	rax,	qword [rsi + 0x08]	; wartość
+	mov	bl,	byte [rsi + 0x05]	; podstawa
+	movzx	ecx,	byte [rsi + 0x06]	; rozmiar prefiksu
+	mov	dl,	byte [rsi + 0x07]	; wypełnienie prefiksu
+	call	library_terminal_number
+
+	; przywróć rozmiar ciągu
+	pop	rcx
+
+	; przetworzono sekwencję
+	sub	rcx,	THIS_SEQUENCE_LENGTH
+	add	rsi,	THIS_SEQUENCE_LENGTH
+
+	; powrót z podprocedury
+	jmp	console_sequence.end
 
 ;-------------------------------------------------------------------------------
 .terminal_scroll_up:

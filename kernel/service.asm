@@ -612,10 +612,6 @@ kernel_service:
 	shl	rcx,	STATIC_MULTIPLE_BY_PAGE_shift
 	mov	qword [rsp],	rcx
 
-	; zwróć rozmiar wszystkich elementów listy w Bajtach
-	mov	rbx,	rdi
-	sub	rbx,	rsi
-
 .process_list_end:
 	; przywróć oryginalne rejestry
 	pop	rcx
@@ -636,11 +632,12 @@ kernel_service:
 	push	rax
 	push	rcx
 	push	r11
+	push	rdi
 
 	; adres przestrzeni do zwolnienia
 	mov	rax,	KERNEL_MEMORY_HIGH_mask
-	sub	rdi,	rax	; zamień na rzeczywisty
-	mov	rax,	rdi
+	xchg	rdi,	rax
+	sub	rax,	rdi	; zamień na rzeczywisty
 
 	; tablica stronicowania procesu
 	mov	r11,	cr3
@@ -651,7 +648,12 @@ kernel_service:
 	; zwolnij przestrzeń
 	call	kernel_memory_release_foreign
 
+	; zwolnij przestrzeń w binarnej mapie pamięci procesu
+	mov	rdi,	qword [rsp]
+	call	kernel_memory_release_task_secured
+
 	; przywróć oryginalne rejestry
+	pop	rdi
 	pop	r11
 	pop	rcx
 	pop	rax

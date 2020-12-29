@@ -148,6 +148,7 @@ STATIC_SEQUENCE_length_min				equ	0x05
 %define	STATIC_SEQUENCE_CLEAR_LINE				"^[t3]"		; wyczyść aktualną linię
 %define	STATIC_SEQUENCE_SCROOL_UP				"^[t4;__--]"	; przewiń zawartość terminala o "__" linii w górę, zaczynając od linii "--"
 %define	STATIC_SEQUENCE_SCROOL_DOWN				"^[t5;__--]"	; przewiń zawartość terminala o "__" linii w dół, zaczynając od linii "--"
+%define	STATIC_SEQUENCE_NUMBER					"^[t6;-=~________]"	; wyświetl wartość "________" o podstawie "-" z prefiksem rozmiaru "=" i wartości "~"
 %define	STATIC_SEQUENCE_COLOR_DEFAULT				"^[c07]"	; kolor jasno-szary na czarnym tle
 %define	STATIC_SEQUENCE_COLOR_BLACK				"^[c*0]"
 %define	STATIC_SEQUENCE_COLOR_RED				"^[c*1]"

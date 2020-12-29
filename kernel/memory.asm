@@ -823,7 +823,7 @@ kernel_memory_release_task_secured:
 	mov	rsi,	qword [rdi + KERNEL_TASK_STRUCTURE.map]
 
 	; przelicz adres strony na numer bitu
-	mov	rax,	rdi
+	mov	rax,	qword [rsp + STATIC_QWORD_SIZE_byte]
 	sub	rax,	qword [kernel_memory_real_address]
 	shr	rax,	STATIC_PAGE_SIZE_shift
 

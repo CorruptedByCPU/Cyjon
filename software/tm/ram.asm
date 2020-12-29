@@ -83,15 +83,12 @@ tm_ram:
 	xor	edx,	edx
 	div	rcx	; zamień KiB
 
-	; przekształć wartość na ciąg
-	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
-	xor	ecx,	ecx	; bez prefiksu
-	mov	rdi,	tm_string_value_format
-	call	library_integer_to_string
-
 	; wyświetl wartość
+	mov	qword [tm_string_number.value],	rax
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	rsi,	rdi
+	mov	byte [tm_string_number.prefix],	STATIC_EMPTY
+	mov	ecx,	tm_string_number_end - tm_string_number
+	mov	rsi,	tm_string_number
 	int	KERNEL_SERVICE
 
 	; powrót z podprocedury
