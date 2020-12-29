@@ -424,8 +424,10 @@ moko_document_format:
 	int	KERNEL_SERVICE
 	jc	.end	; pliku nie znaleziono lub nie udało się wczytać
 
-	; zamień zawartość zmiennych globalnych
-	xchg	qword [moko_document_size],	rcx
+	; zachowaj rozmiar wczytanego dokumentu
+	mov	qword [moko_document_size],	rcx
+
+	; podmień wskaźnik dokumentu
 	xchg	qword [moko_document_start_address],	rdi
 
 	; zwolnić przestrzeń starego dokumentu?
@@ -434,6 +436,7 @@ moko_document_format:
 
 	; zwolnij przestrzeń starego dokumentu
 	mov	ax,	KERNEL_SERVICE_PROCESS_memory_release
+	mov	ecx,	STATIC_PAGE_SIZE_byte
 	int	KERNEL_SERVICE
 
 .no:
