@@ -34,7 +34,7 @@
 
 ;===============================================================================
 console:
-	; ; inicjalizacja przestrzeni konsoli
+	; inicjalizacja przestrzeni konsoli
 	%include	"software/console/init.asm"
 
 .loop:

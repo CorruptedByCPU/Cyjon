@@ -15,6 +15,8 @@ kernel_gui_background_mixer		dd	0x001B1B1B, 0x00212121
 
 kernel_gui_event_console_file		db	"/bin/console"
 kernel_gui_event_console_file_end:
+kernel_gui_event_soler_file		db	"/bin/soler"
+kernel_gui_event_soler_file_end:
 
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
@@ -108,6 +110,18 @@ kernel_gui_window_menu			dq	160	; pozycja na osi X względem wskaźnika kursora
 					db	.element_label_0_end - .element_label_0_string
 .element_label_0_string:		db	" Console "
 .element_label_0_end:			;---------------------------------------
+					; element "label 1"
+					;---------------------------------------
+.element_label_1:			dd	LIBRARY_BOSU_ELEMENT_TYPE_label
+					dq	.element_label_1_end - .element_label_1 ; rozmiar elementu w Bajtach
+					dq	0	; pozycja na osi X względem przestrzeni danych okna
+					dq	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 0x10	; pozycja na osi Y względem przestrzeni danych okna
+					dq	((.element_label_1_end - .element_label_1_string) * LIBRARY_FONT_WIDTH_pixel)	; szerokość elementu
+					dq	0x10	; wysokość elementu
+					dq	kernel_gui_event_soler
+					db	.element_label_1_end - .element_label_1_string
+.element_label_1_string:		db	" Soler "
+.element_label_1_end:			;---------------------------------------
 					; koniec elementów okna
 					;---------------------------------------
 					dd	LIBRARY_BOSU_ELEMENT_TYPE_none
