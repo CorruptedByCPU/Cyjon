@@ -63,6 +63,7 @@ soler:
 	jne	.loop	; nie
 
 .close:
+soler_button_7:
 	; zakończ pracę programu
 	xor	ax,	ax
 	int	KERNEL_SERVICE

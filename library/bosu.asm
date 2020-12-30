@@ -1041,7 +1041,7 @@ library_bosu_element_button:
 
 	; wylicz pozycję bezwzględną elementu w przestrzeni danych okna
 	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
-	mul	r13	; * scanline
+	mul	r10	; * scanline
 	mov	rdi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
 	shl	rdi,	KERNEL_VIDEO_DEPTH_shift
 	add	rdi,	rax
@@ -1061,6 +1061,27 @@ library_bosu_element_button:
 	mul	r10
 	add	rdi,	rax
 
+	; szerokość tekstu większa od szerokości elementu?
+	movzx	eax,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.length]
+	mul	qword [library_font_width_pixel]
+	cmp	rax,	r11
+	ja	.aligned	; brak wycentrowania
+
+	; wycentruj tekst w poziomie
+
+	; odejmuj połowę szerokości ciągu w pikselach
+	shr	rax,	STATIC_DIVIDE_BY_2_shift
+
+	; od połowy szerokości elementu w pikselach
+	mov	rdx,	r11
+	shr	rdx,	STATIC_DIVIDE_BY_2_shift
+	sub	rdx,	rax
+
+	; koryguj wskaźnik położenia ciągu w przestrzeni elementu na osi X
+	shl	rdx,	KERNEL_VIDEO_DEPTH_shift
+	add	rdi,	rdx
+
+.aligned:
 	; wyświetl ciąg o domyślnym kolorze czcionki
 	mov	ebx,	LIBRARY_BOSU_ELEMENT_BUTTON_FOREGROUND_color
 	movzx	ecx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.length]
@@ -1180,6 +1201,48 @@ library_bosu_element_label:
 	mul	r10
 	add	rdi,	rax
 
+	; wycentrować ciąg?
+	test	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.flags],	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center
+	jz	.no_center	; nie
+
+	; szerokość ciągu większa od szerokości elementu?
+	movzx	eax,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.length]
+	mul	qword [library_font_width_pixel]
+	cmp	rax,	r11
+	ja	.aligned	; brak możliwości wycentrowania
+
+	; odejmuj połowę szerokości ciągu w pikselach
+	shr	rax,	STATIC_DIVIDE_BY_2_shift
+
+	; od połowy szerokości elementu w pikselach
+	mov	rdx,	r11
+	shr	rdx,	STATIC_DIVIDE_BY_2_shift
+	sub	rdx,	rax
+
+	; koryguj wskaźnik położenia ciągu w przestrzeni elementu na osi X
+	shl	rdx,	KERNEL_VIDEO_DEPTH_shift
+	add	rdi,	rdx
+
+.no_center:
+	; wyrównać ciąg do prawej strony elementu?
+	test	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.flags],	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_right
+	jz	.aligned	; nie
+
+	; szerokość ciągu większa od szerokości elementu?
+	movzx	eax,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON.length]
+	mul	qword [library_font_width_pixel]
+	cmp	rax,	r11
+	ja	.aligned	; brak możliwości wycentrowania
+
+	; od połowy szerokości elementu w pikselach
+	mov	rdx,	r11
+	sub	rdx,	rax
+
+	; koryguj wskaźnik położenia ciągu w przestrzeni elementu na osi X
+	shl	rdx,	KERNEL_VIDEO_DEPTH_shift
+	add	rdi,	rdx
+
+.aligned:
 	; wyświetl ciąg o domyślnym kolorze czcionki
 	mov	ebx,	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
 	movzx	ecx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.length]
