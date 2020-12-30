@@ -17,6 +17,7 @@
 ; wejście:
 ;	rsi - wskaźnik do struktury okna
 ; wyjście:
+;	Flaga CF - jeśli nie udało się zainicjować okna
 ;	rcx - identyfikator okna
 library_bosu:
 	; zachowaj oryginalne rejestry
