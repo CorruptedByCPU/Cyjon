@@ -42,22 +42,22 @@ kernel_wm_ipc_data:
 		times	KERNEL_IPC_STRUCTURE.SIZE	db	STATIC_EMPTY
 
 ;-------------------------------------------------------------------------------
-kernel_wm_object_framebuffer:				dq	0
-							dq	0
+kernel_wm_object_framebuffer:				dw	0
+							dw	0
+							dw	STATIC_EMPTY
+							dw	STATIC_EMPTY
 							dq	STATIC_EMPTY
-							dq	STATIC_EMPTY
-							dq	STATIC_EMPTY
-.extra:							dq	STATIC_EMPTY
+.extra:							dd	STATIC_EMPTY
 							dq	STATIC_EMPTY
 
 ;-------------------------------------------------------------------------------
-kernel_wm_object_cursor:				dq	0
-							dq	0
-							dq	12
-							dq	19
+kernel_wm_object_cursor:				dw	0
+							dw	0
+							dw	12
+							dw	19
 							dq	kernel_wm_object_cursor.data
-.extra:							dq	kernel_wm_object_cursor.end - kernel_wm_object_cursor.data
-							dq	KERNEL_WM_OBJECT_FLAG_pointer | KERNEL_WM_OBJECT_FLAG_flush | KERNEL_WM_OBJECT_FLAG_visible
+.extra:							dd	kernel_wm_object_cursor.end - kernel_wm_object_cursor.data
+							dw	KERNEL_WM_OBJECT_FLAG_pointer | KERNEL_WM_OBJECT_FLAG_flush | KERNEL_WM_OBJECT_FLAG_visible
 							dq	STATIC_EMPTY	; obiekt kursora nie posiada identyfikatora
 .data:							incbin	"kernel/service/wm/gfx/cursor.data"
 .end:

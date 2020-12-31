@@ -85,10 +85,10 @@ kernel_wm_fill_insert_by_object:
 	jne	.next	; nie
 
 	; wstaw właściwości wypełnienia
-	movsq	; pozycja na osi X
-	movsq	; pozycja na osi Y
-	movsq	; szerokość
-	movsq	; wysokość
+	movsw	; pozycja na osi X
+	movsw	; pozycja na osi Y
+	movsw	; szerokość
+	movsw	; wysokość
 
 	; oraz informacje o obiekcie zależnym
 	mov	rax,	qword [rsp]

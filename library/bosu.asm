@@ -55,9 +55,9 @@ library_bosu:
 	mov	dword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline_byte],	r10d	; zachowaj
 
 	; oblicz rozmiar przestrzeni danych okna w Bajtach
-	mov	rax,	r10
-	mul	r9
-	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.size],	rax	; zachowaj
+	mov	eax,	r10d
+	mul	r9d
+	mov	dword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.size],	eax	; zachowaj
 
 	; zarejestrować okno w menedżerze okien?
 	test	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_unregistered
@@ -74,7 +74,7 @@ library_bosu:
 .unregistered:
 	; wypełnij przestrzeń okna domyślnym kolorem tła
 	mov	eax,	LIBRARY_BOSU_WINDOW_BACKGROUND_color
-	mov	rcx,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.size]
+	mov	ecx,	dword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.size]
 	shr	rcx,	KERNEL_VIDEO_DEPTH_shift
 	mov	rdi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
 	rep	stosd
@@ -1338,7 +1338,7 @@ library_bosu_element_subroutine:
 	je	.error	; tak
 
 	; pobierz rozmiar elementu
-	mov	ecx,	dword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+	movzx	ecx,	word [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
 
 	; element typu "łańcuch"?
 	cmp	byte [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.set],	LIBRARY_BOSU_ELEMENT_TYPE_chain

@@ -64,10 +64,10 @@ LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color	equ	0x00BBBBBB
 LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color	equ	LIBRARY_BOSU_WINDOW_BACKGROUND_color
 
 struc	LIBRARY_BOSU_STRUCTURE_FIELD
-	.x					resb	8
-	.y					resb	8
-	.width					resb	8
-	.height					resb	8
+	.x					resb	2
+	.y					resb	2
+	.width					resb	2
+	.height					resb	2
 	.SIZE:
 endstruc
 
@@ -78,13 +78,14 @@ struc	LIBRARY_BOSU_STRUCTURE_WINDOW
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA
-	.size					resb	8
+	.size					resb	4
 	.flags					resb	2
 	.id					resb	8
 	.length					resb	1
 	.name					resb	LIBRARY_BOSU_WINDOW_NAME_length
 	;--- dane specyficzne dla Bosu
-	.scanline_byte				resb	8
+	.scanline_byte				resb	4
+	.reserved				resb	4
 	.SIZE:
 endstruc
 
@@ -94,7 +95,7 @@ struc	LIBRARY_BOSU_STRUCTURE_TYPE
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT
-	.size					resb	8
+	.size					resb	2
 	.field					resb	LIBRARY_BOSU_STRUCTURE_FIELD.SIZE
 	.event					resb	8
 	.SIZE:
@@ -120,21 +121,21 @@ endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON_CLOSE
 	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
-	.size					resb	8
+	.size					resb	2
 	.event					resb	8
 	.SIZE:
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON_MINIMIZE
 	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
-	.size					resb	8
+	.size					resb	2
 	.event					resb	8
 	.SIZE:
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON_MAXIMIZE
 	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
-	.size					resb	8
+	.size					resb	2
 	.event					resb	8
 	.SIZE:
 endstruc
@@ -156,7 +157,7 @@ endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN
 	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
-	.size					resb	8	; rozmiar przestrzeni w Bajtach
+	.size					resb	2	; rozmiar przestrzeni w Bajtach
 	.address				resb	8
 	.SIZE:
 endstruc

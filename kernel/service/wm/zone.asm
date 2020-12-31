@@ -39,10 +39,10 @@ kernel_wm_zone_insert_by_object:
 	add	rdi,	rax
 
 	; wstaw właściwości strefy
-	movsq	; pozycja na osi X
-	movsq	; pozycja na osi Y
-	movsq	; szerokość
-	movsq	; wysokość
+	movsw	; pozycja na osi X
+	movsw	; pozycja na osi Y
+	movsw	; szerokość
+	movsw	; wysokość
 
 	; oraz informacje o obiekcie zależnym
 	mov	rax,	qword [rsp]
@@ -98,10 +98,10 @@ kernel_wm_zone_insert_by_register:
 	add	rsi,	rax
 
 	; dodaj do listy nową strefę
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.x],	r8
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.y],	r9
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.width],	r10
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.height],	r11
+	mov	word [rsi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.x],	r8w
+	mov	word [rsi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.y],	r9w
+	mov	word [rsi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.width],	r10w
+	mov	word [rsi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.height],	r11w
 
 	; oraz jej obiekt zależny
 	mov	qword [rsi + KERNEL_WM_STRUCTURE_ZONE.object],	rdi

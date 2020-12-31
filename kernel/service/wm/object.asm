@@ -876,7 +876,7 @@ kernel_wm_object_delete:
 	push	rdi
 
 	; pobierz rozmiar przestrzeni obiektu i zamień na strony
-	mov	rcx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size]
+	mov	ecx,	dword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size]
 	call	library_page_from_size
 
 	; zwolnij przestrzeń obiektu

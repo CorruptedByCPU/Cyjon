@@ -112,7 +112,7 @@ kernel_wm_irq:
 	push	rsi
 
 	; przygotuj przestrzeń pod dane obiektu
-	mov	rcx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size]
+	mov	ecx,	dword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size]
 	call	library_page_from_size
 	call	kernel_memory_alloc
 	jc	.window_create_end	; brak wystarczającej ilości pamięci

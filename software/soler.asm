@@ -59,7 +59,7 @@ soler:
 	jc	.loop	; nie znaleziono elementu zależnego
 
 	; element typu "Button Close"?
-	cmp	dword [rsi],	LIBRARY_BOSU_ELEMENT_TYPE_button_close
+	cmp	byte [rsi],	LIBRARY_BOSU_ELEMENT_TYPE_button_close
 	jne	.loop	; nie
 
 .close:
