@@ -46,7 +46,7 @@ endstruc
 
 struc	KERNEL_WM_STRUCTURE_OBJECT_EXTRA
 	.size						resb	8
-	.flags						resb	8
+	.flags						resb	2
 	.id						resb	8
 	.length						resb	1
 	.name						resb	KERNEL_WM_OBJECT_NAME_length

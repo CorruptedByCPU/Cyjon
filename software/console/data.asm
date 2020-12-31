@@ -67,7 +67,7 @@ console_window					dq	STATIC_EMPTY	; pozycja na osi X
 						dq	CONSOLE_WINDOW_HEIGHT_pixel	; wysokość okna
 						dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna (uzupełnia Bosu)
 .extra:						dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach (uzupełnia Bosu)
-						dq	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_header | LIBRARY_BOSU_WINDOW_FLAG_border | LIBRARY_BOSU_WINDOW_FLAG_BUTTON_close
+						dw	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_header | LIBRARY_BOSU_WINDOW_FLAG_border | LIBRARY_BOSU_WINDOW_FLAG_BUTTON_close
 						dq	STATIC_EMPTY	; identyfikator okna (uzupełnia Bosu)
 						db	7
 						db	"Console                        "	; wypełnij do 31 Bajtów znakami STATIC_SCANCODE_SPACE
@@ -75,13 +75,13 @@ console_window					dq	STATIC_EMPTY	; pozycja na osi X
 .elements:					;-------------------------------
 .element_button_close:				; element "window close"
 						;-------------------------------
-						dd	LIBRARY_BOSU_ELEMENT_TYPE_button_close
+						db	LIBRARY_BOSU_ELEMENT_TYPE_button_close
 						dq	.element_button_close_end - .element_button_close
 						dq	console.close
 .element_button_close_end:			;-------------------------------
 						; element "terminal"
 						;-------------------------------
-.element_terminal:				dd	LIBRARY_BOSU_ELEMENT_TYPE_draw
+.element_terminal:				db	LIBRARY_BOSU_ELEMENT_TYPE_draw
 						dq	.element_terminal_end - .element_terminal
 						dq	0	; pozycja na osi X względem przestrzeni danych okna
 						dq	LIBRARY_BOSU_HEADER_HEIGHT_pixel
@@ -91,7 +91,7 @@ console_window					dq	STATIC_EMPTY	; pozycja na osi X
 .element_terminal_end:				;-------------------------------
 						; koniec elementów okna
 						;-------------------------------
-						dd	STATIC_EMPTY
+						db	STATIC_EMPTY
 console_window_end:
 
 ;===============================================================================

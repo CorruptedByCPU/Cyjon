@@ -79,7 +79,7 @@ endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA
 	.size					resb	8
-	.flags					resb	8
+	.flags					resb	2
 	.id					resb	8
 	.length					resb	1
 	.name					resb	LIBRARY_BOSU_WINDOW_NAME_length
@@ -89,7 +89,7 @@ struc	LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA
 endstruc
 
 struc	LIBRARY_BOSU_STRUCTURE_TYPE
-	.set					resb	4
+	.set					resb	1
 	.SIZE:
 endstruc
 

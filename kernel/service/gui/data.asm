@@ -35,7 +35,7 @@ kernel_gui_window_workbench		dq	0	; pozycja na osi X
 					dq	STATIC_EMPTY	; wysokość okna
 					dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
-					dq	LIBRARY_BOSU_WINDOW_FLAG_fixed_xy | LIBRARY_BOSU_WINDOW_FLAG_fixed_z | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
+					dw	LIBRARY_BOSU_WINDOW_FLAG_fixed_xy | LIBRARY_BOSU_WINDOW_FLAG_fixed_z | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
 					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
 					db	9
 					db	"Workbench                      "	; wypełnij do 31 Bajtów znakami STATIC_SCANCODE_SPACE
@@ -51,7 +51,7 @@ kernel_gui_window_taskbar		dq	0	; pozycja na osi X
 					dq	KERNEL_GUI_WINDOW_TASKBAR_HEIGHT_pixel	; wysokość okna
 					dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
-					dq	LIBRARY_BOSU_WINDOW_FLAG_fixed_xy | LIBRARY_BOSU_WINDOW_FLAG_fixed_z | LIBRARY_BOSU_WINDOW_FLAG_arbiter | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush | LIBRARY_BOSU_WINDOW_FLAG_unregistered
+					dw	LIBRARY_BOSU_WINDOW_FLAG_fixed_xy | LIBRARY_BOSU_WINDOW_FLAG_fixed_z | LIBRARY_BOSU_WINDOW_FLAG_arbiter | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush | LIBRARY_BOSU_WINDOW_FLAG_unregistered
 					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
 					db	7
 					db	"Taskbar                        "	; wypełnij do 31 Bajtów znakami STATIC_SCANCODE_SPACE
@@ -59,13 +59,13 @@ kernel_gui_window_taskbar		dq	0	; pozycja na osi X
 .elements:				;---------------------------------------
 					; element "łańcuch 0"
 					;---------------------------------------
-.element_chain_0:			dd	LIBRARY_BOSU_ELEMENT_TYPE_chain
+.element_chain_0:			db	LIBRARY_BOSU_ELEMENT_TYPE_chain
 					dq	STATIC_EMPTY	; rozmiar przestrzeni łańcucha w Bajtach
 					dq	STATIC_EMPTY	; adres przestrzeni łańcucha
 					;---------------------------------------
 					; element "etykieta zegar"
 					;---------------------------------------
-.element_label_clock:			dd	LIBRARY_BOSU_ELEMENT_TYPE_label
+.element_label_clock:			db	LIBRARY_BOSU_ELEMENT_TYPE_label
 					dq	.element_label_clock_end - .element_label_clock ; rozmiar elementu w Bajtach
 					dq	0	; pozycja na osi X względem okna
 					dq	0	; pozycja na osi Y względem okna
@@ -81,7 +81,7 @@ kernel_gui_window_taskbar		dq	0	; pozycja na osi X
 .element_label_clock_end:		;---------------------------------------
 					; koniec elementów okna
 					;---------------------------------------
-					dd	LIBRARY_BOSU_ELEMENT_TYPE_none
+					db	LIBRARY_BOSU_ELEMENT_TYPE_none
 kernel_gui_window_taskbar_end:
 
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
@@ -93,7 +93,7 @@ kernel_gui_window_menu			dq	160	; pozycja na osi X względem wskaźnika kursora
 					dq	STATIC_EMPTY	; wysokość okna względem zawartości elementów
 					dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna
 .extra:					dq	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
-					dq	LIBRARY_BOSU_WINDOW_FLAG_fragile | LIBRARY_BOSU_WINDOW_FLAG_unregistered | LIBRARY_BOSU_WINDOW_FLAG_border
+					dw	LIBRARY_BOSU_WINDOW_FLAG_fragile | LIBRARY_BOSU_WINDOW_FLAG_unregistered | LIBRARY_BOSU_WINDOW_FLAG_border
 					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
 					db	4
 					db	"Menu                           "	; wypełnij do 31 Bajtów znakami STATIC_SCANCODE_SPACE
@@ -101,7 +101,7 @@ kernel_gui_window_menu			dq	160	; pozycja na osi X względem wskaźnika kursora
 .elements:				;---------------------------------------
 					; element "label 0"
 					;---------------------------------------
-.element_label_0:			dd	LIBRARY_BOSU_ELEMENT_TYPE_label
+.element_label_0:			db	LIBRARY_BOSU_ELEMENT_TYPE_label
 					dq	.element_label_0_end - .element_label_0 ; rozmiar elementu w Bajtach
 					dq	1	; pozycja na osi X względem przestrzeni danych okna
 					dq	LIBRARY_BOSU_HEADER_HEIGHT_pixel	; pozycja na osi Y względem przestrzeni danych okna
@@ -114,7 +114,7 @@ kernel_gui_window_menu			dq	160	; pozycja na osi X względem wskaźnika kursora
 .element_label_0_end:			;---------------------------------------
 					; element "label 1"
 					;---------------------------------------
-.element_label_1:			dd	LIBRARY_BOSU_ELEMENT_TYPE_label
+.element_label_1:			db	LIBRARY_BOSU_ELEMENT_TYPE_label
 					dq	.element_label_1_end - .element_label_1 ; rozmiar elementu w Bajtach
 					dq	1	; pozycja na osi X względem przestrzeni danych okna
 					dq	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 0x10	; pozycja na osi Y względem przestrzeni danych okna
@@ -127,5 +127,5 @@ kernel_gui_window_menu			dq	160	; pozycja na osi X względem wskaźnika kursora
 .element_label_1_end:			;---------------------------------------
 					; koniec elementów okna
 					;---------------------------------------
-					dd	LIBRARY_BOSU_ELEMENT_TYPE_none
+					db	LIBRARY_BOSU_ELEMENT_TYPE_none
 kernel_gui_window_menu_end:
