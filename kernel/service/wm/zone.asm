@@ -164,29 +164,29 @@ kernel_wm_zone:
 	;-----------------------------------------------------------------------
 
 	; lewa krawędź na osi X
-	mov	r8,	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	mov	r8w,	word [rdi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.x]
 	; górna krawędź na osi Y
-	mov	r9,	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	mov	r9w,	word [rdi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.y]
 	; prawa krawędź na osi X
-	mov	r10,	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	add	r10,	r8
+	mov	r10w,	word [rdi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	add	r10w,	r8w
 	; dolna krawędź na osi Y
-	mov	r11,	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.height]
-	add	r11,	r9
+	mov	r11w,	word [rdi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	add	r11w,	r9w
 
 	; opisana strefa znajduje się w przestrzeni "ekranu"?
 
 	; poza prawą krawędzią ekranu?
-	cmp	r8,	qword [kernel_video_width_pixel]
+	cmp	r8w,	word [kernel_video_width_pixel]
 	jge	.loop	; tak
 	; poza dolną krawędzią ekranu?
-	cmp	r9,	qword [kernel_video_height_pixel]
+	cmp	r9w,	word [kernel_video_height_pixel]
 	jge	.loop	; tak
 	; poza lewą krawędzią ekranu?
-	cmp	r10,	STATIC_EMPTY
+	cmp	r10w,	STATIC_EMPTY
 	jle	.loop	; tak
 	; poza górną krawędzią ekranu?
-	cmp	r11,	STATIC_EMPTY
+	cmp	r11w,	STATIC_EMPTY
 	jle	.loop	; nie
 
 	;-----------------------------------------------------------------------
@@ -220,15 +220,15 @@ kernel_wm_zone:
 	; pobierz współrzędne obiektu
 
 	; lewa krawędź na oxi X
-	mov	r12,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	mov	r12w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
 	; górna krawędź na osi Y
-	mov	r13,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	mov	r13w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
 	; prawa krawędź na osi X
-	mov	r14,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	add	r14,	r12
+	mov	r14w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	add	r14w,	r12w
 	; dolna krawędź na osi Y
-	mov	r15,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
-	add	r15,	r13
+	mov	r15w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	add	r15w,	r13w
 
 	;--------------------------------
 	;      r9	       r13	X
@@ -239,13 +239,13 @@ kernel_wm_zone:
 	; Y
 
 	; obiekt znajduje się poza przetwarzaną strefą?
-	cmp	r12,	r10	; lewa krawędź obiektu za prawą krawędzią strefy?
+	cmp	r12w,	r10w	; lewa krawędź obiektu za prawą krawędzią strefy?
 	jge	.object	; tak
-	cmp	r13,	r11	; górna krawędź obiektu za dolną krawędzią strefy?
+	cmp	r13w,	r11w	; górna krawędź obiektu za dolną krawędzią strefy?
 	jge	.object	; tak
-	cmp	r14,	r8	; prawa krawędź obiektu przed lewą krawędzią strefy?
+	cmp	r14w,	r8w	; prawa krawędź obiektu przed lewą krawędzią strefy?
 	jle	.object	; tak
-	cmp	r15,	r9	; dolna krawędź obiektu przed górną krawędzią strefy?
+	cmp	r15w,	r9w	; dolna krawędź obiektu przed górną krawędzią strefy?
 	jle	.object	; tak
 
 	;-----------------------------------------------------------------------
@@ -254,7 +254,7 @@ kernel_wm_zone:
 
 .left: ;)
 	; lewa krawędź strefy przed lewą krawędzią obiektu?
-	cmp	r8,	r12
+	cmp	r8w,	r12w
 	jge	.up	; nie
 
 	; wytnij wystający fragment strefy
@@ -263,11 +263,11 @@ kernel_wm_zone:
 	push	r10
 
 	; szerokość odcinanej strefy
-	mov	r10,	r12
-	sub	r10,	r8
+	mov	r10w,	r12w
+	sub	r10w,	r8w
 
 	; wysokość odcinanej strefy
-	sub	r11,	r9
+	sub	r11w,	r9w
 
 	; odłóż na listę stref
 	call	kernel_wm_zone_insert_by_register
@@ -276,27 +276,27 @@ kernel_wm_zone:
 	pop	r10
 
 	; przywróć oryginalną pozycję dolnej krawędzi strefy
-	add	r11,	r9
+	add	r11w,	r9w
 
 	; nowa pozycja lewej krawędzi strefy
-	mov	r8,	r12
+	mov	r8w,	r12w
 
 .up:
 	; górna krawędź strefy przed górną krawędzią obiektu?
-	cmp	r9,	r13
+	cmp	r9w,	r13w
 	jge	.right	; nie
 
 	; wytnij wystający fragment strefy
 
 	; szerokość odcinanej strefy
-	sub	r10,	r8
+	sub	r10w,	r8w
 
 	; zachowaj oryginalną pozycję dolnej krawędzi strefy
 	push	r11
 
 	; wysokość odcinanej strefy
-	mov	r11,	r13
-	sub	r11,	r9
+	mov	r11w,	r13w
+	sub	r11w,	r9w
 
 	; odłóż na listę stref
 	call	kernel_wm_zone_insert_by_register
@@ -305,30 +305,30 @@ kernel_wm_zone:
 	pop	r11
 
 	; przywróć oryginalną pozycję dolnej krawędzi strefy
-	add	r10,	r8
+	add	r10w,	r8w
 
 	; nowa pozycja górnej krawędzi strefy
-	mov	r9,	r13
+	mov	r9w,	r13w
 
 .right:
 	; prawa krawędź strefy za prawą krawędzią obiektu?
-	cmp	r10,	r14
+	cmp	r10w,	r14w
 	jle	.down	; nie
 
 	; wytnij wystający fragment strefy
 
 	; szerokość odcinanej strefy
 	push	r10
-	sub	r10,	r14
+	sub	r10w,	r14w
 
 	; wysokość odcinanej strefy
-	sub	r11,	r9
+	sub	r11w,	r9w
 
 	; zachowaj oryginalną pozycję lewej krawędzi strefy
 	push	r8
 
 	; pozycja lewej krawędzi odcinanej strefy
-	mov	r8,	r14
+	mov	r8w,	r14w
 
 	; odłóż na listę stref
 	call	kernel_wm_zone_insert_by_register
@@ -337,28 +337,28 @@ kernel_wm_zone:
 	pop	r8
 
 	; nowa pozycja prawej krawędzi strefy
-	sub	qword [rsp],	r10
+	sub	word [rsp],	r10w
 	pop	r10
 	; mov	r10,	r14
 
 	; przywróć pozycję dolnej krawędzi
-	add	r11,	r9
+	add	r11w,	r9w
 
 .down:
 	; dolna krawędź strefy za dolną krawędzią obiektu?
-	cmp	r11,	r15
+	cmp	r11w,	r15w
 	jle	.fill	; nie
 
 	; wytnij wystający fragment strefy
 
 	; wysokość odcinanej strefy
-	sub	r11,	r15
+	sub	r11w,	r15w
 
 	; zachowaj oryginalną pozycję górnej krawędzi strefy
 	push	r9
 
 	; pozycja górnej krawędzi odcinanej strefy
-	mov	r9,	r15
+	mov	r9w,	r15w
 
 	; odłóż na listę stref
 	call	kernel_wm_zone_insert_by_register
@@ -367,14 +367,14 @@ kernel_wm_zone:
 	pop	r9
 
 	; nowa pozycja dolnej krawędzi strefy
-	sub	qword [rsp],	r11
-	mov	r11,	r15
+	sub	word [rsp],	r11w
+	mov	r11w,	r15w
 
 .fill:
 	; wypełnij pozostały fragment danym obiektem
-	sub	r10,	r8	; zwróć szerokość strefy
-	sub	r11,	r9	; zwróć wysokość strefy
-	cmp	r10,	STATIC_EMPTY
+	sub	r10w,	r8w	; zwróć szerokość strefy
+	sub	r11w,	r9w	; zwróć wysokość strefy
+	cmp	r10w,	STATIC_EMPTY
 	jle	.loop
 
 	; zarejestruj do wypełnienia

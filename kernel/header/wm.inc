@@ -21,6 +21,6 @@ struc	KERNEL_WM_STRUCTURE_IPC
 	.action				resb	1
 	.reserved			resb	7
 	.id				resb	8
-	.value0				resb	8
-	.value1				resb	8
+	.value0				resb	2
+	.value1				resb	2
 endstruc

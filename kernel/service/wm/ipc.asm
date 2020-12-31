@@ -22,8 +22,8 @@ kernel_wm_ipc_mouse:
 	mov	rbx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid]
 
 	; zamień pozycję wskaźnika kursora na pośrednią (względem okna)
-	sub	r8,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
-	sub	r9,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	sub	r8w,	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	sub	r9w,	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
 
 	; skomponuj komunikat dla procesu
 	mov	rsi,	kernel_wm_ipc_data
@@ -38,8 +38,8 @@ kernel_wm_ipc_mouse:
 	mov	qword [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.id],	rax
 
 	; wyślij informacje o pozycji wskaźnika kursora
-	mov	qword [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	r8	; x
-	mov	qword [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value1],	r9	; y
+	mov	word [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	r8w	; x
+	mov	word [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value1],	r9w	; y
 
 	; wyślij komunikat
 	xor	ecx,	ecx	; standardowy rozmiar komunikatu pod adresem w rejestrze RSI

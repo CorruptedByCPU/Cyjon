@@ -50,8 +50,8 @@ soler:
 	jne	.loop	; nie, zignoruj wiadomość
 
 	; pobierz współrzędne kursora
-	mov	r8,	qword [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]	; x
-	mov	r9,	qword [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value1]	; y
+	movzx	r8d,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]	; x
+	movzx	r9d,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value1]	; y
 
 	; pobierz wskaźnik do elementu biorącego udział w zdarzeniu
 	mov	rsi,	soler_window

@@ -42,23 +42,23 @@ kernel_gui_init:
 	mov	rax,	qword [kernel_gui_background_mixer]
 
 	; szerokość i wysokość przestrzeni
-	mov	rbx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	mov	rdx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	mov	bx,	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	mov	dx,	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
 
 	; przesunięcie linii pionowych
-	xor	r9,	r9
+	xor	r9w,	r9w
 
 	; szerokość fragmentu na podstawie rozdzielszości
-	mov	r10,	qword [kernel_video_width_pixel]
-	shr	r10,	STATIC_DIVIDE_BY_16_shift
+	mov	r10w,	word [kernel_video_width_pixel]
+	shr	r10w,	STATIC_DIVIDE_BY_16_shift
 
 .background_reload:
 	; rozpocznij od fragmentu o rozmiarze 64 pikseli
-	mov	rcx,	r10
+	movzx	ecx,	r10w
 
 .background_loop:
 	; szerokość mniejsza od fragmentu?
-	cmp	rbx,	r10
+	cmp	bx,	r10w
 	jb	.fill	; tak, koryguj
 
 	; wypełnij fragment kolorem
@@ -66,26 +66,26 @@ kernel_gui_init:
 	rep	stosd
 
 	; pozostała szerokość przestrzeni
-	sub	rbx,	r10
+	sub	bx,	r10w
 	jz	.offset	; pierwszy wiersz gotowy
 	jns	.background_reload	; brak przepełnienia, kontynuuj
 
 .fill:
 	; pozostała szerokość do wypełnienia
-	mov	rcx,	rbx
+	movzx	ecx,	bx
 	rol	rax,	STATIC_REPLACE_EAX_WITH_HIGH_shift	; zamień kolorystykę
 	rep	stosd
 
 .offset:
 	; następny wiersz przesunięty o kolejny piksel
-	inc	r9
+	inc	r9w
 
 	; przesunięcie większe od szerokości fragmentu?
-	cmp	r9,	r10
+	cmp	r9w,	r10w
 	jb	.offset_ok	; nie
 
 	; resetuj pozycję przesunięcia
-	xor	r9,	r9
+	xor	r9w,	r9w
 
 	; zamień kolorystykę
 	rol	rax,	STATIC_REPLACE_EAX_WITH_HIGH_shift
@@ -95,18 +95,18 @@ kernel_gui_init:
 
 .offset_ok:
 	; wypełnij fragment przesunięcia
-	mov	rcx,	r9
+	movzx	ecx,	r9w
 	rep	stosd
 
 .offset_end:
 	; szrokość przestrzeni
-	mov	rbx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	mov	bx,	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
 
 	; koryguj szerokość przestrzeni o przesunięcie fragmentu
-	sub	rbx,	r9
+	sub	bx,	r9w
 
 	; koniec przestrzeni na wysokość
-	dec	rdx
+	dec	dx
 	jnz	.background_reload	; nie
 
 	;-----------------------------------------------------------------------
