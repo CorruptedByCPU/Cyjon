@@ -72,8 +72,9 @@ kernel_gui_window_taskbar		dq	0	; pozycja na osi X
 					dq	LIBRARY_FONT_WIDTH_pixel * (.element_label_clock_end - .element_label_clock_string_hour)	; szerokość elementu w pikselach
 					dq	18	; wysokość elementu w pikselach
 					dq	STATIC_EMPTY	; wskaźnik procedury obsługi zdarzenia
+					db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center
 					db	.element_label_clock_end - .element_label_clock_string   ; rozmiar ciągu w znakach
-.element_label_clock_string:		db	" ",
+.element_label_clock_string:		db	" "
 .element_label_clock_string_hour:	db	"00"
 .element_label_clock_char_colon:	db	":"
 .element_label_clock_string_minute:	db	"00  "	; dlaczego dwie spacje?
@@ -104,11 +105,12 @@ kernel_gui_window_menu			dq	160	; pozycja na osi X względem wskaźnika kursora
 					dq	.element_label_0_end - .element_label_0 ; rozmiar elementu w Bajtach
 					dq	1	; pozycja na osi X względem przestrzeni danych okna
 					dq	LIBRARY_BOSU_HEADER_HEIGHT_pixel	; pozycja na osi Y względem przestrzeni danych okna
-					dq	((.element_label_0_end - .element_label_0_string) * LIBRARY_FONT_WIDTH_pixel) - 0x02	; szerokość elementu
+					dq	((.element_label_0_end - .element_label_0_string) * LIBRARY_FONT_WIDTH_pixel)	; szerokość elementu
 					dq	0x10	; wysokość elementu
 					dq	kernel_gui_event_console
+					db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_default
 					db	.element_label_0_end - .element_label_0_string
-.element_label_0_string:		db	" Console "
+.element_label_0_string:		db	"Console"
 .element_label_0_end:			;---------------------------------------
 					; element "label 1"
 					;---------------------------------------
@@ -116,11 +118,12 @@ kernel_gui_window_menu			dq	160	; pozycja na osi X względem wskaźnika kursora
 					dq	.element_label_1_end - .element_label_1 ; rozmiar elementu w Bajtach
 					dq	1	; pozycja na osi X względem przestrzeni danych okna
 					dq	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 0x10	; pozycja na osi Y względem przestrzeni danych okna
-					dq	((.element_label_1_end - .element_label_1_string) * LIBRARY_FONT_WIDTH_pixel) - 0x02	; szerokość elementu
+					dq	((.element_label_1_end - .element_label_1_string) * LIBRARY_FONT_WIDTH_pixel)	; szerokość elementu
 					dq	0x10	; wysokość elementu
 					dq	kernel_gui_event_soler
+					db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_default
 					db	.element_label_1_end - .element_label_1_string
-.element_label_1_string:		db	" Soler "
+.element_label_1_string:		db	"Soler"
 .element_label_1_end:			;---------------------------------------
 					; koniec elementów okna
 					;---------------------------------------

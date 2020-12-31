@@ -210,7 +210,7 @@ kernel_wm_zone:
 	je	.fill	; tak
 
 	; obiekt widoczny?
-	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
 	jz	.object	; nie
 
 	; wystąpiła interferencja z obiektem przetwarzanym? (samym sobą)

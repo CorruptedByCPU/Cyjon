@@ -22,12 +22,12 @@ kernel_gui_init:
 	mov	rsi,	kernel_gui_window_workbench
 
 	; ustaw szerokość, wysokość i rozmiar przestrzeni roboczej
-	mov	rax,	qword [kernel_video_width_pixel]
-	mov	rbx,	qword [kernel_video_height_pixel]
-	mov	rcx,	qword [kernel_video_size_byte]
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width],	rax
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height],	rbx
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size],	rcx
+	mov	ax,	word [kernel_video_width_pixel]
+	mov	bx,	word [kernel_video_height_pixel]
+	mov	ecx,	dword [kernel_video_size_byte]
+	mov	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width],	ax
+	mov	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height],	bx
+	mov	dword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size],	ecx
 
 	; przygotuj miejsce pod przestrzeń roboczą
 	call	library_page_from_size
@@ -37,9 +37,6 @@ kernel_gui_init:
 	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.address],	rdi
 
 	;-----------------------------------------------------------------------
-
-	; zachowaj oryginalne rejestry
-	push	rbx
 
 	; pobierz miks kolorów
 	mov	rax,	qword [kernel_gui_background_mixer]
@@ -112,9 +109,6 @@ kernel_gui_init:
 	dec	rdx
 	jnz	.background_reload	; nie
 
-	; przywróć oryginalne rejestry
-	pop	rbx
-
 	;-----------------------------------------------------------------------
 
 	; przydziel identyfikator dla okna
@@ -130,24 +124,26 @@ kernel_gui_init:
 	mov	rsi,	kernel_gui_window_taskbar
 
 	; ustaw pozycję paska zadań na dole ekranu
-	sub	rbx,	KERNEL_GUI_WINDOW_TASKBAR_HEIGHT_pixel
-	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	rbx
+	mov	bx,	word [kernel_video_height_pixel]
+	sub	bx,	KERNEL_GUI_WINDOW_TASKBAR_HEIGHT_pixel
+	mov	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	bx
 
 	; ustaw szerokość paska zadań na cały ekran
-	mov	rax,	qword [kernel_video_width_pixel]
-	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	rax
+	mov	ax,	word [kernel_video_width_pixel]
+	mov	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	ax
 
 	; ustaw etykietę "zegar" na końcu paska zadań
-	sub	rax,	qword [kernel_gui_window_taskbar.element_label_clock + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
-	mov	qword [kernel_gui_window_taskbar.element_label_clock + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	rax
+	sub	ax,	word [kernel_gui_window_taskbar.element_label_clock + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	mov	word [kernel_gui_window_taskbar.element_label_clock + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	ax
 
 	; oblicz rozmiar przestrzeni danych okna w Bajtach
-	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
-	shl	rax,	KERNEL_VIDEO_DEPTH_shift
-	mul	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	movzx	eax,	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	shl	eax,	KERNEL_VIDEO_DEPTH_shift
+	movzx	ebx,	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	mul	ebx
 
 	; przygotuj miejsce pod przestrzeń okna
-	mov	rcx,	rax
+	mov	ecx,	eax
 	call	library_page_from_size
 	call	kernel_memory_alloc
 
@@ -173,16 +169,17 @@ kernel_gui_init:
 	call	library_bosu_elements_specification
 
 	; ustaw szerokość i wysokość okna menu
-	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	r8
-	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height],	r9
+	mov	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	r8w
+	mov	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height],	r9w
 
 	; oblicz rozmiar przestrzeni danych okna w Bajtach
-	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	movzx	eax,	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
 	shl	rax,	KERNEL_VIDEO_DEPTH_shift
-	mul	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	movzx	ebx,	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	mul	ebx
 
 	; przygotuj miejsce pod przestrzeń okna
-	mov	rcx,	rax
+	mov	ecx,	eax
 	call	library_page_from_size
 	call	kernel_memory_alloc
 

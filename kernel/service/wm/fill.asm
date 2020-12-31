@@ -334,7 +334,7 @@ kernel_wm_fill:
 	jnz	.row	; tak
 
 	; zawartość bufora uległa modyfikacji
-	or	qword [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
+	or	word [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
 .leave:
 	; przywróć wskaźnik i rozmiar listy
