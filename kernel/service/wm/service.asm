@@ -112,7 +112,7 @@ kernel_wm_irq:
 	push	rsi
 
 	; przygotuj przestrzeń pod dane obiektu
-	mov	rcx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size]
+	mov	ecx,	dword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size]
 	call	library_page_from_size
 	call	kernel_memory_alloc
 	jc	.window_create_end	; brak wystarczającej ilości pamięci
@@ -199,20 +199,20 @@ kernel_wm_irq:
 	; pozycjonuj obiekt domyślnie na środku przestrzeni roboczej
 
 	; oś X
-	mov	rax,	qword [kernel_video_width_pixel]
-	mov	rbx,	qword [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	shr	rax,	STATIC_DIVIDE_BY_2_shift
-	shr	rbx,	STATIC_DIVIDE_BY_2_shift
-	sub	rax,	rbx
-	mov	qword [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x],	rax
+	mov	ax,	word [kernel_video_width_pixel]
+	mov	bx,	word [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	shr	ax,	STATIC_DIVIDE_BY_2_shift
+	shr	bx,	STATIC_DIVIDE_BY_2_shift
+	sub	ax,	bx
+	mov	word [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x],	ax
 
 	; oś Y
-	mov	rax,	qword [kernel_video_height_pixel]
-	mov	rbx,	qword [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
-	shr	rax,	STATIC_DIVIDE_BY_2_shift
-	shr	rbx,	STATIC_DIVIDE_BY_2_shift
-	sub	rax,	rbx
-	mov	qword [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y],	rax
+	mov	ax,	word [kernel_video_height_pixel]
+	mov	bx,	word [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	shr	ax,	STATIC_DIVIDE_BY_2_shift
+	shr	bx,	STATIC_DIVIDE_BY_2_shift
+	sub	ax,	bx
+	mov	word [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y],	ax
 
 	; powrót z podprocedury
 	ret
@@ -243,11 +243,11 @@ kernel_wm_irq:
 	mov	rbx,	qword [rsp]
 
 	; zawartość danych obiektu została zmieniona?
-	test	qword [rbx + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
+	test	word [rbx + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 	jz	.unchanged	; nie
 
 	; zachowaj informację
-	or	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
+	or	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
 .unchanged:
 	; ilość znaków reprezentujących nazwę okna

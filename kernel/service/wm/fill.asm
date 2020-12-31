@@ -9,10 +9,10 @@
 ;===============================================================================
 ; wejście:
 ;	rax - wskaźnik do obiektu wypełniającego
-;	r8 - pozycja na osi X
-;	r9 - pozycja na osi Y
-;	r10 - szerokość strefy
-;	r11 - wysokość strefy
+;	r8w - pozycja na osi X
+;	r9w - pozycja na osi Y
+;	r10w - szerokość strefy
+;	r11w - wysokość strefy
 kernel_wm_fill_insert_by_register:
 	; zachowaj oryginalne rejestry
 	push	rcx
@@ -30,10 +30,10 @@ kernel_wm_fill_insert_by_register:
 	jne	.next	; nie
 
 	; dodaj do listy nową strefę
-	mov	qword [rdi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.x],	r8
-	mov	qword [rdi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.y],	r9
-	mov	qword [rdi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.width],	r10
-	mov	qword [rdi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.height],	r11
+	mov	word [rdi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.x],	r8w
+	mov	word [rdi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.y],	r9w
+	mov	word [rdi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.width],	r10w
+	mov	word [rdi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.height],	r11w
 
 	; oraz jej obiekt zależny
 	mov	qword [rdi + KERNEL_WM_STRUCTURE_FILL.object],	rax
@@ -85,10 +85,10 @@ kernel_wm_fill_insert_by_object:
 	jne	.next	; nie
 
 	; wstaw właściwości wypełnienia
-	movsq	; pozycja na osi X
-	movsq	; pozycja na osi Y
-	movsq	; szerokość
-	movsq	; wysokość
+	movsw	; pozycja na osi X
+	movsw	; pozycja na osi Y
+	movsw	; szerokość
+	movsw	; wysokość
 
 	; oraz informacje o obiekcie zależnym
 	mov	rax,	qword [rsp]
@@ -156,57 +156,57 @@ kernel_wm_fill:
 	;-----------------------------------------------------------------------
 	; pobierz właściwości wypełnienia
 	;-----------------------------------------------------------------------
-	mov	r8,	qword [rsi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.x]
-	mov	r9,	qword [rsi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.y]
-	mov	r10,	qword [rsi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	mov	r11,	qword [rsi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	movzx	r8d,	word [rsi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	movzx	r9d,	word [rsi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	movzx	r10d,	word [rsi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	movzx	r11d,	word [rsi + KERNEL_WM_STRUCTURE_FILL.field + KERNEL_WM_STRUCTURE_FIELD.height]
 
 	; opisana strefa znajduje się na ujemnej osi X?
-	bt	r8,	STATIC_QWORD_BIT_sign
+	bt	r8w,	STATIC_QWORD_BIT_sign
 	jnc	.x_positive	; nie
 
 	; wytnij niewidoczny fragment
-	not	r8
-	inc	r8
-	sub	r10,	r8
+	not	r8w
+	inc	r8w
+	sub	r10w,	r8w
 
 	; przesuń na początek osi X
-	xor	r8,	r8
+	xor	r8w,	r8w
 
 .x_positive:
 	; opisana strefa znajduje się na ujemnej osi Y?
-	bt	r9,	STATIC_QWORD_BIT_sign
+	bt	r9w,	STATIC_QWORD_BIT_sign
 	jnc	.y_positive	; nie
 
 	; wytnij niewidoczny fragment
-	not	r9
-	inc	r9
-	sub	r11,	r9
+	not	r9w
+	inc	r9w
+	sub	r11w,	r9w
 
 	; przesuń na początek osi Y
-	xor	r9,	r9
+	xor	r9w,	r9w
 
 .y_positive:
 	; opisana strefa wykracza poza oś X?
-	mov	rax,	r8
-	add	rax,	r10
-	cmp	rax,	qword [kernel_video_width_pixel]
+	mov	ax,	r8w
+	add	ax,	r10w
+	cmp	ax,	word [kernel_video_width_pixel]
 	jb	.x_inside	; nie
 
 	; ogranicz strefę do przestrzeni ekranu
-	sub	rax,	qword [kernel_video_width_pixel]
-	sub	r10,	rax
+	sub	ax,	word [kernel_video_width_pixel]
+	sub	r10w,	ax
 
 .x_inside:
 	; opisana strefa wykracza poza oś Y?
-	mov	rax,	r9
-	add	rax,	r11
-	cmp	rax,	qword [kernel_video_height_pixel]
+	mov	ax,	r9w
+	add	ax,	r11w
+	cmp	ax,	word [kernel_video_height_pixel]
 	jb	.y_inside	; nie
 
 	; ogranicz strefę do przestrzeni ekranu
-	sub	rax,	qword [kernel_video_height_pixel]
-	sub	r11,	rax
+	sub	ax,	word [kernel_video_height_pixel]
+	sub	r11w,	ax
 
 .y_inside:
 	;-----------------------------------------------------------------------
@@ -219,25 +219,25 @@ kernel_wm_fill:
 	;-----------------------------------------------------------------------
 	; scanlines
 	; r12 - scanline wypelnienia w Bajtach
-	mov	r12,	r10
-	shl	r12,	KERNEL_VIDEO_DEPTH_shift
+	movzx	r12d,	r10w
+	shl	r12d,	KERNEL_VIDEO_DEPTH_shift
 	; r13 - scanline obiektu w Bajtach
-	mov	r13,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	shl	r13,	KERNEL_VIDEO_DEPTH_shift
+	movzx	r13d,	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	shl	r13d,	KERNEL_VIDEO_DEPTH_shift
 	; r14 - scanline bufora w Bajtach
-	mov	r14,	qword [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	shl	r14,	KERNEL_VIDEO_DEPTH_shift
+	movzx	r14d,	word [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	shl	r14d,	KERNEL_VIDEO_DEPTH_shift
 
 	; wylicz wskaźnik początku wypełnienia w przestrzeni bufora
 	;-----------------------------------------------------------------------
 
 	; pozycja względem osi X
-	mov	rdi,	r8
-	shl	rdi,	KERNEL_VIDEO_DEPTH_shift
+	movzx	edi,	r8w
+	shl	edi,	KERNEL_VIDEO_DEPTH_shift
 
 	; pozycja względem osi Y
-	mov	rax,	r14
-	mul	r9
+	mov	eax,	r14d
+	mul	r9d
 
 	; wskaźnik bezpośredni do przestrzeni wypełnienia w buforze
 	add	rdi,	rax
@@ -245,20 +245,20 @@ kernel_wm_fill:
 
 	; korekta pozycji wypełnienia względem obiektu
 	; -----------------------------------------------------------------------
-	sub	r8,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	sub	r8w,	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
 	js	.overflow	; obiekt wypełniający poza obszarem fragmentu
-	sub	r9,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	sub	r9w,	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
 	js	.overflow	; obietk wypełniający poza obszarem fragmentu
 
 	; wylicz wskaźnik początku wypełnienia w przestrzeni obiektu
 	;-----------------------------------------------------------------------
 
 	; pozycja na osi Y w Bajtach (względna)
-	mov	rax,	r9
-	mul	r13
+	movzx	eax,	r9w
+	mul	r13d
 
 	; pozycja na osi X w Bajtach (względna)
-	shl	r8,	KERNEL_VIDEO_DEPTH_shift
+	shl	r8d,	KERNEL_VIDEO_DEPTH_shift
 
 	; przelicz na wskaźnik bezwzględny
 	mov	rsi,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.address]
@@ -271,7 +271,7 @@ kernel_wm_fill:
 
 .row:
 	; następny wiersz N pikseli
-	mov	rcx,	r10
+	mov	cx,	r10w
 
 .print:
 	; piksel całkowicie przeźroczysty?
@@ -318,7 +318,7 @@ kernel_wm_fill:
 
 .continue:
 	; następny piksel?
-	dec	rcx
+	dec	cx
 	jnz	.print	; tak
 
 	; przesuń wskaźniki na następną linię
@@ -330,11 +330,11 @@ kernel_wm_fill:
 	add	rsi,	r13
 
 	; pozostały wiersze wypełnienia?
-	dec	r11
+	dec	r11w
 	jnz	.row	; tak
 
 	; zawartość bufora uległa modyfikacji
-	or	qword [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
+	or	word [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
 .leave:
 	; przywróć wskaźnik i rozmiar listy
@@ -349,7 +349,7 @@ kernel_wm_fill:
 	add	rsi,	KERNEL_WM_STRUCTURE_FILL.SIZE
 
 	; następny wpis na liście?
-	dec	rcx
+	dec	cx
 	jnz	.loop	; tak
 
 .end:

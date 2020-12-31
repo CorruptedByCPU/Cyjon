@@ -23,16 +23,16 @@ kernel_wm_event:
 
 	;-----------------------------------------------------------------------
 	; pobierz pozycje wskaźnika myszy
-	mov	r8d,	dword [driver_ps2_mouse_x]
-	mov	r9d,	dword [driver_ps2_mouse_y]
+	mov	r8w,	word [driver_ps2_mouse_x]
+	mov	r9w,	word [driver_ps2_mouse_y]
 
 	; delta osi X
-	mov	r14,	r8
-	sub	r14,	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	mov	r14w,	r8w
+	sub	r14w,	word [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
 
 	; delta osi Y
-	mov	r15,	r9
-	sub	r15,	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	mov	r15w,	r9w
+	sub	r15w,	word [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
 
 	;-----------------------------------------------------------------------
 	; naciśnięto lewy przycisk myszki?
@@ -59,7 +59,7 @@ kernel_wm_event:
 	call	kernel_wm_ipc_mouse
 
 	; obiekt powinien zachować swoją warstwę?
-	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_fixed_z
+	test	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_fixed_z
 	jnz	.fixed_z	; tak
 
 	; przesuń obiekt na koniec listy
@@ -72,10 +72,10 @@ kernel_wm_event:
 	; szybciej przerysujemy cały, niż znajdziemy fragmenty niewidoczne
 
 	; wyświetl ponownie zawartość obiektu
-	or	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
+	or	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
 	; wyświetl ponownie zawartość obiektu kursora (przysłoniony przez obiekt)
-	or	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
+	or	word [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
 .fixed_z:
 	; ukryj obiekty oznaczone flagą FRAGILE
@@ -99,7 +99,6 @@ kernel_wm_event:
 	; naciśnięto prawy przycisk myszki?
 	bt	word [driver_ps2_mouse_state],	DRIVER_PS2_DEVICE_MOUSE_PACKET_RMB_bit
 	jnc	.no_mouse_button_right_action	; nie
-
 
 	; prawy przycisk myszki był już naciśnięty?
 	cmp	byte [kernel_wm_mouse_button_right_semaphore],	STATIC_TRUE
@@ -129,11 +128,11 @@ kernel_wm_event:
 
 .no_mouse_button_right_release:
 	; przesunięcie wskaźnika kursora na osi X
-	test	r14,	r14
+	test	r14w,	r14w
 	jnz	.move	; tak
 
 	; przesunięcie wskaźnika kursora na osi Y
-	test	r15,	r15
+	test	r15w,	r15w
 	jz	.end	; nie
 
 .move:
@@ -142,11 +141,11 @@ kernel_wm_event:
 	call	kernel_wm_zone_insert_by_object
 
 	; aktualizuj specyfikacje obiektu kursora
-	add	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x],	r14
-	add	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y],	r15
+	add	word [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x],	r14w
+	add	word [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y],	r15w
 
 	; obiekt kursora został zaaktualizowany
-	or	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
+	or	word [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
 	;-----------------------------------------------------------------------
 

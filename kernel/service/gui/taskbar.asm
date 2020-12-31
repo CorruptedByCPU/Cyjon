@@ -187,10 +187,10 @@ kernel_gui_taskbar_event:
 	call	kernel_wm_object_by_id
 
 	; zmień widoczność obiektu
-	xor	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	xor	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
 
 	; poinformuj menedżer okien
-	or	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
+	or	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
 
 	; przwtwórz raz jeszcze taskbar
 	mov	qword [kernel_gui_window_taskbar_modify_time],	STATIC_EMPTY
@@ -233,22 +233,22 @@ kernel_gui_taskbar:
 	inc	rcx	; element czyszczący przestrzeń
 	mul	rcx
 
-	; zachowaj rozmiar przestrzeni
+	; zachowaj rozmiar przestrzeni w stronach
 	push	rax
 
-	; aktualny rozmiar łańcucha jest wystarczający?
-	cmp	rax,	qword [kernel_gui_window_taskbar.element_chain_0 + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.size]
-	jbe	.enough	; tak
-
-	; pobierz aktualny rozmiar przestrzeni łańcucha
+	; pobierz aktualny rozmiar przestrzeni łańcucha w stronach
 	mov	rcx,	qword [kernel_gui_window_taskbar.element_chain_0 + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.size]
+
+	; aktualny rozmiar łańcucha jest wystarczający?
+	shl	rcx,	STATIC_PAGE_SIZE_shift
+	cmp	rax,	rcx
+	jbe	.enough	; tak
 
 	; brak przestrzeni
 	test	rcx,	rcx
 	jz	.new	; tak, zarejestruj nową
 
 	; zwolnij aktualną przestrzeń łańcucha
-	call	library_page_from_size
 	mov	rdi,	qword [kernel_gui_window_taskbar.element_chain_0 + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.address]
 	call	kernel_memory_release
 
@@ -268,8 +268,8 @@ kernel_gui_taskbar:
 	;-----------------------------------------------------------------------
 
 	; wylicz domyślną szerokość jednego elementu uwzględniająć dostępną przestrzeń paska zadań
-	mov	rax,	qword [kernel_gui_window_taskbar + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
-	sub	rax,	qword [kernel_gui_window_taskbar.element_label_clock + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	movzx	eax,	word [kernel_gui_window_taskbar + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	sub	ax,	word [kernel_gui_window_taskbar.element_label_clock + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
 	mov	rcx,	qword [kernel_gui_taskbar_list_count]
 	xor	edx,	edx
 
@@ -282,8 +282,8 @@ kernel_gui_taskbar:
 
 .max:
 	; zachowaj szerokość elementu
-	mov	rbx,	rax
-	sub	rbx,	KERNEL_GUI_WINDOW_TASKBAR_MARGIN_right
+	mov	bx,	ax
+	sub	bx,	KERNEL_GUI_WINDOW_TASKBAR_MARGIN_right
 
 	; pozycja pierwszego elementu na osi X
 	xor	edx,	edx
@@ -310,12 +310,12 @@ kernel_gui_taskbar:
 	push	rdi
 
 	; utwórz pierwszy element opisujący okno na początku paska zadań
-	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.type + LIBRARY_BOSU_STRUCTURE_TYPE.set],	LIBRARY_BOSU_ELEMENT_TYPE_taskbar
-	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.SIZE
-	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	rdx
-	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	STATIC_EMPTY
-	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	rbx
-	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height],	KERNEL_GUI_WINDOW_TASKBAR_HEIGHT_pixel
+	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.type + LIBRARY_BOSU_STRUCTURE_TYPE.set],	LIBRARY_BOSU_ELEMENT_TYPE_taskbar
+	mov	word [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.SIZE
+	mov	word [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	dx
+	mov	word [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	STATIC_EMPTY
+	mov	word [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	bx
+	mov	word [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height],	KERNEL_GUI_WINDOW_TASKBAR_HEIGHT_pixel
 	;----------------------------------------------------------------------
 	; pobierz identyfikator okna dla elementu
 	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id]
@@ -323,11 +323,11 @@ kernel_gui_taskbar:
 	;-----------------------------------------------------------------------
 	movzx	ecx,	byte [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.length]
 	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.length],	cl
-	add	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	rcx
+	add	word [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	cx
 	;-----------------------------------------------------------------------
 	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background],	LIBRARY_BOSU_ELEMENT_TASKBAR_BG_color
 	; okno jest widoczne?
-	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	test	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
 	jnz	.visible	; tak
 
 	; oznacz okno na pasku zadań jako widoczne
@@ -344,7 +344,8 @@ kernel_gui_taskbar:
 	pop	rdi
 
 	; przesuń wskaźnik przestrzeni łańcucha za utworzony element
-	add	rdi,	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+	movzx	eax,	word [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+	add	rdi,	rax
 
 	; następny element z prawej strony aktualnego
 	add	rdx,	rbx
@@ -373,10 +374,11 @@ kernel_gui_taskbar:
 
 .ready:
 	; aktualizuj rozmiar przestrzeni łańcucha
-	pop	qword [kernel_gui_window_taskbar.element_chain_0 + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.size]
+	pop	rax
+	mov	word [kernel_gui_window_taskbar.element_chain_0 + LIBRARY_BOSU_STRUCTURE_ELEMENT_CHAIN.size],	ax
 
 	; zakończ listę elementów łańcucha pustym rekordem
-	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_TYPE.set],	LIBRARY_BOSU_ELEMENT_TYPE_none
+	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_TYPE.set],	LIBRARY_BOSU_ELEMENT_TYPE_none
 
 	; zwolnij dostęp do modyfikacji listy obiektów
 	mov	byte [kernel_wm_object_semaphore],	STATIC_FALSE
@@ -419,23 +421,24 @@ kernel_gui_taskbar:
 ;	rdi - wskaźnik następnej pozycji na liście elementów
 kernel_gui_taskbar_margin:
 	; wyczyść przestrzeń za pomocą pustej etykiety
-	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.type + LIBRARY_BOSU_STRUCTURE_TYPE.set],	LIBRARY_BOSU_ELEMENT_TYPE_label
-	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.SIZE
-	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	rdx
-	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	STATIC_EMPTY
-	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	rbx
-	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height],	KERNEL_GUI_WINDOW_TASKBAR_HEIGHT_pixel
+	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.type + LIBRARY_BOSU_STRUCTURE_TYPE.set],	LIBRARY_BOSU_ELEMENT_TYPE_label
+	mov	word [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.SIZE
+	mov	word [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	dx
+	mov	word [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	STATIC_EMPTY
+	mov	word [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	bx
+	mov	word [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.height],	KERNEL_GUI_WINDOW_TASKBAR_HEIGHT_pixel
 	mov	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	STATIC_EMPTY	; brak akcji
 	;-----------------------------------------------------------------------
 	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.length],	0x01
 	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.string],	STATIC_SCANCODE_SPACE
-	add	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	0x01
+	add	word [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	0x01
 
 	; przesuń wskaźnik osi X
-	add	rdx,	rbx
+	add	dx,	bx
 
 	; przesuń wskaźnik przestrzeni łańcucha za utworzony element
-	add	rdi,	qword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+	movzx	eax,	word [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size]
+	add	rdi,	rax
 
 	; powrót z procedury
 	ret

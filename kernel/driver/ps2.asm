@@ -175,8 +175,8 @@ DRIVER_PS2_KEYBOARD_RELEASE_MOUSE_RIGHT				equ	DRIVER_PS2_KEYBOARD_key_release +
 
 align	STATIC_QWORD_SIZE_byte,					db	STATIC_EMPTY
 driver_ps2_mouse_position:
-driver_ps2_mouse_x						dd	STATIC_EMPTY
-driver_ps2_mouse_y						dd	STATIC_EMPTY
+driver_ps2_mouse_x						dw	STATIC_EMPTY
+driver_ps2_mouse_y						dw	STATIC_EMPTY
 driver_ps2_mouse_type						db	STATIC_EMPTY
 driver_ps2_mouse_packet						db	STATIC_EMPTY
 driver_ps2_mouse_state						dw	STATIC_EMPTY
@@ -393,8 +393,8 @@ driver_ps2_mouse:
 	in	al,	DRIVER_PS2_PORT_DATA
 
 	; pobierz aktualną pozycję na osi X i Y
-	mov	ebx,	dword [driver_ps2_mouse_x]
-	mov	edx,	dword [driver_ps2_mouse_y]
+	mov	bx,	word [driver_ps2_mouse_x]
+	mov	dx,	word [driver_ps2_mouse_y]
 
 	;-----------------------------------------------------------------------
 	; status?
@@ -440,26 +440,26 @@ driver_ps2_mouse:
 	neg	al
 
 	; przesuń wskaźnik w lewo
-	sub	ebx,	eax
+	sub	bx,	ax
 	jns	.ready	; koniec obsługi pakietu
 
 	; koryguj pozycje na osi X
-	xor	ebx,	ebx
+	xor	bx,	bx
 
 	; koniec obsługi pakietu
 	jmp	.ready
 
 .x_unsigned:
 	; przesuń wskaźnik w prawo
-	add	ebx,	eax
+	add	bx,	ax
 
 	; wskaźnik poza ekranem na osi X?
-	cmp	ebx,	dword [kernel_video_width_pixel]
+	cmp	bx,	word [kernel_video_width_pixel]
 	jb	.ready	; nie, koniec obsługi pakietu
 
 	; koryguj pozycję
-	mov	ebx,	dword [kernel_video_width_pixel]
-	dec	ebx
+	mov	bx,	word [kernel_video_width_pixel]
+	dec	bx
 
 	; koniec obsługi pakietu
 	jmp	.ready
@@ -478,31 +478,31 @@ driver_ps2_mouse:
 	neg	al
 
 	; przesuń wskaźnik w lewo
-	add	edx,	eax
+	add	dx,	ax
 
 	; wskaźnik poda ekranem na osi X?
-	cmp	edx,	dword [kernel_video_height_pixel]
+	cmp	dx,	word [kernel_video_height_pixel]
 	jb	.ready	; nie, koniec obsługi pakietu
 
 	; koryguj pozycję
-	mov	edx,	dword [kernel_video_height_pixel]
-	dec	edx
+	mov	dx,	word [kernel_video_height_pixel]
+	dec	dx
 
 	; koniec obsługi pakietu
 	jmp	.ready
 
 .y_unsigned:
 	; przesuń wskaźnik w prawo
-	sub	edx,	eax
+	sub	dx,	ax
 	jns	.ready	; koniec obsługi pakietu
 
 	; koryguj pozycje na osi X
-	xor	edx,	edx
+	xor	dx,	dx
 
 .ready:
 	; zachowaj nową pozycję wskaźnika
-	mov	dword [driver_ps2_mouse_x],	ebx
-	mov	dword [driver_ps2_mouse_y],	edx
+	mov	word [driver_ps2_mouse_x],	bx
+	mov	word [driver_ps2_mouse_y],	dx
 
 .end:
 	; poinformuj LAPIC o obsłużeniu przerwania sprzętowego

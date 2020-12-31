@@ -66,7 +66,7 @@ kernel_wm_object_insert:
 	; wstaw zarejestrowany obiekt przed arbitrem (jeśli istnieje)
 
 	; obiekt jest arbitrem?
-	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_arbiter
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_arbiter
 	jz	.loop	; nie, szukaj dalej
 
 	; wbrak elementów do przesunięcia?
@@ -235,15 +235,15 @@ kernel_wm_object:
 	jz	.end	; tak
 
 	; przerysować zawartość pod obiektem?
-	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
 	jnz	.undraw	; tak
 
 	; obiekt widoczny?
-	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
 	jz	.loop	; nie
 
 	; obiekt aktualizował swoją zawartość?
-	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 	jz	.loop	; nie
 
 .undraw:
@@ -252,10 +252,10 @@ kernel_wm_object:
 	call	kernel_wm_zone_insert_by_object
 
 	; wyłącz flagę aktualizacji obiektu lub przerysowania zawartości pod obiektem
-	and	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_flush & ~KERNEL_WM_OBJECT_FLAG_undraw
+	and	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_flush & ~KERNEL_WM_OBJECT_FLAG_undraw
 
 	; wymuś aktualizacje obiektu kursora
-	or	qword [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
+	or	word [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
 	; kontynuuj
 	jmp	.loop
@@ -455,28 +455,28 @@ kernel_wm_object_find:
 	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.object_address]
 
 	; obiekt widoczny?
-	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
 	jz	.loop	; nie
 
 	;-----------------------------------------------------------------------
 	; wskaźnik w przestrzeni obiektu względem lewej krawędzi?
-	cmp	r8,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	cmp	r8w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
 	jl	.loop	; nie
 
 	; wskaźnik w przestrzeni obiektu względem górnej krawędzi?
-	cmp	r9,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	cmp	r9w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
 	jl	.loop	; nie
 
 	; wskaźnik w przestrzeni obiektu względem prawej krawędzi?
-	mov	rcx,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
-	add	rcx,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	cmp	r8,	rcx
+	mov	cx,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	add	cx,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	cmp	r8w,	cx
 	jge	.loop	; nie
 
 	; wskaźnik w przestrzeni obiektu względem dolnej krawędzi?
-	mov	rcx,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
-	add	rcx,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
-	cmp	r9,	rcx
+	mov	cx,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	add	cx,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	cmp	r9w,	cx
 	jge	.loop	; nie
 	;-----------------------------------------------------------------------
 
@@ -557,7 +557,7 @@ kernel_wm_object_up:
 
 	; element wskazuje na obiekt arbitra?
 	mov	rax,	qword [rsi]
-	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_arbiter
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_arbiter
 	jnz	.last	; tak
 
 	; przesuń element na poprzednią pozycję
@@ -676,115 +676,115 @@ kernel_wm_object_move:
 	mov	rdi,	qword [kernel_wm_object_table_address]
 
 	; obiekt można przemieszczać?
-	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_fixed_xy
+	test	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_fixed_xy
 	jnz	.end	; nie
 
 	; pobierz właściwości obiektu
-	mov	r8,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
-	mov	r9,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
-	mov	r10,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	mov	r11,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	mov	r8w,	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	mov	r9w,	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	mov	r10w,	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	mov	r11w,	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
 
 	; ustaw zmienne lokalne
-	mov	r12,	r8
-	mov	r13,	r10
+	mov	r12w,	r8w
+	mov	r13w,	r10w
 
 	; brak przesunięcia na osi X?
-	test	r14,	r14
+	test	r14w,	r14w
 	jz	.y	; tak
 
 	; aktualizuj pozycję obiektu na osi X
-	add	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x],	r14
+	add	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x],	r14w
 
 	; przesunięcie na osi X jest dodatnie?
-	cmp	r14,	STATIC_EMPTY
+	cmp	r14w,	STATIC_EMPTY
 	jl	.to_left	; nie
 
 	; szerokość strefy
-	mov	r10,	r14
+	mov	r10w,	r14w
 
 	; zarejestruj
 	call	kernel_wm_zone_insert_by_register
 
 	; koryguj pozycję strefy na osi X
-	add	r8,	r14
+	add	r8w,	r14w
 
 .to_left:
 	; przesunięcie na osi X jest ujemne?
-	cmp	r14,	STATIC_EMPTY
+	cmp	r14w,	STATIC_EMPTY
 	jnl	.x_done	; nie
 
 	; zamień przesunięcie na wartość bezwzględną
-	neg	r14
+	neg	r14w
 
 	; pozycja i szerokość strefy
-	add	r8,	r10
-	sub	r8,	r14
-	mov	r10,	r14
+	add	r8w,	r10w
+	sub	r8w,	r14w
+	mov	r10w,	r14w
 
 	; zarejestruj
 	call	kernel_wm_zone_insert_by_register
 
 	; koryguj pozycję strefy na osi X
-	mov	r8,	r12
+	mov	r8w,	r12w
 
 .x_done:
 	; koryguj szerokość strefy
-	mov	r10,	r13
-	sub	r10,	r14
+	mov	r10w,	r13w
+	sub	r10w,	r14w
 
 .y:
 	; ustaw zmienne lokalne
-	mov	r12,	r9
-	mov	r13,	r11
+	mov	r12w,	r9w
+	mov	r13w,	r11w
 
 	; brak przesunięcia na osi X?
-	test	r15,	r15
+	test	r15w,	r15w
 	jz	.ready	; tak
 
 	; aktualizuj pozycję obiektu na osi Y
-	add	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y],	r15
+	add	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y],	r15w
 
 	; przesunięcie na osi Y jest dodatnie?
-	cmp	r15,	STATIC_EMPTY
+	cmp	r15w,	STATIC_EMPTY
 	jl	.to_up	; nie
 
 	; wysokość strefy
-	mov	r11,	r15
+	mov	r11w,	r15w
 
 	; zarejestruj
 	call	kernel_wm_zone_insert_by_register
 
 	; koryguj pozycję strefy na osi Y
-	add	r9,	r15
+	add	r9w,	r15w
 
 .to_up:
 	; przesunięcie na osi Y jest ujemne?
-	cmp	r15,	STATIC_EMPTY
+	cmp	r15w,	STATIC_EMPTY
 	jnl	.y_done	; nie
 
 	; zamień przesunięcie na wartość bezwzględną
-	neg	r15
+	neg	r15w
 
 	; pozycja i wysokość strefy
-	add	r9,	r11
-	sub	r9,	r15
-	mov	r11,	r15
+	add	r9w,	r11w
+	sub	r9w,	r15w
+	mov	r11w,	r15w
 
 	; zarejestruj
 	call	kernel_wm_zone_insert_by_register
 
 	; koryguj pozycję strefy na osi Y
-	mov	r9,	r12
+	mov	r9w,	r12w
 
 .y_done:
 	; koryguj wysokość strefy
-	mov	r11,	r13
-	sub	r11,	r15
+	mov	r11w,	r13w
+	sub	r11w,	r15w
 
 .ready:
 	; wyświetl ponownie zawartość obiektu
-	or	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
+	or	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 
 .end:
 	; przywróć oryginalne rejestry
@@ -822,16 +822,16 @@ kernel_wm_object_hide_fragile:
 	jz	.end	; tak
 
 	; obiekt VISIBLE?
-	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
 	jz	.loop	; nie
 
 	; obiekt FRAGILE?
-	test	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_fragile
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_fragile
 	jz	.loop	; nie
 
 	; wyłącz flagę VISIBLE, ustaw flagę UNDRAW
-	and	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_visible
-	or	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
+	and	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_visible
+	or	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
 
 	; kontynuuj
 	jmp	.loop
@@ -876,7 +876,7 @@ kernel_wm_object_delete:
 	push	rdi
 
 	; pobierz rozmiar przestrzeni obiektu i zamień na strony
-	mov	rcx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size]
+	mov	ecx,	dword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size]
 	call	library_page_from_size
 
 	; zwolnij przestrzeń obiektu
@@ -884,11 +884,11 @@ kernel_wm_object_delete:
 	call	kernel_memory_release
 
 	; przerysuj przestrzeń pod obiektem
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_visible | KERNEL_WM_OBJECT_FLAG_undraw
+	mov	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_visible | KERNEL_WM_OBJECT_FLAG_undraw
 
 .wait:
 	; przestrzeń pod obiektem została przerysowana?
-	test	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
+	test	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
 	jnz	.wait	; nie, czekaj
 
 	; usuń obiekt z listy

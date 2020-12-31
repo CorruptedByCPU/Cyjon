@@ -22,12 +22,12 @@ kernel_gui_init:
 	mov	rsi,	kernel_gui_window_workbench
 
 	; ustaw szerokość, wysokość i rozmiar przestrzeni roboczej
-	mov	rax,	qword [kernel_video_width_pixel]
-	mov	rbx,	qword [kernel_video_height_pixel]
-	mov	rcx,	qword [kernel_video_size_byte]
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width],	rax
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height],	rbx
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size],	rcx
+	mov	ax,	word [kernel_video_width_pixel]
+	mov	bx,	word [kernel_video_height_pixel]
+	mov	ecx,	dword [kernel_video_size_byte]
+	mov	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width],	ax
+	mov	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height],	bx
+	mov	dword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size],	ecx
 
 	; przygotuj miejsce pod przestrzeń roboczą
 	call	library_page_from_size
@@ -38,30 +38,27 @@ kernel_gui_init:
 
 	;-----------------------------------------------------------------------
 
-	; zachowaj oryginalne rejestry
-	push	rbx
-
 	; pobierz miks kolorów
 	mov	rax,	qword [kernel_gui_background_mixer]
 
 	; szerokość i wysokość przestrzeni
-	mov	rbx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	mov	rdx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	mov	bx,	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	mov	dx,	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
 
 	; przesunięcie linii pionowych
-	xor	r9,	r9
+	xor	r9w,	r9w
 
 	; szerokość fragmentu na podstawie rozdzielszości
-	mov	r10,	qword [kernel_video_width_pixel]
-	shr	r10,	STATIC_DIVIDE_BY_16_shift
+	mov	r10w,	word [kernel_video_width_pixel]
+	shr	r10w,	STATIC_DIVIDE_BY_16_shift
 
 .background_reload:
 	; rozpocznij od fragmentu o rozmiarze 64 pikseli
-	mov	rcx,	r10
+	movzx	ecx,	r10w
 
 .background_loop:
 	; szerokość mniejsza od fragmentu?
-	cmp	rbx,	r10
+	cmp	bx,	r10w
 	jb	.fill	; tak, koryguj
 
 	; wypełnij fragment kolorem
@@ -69,26 +66,26 @@ kernel_gui_init:
 	rep	stosd
 
 	; pozostała szerokość przestrzeni
-	sub	rbx,	r10
+	sub	bx,	r10w
 	jz	.offset	; pierwszy wiersz gotowy
 	jns	.background_reload	; brak przepełnienia, kontynuuj
 
 .fill:
 	; pozostała szerokość do wypełnienia
-	mov	rcx,	rbx
+	movzx	ecx,	bx
 	rol	rax,	STATIC_REPLACE_EAX_WITH_HIGH_shift	; zamień kolorystykę
 	rep	stosd
 
 .offset:
 	; następny wiersz przesunięty o kolejny piksel
-	inc	r9
+	inc	r9w
 
 	; przesunięcie większe od szerokości fragmentu?
-	cmp	r9,	r10
+	cmp	r9w,	r10w
 	jb	.offset_ok	; nie
 
 	; resetuj pozycję przesunięcia
-	xor	r9,	r9
+	xor	r9w,	r9w
 
 	; zamień kolorystykę
 	rol	rax,	STATIC_REPLACE_EAX_WITH_HIGH_shift
@@ -98,22 +95,19 @@ kernel_gui_init:
 
 .offset_ok:
 	; wypełnij fragment przesunięcia
-	mov	rcx,	r9
+	movzx	ecx,	r9w
 	rep	stosd
 
 .offset_end:
 	; szrokość przestrzeni
-	mov	rbx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	mov	bx,	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
 
 	; koryguj szerokość przestrzeni o przesunięcie fragmentu
-	sub	rbx,	r9
+	sub	bx,	r9w
 
 	; koniec przestrzeni na wysokość
-	dec	rdx
+	dec	dx
 	jnz	.background_reload	; nie
-
-	; przywróć oryginalne rejestry
-	pop	rbx
 
 	;-----------------------------------------------------------------------
 
@@ -130,24 +124,26 @@ kernel_gui_init:
 	mov	rsi,	kernel_gui_window_taskbar
 
 	; ustaw pozycję paska zadań na dole ekranu
-	sub	rbx,	KERNEL_GUI_WINDOW_TASKBAR_HEIGHT_pixel
-	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	rbx
+	mov	bx,	word [kernel_video_height_pixel]
+	sub	bx,	KERNEL_GUI_WINDOW_TASKBAR_HEIGHT_pixel
+	mov	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.y],	bx
 
 	; ustaw szerokość paska zadań na cały ekran
-	mov	rax,	qword [kernel_video_width_pixel]
-	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	rax
+	mov	ax,	word [kernel_video_width_pixel]
+	mov	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	ax
 
 	; ustaw etykietę "zegar" na końcu paska zadań
-	sub	rax,	qword [kernel_gui_window_taskbar.element_label_clock + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
-	mov	qword [kernel_gui_window_taskbar.element_label_clock + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	rax
+	sub	ax,	word [kernel_gui_window_taskbar.element_label_clock + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	mov	word [kernel_gui_window_taskbar.element_label_clock + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x],	ax
 
 	; oblicz rozmiar przestrzeni danych okna w Bajtach
-	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
-	shl	rax,	KERNEL_VIDEO_DEPTH_shift
-	mul	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	movzx	eax,	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	shl	eax,	KERNEL_VIDEO_DEPTH_shift
+	movzx	ebx,	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	mul	ebx
 
 	; przygotuj miejsce pod przestrzeń okna
-	mov	rcx,	rax
+	mov	ecx,	eax
 	call	library_page_from_size
 	call	kernel_memory_alloc
 
@@ -173,16 +169,17 @@ kernel_gui_init:
 	call	library_bosu_elements_specification
 
 	; ustaw szerokość i wysokość okna menu
-	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	r8
-	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height],	r9
+	mov	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	r8w
+	mov	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height],	r9w
 
 	; oblicz rozmiar przestrzeni danych okna w Bajtach
-	mov	rax,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	movzx	eax,	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
 	shl	rax,	KERNEL_VIDEO_DEPTH_shift
-	mul	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	movzx	ebx,	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.height]
+	mul	ebx
 
 	; przygotuj miejsce pod przestrzeń okna
-	mov	rcx,	rax
+	mov	ecx,	eax
 	call	library_page_from_size
 	call	kernel_memory_alloc
 
@@ -209,6 +206,6 @@ kernel_gui_init:
 	mov	qword [kernel_gui_taskbar_list_address],	rdi	; zachowaj wskaźnik
 
 	; uruchom domyślnie program Console
-	call	kernel_gui_event_console
+	; call	kernel_gui_event_console
 
 	macro_debug	"kernel_gui_init"

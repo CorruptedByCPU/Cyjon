@@ -31,10 +31,10 @@ struc	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY
 endstruc
 
 struc	KERNEL_WM_STRUCTURE_FIELD
-	.x						resb	8
-	.y						resb	8
-	.width						resb	8
-	.height						resb	8
+	.x						resb	2
+	.y						resb	2
+	.width						resb	2
+	.height						resb	2
 	.SIZE:
 endstruc
 
@@ -45,8 +45,8 @@ struc	KERNEL_WM_STRUCTURE_OBJECT
 endstruc
 
 struc	KERNEL_WM_STRUCTURE_OBJECT_EXTRA
-	.size						resb	8
-	.flags						resb	8
+	.size						resb	4
+	.flags						resb	2
 	.id						resb	8
 	.length						resb	1
 	.name						resb	KERNEL_WM_OBJECT_NAME_length
