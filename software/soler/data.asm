@@ -34,36 +34,37 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 .element_label:					db	LIBRARY_BOSU_ELEMENT_TYPE_label
 						dw	.element_label_end - .element_label
-						dw	1
+						dw	SOLER_WINDOW_PADDING_pixel
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel
-						dw	64 + 3
-						dw	16
+						dw	SOLER_INPUT_WIDTH_pixel
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel
 						dq	STATIC_EMPTY
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_right
 						db	1
 						db	"0"
+	times	SOLER_INPUT_SIZE_char - 0x01	db	STATIC_EMPTY
 .element_label_end:				;-------------------------------
 						; element "button C"
 						;-------------------------------
-.element_button_C:				db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
+.element_button_C:				db	LIBRARY_BOSU_ELEMENT_TYPE_button	; type
 						dw	.element_button_C_end - .element_button_C	; size
-						dw	1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1					; y
-						dw	16						; width
-						dw	16						; height
-						dq	soler_button_7					; wyjątek
+						dw	SOLER_WINDOW_PADDING_pixel	; x
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel	; y
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel	; width
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel	; height
+						dq	soler_button_7	; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
-						db	1						; length
-						db	"C"						; name
+						db	1	; length
+						db	"C"	; name
 .element_button_C_end:				;-------------------------------
 						; element "button 7"
 						;-------------------------------
-.element_button_7:				db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
-						dw	.element_button_7_end - .element_button_7	; size
-						dw	1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1 + 16 + 1					; y
-						dw	16						; width
-						dw	16						; height
+.element_button_7:				db	LIBRARY_BOSU_ELEMENT_TYPE_button
+						dw	.element_button_7_end - .element_button_7
+						dw	SOLER_WINDOW_PADDING_pixel
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x02
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel	; height
 						dq	soler_button_7					; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1						; length
@@ -73,10 +74,10 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 .element_button_4:				db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
 						dw	.element_button_4_end - .element_button_4	; size
-						dw	1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1 + 16 + 1 + 16 + 1					; y
-						dw	16						; width
-						dw	16						; height
+						dw	SOLER_WINDOW_PADDING_pixel
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x03
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel	; width
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel	; height
 						dq	soler_button_7					; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1						; length
@@ -86,10 +87,10 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 .element_button_1:				db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
 						dw	.element_button_1_end - .element_button_1	; size
-						dw	1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1 + 16 + 1 + 16 + 1 + 16 + 1					; y
-						dw	16						; width
-						dw	16						; height
+						dw	SOLER_WINDOW_PADDING_pixel
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x04
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel	; width
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel	; height
 						dq	soler_button_7					; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1						; length
@@ -99,10 +100,10 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 .element_button_0:				db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
 						dw	.element_button_0_end - .element_button_0	; size
-						dw	1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1 + 16 + 1 + 16 + 1 + 16 + 1 + 16 + 1					; y
-						dw	32 + 1						; width
-						dw	16						; height
+						dw	SOLER_WINDOW_PADDING_pixel
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x05
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel	; height
 						dq	soler_button_7					; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1						; length
@@ -112,10 +113,10 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 .element_button_DIVIDE:				db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
 						dw	.element_button_DIVIDE_end - .element_button_DIVIDE	; size
-						dw	1 + 16 + 1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1					; y
-						dw	16						; width
-						dw	16						; height
+						dw	SOLER_WINDOW_PADDING_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel	; width
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel	; height
 						dq	soler_button_7					; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1						; length
@@ -125,10 +126,10 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 .element_button_8:				db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
 						dw	.element_button_8_end - .element_button_8	; size
-						dw	1 + 16 + 1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1 + 16 + 1					; y
-						dw	16						; width
-						dw	16						; height
+						dw	SOLER_WINDOW_PADDING_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x02
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel	; width
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel	; height
 						dq	soler_button_7					; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1						; length
@@ -138,10 +139,10 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 .element_button_5:				db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
 						dw	.element_button_5_end - .element_button_5	; size
-						dw	1 + 16 + 1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1 + 16 + 1 + 16 + 1					; y
-						dw	16						; width
-						dw	16						; height
+						dw	SOLER_WINDOW_PADDING_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x03
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel	; width
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel	; height
 						dq	soler_button_7					; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1						; length
@@ -151,10 +152,10 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 .element_button_2:				db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
 						dw	.element_button_2_end - .element_button_2	; size
-						dw	1 + 16 + 1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1 + 16 + 1 + 16 + 1 + 16 + 1					; y
-						dw	16						; width
-						dw	16						; height
+						dw	SOLER_WINDOW_PADDING_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x04
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel	; width
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel	; height
 						dq	soler_button_7					; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1						; length
@@ -164,10 +165,10 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 .element_button_MULTIPLY:			db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
 						dw	.element_button_MULTIPLY_end - .element_button_MULTIPLY	; size
-						dw	1 + 16 + 1 + 16 + 1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1					; y
-						dw	16						; width
-						dw	16						; height
+						dw	SOLER_WINDOW_PADDING_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x02
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel	; width
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel	; height
 						dq	soler_button_7					; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1						; length
@@ -177,10 +178,10 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 .element_button_9:				db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
 						dw	.element_button_9_end - .element_button_9	; size
-						dw	1 + 16 + 1 + 16 + 1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1 + 16 + 1					; y
-						dw	16						; width
-						dw	16						; height
+						dw	SOLER_WINDOW_PADDING_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x02
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x02
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel	; width
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel	; height
 						dq	soler_button_7					; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1						; length
@@ -190,10 +191,10 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 .element_button_6:				db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
 						dw	.element_button_6_end - .element_button_6	; size
-						dw	1 + 16 + 1 + 16 + 1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1 + 16 + 1 + 16 + 1					; y
-						dw	16						; width
-						dw	16						; height
+						dw	SOLER_WINDOW_PADDING_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x02
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x03
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel	; width
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel	; height
 						dq	soler_button_7					; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1						; length
@@ -203,10 +204,10 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 .element_button_3:				db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
 						dw	.element_button_3_end - .element_button_3	; size
-						dw	1 + 16 + 1 + 16 + 1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1 + 16 + 1 + 16 + 1 + 16 + 1					; y
-						dw	16						; width
-						dw	16						; height
+						dw	SOLER_WINDOW_PADDING_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x02
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x04
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel	; width
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel	; height
 						dq	soler_button_7					; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1						; length
@@ -216,10 +217,10 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 .element_button_DOT:				db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
 						dw	.element_button_DOT_end - .element_button_DOT	; size
-						dw	1 + 16 + 1 + 16 + 1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1 + 16 + 1 + 16 + 1 + 16 + 1 + 16 + 1					; y
-						dw	16						; width
-						dw	16						; height
+						dw	SOLER_WINDOW_PADDING_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x02
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x05
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel	; width
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel	; height
 						dq	soler_button_7					; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1						; length
@@ -229,10 +230,10 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 .element_button_SUB:				db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
 						dw	.element_button_SUB_end - .element_button_SUB	; size
-						dw	1 + 16 + 1 + 16 + 1 + 16 + 1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1					; y
-						dw	16						; width
-						dw	16						; height
+						dw	SOLER_WINDOW_PADDING_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x03
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel	; width
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel	; height
 						dq	soler_button_7					; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1						; length
@@ -242,10 +243,10 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 .element_button_ADD:				db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
 						dw	.element_button_ADD_end - .element_button_ADD	; size
-						dw	1 + 16 + 1 + 16 + 1 + 16 + 1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1 + 16 + 1					; y
-						dw	16						; width
-						dw	32 + 1						; height
+						dw	SOLER_WINDOW_PADDING_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x03
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x02
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel						; width
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel	; height
 						dq	soler_button_7					; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1						; length
@@ -255,10 +256,10 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 .element_button_RESULT:				db	LIBRARY_BOSU_ELEMENT_TYPE_button		; type
 						dw	.element_button_RESULT_end - .element_button_RESULT	; size
-						dw	1 + 16 + 1 + 16 + 1 + 16 + 1					; x
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 16 + 1 + 16 + 1 + 16 + 1 + 16 + 1					; y
-						dw	16						; width
-						dw	32 + 1						; height
+						dw	SOLER_WINDOW_PADDING_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x03
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x04
+						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel						; width
+						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel	; height
 						dq	soler_button_7					; wyjątek
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1						; length
