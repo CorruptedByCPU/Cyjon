@@ -34,6 +34,10 @@ soler:
 	; inicjalizacja przestrzeni konsoli
 	%include	"software/soler/init.asm"
 
+.reset:
+	; wyczyść pamięć podręczną
+	call	soler_reset
+
 .loop:
 	; pobierz wiadomość
 	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
@@ -43,8 +47,53 @@ soler:
 
 	; komunikat typu: urządzenie wskazujące (myszka)?
 	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_MOUSE
-	jne	.loop	; nie, zignoruj wiadomość
+	je	.mouse	; tak
 
+	; komunikat typu: urządzenie wskazujące (klwiatura)?
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
+	jne	.loop	; nie, zignoruj klawizs
+
+	; pobierz kod klawisza
+	mov	ax,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
+
+	; sprawdź klawisz z klawiatury numerycznej
+	call	soler_numlock
+	jnc	.loop	; rozpoznano i przetworzono
+
+	; zrestartować wszystkie operacje?
+	cmp	ax,	STATIC_SCANCODE_ESCAPE
+	je	.reset	; tak
+
+	; suma operacji?
+	cmp	ax,	"+"
+	je	.operation	; tak
+
+	; różnica operacji?
+	cmp	ax,	"-"
+	je	.operation	; tak
+
+	; iloczyn operacji?
+	cmp	ax,	"*"
+	je	.operation	; tak
+
+	; iloraz operacji?
+	cmp	ax,	"/"
+	je	.operation	; tak
+
+	; modyfikacja wartości?
+	cmp	ax,	STATIC_SCANCODE_DIGIT_0
+	jb	.loop	; nie
+	cmp	ax,	STATIC_SCANCODE_DIGIT_9
+	ja	.loop	; nie
+
+.operation:
+	; wykonaj operację
+	call	soler_operation
+
+	; powrót do głównej pętli
+	jmp	.loop
+
+.mouse:
 	; naciśnięcie lewego klawisza myszki?
 	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.action],	KERNEL_WM_IPC_MOUSE_btn_left_press
 	jne	.loop	; nie, zignoruj wiadomość
@@ -73,6 +122,9 @@ soler_button_7:
 
 	;-----------------------------------------------------------------------
 	%include	"software/soler/data.asm"
+	%include	"software/soler/reset.asm"
+	%include	"software/soler/operation.asm"
+	%include	"software/soler/numlock.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"
 	%include	"library/font.asm"
