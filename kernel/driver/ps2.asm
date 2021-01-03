@@ -376,6 +376,11 @@ driver_ps2_keyboard_shift_right_semaphore			db	STATIC_FALSE
 driver_ps2_keyboard_alt_semaphore				db	STATIC_FALSE
 driver_ps2_keyboard_capslock_semaphore				db	STATIC_FALSE
 
+driver_ps2_string_debug						db	"Driver PS2: key 0x"
+driver_ps2_string_scancode					dd	STATIC_EMPTY
+								db	STATIC_SCANCODE_RETURN, STATIC_SCANCODE_NEW_LINE, STATIC_SCANCODE_TERMINATOR
+driver_ps2_string_debug_end:
+
 ;===============================================================================
 driver_ps2_mouse:
 	; zachowaj oryginalne rejestry
@@ -536,6 +541,29 @@ driver_ps2_keyboard_pull:
 	xor	eax,	eax	; wyczyść akumulator
 	in	al,	DRIVER_PS2_PORT_DATA
 
+	; zachowaj oryginalne rejestry
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rdi
+
+	; zamień wartość na ciąg
+	mov	bl,	STATIC_NUMBER_SYSTEM_hexadecimal
+	mov	ecx,	4	; prefiks
+	mov	dl,	STATIC_SCANCODE_DIGIT_0	; uzupełnij wartościami ZERO
+	mov	rdi,	driver_ps2_string_scancode
+	call	library_integer_to_string
+
+	; wyślij ciąg na port szeregowy COM1
+	mov	rsi,	driver_ps2_string_debug
+	call	driver_serial_send
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+
 	; rozpocząć sekwencje?
 	cmp	al,	DRIVER_PS2_KEYBOARD_sequence
 	je	.sequence	; tak
@@ -549,10 +577,8 @@ driver_ps2_keyboard_pull:
 	je	.no_sequence	; nie
 
 	; kombinuj kod klawisza
-	mov	ah,	byte [driver_ps2_keyboard_sequence]
-
-	; usuń flagę sekwencji
-	mov	byte [driver_ps2_keyboard_sequence],	STATIC_EMPTY
+	xor	ah,	ah
+	xchg	ah,	byte [driver_ps2_keyboard_sequence]
 
 	; zapisz kod klawisza do bufora klawiatury
 	jmp	.save
@@ -585,8 +611,6 @@ driver_ps2_keyboard_pull:
 	jmp	.save
 
 .inside:
-	xchg	bx,bx
-
 	; pobierz kod klawisza na podstawie scancode
 	mov	ax,	word [rsi + rax * STATIC_WORD_SIZE_byte]
 

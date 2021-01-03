@@ -56,41 +56,14 @@ soler:
 	; pobierz kod klawisza
 	mov	ax,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
 
-	; sprawdź klawisz z klawiatury numerycznej
-	call	soler_numlock
-	jnc	.loop	; rozpoznano i przetworzono
-
 	; zrestartować wszystkie operacje?
 	cmp	ax,	STATIC_SCANCODE_ESCAPE
 	je	.reset	; tak
 
-	; suma operacji?
-	cmp	ax,	"+"
-	je	.operation	; tak
-
-	; różnica operacji?
-	cmp	ax,	"-"
-	je	.operation	; tak
-
-	; iloczyn operacji?
-	cmp	ax,	"*"
-	je	.operation	; tak
-
-	; iloraz operacji?
-	cmp	ax,	"/"
-	je	.operation	; tak
-
-	; modyfikacja wartości?
-	cmp	ax,	STATIC_SCANCODE_DIGIT_0
-	jb	.loop	; nie
-	cmp	ax,	STATIC_SCANCODE_DIGIT_9
-	ja	.loop	; nie
-
-.operation:
-	; wykonaj operację
+	; wykonaj operację związaną z klawiszem
 	call	soler_operation
 
-	; powrót do głównej pętli
+	; powrót do procedury
 	jmp	.loop
 
 .mouse:
@@ -112,7 +85,6 @@ soler:
 	jne	.loop	; nie
 
 .close:
-soler_button_7:
 	; zakończ pracę programu
 	xor	ax,	ax
 	int	KERNEL_SERVICE

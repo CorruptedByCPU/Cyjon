@@ -76,7 +76,10 @@ driver_serial_send:
 .loop:
 	; pobierz znak z ciągu
 	lodsb
-	jz	.end	; koniec ciągu
+
+	; koniec ciągu?
+	test	al,	al
+	jz	.end	; tak
 
 	; odczekaj na gotowość kontrolera
 	call	driver_serial_ready
