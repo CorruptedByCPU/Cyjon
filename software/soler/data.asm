@@ -40,8 +40,8 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel
 						dq	STATIC_EMPTY
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_right
-						db	1
-						db	"0"
+.element_label_length:				db	1
+.element_label_string:				db	"0"
 	times	SOLER_INPUT_SIZE_char - 0x01	db	STATIC_EMPTY
 .element_label_end:				;-------------------------------
 						; element "button C"
@@ -65,7 +65,7 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x02
 						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel
 						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel
-						dq	0x0007
+						dq	STATIC_SCANCODE_DIGIT_7
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"7"
@@ -78,7 +78,7 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x03
 						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel
 						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel
-						dq	0x0004
+						dq	STATIC_SCANCODE_DIGIT_4
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"4"
@@ -91,7 +91,7 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x04
 						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel
 						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel
-						dq	0x0001
+						dq	STATIC_SCANCODE_DIGIT_1
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"1"
@@ -104,7 +104,7 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x05
 						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel
 						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel
-						dq	0x0000
+						dq	STATIC_SCANCODE_DIGIT_0
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"0"
@@ -130,7 +130,7 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x02
 						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel
 						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel
-						dq	0x0008
+						dq	STATIC_SCANCODE_DIGIT_8
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"8"
@@ -143,7 +143,7 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x03
 						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel
 						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel
-						dq	0x0005
+						dq	STATIC_SCANCODE_DIGIT_5
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"5"
@@ -156,7 +156,7 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x04
 						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel
 						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel
-						dq	0x0002
+						dq	STATIC_SCANCODE_DIGIT_2
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"2"
@@ -182,7 +182,7 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x02
 						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel
 						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel
-						dq	0x0009
+						dq	STATIC_SCANCODE_DIGIT_9
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"9"
@@ -195,7 +195,7 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x03
 						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel
 						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel
-						dq	0x0006
+						dq	STATIC_SCANCODE_DIGIT_6
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"6"
@@ -208,7 +208,7 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x04
 						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel
 						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel
-						dq	0x0003
+						dq	STATIC_SCANCODE_DIGIT_3
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"3"
@@ -234,7 +234,7 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel
 						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel
 						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel
-						dq	"-"
+						dq	STATIC_SCANCODE_MINUS
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"-"
@@ -260,7 +260,7 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel * 0x04
 						dw	SOLER_WINDOW_ELEMENT_WIDTH_pixel
 						dw	SOLER_WINDOW_ELEMENT_HEIGHT_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel
-						dq	"="
+						dq	STATIC_SCANCODE_RETURN
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"="

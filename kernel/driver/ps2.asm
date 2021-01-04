@@ -541,29 +541,6 @@ driver_ps2_keyboard_pull:
 	xor	eax,	eax	; wyczyść akumulator
 	in	al,	DRIVER_PS2_PORT_DATA
 
-	; zachowaj oryginalne rejestry
-	push	rbx
-	push	rcx
-	push	rdx
-	push	rdi
-
-	; zamień wartość na ciąg
-	mov	bl,	STATIC_NUMBER_SYSTEM_hexadecimal
-	mov	ecx,	4	; prefiks
-	mov	dl,	STATIC_SCANCODE_DIGIT_0	; uzupełnij wartościami ZERO
-	mov	rdi,	driver_ps2_string_scancode
-	call	library_integer_to_string
-
-	; wyślij ciąg na port szeregowy COM1
-	mov	rsi,	driver_ps2_string_debug
-	call	driver_serial_send
-
-	; przywróć oryginalne rejestry
-	pop	rdi
-	pop	rdx
-	pop	rcx
-	pop	rbx
-
 	; rozpocząć sekwencje?
 	cmp	al,	DRIVER_PS2_KEYBOARD_sequence
 	je	.sequence	; tak
@@ -615,6 +592,29 @@ driver_ps2_keyboard_pull:
 	mov	ax,	word [rsi + rax * STATIC_WORD_SIZE_byte]
 
 .save:
+	; zachowaj oryginalne rejestry
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rdi
+
+	; zamień wartość na ciąg
+	mov	bl,	STATIC_NUMBER_SYSTEM_hexadecimal
+	mov	ecx,	4	; prefiks
+	mov	dl,	STATIC_SCANCODE_DIGIT_0	; uzupełnij wartościami ZERO
+	mov	rdi,	driver_ps2_string_scancode
+	call	library_integer_to_string
+
+	; wyślij ciąg na port szeregowy COM1
+	mov	rsi,	driver_ps2_string_debug
+	call	driver_serial_send
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+
 	; zmień macierz klawiatury, jeśli wystąpiła odpowiednia sekwencja
 	call	driver_ps2_keyboard_shift
 
