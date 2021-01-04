@@ -4,8 +4,8 @@ rem MS/Windows build fix ... even if I'm compiling a new kernel ... the file con
 IF EXIST "build\kernel" ( DEL build\kernel )
 
 rem select a resolution supported by the BIOS
-set WIDTH=1280
-set HEIGHT=720
+set WIDTH=640
+set HEIGHT=400
 
 set PASS=0
 

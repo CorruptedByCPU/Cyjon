@@ -100,6 +100,9 @@ DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_4				equ	0xE14B
 DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_5				equ	0xE04C
 DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_6				equ	0xE14D
 DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_PLUS				equ	0xE04E
+DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_7				equ	0xE047
+DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_8				equ	0xE048
+DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_9				equ	0xE049
 DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_1				equ	0xE14F
 DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_2				equ	0xE150
 DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_3				equ	0xE151
@@ -242,36 +245,36 @@ driver_ps2_keyboard_matrix_low					dw	STATIC_EMPTY
 								db	",",	0x00				; 0x33
 								db	".",	0x00				; 0x34
 								db	"/",	0x00				; 0x35
-								dw	DRIVER_PS2_KEYBOARD_PRESS_SHIFT_RIGHT
+								dw	DRIVER_PS2_KEYBOARD_PRESS_SHIFT_RIGHT	; 0x36
 								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_MULTIPLY
-								dw	DRIVER_PS2_KEYBOARD_PRESS_ALT_LEFT
+								dw	DRIVER_PS2_KEYBOARD_PRESS_ALT_LEFT	; 0x38
 								dw	" ",	0x00				; 0x39
-								dw	DRIVER_PS2_KEYBOARD_PRESS_CAPSLOCK
+								dw	DRIVER_PS2_KEYBOARD_PRESS_CAPSLOCK	; 0x3A
 								dw	DRIVER_PS2_KEYBOARD_PRESS_F1
 								dw	DRIVER_PS2_KEYBOARD_PRESS_F2
 								dw	DRIVER_PS2_KEYBOARD_PRESS_F3
 								dw	DRIVER_PS2_KEYBOARD_PRESS_F4
 								dw	DRIVER_PS2_KEYBOARD_PRESS_F5
-								dw	DRIVER_PS2_KEYBOARD_PRESS_F6
+								dw	DRIVER_PS2_KEYBOARD_PRESS_F6		; 0x40
 								dw	DRIVER_PS2_KEYBOARD_PRESS_F7
 								dw	DRIVER_PS2_KEYBOARD_PRESS_F8
 								dw	DRIVER_PS2_KEYBOARD_PRESS_F9
-								dw	DRIVER_PS2_KEYBOARD_PRESS_F10
 								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK
-								dw	DRIVER_PS2_KEYBOARD_PRESS_SCROLL_LOCK
 								dw	STATIC_EMPTY
+								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_7	; 0x47
+								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_8	; 0x48
+								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_9	; 0x49
+								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_MINUS	; 0x4A
+								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_4	; 0x4B
+								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_5	; 0x4C
+								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_6	; 0x4D
+								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_PLUS	; 0x4E
+								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_1	; 0x4F
+								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_2	; 0x50
+								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_3	; 0x51
+								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_0	; 0x52
+								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_DOT	; 0x53
 								dw	STATIC_EMPTY
-								dw	STATIC_EMPTY
-								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_MINUS
-								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_4
-								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_5
-								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_6
-								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_PLUS
-								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_1
-								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_2
-								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_3
-								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_0
-								dw	DRIVER_PS2_KEYBOARD_PRESS_NUMLOCK_DOT
 								dw	STATIC_EMPTY
 								dw	STATIC_EMPTY
 								dw	STATIC_EMPTY
@@ -367,14 +370,16 @@ driver_ps2_keyboard_matrix_high					dw	STATIC_EMPTY
 								dw	DRIVER_PS2_KEYBOARD_PRESS_F11
 								dw	DRIVER_PS2_KEYBOARD_PRESS_F12
 
-
-
-
 driver_ps2_keyboard_ctrl_semaphore				db	STATIC_FALSE
 driver_ps2_keyboard_shift_left_semaphore			db	STATIC_FALSE
 driver_ps2_keyboard_shift_right_semaphore			db	STATIC_FALSE
 driver_ps2_keyboard_alt_semaphore				db	STATIC_FALSE
 driver_ps2_keyboard_capslock_semaphore				db	STATIC_FALSE
+
+driver_ps2_string_debug						db	"Driver PS2: key 0x"
+driver_ps2_string_scancode					dd	STATIC_EMPTY
+								db	STATIC_SCANCODE_RETURN, STATIC_SCANCODE_NEW_LINE, STATIC_SCANCODE_TERMINATOR
+driver_ps2_string_debug_end:
 
 ;===============================================================================
 driver_ps2_mouse:
@@ -549,10 +554,8 @@ driver_ps2_keyboard_pull:
 	je	.no_sequence	; nie
 
 	; kombinuj kod klawisza
-	mov	ah,	byte [driver_ps2_keyboard_sequence]
-
-	; usuń flagę sekwencji
-	mov	byte [driver_ps2_keyboard_sequence],	STATIC_EMPTY
+	xor	ah,	ah
+	xchg	ah,	byte [driver_ps2_keyboard_sequence]
 
 	; zapisz kod klawisza do bufora klawiatury
 	jmp	.save
@@ -589,6 +592,29 @@ driver_ps2_keyboard_pull:
 	mov	ax,	word [rsi + rax * STATIC_WORD_SIZE_byte]
 
 .save:
+	; zachowaj oryginalne rejestry
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rdi
+
+	; zamień wartość na ciąg
+	mov	bl,	STATIC_NUMBER_SYSTEM_hexadecimal
+	mov	ecx,	4	; prefiks
+	mov	dl,	STATIC_SCANCODE_DIGIT_0	; uzupełnij wartościami ZERO
+	mov	rdi,	driver_ps2_string_scancode
+	call	library_integer_to_string
+
+	; wyślij ciąg na port szeregowy COM1
+	mov	rsi,	driver_ps2_string_debug
+	call	driver_serial_send
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+
 	; zmień macierz klawiatury, jeśli wystąpiła odpowiednia sekwencja
 	call	driver_ps2_keyboard_shift
 
