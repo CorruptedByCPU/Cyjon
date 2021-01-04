@@ -26,12 +26,12 @@ soler_show:
 	call	library_integer_to_string
 
 	; ciąg zmieści się w etykiecie?
-	cmp	rcx,	SOLER_INPUT_SIZE_overflow
-	jb	.end	; tak
+	cmp	rcx,	SOLER_INPUT_SIZE_char
+	jbe	.end	; tak
 
 	; wyświetl komunikat błędu
-	mov	cl,	STATIC_QWORD_SIZE_byte	; rozmiar komunikatu błędu
-	mov	qword [soler_window.element_label_string],	" ERR"
+	mov	cl,	STATIC_DWORD_SIZE_byte	; rozmiar komunikatu błędu
+	mov	qword [soler_window.element_label_string],	" Err"
 
 .end:
 	; ustaw rozmiar ciągu w etykiecie
