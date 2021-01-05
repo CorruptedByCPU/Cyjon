@@ -29,6 +29,55 @@
 ; położenie kodu programu w pamięci logicznej
 [org SOFTWARE_base_address]
 
+	; test
+	xchg	bx,bx
+
+	; przelicz 8/7
+	finit
+	fild	dword [a]	; mov	st1,	dword [a]
+	fild	dword [b]	; mov	st0,	dword [b]
+	fdivp	st1	; div	st0
+			; mov	st0,	st1
+	fstp	qword [result]	; zapisz
+
+	finit	; reset koprocesora
+        fstcw	word [control]	; zapisz flagi koprocesora
+	mov	ax,	110000000000b	; nie zachowuj wartości za przecinkiem
+	or	word [control],	ax
+        fldcw	word [control]	; wczytaj nowe flagi koprocesora
+        fld	qword [result]	; mov	st0,	qword [result]
+        fist	dword [integer]	; mov	dword [integer],	st0
+
+	finit	; reset koprocesora
+        fld	qword [result]	; mov	st1,	qword [result]
+        fild	dword [integer]	; mov	st0,	dword [integer]
+        fsub	; sub	st1,	st0
+		; mov	st0,	st1
+        fstp	qword [temp]	; mov	qword [temp],	st0
+
+	finit	; reset koprocesora
+        fld	qword [temp]	; mov	st1,	qword [temp]
+        fild	dword [precision]	; mov	st0,	dword [precision]
+        fmul	; mul	st1
+	fistp	qword [decimal]	; mov	qword [decimal],	st0
+
+	mov	eax,	dword [integer]	; 1
+	mov	rbx,	qword [decimal]	; 14
+
+	jmp	soler
+
+align	4
+
+a		dq	8
+b		dq	7
+result		dq	0.0
+
+control		dw	0
+integer		dd	0
+decimal		dq	0
+precision	dq	100	; do 2 miejsc po przecinku
+temp		dq	0.0
+
 ;===============================================================================
 soler:
 	; inicjalizacja przestrzeni konsoli
