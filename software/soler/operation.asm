@@ -13,31 +13,11 @@ soler_operation:
 	; zachowaj oryginalne rejestry
 	push	rax
 
-	; suma operacji?
-	cmp	ax,	"+"
-	je	.add	; tak
-
-	; różnica operacji?
-	cmp	ax,	"-"
-	je	.sub	; tak
-
-	; iloczyn operacji?
-	cmp	ax,	"*"
-	je	.multiply	; tak
-
-	; iloraz operacji?
-	cmp	ax,	"/"
-	je	.divide	; tak
-
-	; przerworzyć?
-	cmp	ax,	"="
-	je	.result	; tak
-
 	; modyfikacja wartości?
 	cmp	ax,	STATIC_SCANCODE_DIGIT_0
-	jb	.end	; nie
+	jb	.no_digit	; nie
 	cmp	ax,	STATIC_SCANCODE_DIGIT_9
-	ja	.end	; nie
+	ja	.no_digit	; nie
 
 	; zamień scancode na cyfrę
 	and	byte [rsp],	STATIC_BYTE_LOW_mask
@@ -78,11 +58,33 @@ soler_operation:
 	; wykonano operację
 	jmp	.end
 
+.no_digit:
+	; suma operacji?
+	cmp	ax,	"+"
+	je	.add	; tak
+
+	; różnica operacji?
+	cmp	ax,	"-"
+	je	.sub	; tak
+
+	; iloczyn operacji?
+	cmp	ax,	"*"
+	je	.multiply	; tak
+
+	; iloraz operacji?
+	cmp	ax,	"/"
+	je	.divide	; tak
+
+	; przerworzyć?
+	cmp	ax,	"="
+	jne	.end	; nie
+
+	; result
+
 .add:
 .sub:
 .multiply:
 .divide:
-.result:
 
 .end:
 	; przywróć oryginalne rejestry
