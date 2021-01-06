@@ -123,6 +123,7 @@ soler:
 	%include	"software/soler/data.asm"
 	%include	"software/soler/operation.asm"
 	%include	"software/soler/show.asm"
+	%include	"software/soler/fpu.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"
 	%include	"library/font.asm"
