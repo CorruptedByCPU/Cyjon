@@ -75,6 +75,10 @@ soler_operation:
 	cmp	ax,	"/"
 	je	.divide	; tak
 
+	; wstawić część ułamkową?
+	cmp	ax,	","
+	je	.dot	; tak
+
 	; przerworzyć?
 	cmp	ax,	"="
 	jne	.end	; nie
@@ -85,7 +89,26 @@ soler_operation:
 .sub:
 .multiply:
 .divide:
+	; koniec obsługi operacji
+	jmp	.end
 
+;-------------------------------------------------------------------------------
+.dot:
+	; wartość pierwsza czy druga ?
+	test	r12b,	r12b
+	jnz	.dot_second	; druga wartość
+
+	; oznacz flagą wartość ułamkową liczby
+	or	r15b,	SOLER_INPUT_FLAG_float_first
+
+	; koniec obsługi operacji
+	jmp	.end
+
+.dot_second:
+	; oznacz flagą wartość ułamkową liczby
+	or	r15b,	SOLER_INPUT_FLAG_float_second
+
+;-------------------------------------------------------------------------------
 .end:
 	; przywróć oryginalne rejestry
 	pop	rax

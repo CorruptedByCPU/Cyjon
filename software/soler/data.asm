@@ -10,7 +10,6 @@ align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 soler_fpu_float_result				dq	STATIC_EMPTY
 soler_fpu_precision				dq	1000	; do 3 miejsc po przecinku
 soler_fpu_precision_digit			dq	10	; jedno miejsce po przecinku
-soler_fpu_float_pointer				dd	STATIC_EMPTY
 soler_fpu_control				dw	0
 
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING

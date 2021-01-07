@@ -8,7 +8,7 @@
 
 ;===============================================================================
 ; wejście:
-;	rax - wartość
+;	rax - wartość całkowita
 ;	rbx - system liczbowy (podstawa: 2..36)
 ;	rcx - ilość znaków na prefiks
 ;	dl - kod ASCII prefiksu

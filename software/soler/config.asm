@@ -9,6 +9,9 @@
 %define	PROGRAM_NAME			"soler"
 %define	PROGRAM_VERSION			"0.2"
 
+SOLER_INPUT_FLAG_float_first		equ	00000001b
+SOLER_INPUT_FLAG_float_second		equ	00000010b
+
 SOLER_INPUT_SIZE_overflow		equ	21
 SOLER_INPUT_SIZE_char			equ	16
 SOLER_INPUT_WIDTH_pixel			equ	SOLER_INPUT_SIZE_char * LIBRARY_FONT_WIDTH_pixel + 0x03	; +0x03 korekta do wszystkich wyliczeń

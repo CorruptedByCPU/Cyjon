@@ -39,6 +39,9 @@ soler:
 	xor	r10,	r10	; pierwsza wartość
 	xor	r11,	r11	; druga wartość
 	xor	r12,	r12	; operacja
+	xor	r13,	r13	; frakcja pierwszej wartości
+	xor	r14,	r14	; frakcja drugiej wartości
+	xor	r15,	r15	; flagi
 
 	; aktualizuj zawartość etykiety
 	call	soler_show
@@ -128,4 +131,6 @@ soler:
 	%include	"library/bosu.asm"
 	%include	"library/font.asm"
 	%include	"library/integer_to_string.asm"
+	%include	"library/string_to_float.asm"
+	%include	"library/string_word_next.asm"
 	;-----------------------------------------------------------------------

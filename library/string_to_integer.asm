@@ -11,7 +11,7 @@
 ;	rbx - ilość znaków w ciągu
 ;	rsi - wskaźnik do ciągu
 ; wyjście:
-;	rax - wartość
+;	rax - wartość całkowita
 library_string_to_integer:
 	; zachowaj oryginalne rejestry
 	push	rbx
