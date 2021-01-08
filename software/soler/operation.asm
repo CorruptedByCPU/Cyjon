@@ -14,7 +14,8 @@ soler_operation:
 	push	rax
 	push	rsi
 
-	; przetwarzany ciąg
+	; przetwarzany ciąg i jego rozmiar
+	movzx	ecx,	byte [soler_window.element_label_value_length]
 	mov	rsi,	soler_window.element_label_value_string
 
 	; modyfikacja wartości?
@@ -24,12 +25,23 @@ soler_operation:
 	ja	.no_digit	; nie
 
 .dot:
+	; przecinek?
+	cmp	ax,	","
+	jne	.not_dot	; nie
+
+	; wstawiono już przecinek?
+	test	r10b,	r10b
+	jz	.error	; tak, zignoruj
+
+	; oznacz flagą wstawienie przecinka w liczbie
+	mov	r10b,	STATIC_TRUE
+
+.not_dot:
 	; osiągnięto limit wejścia?
-	cmp	byte [soler_window.element_label_value_length],	SOLER_INPUT_VALUE_WIDTH_char
+	cmp	cl,	SOLER_INPUT_VALUE_WIDTH_char
 	jnb	.error	; tak, zignoruj cyfrę
 
 	; dołącz cyfrę na koniec ciągu
-	movzx	ecx,	byte[soler_window.element_label_value_length]
 	mov	byte [rsi + rcx],	al
 
 	; rozmiar ciągu
@@ -74,17 +86,49 @@ soler_operation:
 	cmp	ax,	STATIC_SCANCODE_RETURN
 	jne	.error	; nie
 
+;-------------------------------------------------------------------------------
 .result:
-	; result
+	; koniec obsługi operacji
+	jmp	.end
 
+;-------------------------------------------------------------------------------
 .backspace:
+	; ciąg pusty?
+	test	cl,	cl
+	jz	.error	; tak
+
+	; usuń ostatnią cyfrę (lub przecinek) z ciągu
+	dec	cl
+
+	; usuniętym znakiem jest przecinek?
+	cmp	byte [rsi + rcx],	","
+	jne	.backspace_ready	; nie
+
+	; zwolnij flagę przecinka
+	mov	r10b,	STATIC_FALSE
+
+.backspace_ready:
+	; aktulizuj rozmiar ciągu
+	mov	byte [soler_window.element_label_value_length],	cl
+
+	; koniec obsługi operacji
+	jmp	.end
+
+;-------------------------------------------------------------------------------
 .add:
+
+;-------------------------------------------------------------------------------
 .sub:
+
+;-------------------------------------------------------------------------------
 .multiply:
+
+;-------------------------------------------------------------------------------
 .divide:
 	; koniec obsługi operacji
 	jmp	.end
 
+;-------------------------------------------------------------------------------
 .error:
 	; nie wykonano operacji
 	stc

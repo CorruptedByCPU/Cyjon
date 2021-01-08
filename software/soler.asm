@@ -36,7 +36,7 @@ soler:
 
 .reset:
 	; flaga, przecinek
-	xor	r10b,	r10b
+	mov	r10b,	STATIC_FALSE
 
 	; rozmiar ciągu etykiet
 	mov	byte [soler_window.element_label_operation_length],	STATIC_EMPTY
