@@ -35,20 +35,16 @@ soler:
 	%include	"software/soler/init.asm"
 
 .reset:
-	; zresetuj stan
-	xor	r10,	r10	; pierwsza wartość
-	xor	r11,	r11	; druga wartość
-	xor	r12,	r12	; operacja
-	xor	r13,	r13	; frakcja pierwszej wartości
-	xor	r14,	r14	; frakcja drugiej wartości
-	xor	r15,	r15	; flagi
+	; flaga, przecinek
+	xor	r10b,	r10b
 
-	; aktualizuj zawartość etykiety
-	call	soler_show
+	; rozmiar ciągu etykiet
+	mov	byte [soler_window.element_label_operation_length],	STATIC_EMPTY
+	mov	byte [soler_window.element_label_value_length],	STATIC_EMPTY
 
 .refresh:
 	; aktualizuj zawartość etykiety
-	mov	rsi,	soler_window.element_label
+	mov	rsi,	soler_window.element_label_value
 	mov	rdi,	soler_window
 	call	library_bosu_element_label
 
@@ -83,9 +79,7 @@ soler:
 
 	; wykonaj operację związaną z klawiszem
 	call	soler_operation
-
-	; aktualizuj zawartość etykiety
-	call	soler_show
+	jc	.loop	; brak działań
 
 	; powrót do procedury
 	jmp	.refresh
@@ -125,7 +119,7 @@ soler:
 	;-----------------------------------------------------------------------
 	%include	"software/soler/data.asm"
 	%include	"software/soler/operation.asm"
-	%include	"software/soler/show.asm"
+	; %include	"software/soler/show.asm"
 	%include	"software/soler/fpu.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"

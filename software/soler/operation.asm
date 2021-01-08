@@ -12,6 +12,10 @@
 soler_operation:
 	; zachowaj oryginalne rejestry
 	push	rax
+	push	rsi
+
+	; przetwarzany ciąg
+	mov	rsi,	soler_window.element_label_value_string
 
 	; modyfikacja wartości?
 	cmp	ax,	STATIC_SCANCODE_DIGIT_0
@@ -19,41 +23,20 @@ soler_operation:
 	cmp	ax,	STATIC_SCANCODE_DIGIT_9
 	ja	.no_digit	; nie
 
-	; zamień scancode na cyfrę
-	and	byte [rsp],	STATIC_BYTE_LOW_mask
+.dot:
+	; osiągnięto limit wejścia?
+	cmp	byte [soler_window.element_label_value_length],	SOLER_INPUT_VALUE_WIDTH_char
+	jnb	.error	; tak, zignoruj cyfrę
 
-	; domyślnie dołącz cyfrę do pierwszej wartości
-	mov	rcx,	r10
+	; dołącz cyfrę na koniec ciągu
+	movzx	ecx,	byte[soler_window.element_label_value_length]
+	mov	byte [rsi + rcx],	al
 
-	; wybrano operację?
-	test	r12b,	r12b
-	jz	.no_operation	; nie
+	; rozmiar ciągu
+	inc	byte [soler_window.element_label_value_length]
 
-	; dołącz cyfrę do drugiej wartości
-	mov	rcx,	r11
-
-.no_operation:
-	; zmień podstawę wartości
-	mov	eax,	STATIC_NUMBER_SYSTEM_decimal
-	mul	rcx
-
-	; kombinuj cyfrę z wartością
-	movzx	ecx,	byte [rsp]
-	add	rcx,	rax
-
-	; wybrano operację?
-	test	r12b,	r12b
-	jz	.first	; nie
-
-	; aktualizuj wartość
-	mov	r11,	rcx
-
-	; wykonano operację
-	jmp	.end
-
-.first:
-	; aktualizuj wartość
-	mov	r10,	rcx
+	; operacja wykonana
+	clc
 
 	; wykonano operację
 	jmp	.end
@@ -81,10 +64,20 @@ soler_operation:
 
 	; przerworzyć?
 	cmp	ax,	"="
-	jne	.end	; nie
+	je	.result	; tak
 
+	; cofnij wartość?
+	cmp	ax,	STATIC_SCANCODE_BACKSPACE
+	je	.backspace	; tak
+
+	; przetworzyć?
+	cmp	ax,	STATIC_SCANCODE_RETURN
+	jne	.error	; nie
+
+.result:
 	; result
 
+.backspace:
 .add:
 .sub:
 .multiply:
@@ -92,25 +85,14 @@ soler_operation:
 	; koniec obsługi operacji
 	jmp	.end
 
-;-------------------------------------------------------------------------------
-.dot:
-	; wartość pierwsza czy druga ?
-	test	r12b,	r12b
-	jnz	.dot_second	; druga wartość
-
-	; oznacz flagą wartość ułamkową liczby
-	or	r15b,	SOLER_INPUT_FLAG_float_first
-
-	; koniec obsługi operacji
-	jmp	.end
-
-.dot_second:
-	; oznacz flagą wartość ułamkową liczby
-	or	r15b,	SOLER_INPUT_FLAG_float_second
+.error:
+	; nie wykonano operacji
+	stc
 
 ;-------------------------------------------------------------------------------
 .end:
 	; przywróć oryginalne rejestry
+	pop	rsi
 	pop	rax
 
 	; powrót z procedury
