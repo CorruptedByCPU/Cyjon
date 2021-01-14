@@ -16,6 +16,10 @@ align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 soler_fpu_integer				dq	0
 soler_fpu_fraction				dq	0
 
+soler_value_exec				db	STATIC_EMPTY
+soler_value_first				dq	0.0
+soler_value_second				dq	0.0
+
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 soler_ipc_data:
 	times KERNEL_IPC_STRUCTURE.SIZE		db	STATIC_EMPTY

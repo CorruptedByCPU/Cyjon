@@ -7,6 +7,140 @@
 ;===============================================================================
 
 ;===============================================================================
+soler_operation_insert:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rsi
+
+	; komponuj obydwie wartości jeśli istnieją
+	call	soler_operation_compose
+
+	; wprowadzono pierwszą wartość?
+	cmp	r11b,	STATIC_TRUE
+	je	.first_exist	; tak
+
+	; zaakceptuj pierwszą wartość
+
+	; zamień ciąg wprowadzony przez użyszkodnika na wartość zmiennoprzecinkową
+	movzx	ecx,	byte [soler_window.element_label_value_length]
+	mov	rsi,	soler_window.element_label_value_string
+	call	library_string_to_float
+
+	; zachowaj wartość i podnieś flagę
+	mov	qword [soler_value_first],	rax
+	mov	r11b,	STATIC_TRUE
+
+	; koniec operacji
+	jmp	.end
+
+.first_exist:
+	; zaakceptuj drugą wartość
+
+	; zamień ciąg wprowadzony przez użyszkodnika na wartość zmiennoprzecinkową
+	movzx	ecx,	byte [soler_window.element_label_value_length]
+	mov	rsi,	soler_window.element_label_value_string
+	call	library_string_to_float
+
+	; zachowaj wartość i podnieś flagę
+	mov	qword [soler_value_second],	rax
+	mov	r12b,	STATIC_TRUE
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rcx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+	; debug
+	macro_debug	"software: soler_operation_insert"
+
+;===============================================================================
+; wejście:
+;	byte [soler_value_exec]
+;	qword [soler_value_first]
+;	qword [soler_value_second]
+; wyjście:
+;	qword [soler_value_first]
+soler_operation_compose:
+	; spełniono kryteria?
+
+	; wybrano typ opreracji?
+	cmp	byte [soler_value_exec],	STATIC_EMPTY
+	je	.no_result	; nie
+
+	; załadowano pierwszą wartość
+	cmp	r11b,	STATIC_FALSE
+	je	.no_result	; nie
+
+	; załadowano drugą wartość?
+	cmp	r12b,	STATIC_FALSE
+	je	.no_result	; nie
+
+	;-----------------------------------------------------------------------
+
+	finit	; reset koprocesora
+	fld	qword [soler_value_first]
+	fld	qword [soler_value_second]
+
+	; operacja dodawania?
+	cmp	byte [soler_value_exec],	"+"
+	jne	.no_add	; nie
+
+	; wykonaj operację
+	fadd
+
+	; koniec operacji
+	jmp	.result
+
+.no_add:
+	; operacja odejmowania?
+	cmp	byte [soler_value_exec],	"-"
+	jne	.no_sub	; nie
+
+	; wykonaj operację
+	fsub
+
+	; koniec operacji
+	jmp	.result
+
+.no_sub:
+	; operacja mnożenia?
+	cmp	byte [soler_value_exec],	"*"
+	jne	.no_multiply	; nie
+
+	; wykonaj operację
+	fmul
+
+	; koniec operacji
+	jmp	.result
+
+.no_multiply:
+	; operacja mnożenia?
+	cmp	byte [soler_value_exec],	"/"
+	jne	.no_result	; nie
+
+	; wykonaj operację
+	fdiv
+
+.result:
+	; zwróć wynik w pierwszej wartości zmiennoprzecinkowej
+	fst	qword [soler_value_first]
+
+	; druga wartość jest przeterminowana
+	mov	r12b,	STATIC_FALSE
+
+.no_result:
+	; powrót z procedury
+	ret
+
+	; debug
+	macro_debug	"software: soler_operation_compose"
+
+;===============================================================================
 ; wejście:
 ;	ax - wartość z klawiatury bądź myszki
 soler_operation:
@@ -74,7 +208,7 @@ soler_operation:
 	cmp	ax,	","
 	je	.dot	; tak
 
-	; przerworzyć?
+	; przetworzyć?
 	cmp	ax,	"="
 	je	.result	; tak
 
@@ -116,6 +250,17 @@ soler_operation:
 
 ;-------------------------------------------------------------------------------
 .add:
+	xchg	bx,bx
+
+	; załaduj wartość do zmiennej
+	call	soler_operation_insert
+	jc	.end	; brak przesłanej wartości
+
+	; zachowaj znak operacji
+	mov	byte [soler_value_exec],	"+"
+
+	; koniec procedury
+	jmp	.end
 
 ;-------------------------------------------------------------------------------
 .sub:
@@ -141,3 +286,6 @@ soler_operation:
 
 	; powrót z procedury
 	ret
+
+	; debug
+	macro_debug	"software: soler_operation"

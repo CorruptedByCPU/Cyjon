@@ -36,7 +36,11 @@ soler:
 
 .reset:
 	; flaga, przecinek
-	mov	r10b,	STATIC_FALSE
+	mov	r10b,	STATIC_FALSE	; wprowadzono znak części ułamkowej
+
+	; flaga, pierwsza i druga wartość
+	mov	r11b,	STATIC_FALSE	; zatwierdzono pierwszą wartość
+	mov	r12b,	STATIC_FALSE	; zatwierdzono drugą wartość
 
 	; rozmiar ciągu etykiet
 	mov	byte [soler_window.element_label_operation_length],	STATIC_EMPTY

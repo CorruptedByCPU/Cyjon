@@ -27,6 +27,10 @@ library_string_to_float:
 	push	STATIC_EMPTY	; frakcja
 	push	STATIC_EMPTY	; całkowita
 
+	; ciąg pusty?
+	test	rcx,	rcx
+	jz	.error	; tak
+
 	; odszukaj znaku ułamka w ciągu
 	mov	bl,	","
 	call	library_string_word_next
@@ -112,7 +116,15 @@ library_string_to_float:
 	; zwróć wynik
 	fstp	qword [rsp + STATIC_QWORD_SIZE_byte * 0x03]
 
-	; zwolnij zmiwnne lokalne (całkowita i frakcja)
+	; koniec
+	jmp	.end
+
+.error:
+	; nie udało się przetworzyć poprawnie ciągu zwróć "0.0"
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte * 0x03],	STATIC_EMPTY
+
+.end:
+	; zwolnij zmienne lokalne (całkowita i frakcja)
 	add	rsp,	STATIC_QWORD_SIZE_byte * 0x02
 
 	; przywróć oryginalne rejestry
