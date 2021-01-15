@@ -89,6 +89,7 @@ kernel:
 	%include	"library/page_from_size.asm"
 	%include	"library/string_compare.asm"
 	%include	"library/string_cut.asm"
+	%include	"library/string_word_next.asm"
 	;-----------------------------------------------------------------------
 
 ; wyrównaj kod jądra systemu do pełnej strony

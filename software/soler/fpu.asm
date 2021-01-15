@@ -10,7 +10,7 @@
 ; wejście:
 ;	qword [soler.soler_fpu_fraction] - liczba całkowita
 ; wyjście:
-;	dword [soler_fpu_float_pointer] - ilość cyfr po przecinku
+;	rcx - ilość cyfr po przecinku
 ;	qword [soler_fpu_float_result] - wartość zmiennoprzecinkowa
 soler_fpu_fraction_to_float:
 	finit	; reset koprocesora
@@ -19,12 +19,12 @@ soler_fpu_fraction_to_float:
 	fild	qword [soler_fpu_fraction]	; st0
 
 	; zresetuj ilość miejsc po przecinku
-	mov	dword [soler_fpu_float_pointer],	STATIC_EMPTY
+	xor	ecx,	ecx
 
 .loop:
 	; zamień liczbę w ułamek
 	fdiv	st0,	st1	; div	st1
-	inc	dword [soler_fpu_float_pointer]	; ilość cyfr po przecinku
+	inc	rcx	; ilość cyfr po przecinku
 	fcomi	st0,	st2	; cmp	st0,	st2
 	ja	.loop	; przeliczaj dalej
 
@@ -45,7 +45,7 @@ soler_fpu_float_to_fraction:
 
 	finit	; reset koprocesora
 	fld	qword [soler_fpu_float_result]	; mov	st1,	qword [soler_fpu_float_result]
-	fild	dword [soler_fpu_precision]	; mov	st0,	dword [soler_fpu_precision]
+	fild	qword [soler_fpu_precision]	; mov	st0,	qword [soler_fpu_precision]
 	fmul	; mul	st1
 	fistp	qword [soler_fpu_fraction]	; mov	qword [soler_fpu_fraction],	st0
 
@@ -56,19 +56,19 @@ soler_fpu_float_to_fraction:
 ; wejście:
 ;	qword [soler_fpu_float_result] - wartość zmiennoprzecinkowa (integer.float)
 ; wyjście:
-;	dword [soler_fpu_integer] - wartość całkowita z zmiennoprzecinkowej (integer)
+;	qword [soler_fpu_integer] - wartość całkowita z zmiennoprzecinkowej (integer)
 soler_fpu_float_to_integer:
 	finit	; reset koprocesora
 	fldcw	word [soler_fpu_control]	; wczytaj flagi koprocesora z zmiennej
 	fld	qword [soler_fpu_float_result]	; mov	st0,	qword [soler_fpu_float_result]
-	fist	dword [soler_fpu_integer]	; mov	dword [soler_fpu_integer],	st0
+	fistp	qword [soler_fpu_integer]	; mov	qword [soler_fpu_integer],	st0
 
 	; powrót z procedury
 	ret
 
 ;===============================================================================
 ; wejście:
-;	dword [soler_fpu_integer] - wartość całkowita (integer)
+;	qword [soler_fpu_integer] - wartość całkowita (integer)
 ; wyjście:
 ;	qword [soler_fpu_float_result] - wartość zmiennoprzecinkowa (integer.0)
 soler_fpu_integer_to_float:
@@ -93,7 +93,7 @@ soler_fpu_float_only:
 
 	finit	; reset koprocesora
         fld	qword [soler_fpu_float_result]	; mov	st1,	qword [soler_fpu_float_result]
-        fild	dword [soler_fpu_integer]	; mov	st0,	dword [soler_fpu_integer]
+        fild	qword [soler_fpu_integer]	; mov	st0,	qword [soler_fpu_integer]
         fsub	; sub	st1,	st0
 		; mov	st0,	st1
         fstp	qword [soler_fpu_float_result]	; mov	qword [soler_fpu_float_result],	st0

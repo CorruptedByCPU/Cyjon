@@ -35,17 +35,20 @@ soler:
 	%include	"software/soler/init.asm"
 
 .reset:
-	; zresetuj stan
-	xor	r10,	r10	; pierwsza wartość
-	xor	r11,	r11	; druga wartość
-	xor	r12,	r12	; operacja
+	; flaga, przecinek
+	mov	r10b,	STATIC_FALSE	; wprowadzono znak części ułamkowej
 
-	; aktualizuj zawartość etykiety
-	call	soler_show
+	; flaga, pierwsza i druga wartość
+	mov	r11b,	STATIC_FALSE	; zatwierdzono pierwszą wartość
+	mov	r12b,	STATIC_FALSE	; zatwierdzono drugą wartość
+
+	; rozmiar ciągu etykiet
+	mov	byte [soler_window.element_label_operation_length],	STATIC_EMPTY
+	mov	byte [soler_window.element_label_value_length],	STATIC_EMPTY
 
 .refresh:
 	; aktualizuj zawartość etykiety
-	mov	rsi,	soler_window.element_label
+	mov	rsi,	soler_window.element_label_value
 	mov	rdi,	soler_window
 	call	library_bosu_element_label
 
@@ -80,9 +83,7 @@ soler:
 
 	; wykonaj operację związaną z klawiszem
 	call	soler_operation
-
-	; aktualizuj zawartość etykiety
-	call	soler_show
+	jc	.loop	; brak działań
 
 	; powrót do procedury
 	jmp	.refresh
@@ -122,10 +123,13 @@ soler:
 	;-----------------------------------------------------------------------
 	%include	"software/soler/data.asm"
 	%include	"software/soler/operation.asm"
-	%include	"software/soler/show.asm"
+	; %include	"software/soler/show.asm"
 	%include	"software/soler/fpu.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"
 	%include	"library/font.asm"
 	%include	"library/integer_to_string.asm"
+	%include	"library/string_to_float.asm"
+	%include	"library/string_to_integer.asm"
+	%include	"library/string_word_next.asm"
 	;-----------------------------------------------------------------------

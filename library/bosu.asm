@@ -876,6 +876,10 @@ library_bosu_string:
 	push	r9
 	push	r13
 
+	; ciąg pusty?
+	test	rcx,	rcx
+	jz	.end	; tak
+
 	; wyczyść akumulator
 	xor	rax,	rax
 
