@@ -44,11 +44,25 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	.element_button_close_end - .element_button_close
 						dq	soler.close
 .element_button_close_end:			;-------------------------------
+						; element "label operation"
+						;-------------------------------
+.element_label_operation:			db	LIBRARY_BOSU_ELEMENT_TYPE_label
+						dw	.element_label_operation_end - .element_label_operation
+						dw	SOLER_WINDOW_PADDING_pixel
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel
+						dw	SOLER_INPUT_OPERATION_WIDTH_pixel
+						dw	SOLER_INPUT_HEIGHT_pixel
+						dq	STATIC_EMPTY
+						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_right
+.element_label_operation_length:		db	1
+.element_label_operation_string:		db	STATIC_SCANCODE_SPACE
+times	SOLER_INPUT_OPERATION_WIDTH_char - 0x01	db	STATIC_EMPTY
+.element_label_operation_end:			;-------------------------------
 						; element "label value"
 						;-------------------------------
 .element_label_value:				db	LIBRARY_BOSU_ELEMENT_TYPE_label
 						dw	.element_label_value_end - .element_label_value
-						dw	SOLER_WINDOW_PADDING_pixel
+						dw	SOLER_WINDOW_PADDING_pixel + SOLER_INPUT_OPERATION_WIDTH_pixel
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel
 						dw	SOLER_INPUT_VALUE_WIDTH_pixel
 						dw	SOLER_INPUT_HEIGHT_pixel
@@ -58,20 +72,6 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 .element_label_value_string:			db	""
 times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 .element_label_value_end:			;-------------------------------
-						; element "label operation"
-						;-------------------------------
-.element_label_operation:			db	LIBRARY_BOSU_ELEMENT_TYPE_label
-						dw	.element_label_operation_end - .element_label_operation
-						dw	SOLER_WINDOW_PADDING_pixel + SOLER_INPUT_VALUE_WIDTH_pixel
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel
-						dw	SOLER_INPUT_OPERATION_WIDTH_pixel
-						dw	SOLER_INPUT_HEIGHT_pixel
-						dq	STATIC_EMPTY
-						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_right
-.element_label_operation_length:		db	1
-.element_label_operation_string:		db	"<"
-times	SOLER_INPUT_OPERATION_WIDTH_char - 0x01	db	STATIC_EMPTY
-.element_label_operation_end:			;-------------------------------
 						; element "button C"
 						;-------------------------------
 .element_button_C:				db	LIBRARY_BOSU_ELEMENT_TYPE_button	; typ

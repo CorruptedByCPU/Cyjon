@@ -8,98 +8,39 @@
 
 ;===============================================================================
 ; wejście:
-;	rcx - ilość znaków w ciągu
-;	bl - kod ASII separatora, jeśli 0x00 to TERMINATOR, NEW_LINE, SPACE, TAB
+;	al - kod ASII separatora
+;	rcx - rozmiar ciągu w Bajtach
 ;	rsi - wskaźnik do ciągu
 ; wyjście:
-;	Flaga CF - jeśli błąd
-;	rbx - rozmiar pierwszego znalezionego "słowa"
-;	rsi - wskaźnik bezwzględny w ciągu do odnalezionego "słowa"
+;	Flaga CF - jeśli nie znaleziono separatora
+;	rbx - rozmiar ciągu do pierwszego separatora
+;	lub rbx = rcx jeśli Flaga CF
 library_string_word_next:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rcx
-
-	; ciąg pusty?
-	test	rcx,	rcx
-	jz	.not_found	; tak
-
-.find:
-	; znaleziono separator?
-	cmp	byte [rsi],	bl
-	je	.not_found	; tak, koniec ciągu
-
-	; koniec lini?
-	cmp	byte [rsi],	STATIC_SCANCODE_NEW_LINE
-	je	.leave
-
-	; pomiń spacje przed słowem
-	cmp	byte [rsi],	STATIC_SCANCODE_SPACE
-	je	.leave
-
-	; pomiń znak tabulacji przed słowem
-	cmp	byte [rsi],	STATIC_SCANCODE_TAB
-	jne	.char	; znaleziono pierwszy znak należący do słowa
-
-.leave:
-	; przesuń wskaźnik bufora na następny znak
-	inc	rsi
-
-	; szukaj dalej
-	dec	rcx
-	jnz	.find
-
-	; koniec ciągu
-	jmp	.not_found
-
-.char:
-	; wylicz rozmiar słowa
-
-	; zachowaj adres początku słowa
 	push	rsi
 
 	; licznik
-	xor	rax,	rax
+	xor	ebx,	ebx
 
-.count:
+.search:
+	; koniec ciągu?
+	dec	rcx
+	js	.not_found	; tak
+
 	; znaleziono separator?
-	cmp	byte [rsi],	bl
-	je	.ready	; tak, koniec słowa
-
-	; koniec lini?
-	cmp	byte [rsi],	STATIC_SCANCODE_NEW_LINE
-	je	.ready
-
-	; sprawdź czy koniec słowa
-	cmp	byte [rsi],	STATIC_SCANCODE_SPACE
-	je	.ready
-
-	; sprawdź czy koniec słowa
-	cmp	byte [rsi],	STATIC_SCANCODE_TAB
-	je	.ready
+	cmp	byte [rsi],	al
+	je	.end	; tak, koniec fragmentu ciągu
 
 	; przesuń wskaźnik na następny znak w buforze polecenia
 	inc	rsi
 
 	; zwiększ licznik znaków przypadających na znalezione słowo
-	inc	rax
+	inc	rbx
 
 	; zliczaj dalej
-	dec	rcx
-	jnz	.count
-
-.ready:
-	; przywróć adres początku słowa
-	pop	rsi
-
-	; zwróć rozmiar "słowa"
-	mov	rbx,	rax
-
-	; flaga, sukces
-	clc
-
-	; koniec
-	jmp	.end
+	jmp	.search
 
 .not_found:
 	; nie znaleziono słowa w ciągu znaków
@@ -107,6 +48,7 @@ library_string_word_next:
 
 .end:
 	; przywróć oryginalne rejestry
+	pop	rsi
 	pop	rcx
 	pop	rax
 

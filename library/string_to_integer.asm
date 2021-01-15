@@ -37,7 +37,7 @@ library_string_to_integer:
 	add	r8,	rax
 
 	; zamień podstawę na dziesiątki, setki, tysiące... itd.
-	mov	eax,	10
+	mov	eax,	STATIC_NUMBER_SYSTEM_decimal
 	mul	rcx
 	mov	rcx,	rax
 

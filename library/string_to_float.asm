@@ -16,124 +16,102 @@ library_string_to_float:
 	; zachowaj oryginalne rejestry
 	push	rbx
 	push	rcx
-	push	rcx	; zmienna lokalna - pozostały rozmiar ciągu
-	push	rdx
 	push	rsi
-	push	r8
 	push	rax
-	push	1000	; precyzja do 3-go miejsca po przecinku
-
-	; zmienne lokalne
-	push	STATIC_EMPTY	; frakcja
-	push	STATIC_EMPTY	; całkowita
 
 	; ciąg pusty?
 	test	rcx,	rcx
 	jz	.error	; tak
 
+	; ustaw zmienne lokalne
+	push	STATIC_NUMBER_SYSTEM_decimal	; system dziesiętny
+	push	STATIC_EMPTY	; frakcja
+	push	STATIC_EMPTY	; całkowita
+
 	; odszukaj znaku ułamka w ciągu
-	mov	bl,	","
+	mov	al,	","
 	call	library_string_word_next
+	jnc	.integer	; zamień wartość całkowitą na część ułamkową
 
-.next:
-	; podstawa cyfry
-	mov	ecx,	1
+	; zamień cały ciąg na liczbę
+	call	library_string_to_integer
 
-	; wynik cząstkowy
-	xor	r8,	r8
+	; aktualizuj wartość całkowitą
+	mov	qword [rsp],	rax
 
-.loop:
-	; pobierz ostatnią cyfrę z ciągu
-	movzx	eax,	byte [rsi + rbx - 0x01]
-	sub	al,	STATIC_SCANCODE_DIGIT_0	; przekształć kod ASCII cyfry na wartość
-	mul	rcx	; zamień na wartość z danej podstawy dla cyfry
+	; brak części ułamkowej
+	xor	ebx,	ebx
 
-	; dodaj do wyniku cząstkowego
-	add	r8,	rax
+	; zwróć wartość w formie zmiennoprzecinkowej
+	jmp	.transform
 
-	; zamień podstawę na dziesiątki, setki, tysiące... itd.
-	mov	eax,	10
-	mul	rcx
-	mov	rcx,	rax
+.integer:
+	; ilość cyfr z wartości całkowitej
+	test	rbx,	rbx
+	jz	.integer_empty	; brak
 
-	; rozmiar pozostałego ciągu
-	dec	qword [rsp + STATIC_QWORD_SIZE_byte * 0x07]
+	; zamień cały ciąg na liczbę
+	call	library_string_to_integer
 
-	; koniec ciągu?
-	dec	rbx
-	jnz	.loop	; nie, przetwarzaj dalej
+	; aktualizuj wartość całkowitą
+	mov	qword [rsp],	rax
 
-	; przetworzono wartość całkowitą?
-	cmp	qword [rsp],	STATIC_EMPTY
-	jne	.fraction	; tak
-
-	; zachowaj wartość całkowitą
-	mov	dword [rsp],	r8d
-
-	; przywróć rozmiar pozostałego ciągu
-	mov	rbx,	qword [rsp + STATIC_QWORD_SIZE_byte * 0x07]
-	dec	rbx
-
-	; przesuń wskaźnik na wartość frakcji
-	add	rsi,	qword [rsp + STATIC_QWORD_SIZE_byte * 0x07]
-	inc	rsi
-
-	; kontynuuj
-	jmp	.next
+.integer_empty:
+	; koryguj rozmiar i wskaźnik ciągu
+	inc	rbx	; separator
+	sub	rcx,	rbx
+	add	rsi,	rbx
 
 .fraction:
-	; zachowaj wartość frakcji
-	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	r8
+	; domyślnie brak części ułamkowej
+	xor	ebx,	ebx
 
-	;-----------------------------------------------------------------------
+	; brak cyfr w wartości frakcji?
+	test	rcx,	rcx
+	jz	.transform	; tak
 
-	; wartość całkowita do zmiennoprzecinkowej
-	finit	; reset koprocesora
-	fild	qword [rsp]
-	fst	qword [rsp]
+	; zamień cały ciąg na liczbę
+	mov	rbx,	rcx
+	call	library_string_to_integer
 
+	; aktualizuj wartość frakcji
+	mov	qword [rsp + STATIC_QWORD_SIZE_byte],	rax
+
+.transform:
 	; wartość frakcji do zmiennoprzecinkowej
 	finit	; reset koprocesora
-	fld1	; st2
-	fild	qword [rsp + STATIC_QWORD_SIZE_byte * 0x02]	; st1
-	fild	qword [rsp + STATIC_QWORD_SIZE_byte]	; st0
+	fild	qword [rsp + STATIC_QWORD_SIZE_byte * 0x02]	; st1 > system liczbowy
+	fild	qword [rsp + STATIC_QWORD_SIZE_byte]	; st0 > frakcja
 
-.divide:
+.convert:
 	; zamień liczbę w ułamek
 	fdiv	st0,	st1	; div	st1
-	fcomi	st0,	st2	; cmp	st0,	st2
-	ja	.divide	; przeliczaj dalej
 
-	; zachowaj wynik operacji przekształcenia
-	fstp	qword [rsp + STATIC_QWORD_SIZE_byte]
+	; osiągnięto rząd wielkości?
+	dec	rbx
+	jnz	.convert	; nie, przeliczaj dalej
 
 	; dodaj obydwie liczby zmiennoprzecinkowe
-	finit	; reset koprocesora
-	fld	qword [rsp + STATIC_QWORD_SIZE_byte]
-	fld	qword [rsp]
+	fild	qword [rsp]	; st0 > całkowita
 	faddp	st1,	st0
 
-	; zwróć wynik
-	fstp	qword [rsp + STATIC_QWORD_SIZE_byte * 0x03]
+	; zwolnij zmienne lokalne
+	add	rsp,	STATIC_QWORD_SIZE_byte * 0x03
 
-	; koniec
+	; zwróć wynik
+	fstp	qword [rsp]
+
+	; koniec operacji przekształcenia
 	jmp	.end
 
 .error:
-	; nie udało się przetworzyć poprawnie ciągu zwróć "0.0"
-	mov	qword [rsp + STATIC_QWORD_SIZE_byte * 0x03],	STATIC_EMPTY
+	; nie udało się poprawnie przetworzyć ciągu, zwróć "0.0"
+	mov	qword [rsp],	STATIC_EMPTY
 
 .end:
-	; zwolnij zmienne lokalne (całkowita i frakcja)
-	add	rsp,	STATIC_QWORD_SIZE_byte * 0x02
-
 	; przywróć oryginalne rejestry
-	add	rsp,	STATIC_QWORD_SIZE_byte	; zwolnij zmienną lokalną, precyzja
 	pop	rax
-	pop	r8
 	pop	rsi
-	pop	rdx
-	add	rsp,	STATIC_QWORD_SIZE_byte	; zwolnij zmienną lokalną - pozostały rozmiar ciągu
 	pop	rcx
 	pop	rbx
 

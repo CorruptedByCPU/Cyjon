@@ -43,9 +43,9 @@ shell_input:
 	call	library_string_trim
 	jc	shell.restart	; bufor zawierał tylko "białe znaki"
 
-	; przemieść zawartość bufora na jeg początek (jeśli wystąpiły "białe znaku" na jego początku)
+	; przemieść zawartość bufora na jego początek (jeśli wystąpiły "białe znaki" na jego początku)
 	call	shell_prompt_relocate
 
 	; pobierz rozmiar pierwszego "słowa" w ciągu
-	mov	bl,	STATIC_SCANCODE_SPACE	; separator
+	mov	al,	STATIC_SCANCODE_SPACE	; separator
 	call	library_string_word_next

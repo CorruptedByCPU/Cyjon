@@ -222,6 +222,16 @@ soler_operation:
 
 ;-------------------------------------------------------------------------------
 .result:
+	; załaduj wartość do zmiennej
+	call	soler_operation_insert
+	jc	.end	; brak przesłanej wartości
+
+	; komponuj obydwie wartości jeśli istnieją
+	call	soler_operation_compose
+
+	; zachowaj znak operacji
+	mov	byte [soler_value_exec],	"="
+
 	; koniec obsługi operacji
 	jmp	.end
 
@@ -250,8 +260,6 @@ soler_operation:
 
 ;-------------------------------------------------------------------------------
 .add:
-	xchg	bx,bx
-
 	; załaduj wartość do zmiennej
 	call	soler_operation_insert
 	jc	.end	; brak przesłanej wartości
