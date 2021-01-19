@@ -170,11 +170,32 @@ soler_operation:
 	; oznacz flagą wstawienie przecinka w liczbie
 	mov	r10b,	STATIC_TRUE
 
+	; czy pierwsza i jedyna cyfra w wartości jest ZEREM?
+	cmp	byte [soler_window.element_label_value_length],	STATIC_BYTE_SIZE_byte
+	jne	.not_dot	; nie
+	cmp	byte [soler_window.element_label_value_string],	STATIC_SCANCODE_DIGIT_0
+	jne	.not_dot	; nie
+
+	; nie czyść wartości
+	mov	r13b,	STATIC_FALSE
+
 .not_dot:
 	; osiągnięto limit wejścia?
 	cmp	cl,	SOLER_INPUT_VALUE_WIDTH_char
 	jnb	.error	; tak, zignoruj cyfrę
 
+	; wyczyścić wartość przed dołączeniem cyfry/przecinka?
+	cmp	r13b,	STATIC_FALSE
+	je	.empty	; nie
+
+	; wyłącz flagę
+	mov	r13b,	STATIC_FALSE
+
+	; zresetuj rozmiar ciągu wartości
+	xor	cl,	cl
+	mov	byte [soler_window.element_label_value_length],	STATIC_EMPTY
+
+.empty:
 	; dołącz cyfrę na koniec ciągu
 	mov	byte [rsi + rcx],	al
 
@@ -185,6 +206,13 @@ soler_operation:
 	clc
 
 	; wykonano operację
+	jmp	.end
+
+.error:
+	; nie wykonano operacji
+	stc
+
+	; koniec procedury
 	jmp	.end
 
 .no_digit:
@@ -233,14 +261,21 @@ soler_operation:
 	mov	byte [soler_value_exec],	"="
 
 	; koniec obsługi operacji
-	jmp	.end
+	jmp	.preserve
 
 ;-------------------------------------------------------------------------------
 .backspace:
-	; ciąg pusty?
-	test	cl,	cl
-	jz	.error	; tak
+	; ciąg wartości zawiera tylko jedną cyfrę/przecinek?
+	cmp	cl,	STATIC_BYTE_SIZE_byte
+	jne	.backspace_prepare	; nie
 
+	; podmień pierwszą cyfrę na ZERO
+	mov	byte [soler_window.element_label_value_string],	STATIC_SCANCODE_DIGIT_0
+
+	; koniec obsługi operacji
+	jmp	.preserve
+
+.backspace_prepare:
 	; usuń ostatnią cyfrę (lub przecinek) z ciągu
 	dec	cl
 
@@ -267,8 +302,11 @@ soler_operation:
 	; zachowaj znak operacji
 	mov	byte [soler_value_exec],	"+"
 
+	; wyczyść wartość przed modyfikacją
+	mov	r13b,	STATIC_TRUE
+
 	; koniec procedury
-	jmp	.end
+	jmp	.preserve
 
 ;-------------------------------------------------------------------------------
 .sub:
@@ -282,11 +320,10 @@ soler_operation:
 	jmp	.end
 
 ;-------------------------------------------------------------------------------
-.error:
-	; nie wykonano operacji
-	stc
+.preserve:
+	; wyczyść wartość przed modyfikacją
+	mov	r13b,	STATIC_TRUE
 
-;-------------------------------------------------------------------------------
 .end:
 	; przywróć oryginalne rejestry
 	pop	rsi

@@ -42,14 +42,26 @@ soler:
 	mov	r11b,	STATIC_FALSE	; zatwierdzono pierwszą wartość
 	mov	r12b,	STATIC_FALSE	; zatwierdzono drugą wartość
 
-	; rozmiar ciągu etykiet
-	mov	byte [soler_window.element_label_operation_length],	STATIC_EMPTY
-	mov	byte [soler_window.element_label_value_length],	STATIC_EMPTY
+	; flaga, przyrostek
+	mov	r13b,	STATIC_TRUE	; wyczyść wartość przed modyfikacją
+
+	; flaga, znak wartości
+	mov	r14b,	STATIC_FALSE	; dodatnia
+
+	; wyczyść zawartość etykiet
+	mov	byte [soler_window.element_label_operation_string],	STATIC_SCANCODE_SPACE
+	mov	byte [soler_window.element_label_value_string],	STATIC_SCANCODE_DIGIT_0
+	mov	byte [soler_window.element_label_value_length],	STATIC_BYTE_SIZE_byte
 
 .refresh:
-	; aktualizuj zawartość etykiety
-	mov	rsi,	soler_window.element_label_value
+	; aktualizuj zawartość etykiet
 	mov	rdi,	soler_window
+
+	; etykieta operacji
+	mov	rsi,	soler_window.element_label_operation
+	call	library_bosu_element_label
+	; etykieta wartości
+	mov	rsi,	soler_window.element_label_value
 	call	library_bosu_element_label
 
 	; aktualizuj zawartość okna
@@ -123,7 +135,7 @@ soler:
 	;-----------------------------------------------------------------------
 	%include	"software/soler/data.asm"
 	%include	"software/soler/operation.asm"
-	; %include	"software/soler/show.asm"
+	%include	"software/soler/show.asm"
 	%include	"software/soler/fpu.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"

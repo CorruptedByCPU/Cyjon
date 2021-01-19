@@ -68,8 +68,8 @@ times	SOLER_INPUT_OPERATION_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_INPUT_HEIGHT_pixel
 						dq	STATIC_EMPTY
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_right
-.element_label_value_length:			db	0
-.element_label_value_string:			db	""
+.element_label_value_length:			db	1
+.element_label_value_string:			db	"0"
 times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 .element_label_value_end:			;-------------------------------
 						; element "button C"

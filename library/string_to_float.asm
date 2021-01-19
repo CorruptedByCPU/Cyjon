@@ -39,11 +39,18 @@ library_string_to_float:
 	; aktualizuj wartość całkowitą
 	mov	qword [rsp],	rax
 
-	; brak części ułamkowej
-	xor	ebx,	ebx
+	; wartość całkowita do zmiennoprzecinkowej
+	finit	; reset koprocesora
+	fild	qword [rsp]
 
-	; zwróć wartość w formie zmiennoprzecinkowej
-	jmp	.transform
+	; zwolnij zmienne lokalne
+	add	rsp,	STATIC_QWORD_SIZE_byte * 0x03
+
+	; zwróć wynik
+	fstp	qword [rsp]
+
+	; koniec operacji przekształcenia
+	jmp	.end
 
 .integer:
 	; ilość cyfr z wartości całkowitej

@@ -8,34 +8,20 @@
 
 ;===============================================================================
 soler_show:
-	; domyślnie wyświetl pierwszą wartość
-	mov	rax,	r10
+	; pierwsza wartość zatwierdzona?
+	cmp	r11b,	STATIC_FALSE
+	je	.end	; nie
 
-	; wyświetlić pierwszą czy drugą wartość?
-	test	r12b,	r12b
-	jz	.first	; pierwsza
+	; pobierz wynik operacji
+	mov	rax,	qword [soler_value_first]
 
-	; wyświetl drugą wartość
-	mov	rax,	r11
+	; wyodrębnij wartość całkowitą z zmiennoprzecinkowej
+	mov	qword [soler_fpu_float_result],	rax
+	call	soler_fpu_float_to_integer
+	call	soler_fpu_float_to_fraction	; oraz frakcji
 
-.first:
-	; zamień wartość na ciąg
-	mov	bl,	STATIC_NUMBER_SYSTEM_decimal
-	xor	ecx,	ecx	; brak prefiksu
-	mov	rdi,	soler_window.element_label_string
-	call	library_integer_to_string
-
-	; ciąg zmieści się w etykiecie?
-	cmp	rcx,	SOLER_INPUT_SIZE_char
-	jbe	.end	; tak
-
-	; wyświetl komunikat błędu
-	mov	cl,	STATIC_DWORD_SIZE_byte	; rozmiar komunikatu błędu
-	mov	qword [soler_window.element_label_string],	" Err"
+	
 
 .end:
-	; ustaw rozmiar ciągu w etykiecie
-	mov	byte [soler_window.element_label_length],	cl
-
 	; powrót z peocedury
 	ret

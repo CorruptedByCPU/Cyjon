@@ -78,6 +78,7 @@ STATIC_QWORD_mask					equ	0xFFFFFFFF00000000
 
 STATIC_BYTE_BIT_sign					equ	7
 STATIC_WORD_BIT_sign					equ	15
+STATIC_DWORD_BIT_sign					equ	31
 STATIC_QWORD_BIT_sign					equ	63
 
 STATIC_QWORD_DIGIT_length				equ	16
