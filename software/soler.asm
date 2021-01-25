@@ -54,12 +54,16 @@ soler:
 	mov	byte [soler_window.element_label_value_length],	STATIC_BYTE_SIZE_byte
 
 .refresh:
+	; wyświelt wynik/stan ostatniej operacji
+	call	soler_show
+
 	; aktualizuj zawartość etykiet
 	mov	rdi,	soler_window
 
 	; etykieta operacji
 	mov	rsi,	soler_window.element_label_operation
 	call	library_bosu_element_label
+
 	; etykieta wartości
 	mov	rsi,	soler_window.element_label_value
 	call	library_bosu_element_label

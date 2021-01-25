@@ -8,46 +8,70 @@
 
 ;===============================================================================
 ; wejście:
-;	qword [soler.soler_fpu_fraction] - liczba całkowita
+;	qword [soler_fpu_precision] - ilość miejsc po przecinku
+;	qword [soler_fpu_fraction] - wartość frakcji w formie całkowitej
 ; wyjście:
-;	rcx - ilość cyfr po przecinku
 ;	qword [soler_fpu_float_result] - wartość zmiennoprzecinkowa
 soler_fpu_fraction_to_float:
 	finit	; reset koprocesora
 	fld1	; st2
-	fild	qword [soler_fpu_precision_digit]	; st1
+	fild	qword [soler_fpu_precision_value]	; st1
 	fild	qword [soler_fpu_fraction]	; st0
 
-	; zresetuj ilość miejsc po przecinku
-	xor	ecx,	ecx
-
 .loop:
+	; przeliczać na ułamek?
+	dec	qword [soler_fpu_precision]
+	js	.end	; nie
+	jz	.ready	; koniec
+
 	; zamień liczbę w ułamek
 	fdiv	st0,	st1	; div	st1
-	inc	rcx	; ilość cyfr po przecinku
-	fcomi	st0,	st2	; cmp	st0,	st2
-	ja	.loop	; przeliczaj dalej
+	jmp	.loop	; kontynuuj
 
+.ready:
 	; zachowaj wynik operacji przekształcenia
 	fstp	qword [soler_fpu_float_result]
 
+.end:
 	; powrót z procedury
 	ret
 
 ;===============================================================================
 ; wejście:
+;	qword [soler_fpu_precision] - ilość cyfr do zinterpretowania
 ;	qword [soler_fpu_float_result] - wartość całkowita z zmiennoprzecinkową (integer.float)
 ; wyjście:
 ;	qword [soler_fpu_fraction] - wartość całkowita z ZMIENNOPRZECINKOWEJ
 soler_fpu_float_to_fraction:
+	; zachowaj oryginalne rejestry/zmienne
+	push	rcx
+
+	; pobierz rozmiar precyzji
+	mov	rcx,	qword [soler_fpu_precision]
+
 	; usuń wartość całkowitą
 	call	soler_fpu_float_only
 
 	finit	; reset koprocesora
-	fld	qword [soler_fpu_float_result]	; mov	st1,	qword [soler_fpu_float_result]
-	fild	qword [soler_fpu_precision]	; mov	st0,	qword [soler_fpu_precision]
-	fmul	; mul	st1
+	fild	qword [soler_fpu_precision_value]	; mov	st1,	qword [soler_fpu_precision]
+	fld	qword [soler_fpu_float_result]	; mov	st0,	qword [soler_fpu_float_result]
+
+.loop:
+	; przeliczać na ułamek?
+	dec	rcx
+	js	.end	; nie
+	jz	.ready	; koniec
+
+	; zamień ułamek w liczbę
+	fmul	st0,	st1
+	jmp	.loop	; kontynuuj
+
+.ready:
 	fistp	qword [soler_fpu_fraction]	; mov	qword [soler_fpu_fraction],	st0
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rcx
 
 	; powrót z procedury
 	ret
@@ -92,9 +116,8 @@ soler_fpu_float_only:
 	call	soler_fpu_float_to_integer
 
 	finit	; reset koprocesora
-        fld	qword [soler_fpu_float_result]	; mov	st1,	qword [soler_fpu_float_result]
-        fild	qword [soler_fpu_integer]	; mov	st0,	qword [soler_fpu_integer]
-        fsub	; sub	st1,	st0
+	fld	qword [soler_fpu_float_result]	; mov	st1,	qword [soler_fpu_float_result]
+        fisub	dword [soler_fpu_integer]	; sub	st0, dword [soler_fpu_integer]
 		; mov	st0,	st1
         fstp	qword [soler_fpu_float_result]	; mov	qword [soler_fpu_float_result],	st0
 

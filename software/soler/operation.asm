@@ -196,6 +196,15 @@ soler_operation:
 	mov	byte [soler_window.element_label_value_length],	STATIC_EMPTY
 
 .empty:
+	; użyszkodnik chce wstawić cyfrę ZERO?
+	cmp	al,	STATIC_SCANCODE_DIGIT_0
+	jne	.not_zero	; nie
+
+	; na początku ciągu wartości?
+	test	cl,	cl
+	jz	.error	; tak
+
+.not_zero:
 	; dołącz cyfrę na koniec ciągu
 	mov	byte [rsi + rcx],	al
 
