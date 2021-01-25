@@ -6,6 +6,9 @@ A simple, clean, multi-tasking operating system written in pure assembly languag
 
 If possible, please run Qemu on GNU/Linux - performance against MS/Windows is overwhelming ;)
 
+Right-clicking on the desktop will open the Menu.
+To move the window around the screen, hold down the left ALT key.
+
 ### Software:
 
   - Qemu 5.0.0 or Bochs 2.6.11 (no SMP support on MS/Windows)
