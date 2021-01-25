@@ -7,16 +7,15 @@
 ;===============================================================================
 
 kernel_init_library:
-	xchg	bx,bx
-
 	; mapuj przestrzeń logiczną bibliotek
-	mov	ecx,	kernel_library_end - kernel_library
+	mov	rax,	LIBRARY_ENTRY_base_address
+	mov	bx,	KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_available
+	mov	ecx,	kernel_init_library_file_end - kernel_init_library_file
 	call	library_page_from_size
-	mov	rsi,	kernel_library
-	mov	rdi,	LIBRARY_ENTRY_base_address
-	; call	kernel_page_map_virtual
+	call	kernel_page_map_logical
 
-	; ; przenieś biblioteki na początek przestrzenikopiuj zbiór bibliotek w miejsce docelowe
-	; mov	ecx,	kernel_init_libraries_end - kernel_init_libraries
-	; mov	rsi,	kernel_init_libraries
-	; rep	movsb
+	; przenieś biblioteki na miejsce docelowe
+	mov	ecx,	(kernel_init_library_file_end - kernel_init_library_file) >> STATIC_DIVIDE_BY_8_shift
+	mov	rsi,	kernel_init_library_file
+	mov	rdi,	LIBRARY_ENTRY_base_address
+	rep	movsq

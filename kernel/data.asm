@@ -53,11 +53,4 @@ kernel_video_base_address				dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych t
 kernel_video_size_byte					dq	STATIC_EMPTY	; rozmiar przestrzeni w Bajtach
 kernel_video_scanline_byte				dq	STATIC_EMPTY	; scanline_byte
 
-;===============================================================================
-; LIBRARY
-;===============================================================================
-align	STATIC_PAGE_SIZE_byte,				db	STATIC_NOTHING
-kernel_library						incbin	"build/library"
-kernel_library_end:
-
 macro_debug	"kernel_data"
