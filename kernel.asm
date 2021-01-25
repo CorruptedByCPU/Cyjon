@@ -15,12 +15,13 @@
 	;-----------------------------------------------------------------------
 	%include	"kernel/macro/apic.asm"
 	;-----------------------------------------------------------------------
-	%include	"kernel/header/vfs.inc"
-	%include	"kernel/header/service.inc"
+	%include	"kernel/header/library.inc"
 	%include	"kernel/header/ipc.inc"
+	%include	"kernel/header/service.inc"
 	%include	"kernel/header/stream.inc"
-	%include	"kernel/header/wm.inc"
 	%include	"kernel/header/task.inc"
+	%include	"kernel/header/vfs.inc"
+	%include	"kernel/header/wm.inc"
 	;-----------------------------------------------------------------------
 
 ; 64 bitowy kod inicjalizacyjny jądra systemu
@@ -83,10 +84,10 @@ kernel:
 	%include	"kernel/service/tx.asm"
 	%include	"kernel/service/http.asm"
 	;-----------------------------------------------------------------------
-	%include	"library/color.asm"
-	%include	"library/integer_to_string.asm"
 	%include	"library/page_align_up.asm"
 	%include	"library/page_from_size.asm"
+	%include	"library/color.asm"
+	%include	"library/integer_to_string.asm"
 	%include	"library/string_compare.asm"
 	%include	"library/string_cut.asm"
 	%include	"library/string_word_next.asm"

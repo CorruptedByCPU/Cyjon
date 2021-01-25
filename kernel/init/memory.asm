@@ -50,7 +50,7 @@ kernel_init_memory:
 
 	; zamień ilość stron na "zestawy" po 8 bitów
 	shr	rcx,	STATIC_DIVIDE_BY_8_shift	; w tym przypadku możemy stracić do 7 stron
-	; zastosowane w celu uproszenia kodu
+							; zastosowane w celu uproszenia kodu
 
 	; zachowaj ilość stron
 	push	rcx
