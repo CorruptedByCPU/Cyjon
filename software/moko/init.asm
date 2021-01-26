@@ -26,7 +26,7 @@
 	mov	rsi,	rsp
 
 	; usuń białe znaki z początku i końca ciągu
-	call	library_string_trim
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_trim
 
 .no_arguments:
 	; przygotuj właściwości przestrzeni pod dokument

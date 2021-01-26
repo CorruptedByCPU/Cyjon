@@ -67,7 +67,7 @@ tm_uptime:
 
 .day_overflow:
 	; konwertuj wartość na ciąg
-	call	library_integer_to_string
+	macro_library	LIBRARY_STRUCTURE_ENTRY.integer_to_string
 
 	; wyświetl
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
@@ -144,7 +144,7 @@ tm_uptime:
 
 .hour_overflow:
 	; konwertuj wartość na ciąg
-	call	library_integer_to_string
+	macro_library	LIBRARY_STRUCTURE_ENTRY.integer_to_string
 
 	; wyświetl
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
@@ -221,7 +221,7 @@ tm_uptime:
 
 .minutes_overflow:
 	; konwertuj wartość na ciąg
-	call	library_integer_to_string
+	macro_library	LIBRARY_STRUCTURE_ENTRY.integer_to_string
 
 	; wyświetl
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
@@ -278,7 +278,7 @@ tm_uptime:
 
 .second_overflow:
 	; konwertuj wartość na ciąg
-	call	library_integer_to_string
+	macro_library	LIBRARY_STRUCTURE_ENTRY.integer_to_string
 
 	; wyświetl
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out

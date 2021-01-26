@@ -7,40 +7,27 @@
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
-	; stałe, zmienne, globalne, struktury, obiekty, makra
+	; stałe, zmienne, globalne, struktury, obiekty, nagłówki
 	;-----------------------------------------------------------------------
 	%include	"config.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/config.asm"
 	;-----------------------------------------------------------------------
+	%include	"kernel/header/ipc.asm"
+	%include	"kernel/header/library.asm"
 	%include	"kernel/header/service.asm"
+	%include	"kernel/header/stream.asm"
+	%include	"kernel/header/task.asm"
+	%include	"kernel/header/vfs.asm"
+	%include	"kernel/header/wm.asm"
 	;-----------------------------------------------------------------------
+	%include	"kernel/macro/apic.asm"
+	%include	"kernel/macro/copy.asm"
 	%include	"kernel/macro/debug.asm"
+	%include	"kernel/macro/library.asm"
+	%include	"kernel/macro/lock.asm"
 	;-----------------------------------------------------------------------
-
-; 64 bitowy kod programu
-[bits 64]
-
-; adresowanie względne
-[default rel]
-
-; położenie kodu programu w pamięci logicznej
-[org SOFTWARE_base_address]
-
-;===============================================================================
-hello:
-	; wyświetl powitanie
-	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
-	mov	cl,	hello_string_end - hello_string
-	mov	rsi,	hello_string
-	int	KERNEL_SERVICE
-
-	; zakończ pracę programu
-	xor	ax,	ax
-	int	KERNEL_SERVICE
-
-	; debug
-	macro_debug	"software: hello"
-
-hello_string	db	"Hello, World!"
-hello_string_end:
+	%include	"kernel/library/bosu/header.asm"
+	%include	"kernel/library/font/header.asm"
+	%include	"kernel/library/terminal/header.asm"
+	;-----------------------------------------------------------------------

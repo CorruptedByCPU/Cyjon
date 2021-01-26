@@ -51,7 +51,7 @@ shell_prompt_clean:
 
 	; usuń białe znaki z początku i końca reszty ciągu
 	mov	rcx,	r8
-	call	library_string_trim
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_trim
 
 	; zachowaj pozostały rozmiar polecenia
 	mov	r8,	rcx
@@ -77,7 +77,7 @@ shell_prompt_internal:
 	; sprawdź czy polecenie "clear"
 	mov	ecx,	ebx	; rozmiar porównywanego ciągu
 	mov	rdi,	shell_command_clear
-	call	library_string_compare
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_compare
 	jc	.no_clear	; ciągi rózne
 
 	; wyślij sekwencje czyszczenia przestrzeni znakowej
@@ -98,7 +98,7 @@ shell_prompt_internal:
 	; sprawdź czy polecenie "exit"
 	mov	ecx,	ebx	; rozmiar porównywanego ciągu
 	mov	rdi,	shell_command_exit
-	call	library_string_compare
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_compare
 	jc	.no_exit	; ciągi różne
 
 	; zakończ działanie powłoki
@@ -114,7 +114,7 @@ shell_prompt_internal:
 	; sprawdź czy polecenie "cd"
 	mov	ecx,	ebx	; rozmiar porównywanego ciągu
 	mov	rdi,	shell_command_cd
-	call	library_string_compare
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_compare
 	jc	.no_cd	; ciągi różne
 
 	; ustaw rejestry na ścieżkę dostępu
@@ -123,7 +123,7 @@ shell_prompt_internal:
 	add	rsi,	rbx
 
 	; usuń z ścieżki "białe znaku" znajdujące się na początku i końcu ciągu
-	call	library_string_trim
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_trim
 
 	; zmień katalog roboczy
 	mov	ax,	KERNEL_SERVICE_PROCESS_dir_change

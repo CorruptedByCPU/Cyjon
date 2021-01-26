@@ -11,10 +11,6 @@
 ;	on 01.01.2020 at 3:28 AM ^^
 ;===============================================================================
 
-LIBRARY_FONT_WIDTH_pixel	equ	6
-LIBRARY_FONT_HEIGHT_pixel	equ	12
-LIBRARY_FONT_MATRIX_offset	equ	0x20
-
 align	STATIC_QWORD_SIZE_byte,	db	STATIC_NOTHING
 
 library_font_width_pixel	dq	LIBRARY_FONT_WIDTH_pixel

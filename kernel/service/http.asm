@@ -37,7 +37,7 @@ service_http:
 	mov	ecx,	service_http_get_root_end - service_http_get_root
 	mov	rsi,	qword [rdi + KERNEL_IPC_STRUCTURE.pointer]
 	mov	rdi,	service_http_get_root
-	call	library_string_compare
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_compare
 	jc	.no	; nie
 
 	; ustaw odpowiedź

@@ -6,32 +6,32 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-LIBRARY_ENTRY_base_address		equ	0x0000700000000000
+LIBRARY_base_address			equ	0x0000700000000000
 
 struc	LIBRARY_STRUCTURE_ENTRY
 	;-----------------------------------------------------------------------
 	.bit_find			resb	8
 	;-----------------------------------------------------------------------
 	.bosu				resb	8
-	.bosu_header_set		resb	8
-	.bosu_clean			resb	8
-	.bosu_border_correction		resb	8
-	.bosu_close			resb	8
-	.bosu_element_button_close	resb	8
-	.bosu_element_button_minimize	resb	8
-	.bosu_element_button_maximize	resb	8
+	; .bosu_header_set		resb	8
+	; .bosu_clean			resb	8
+	; .bosu_border_correction		resb	8
+	; .bosu_close			resb	8
+	; .bosu_element_button_close	resb	8
+	; .bosu_element_button_minimize	resb	8
+	; .bosu_element_button_maximize	resb	8
 	.bosu_elements_specification	resb	8
-	.bosu_elements			resb	8
-	.bosu_element_taskbar		resb	8
+	; .bosu_elements			resb	8
+	; .bosu_element_taskbar		resb	8
 	.bosu_element_chain		resb	8
-	.bosu_header_update		resb	8
-	.bosu_string			resb	8
-	.bosu_char			resb	8
-	.bosu_element_button		resb	8
-	.bosu_element_drain		resb	8
+	; .bosu_header_update		resb	8
+	; .bosu_string			resb	8
+	; .bosu_char			resb	8
+	; .bosu_element_button		resb	8
+	; .bosu_element_drain		resb	8
 	.bosu_element_label		resb	8
 	.bosu_element			resb	8
-	.bosu_element_subroutine	resb	8
+	; .bosu_element_subroutine	resb	8
 	;-----------------------------------------------------------------------
 	.bresenham			resb	8
 	;-----------------------------------------------------------------------
@@ -62,14 +62,14 @@ struc	LIBRARY_STRUCTURE_ENTRY
 	.terminal_cursor_switch		resb	8
 	.terminal_cursor_set		resb	8
 	.terminal_matrix		resb	8
-	.library_terminal_empty_char	resb	8
-	.library_terminal_char		resb	8
-	.library_terminal_scroll	resb	8
-	.library_terminal_scroll_down	resb	8
-	.library_terminal_scroll_up	resb	8
-	.library_terminal_empty_line	resb	8
-	.library_terminal_string	resb	8
-	.library_terminal_number	resb	8
+	.terminal_empty_char		resb	8
+	.terminal_char			resb	8
+	.terminal_scroll		resb	8
+	.terminal_scroll_down		resb	8
+	.terminal_scroll_up		resb	8
+	.terminal_empty_line		resb	8
+	.terminal_string		resb	8
+	.terminal_number		resb	8
 	;-----------------------------------------------------------------------
 	.value_to_size			resb	8
 	;-----------------------------------------------------------------------

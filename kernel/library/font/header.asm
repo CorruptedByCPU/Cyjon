@@ -6,14 +6,6 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-%MACRO	macro_library	1
-	; zachowaj wartość procesu
-	push	rbp
-
-	; odłóż na stos adres procedury docelowej
-	mov	rbp,	LIBRARY_base_address + %1
-	call	qword [rbp]	; wykonaj skok do biblioteki
-
-	; przywróć wartość procesu
-	pop	rbp
-%ENDMACRO
+LIBRARY_FONT_WIDTH_pixel	equ	6
+LIBRARY_FONT_HEIGHT_pixel	equ	12
+LIBRARY_FONT_MATRIX_offset	equ	0x20

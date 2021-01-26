@@ -9,16 +9,7 @@
 	;-----------------------------------------------------------------------
 	; stałe, zmienne, globalne, struktury, obiekty, makra
 	;-----------------------------------------------------------------------
-	%include	"config.asm"
-	;-----------------------------------------------------------------------
-	%include	"kernel/config.asm"
-	;-----------------------------------------------------------------------
-	%include	"kernel/macro/debug.asm"
-	;-----------------------------------------------------------------------
-	%include	"kernel/header/ipc.inc"
-	%include	"kernel/header/library.inc"
-	%include	"kernel/header/wm.inc"
-	%include	"kernel/header/service.inc"
+	%include	"kernel/header.asm"
 	;-----------------------------------------------------------------------
 
 ; 64 bitowy kod programu
@@ -28,7 +19,7 @@
 [default rel]
 
 ; położenie kodu programu w pamięci logicznej
-[org LIBRARY_ENTRY_base_address]
+[org LIBRARY_base_address]
 
 ;===============================================================================
 kernel_library:
@@ -36,32 +27,32 @@ kernel_library:
 	.bit_find			dq	library_bit_find
 	;-----------------------------------------------------------------------
 	.bosu				dq	library_bosu
-	.bosu_header_set		dq	library_bosu_header_set
-	.bosu_clean			dq	library_bosu_clean
-	.bosu_border_correction		dq	library_bosu_border_correction
-	.bosu_close			dq	library_bosu_close
-	.bosu_element_button_close	dq	library_bosu_element_button_close
-	.bosu_element_button_minimize	dq	library_bosu_element_button_minimize
-	.bosu_element_button_maximize	dq	library_bosu_element_button_maximize
+	; .bosu_header_set		dq	library_bosu_header_set
+	; .bosu_clean			dq	library_bosu_clean
+	; .bosu_border_correction		dq	library_bosu_border_correction
+	; .bosu_close			dq	library_bosu_close
+	; .bosu_element_button_close	dq	library_bosu_element_button_close
+	; .bosu_element_button_minimize	dq	library_bosu_element_button_minimize
+	; .bosu_element_button_maximize	dq	library_bosu_element_button_maximize
 	.bosu_elements_specification	dq	library_bosu_elements_specification
-	.bosu_elements			dq	library_bosu_elements
-	.bosu_element_taskbar		dq	library_bosu_element_taskbar
+	; .bosu_elements			dq	library_bosu_elements
+	; .bosu_element_taskbar		dq	library_bosu_element_taskbar
 	.bosu_element_chain		dq	library_bosu_element_chain
-	.bosu_header_update		dq	library_bosu_header_update
-	.bosu_string			dq	library_bosu_string
-	.bosu_char			dq	library_bosu_char
-	.bosu_element_button		dq	library_bosu_element_button
-	.bosu_element_drain		dq	library_bosu_element_drain
+	; .bosu_header_update		dq	library_bosu_header_update
+	; .bosu_string			dq	library_bosu_string
+	; .bosu_char			dq	library_bosu_char
+	; .bosu_element_button		dq	library_bosu_element_button
+	; .bosu_element_drain		dq	library_bosu_element_drain
 	.bosu_element_label		dq	library_bosu_element_label
 	.bosu_element			dq	library_bosu_element
-	.bosu_element_subroutine	dq	library_bosu_element_subroutine
+	; .bosu_element_subroutine	dq	library_bosu_element_subroutine
 	;-----------------------------------------------------------------------
 	.bresenham			dq	library_bresenham
 	;-----------------------------------------------------------------------
 	.color_alpha			dq	library_color_alpha
 	.color_alpha_invert		dq	library_color_alpha_invert
 	;-----------------------------------------------------------------------
-	.font				dq	library_font_matrix
+	.font_matrix			dq	library_font_matrix
 	;-----------------------------------------------------------------------
 	.input				dq	library_input
 	;-----------------------------------------------------------------------
@@ -100,23 +91,23 @@ kernel_library:
 	;-----------------------------------------------------------------------
 
 ;-------------------------------------------------------------------------------
-%include	"library/bit.asm"
-%include	"library/bosu.asm"
-%include	"library/bresenham.asm"
-%include	"library/color.asm"
-%include	"library/font.asm"
-%include	"library/input.asm"
-%include	"library/integer_to_string.asm"
-%include	"library/page_align_up.asm"
-%include	"library/page_from_size.asm"
-%include	"library/string_compare.asm"
-%include	"library/string_cut.asm"
-%include	"library/string_digits.asm"
-%include	"library/string_to_float.asm"
-%include	"library/string_to_integer.asm"
-%include	"library/string_trim.asm"
-%include	"library/string_word_next.asm"
-%include	"library/terminal.asm"
-%include	"library/value_to_size.asm"
-%include	"library/xorshift32.asm"
+%include	"kernel/library/bit.asm"
+%include	"kernel/library/bosu.asm"
+%include	"kernel/library/bresenham.asm"
+%include	"kernel/library/color.asm"
+%include	"kernel/library/font.asm"
+%include	"kernel/library/input.asm"
+%include	"kernel/library/integer_to_string.asm"
+%include	"kernel/library/page_align_up.asm"
+%include	"kernel/library/page_from_size.asm"
+%include	"kernel/library/string_compare.asm"
+%include	"kernel/library/string_cut.asm"
+%include	"kernel/library/string_digits.asm"
+%include	"kernel/library/string_to_float.asm"
+%include	"kernel/library/string_to_integer.asm"
+%include	"kernel/library/string_trim.asm"
+%include	"kernel/library/string_word_next.asm"
+%include	"kernel/library/terminal.asm"
+%include	"kernel/library/value_to_size.asm"
+%include	"kernel/library/xorshift32.asm"
 ;-------------------------------------------------------------------------------

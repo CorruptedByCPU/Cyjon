@@ -69,7 +69,7 @@ console_sequence:
 
 	; rozpoznaj nazwę nagłówka (ilośc znaków wchodzących w jego skład)
 	mov	al,	"]"
-	call	library_string_cut
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_cut
 	jc	.header_end	; nie znaleziono końca sekwencji
 
 	; utwórz nowy nagłówek

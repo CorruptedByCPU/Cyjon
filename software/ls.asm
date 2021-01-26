@@ -9,12 +9,7 @@
 	;-----------------------------------------------------------------------
 	; stałe, zmienne, globalne, struktury, obiekty, makra
 	;-----------------------------------------------------------------------
-	%include	"config.asm"
-	;-----------------------------------------------------------------------
-	%include	"kernel/config.asm"
-	%include	"kernel/header/service.inc"
-	%include	"kernel/header/vfs.inc"
-	%include	"kernel/macro/debug.asm"
+	%include	"kernel/header.asm"
 	;-----------------------------------------------------------------------
 
 ; 64 bitowy kod programu
@@ -102,4 +97,3 @@ ls:
 	;-----------------------------------------------------------------------
 	%include	"software/ls/data.asm"
 	;-----------------------------------------------------------------------
-	%include	"library/string_trim.asm"

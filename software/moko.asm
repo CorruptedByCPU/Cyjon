@@ -9,18 +9,11 @@
 	;-----------------------------------------------------------------------
 	; stałe, zmienne, globalne, struktury, obiekty, makra
 	;-----------------------------------------------------------------------
-	%include	"config.asm"
+	%include	"kernel/header.asm"
 	;-----------------------------------------------------------------------
-	%include	"kernel/config.asm"
-	%include	"kernel/header/stream.inc"
-	%include	"kernel/header/service.inc"
-	%include	"kernel/header/vfs.inc"
-	%include	"kernel/header/ipc.inc"
-	%include	"kernel/header/wm.inc"
-	%include	"kernel/macro/debug.asm"
+	%include	"software/console/header.asm"
 	;-----------------------------------------------------------------------
 	%include	"software/moko/config.asm"
-	%include	"software/console/header.inc"
 	;-----------------------------------------------------------------------
 
 	; r8d	- szerokość przestrzeni dokumentu w znakach liczona od zera
@@ -110,7 +103,4 @@ moko:
 	%include	"software/moko/shortcut.asm"
 	%include	"software/moko/ipc.asm"
 	%include	"software/moko/status.asm"
-	;-----------------------------------------------------------------------
-	%include	"library/string_trim.asm"
-	%include	"library/input.asm"
 	;-----------------------------------------------------------------------
