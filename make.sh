@@ -13,7 +13,9 @@ nasm -f bin software/redia.asm		-o build/redia
 nasm -f bin software/soler.asm		-o build/soler
 nasm -f bin software/taris.asm		-o build/taris
 
+
 nasm -f bin kernel/init/boot.asm	-o build/boot
+nasm -f bin kernel/library.asm		-o build/library
 nasm -f bin kernel.asm			-o build/kernel
 KERNEL_SIZE=`wc -c < build/kernel`
 

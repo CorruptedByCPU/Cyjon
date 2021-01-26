@@ -14,13 +14,18 @@
 	%include	"kernel/config.asm"	; lokalne
 	;-----------------------------------------------------------------------
 	%include	"kernel/macro/apic.asm"
+	%include	"kernel/macro/copy.asm"
+	%include	"kernel/macro/debug.asm"
+	%include	"kernel/macro/library.asm"
+	%include	"kernel/macro/lock.asm"
 	;-----------------------------------------------------------------------
-	%include	"kernel/header/vfs.inc"
-	%include	"kernel/header/service.inc"
-	%include	"kernel/header/ipc.inc"
-	%include	"kernel/header/stream.inc"
-	%include	"kernel/header/wm.inc"
-	%include	"kernel/header/task.inc"
+	%include	"kernel/header/ipc.asm"
+	%include	"kernel/header/library.asm"
+	%include	"kernel/header/service.asm"
+	%include	"kernel/header/stream.asm"
+	%include	"kernel/header/task.asm"
+	%include	"kernel/header/vfs.asm"
+	%include	"kernel/header/wm.asm"
 	;-----------------------------------------------------------------------
 
 ; 64 bitowy kod inicjalizacyjny jądra systemu
@@ -46,50 +51,41 @@ kernel:
 	jmp	$
 
 	;-----------------------------------------------------------------------
-	; procedury, makra, dane, biblioteki, usługi - wszystko co niezbędne
-	; do prawidłowej pracy jądra systemu
+	; procedury, dane, biblioteki, usługi - wszystko co niezbędne
+	; do prawidłowej pracy jądra/usług systemu
 	;-----------------------------------------------------------------------
-	%include	"kernel/macro/lock.asm"
-	%include	"kernel/macro/debug.asm"
-	%include	"kernel/macro/copy.asm"
-	;-----------------------------------------------------------------------
-	%include	"kernel/ipc.asm"
-	%include	"kernel/panic.asm"
-	%include	"kernel/page.asm"
-	%include	"kernel/memory.asm"
 	%include	"kernel/apic.asm"
-	%include	"kernel/io_apic.asm"
 	%include	"kernel/data.asm"
+	%include	"kernel/exec.asm"
 	%include	"kernel/idt.asm"
+	%include	"kernel/io_apic.asm"
+	%include	"kernel/ipc.asm"
+	%include	"kernel/memory.asm"
+	%include	"kernel/page.asm"
+	%include	"kernel/panic.asm"
 	%include	"kernel/task.asm"
 ;	%include	"kernel/thread.asm"
 	%include	"kernel/vfs.asm"
-	%include	"kernel/exec.asm"
 	%include	"kernel/service.asm"
-	%include	"kernel/stream.asm"
 	%include	"kernel/sleep.asm"
+	%include	"kernel/stream.asm"
 	;-----------------------------------------------------------------------
-	%include	"kernel/driver/rtc.asm"
-	%include	"kernel/driver/ps2.asm"
-	%include	"kernel/driver/pci.asm"
 	%include	"kernel/driver/network/i82540em.asm"
-	%include	"kernel/driver/storage/ide.asm"
+	%include	"kernel/driver/pci.asm"
+	%include	"kernel/driver/ps2.asm"
+	%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/serial.asm"
+	%include	"kernel/driver/storage/ide.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/service/gc.asm"
-	%include	"kernel/service/wm.asm"
 	%include	"kernel/service/gui.asm"
+	%include	"kernel/service/http.asm"
 	%include	"kernel/service/network.asm"
 	%include	"kernel/service/tx.asm"
-	%include	"kernel/service/http.asm"
+	%include	"kernel/service/wm.asm"
 	;-----------------------------------------------------------------------
-	%include	"library/color.asm"
-	%include	"library/integer_to_string.asm"
-	%include	"library/page_align_up.asm"
-	%include	"library/page_from_size.asm"
-	%include	"library/string_compare.asm"
-	%include	"library/string_cut.asm"
-	%include	"library/string_word_next.asm"
+	%include	"kernel/library/page_align_up.asm"
+	%include	"kernel/library/page_from_size.asm"
 	;-----------------------------------------------------------------------
 
 ; wyrównaj kod jądra systemu do pełnej strony

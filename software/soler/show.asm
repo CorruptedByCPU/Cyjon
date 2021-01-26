@@ -44,7 +44,7 @@ soler_show:
 	mov	rax,	qword [soler_fpu_integer]
 	mov	bl,	STATIC_NUMBER_SYSTEM_decimal
 	xor	ecx,	ecx
-	call	library_integer_to_string
+	macro_library	LIBRARY_STRUCTURE_ENTRY.integer_to_string
 
 	; przesuń wskaźnik ciągu wartości za całkowitą część ułamka oraz zlicz rozmiar
 	add	rdx,	rcx
@@ -66,7 +66,7 @@ soler_show:
 	mov	bl,	STATIC_NUMBER_SYSTEM_decimal
 	mov	rcx,	qword [soler_fpu_precision]
 	mov	dl,	STATIC_SCANCODE_DIGIT_0
-	call	library_integer_to_string
+	macro_library	LIBRARY_STRUCTURE_ENTRY.integer_to_string
 
 	; przesuń wskaźnik ciągu wartości za całkowitą część ułamka oraz zlicz rozmiar
 	add	rdx,	rcx

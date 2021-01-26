@@ -58,6 +58,11 @@ kernel_init:
 	%include	"kernel/init/page.asm"
 
 	;-----------------------------------------------------------------------
+	; udostępnij biblioteki dla wszystkich procesów
+	;-----------------------------------------------------------------------
+	%include	"kernel/init/library.asm"
+
+	;-----------------------------------------------------------------------
 	; utwórz Globalną Tablicę Deskryptorów
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/gdt.asm"

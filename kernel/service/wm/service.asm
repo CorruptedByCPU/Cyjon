@@ -139,6 +139,7 @@ kernel_wm_irq:
 
 .window_create_allocated:
 	; mapuj przestrzeń jądra do procesu
+	mov	bx,	KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_available	; flagi przestrzeni pamięci udostępnionej
 	mov	rsi,	qword [rsp]
 	call	kernel_page_map_virtual
 	jc	.window_create_failover	; brak miejsca na stronicowanie

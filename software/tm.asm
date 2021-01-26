@@ -7,17 +7,11 @@
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
-	%include	"config.asm"
+	; stałe, zmienne, globalne, struktury, obiekty, makra
 	;-----------------------------------------------------------------------
-	%include	"kernel/config.asm"
-	%include	"kernel/header/service.inc"
-	%include	"kernel/header/stream.inc"
-	%include	"kernel/header/ipc.inc"
-	%include	"kernel/header/wm.inc"
-	%include	"kernel/header/task.inc"
-	%include	"kernel/macro/debug.asm"
+	%include	"kernel/header.asm"
 	;-----------------------------------------------------------------------
-	%include	"software/console/header.inc"
+	%include	"software/console/header.asm"
 	;-----------------------------------------------------------------------
 	%include	"software/tm/config.asm"
 	;-----------------------------------------------------------------------
@@ -127,7 +121,4 @@ tm:
 	%include	"software/tm/uptime.asm"
 	%include	"software/tm/task.asm"
 	%include	"software/tm/percent.asm"
-	;-----------------------------------------------------------------------
-	%include	"library/integer_to_string.asm"
-	%include	"library/value_to_size.asm"
 	;-----------------------------------------------------------------------

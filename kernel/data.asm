@@ -44,14 +44,13 @@ kernel_idt_header:
 							dw	STATIC_PAGE_SIZE_byte
 							dq	STATIC_EMPTY
 
-macro_debug	"kernel_data"
-
 ;===============================================================================
 ; VIDEO
-;===============================================================================
 ;===============================================================================
 kernel_video_width_pixel				dq	STATIC_EMPTY	; szerokość w pikselach
 kernel_video_height_pixel				dq	STATIC_EMPTY	; wysokość w pikselach
 kernel_video_base_address				dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych terminala
 kernel_video_size_byte					dq	STATIC_EMPTY	; rozmiar przestrzeni w Bajtach
 kernel_video_scanline_byte				dq	STATIC_EMPTY	; scanline_byte
+
+macro_debug	"kernel_data"

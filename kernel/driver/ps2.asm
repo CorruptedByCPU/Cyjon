@@ -603,7 +603,7 @@ driver_ps2_keyboard_pull:
 	mov	ecx,	4	; prefiks
 	mov	dl,	STATIC_SCANCODE_DIGIT_0	; uzupełnij wartościami ZERO
 	mov	rdi,	driver_ps2_string_scancode
-	call	library_integer_to_string
+	macro_library	LIBRARY_STRUCTURE_ENTRY.integer_to_string
 
 	; wyślij ciąg na port szeregowy COM1
 	mov	rsi,	driver_ps2_string_debug

@@ -48,7 +48,7 @@ moko_shortcut_file:
 	mov	rdx,	moko_ipc	; obsługa wyjątków
 	mov	rsi,	qword [moko_cache_address]
 	mov	rdi,	moko_ipc_data
-	call	library_input
+	macro_library	LIBRARY_STRUCTURE_ENTRY.input
 
 	; zachowaj oryginalne rejestry oraz stan flagi CF
 	pushf
@@ -69,7 +69,7 @@ moko_shortcut_file:
 	jc	.end	; tak
 
 	; usuń z ciągu "białe znaki"
-	call	library_string_trim
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_trim
 	jc	.end	; pusty ciąg
 
 	; zwróć informacje o ciągu

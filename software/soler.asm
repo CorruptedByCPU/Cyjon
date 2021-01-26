@@ -9,13 +9,7 @@
 	;-----------------------------------------------------------------------
 	; stałe, zmienne, globalne, struktury, obiekty, makra
 	;-----------------------------------------------------------------------
-	%include	"config.asm"
-	;-----------------------------------------------------------------------
-	%include	"kernel/config.asm"
-	%include	"kernel/header/service.inc"
-	%include	"kernel/header/ipc.inc"
-	%include	"kernel/header/wm.inc"
-	%include	"kernel/macro/debug.asm"
+	%include	"kernel/header.asm"
 	;-----------------------------------------------------------------------
 	%include	"software/soler/config.asm"
 	;-----------------------------------------------------------------------
@@ -144,8 +138,4 @@ soler:
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"
 	%include	"library/font.asm"
-	%include	"library/integer_to_string.asm"
-	%include	"library/string_to_float.asm"
-	%include	"library/string_to_integer.asm"
-	%include	"library/string_word_next.asm"
 	;-----------------------------------------------------------------------

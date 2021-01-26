@@ -25,7 +25,7 @@ soler_operation_insert:
 	; zamień ciąg wprowadzony przez użyszkodnika na wartość zmiennoprzecinkową
 	movzx	ecx,	byte [soler_window.element_label_value_length]
 	mov	rsi,	soler_window.element_label_value_string
-	call	library_string_to_float
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_to_float
 
 	; zachowaj wartość i podnieś flagę
 	mov	qword [soler_value_first],	rax
@@ -40,7 +40,7 @@ soler_operation_insert:
 	; zamień ciąg wprowadzony przez użyszkodnika na wartość zmiennoprzecinkową
 	movzx	ecx,	byte [soler_window.element_label_value_length]
 	mov	rsi,	soler_window.element_label_value_string
-	call	library_string_to_float
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_to_float
 
 	; zachowaj wartość i podnieś flagę
 	mov	qword [soler_value_second],	rax

@@ -199,7 +199,7 @@ kernel_vfs_path_resolve:
 
 	; pobierz nazwę katalogu
 	mov	al,	STATIC_SCANCODE_SLASH	; separator plików w ścieżce
-	call	library_string_cut
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_cut
 	jc	.ready	; przetworzono ścieżkę
 
 	; zwrócono pusty ciąg?
@@ -450,7 +450,7 @@ kernel_vfs_file_find:
 	xchg	rcx,	rax
 
 	; porównaj nazwy plików
-	call	library_string_compare
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_compare
 
 	; przywróć licznik
 	xchg	rcx,	rax

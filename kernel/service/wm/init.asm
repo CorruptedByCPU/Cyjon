@@ -13,7 +13,7 @@
 	; odwróć kanała alfa obiektu kursora
 	mov	ecx,	kernel_wm_object_cursor.end - kernel_wm_object_cursor.data
 	mov	rsi,	kernel_wm_object_cursor.data
-	call	library_color_alpha_invert
+	macro_library	LIBRARY_STRUCTURE_ENTRY.color_alpha_invert
 
 	; pobierz rozmiar przestrzeni pamięci karty graficznej w pikselach i Bajtach
 	mov	bx,	word [kernel_video_width_pixel]

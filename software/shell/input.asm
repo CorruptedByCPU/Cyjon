@@ -36,11 +36,11 @@ shell_input:
 	mov	rdx,	shell_event	; obsługa zaistniałych wyjątków
 	mov	rsi,	shell_cache	; lokalizacja bufora w przestrzeni procesu
 	mov	rdi,	shell_ipc_data	; lokalizacja przestrzeni procesu dla przychodzących wyjątków
-	call	library_input
+	macro_library	LIBRARY_STRUCTURE_ENTRY.input
 	jc	shell.restart	; bufor pusty lub przerwano wprowadzanie
 
 	; usuń białe znaki z początku i końca bufora
-	call	library_string_trim
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_trim
 	jc	shell.restart	; bufor zawierał tylko "białe znaki"
 
 	; przemieść zawartość bufora na jego początek (jeśli wystąpiły "białe znaki" na jego początku)
@@ -48,4 +48,4 @@ shell_input:
 
 	; pobierz rozmiar pierwszego "słowa" w ciągu
 	mov	al,	STATIC_SCANCODE_SPACE	; separator
-	call	library_string_word_next
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_word_next

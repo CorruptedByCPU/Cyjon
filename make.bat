@@ -20,7 +20,9 @@ set PASS=0
 ..\nasm -f bin software/soler.asm	-o build/soler		&& echo. || set PASS=1
 ..\nasm -f bin software/taris.asm	-o build/taris		&& echo. || set PASS=1
 
+
 ..\nasm -f bin kernel/init/boot.asm	-o build/boot		&& echo. || set PASS=1
+..\nasm -f bin kernel/library.asm	-o build/library	&& echo. || set PASS=1
 ..\nasm -f bin kernel.asm		-o build/kernel		&& echo. || set PASS=1
 FOR /F "usebackq" %%A IN ('build/kernel') DO set KERNEL_SIZE=%%~zA
 

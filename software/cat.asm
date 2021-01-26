@@ -9,12 +9,7 @@
 	;-----------------------------------------------------------------------
 	; stałe, zmienne, globalne, struktury, obiekty, makra
 	;-----------------------------------------------------------------------
-	%include	"config.asm"
-	;-----------------------------------------------------------------------
-	%include	"kernel/config.asm"
-	%include	"kernel/header/service.inc"
-	%include	"kernel/header/vfs.inc"
-	%include	"kernel/macro/debug.asm"
+	%include	"kernel/header.asm"
 	;-----------------------------------------------------------------------
 
 ; 64 bitowy kod programu
@@ -45,7 +40,7 @@ cat:
 	mov	rsi,	rsp
 
 	; usuń z początku i końca listy wszystkie białe znaki
-	call	library_string_trim
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_trim
 	jc	.not_found	; niepoprawna ścieżka do pliku lub nie istnieje
 
 	; wczytaj dane pliku na koniec programu
@@ -118,12 +113,10 @@ cat:
 	; debug
 	macro_debug	"software: cat"
 
-	;=======================================================================
+	;-----------------------------------------------------------------------
 	%include	"software/cat/config.asm"
 	%include	"software/cat/data.asm"
 	%include	"software/cat/text.asm"
-	;=======================================================================
-	%include	"library/string_trim.asm"
-	;=======================================================================
+	;-----------------------------------------------------------------------
 
 cat_end:

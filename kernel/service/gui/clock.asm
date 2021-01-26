@@ -41,7 +41,7 @@ kernel_gui_clock:
 	mov	ecx,	0x02	; wyświetl dwie cyfry (prefix)
 	mov	dl,	STATIC_SCANCODE_DIGIT_0	; prefix to cyfra "0"
 	mov	rdi,	kernel_gui_window_taskbar.element_label_clock_string_minute
-	call	library_integer_to_string
+	macro_library	LIBRARY_STRUCTURE_ENTRY.integer_to_string
 
 	; pobierz aktualny znacznik czasu
 	mov	rax,	qword [kernel_gui_clock_last_state]
@@ -53,7 +53,7 @@ kernel_gui_clock:
 	and	rax,	0xFF	; usuń informacje o dniu, miesiącu, roku... itp.
 	mov	dl,	STATIC_SCANCODE_SPACE	; prefix to "spacja"
 	mov	rdi,	kernel_gui_window_taskbar.element_label_clock_string_hour
-	call	library_integer_to_string
+	macro_library	LIBRARY_STRUCTURE_ENTRY.integer_to_string
 
 	; aktualizuj element "etykieta zegar" w przestrzeni okna paska zadań
 	mov	rdi,	kernel_gui_window_taskbar

@@ -7,20 +7,12 @@
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
-	; stałe, zmienne, globalne, struktury, obiekty, nagłówki
+	; stałe, zmienne, globalne, struktury, obiekty, makra
 	;-----------------------------------------------------------------------
-	%include	"config.asm"
-	;-----------------------------------------------------------------------
-	%include	"kernel/config.asm"
-	%include	"kernel/header/vfs.inc"
-	%include	"kernel/header/service.inc"
-	%include	"kernel/header/ipc.inc"
-	%include	"kernel/header/stream.inc"
-	%include	"kernel/header/wm.inc"
-	%include	"kernel/macro/debug.asm"
+	%include	"kernel/header.asm"
 	;-----------------------------------------------------------------------
 	%include	"software/console/config.asm"
-	%include	"software/console/header.inc"
+	%include	"software/console/header.asm"
 	;-----------------------------------------------------------------------
 
 ; 64 bitowy kod programu
@@ -170,12 +162,6 @@ console:
 	%include	"software/console/meta.asm"
 	;-----------------------------------------------------------------------
 	%include	"library/bosu.asm"
-	%include	"library/integer_to_string.asm"
 	%include	"library/font.asm"
-	%include	"library/page_from_size.asm"
-	%include	"library/string_cut.asm"
-	%include	"library/string_compare.asm"
-	%include	"library/string_to_integer.asm"
-	%include	"library/string_word_next.asm"
 	%include	"library/terminal.asm"
 	;-----------------------------------------------------------------------

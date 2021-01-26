@@ -25,7 +25,7 @@ ls_init:
 	mov	rsi,	rsp
 
 	; usuń z początku i końca listy wszystkie białe znaki
-	call	library_string_trim
+	macro_library	LIBRARY_STRUCTURE_ENTRY.string_trim
 	jnc	.trimmed	; przetworzono
 
 .no_arguments:
