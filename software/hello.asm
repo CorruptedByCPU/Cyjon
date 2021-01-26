@@ -39,7 +39,6 @@ hello:
 	xor	ax,	ax
 	int	KERNEL_SERVICE
 
-	; debug
 	macro_debug	"software: hello"
 
 hello_string	db	"Hello, World!"

@@ -13,25 +13,11 @@ struc	LIBRARY_STRUCTURE_ENTRY
 	.bit_find			resb	8
 	;-----------------------------------------------------------------------
 	.bosu				resb	8
-	; .bosu_header_set		resb	8
-	; .bosu_clean			resb	8
-	; .bosu_border_correction		resb	8
-	; .bosu_close			resb	8
-	; .bosu_element_button_close	resb	8
-	; .bosu_element_button_minimize	resb	8
-	; .bosu_element_button_maximize	resb	8
+	.bosu_header_set		resb	8
 	.bosu_elements_specification	resb	8
-	; .bosu_elements			resb	8
-	; .bosu_element_taskbar		resb	8
 	.bosu_element_chain		resb	8
-	; .bosu_header_update		resb	8
-	; .bosu_string			resb	8
-	; .bosu_char			resb	8
-	; .bosu_element_button		resb	8
-	; .bosu_element_drain		resb	8
 	.bosu_element_label		resb	8
 	.bosu_element			resb	8
-	; .bosu_element_subroutine	resb	8
 	;-----------------------------------------------------------------------
 	.bresenham			resb	8
 	;-----------------------------------------------------------------------

@@ -42,9 +42,6 @@ kernel_gui:
 	%include	"kernel/service/gui/event.asm"
 	%include	"kernel/service/gui/taskbar.asm"
 	;-----------------------------------------------------------------------
-	%include	"library/bosu.asm"
-	%include	"library/font.asm"
-	;-----------------------------------------------------------------------
 
 	macro_debug	"kernel_gui"
 

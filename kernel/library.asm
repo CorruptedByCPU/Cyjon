@@ -27,25 +27,11 @@ kernel_library:
 	.bit_find			dq	library_bit_find
 	;-----------------------------------------------------------------------
 	.bosu				dq	library_bosu
-	; .bosu_header_set		dq	library_bosu_header_set
-	; .bosu_clean			dq	library_bosu_clean
-	; .bosu_border_correction		dq	library_bosu_border_correction
-	; .bosu_close			dq	library_bosu_close
-	; .bosu_element_button_close	dq	library_bosu_element_button_close
-	; .bosu_element_button_minimize	dq	library_bosu_element_button_minimize
-	; .bosu_element_button_maximize	dq	library_bosu_element_button_maximize
+	.bosu_header_set		dq	library_bosu_header_set
 	.bosu_elements_specification	dq	library_bosu_elements_specification
-	; .bosu_elements			dq	library_bosu_elements
-	; .bosu_element_taskbar		dq	library_bosu_element_taskbar
 	.bosu_element_chain		dq	library_bosu_element_chain
-	; .bosu_header_update		dq	library_bosu_header_update
-	; .bosu_string			dq	library_bosu_string
-	; .bosu_char			dq	library_bosu_char
-	; .bosu_element_button		dq	library_bosu_element_button
-	; .bosu_element_drain		dq	library_bosu_element_drain
 	.bosu_element_label		dq	library_bosu_element_label
 	.bosu_element			dq	library_bosu_element
-	; .bosu_element_subroutine	dq	library_bosu_element_subroutine
 	;-----------------------------------------------------------------------
 	.bresenham			dq	library_bresenham
 	;-----------------------------------------------------------------------
@@ -76,14 +62,14 @@ kernel_library:
 	.terminal_cursor_switch		dq	library_terminal_cursor_switch
 	.terminal_cursor_set		dq	library_terminal_cursor_set
 	.terminal_matrix		dq	library_terminal_matrix
-	.library_terminal_empty_char	dq	library_terminal_empty_char
-	.library_terminal_char		dq	library_terminal_char
-	.library_terminal_scroll	dq	library_terminal_scroll
-	.library_terminal_scroll_down	dq	library_terminal_scroll_down
-	.library_terminal_scroll_up	dq	library_terminal_scroll_up
-	.library_terminal_empty_line	dq	library_terminal_empty_line
-	.library_terminal_string	dq	library_terminal_string
-	.library_terminal_number	dq	library_terminal_number
+	.terminal_empty_char		dq	library_terminal_empty_char
+	.terminal_char			dq	library_terminal_char
+	.terminal_scroll		dq	library_terminal_scroll
+	.terminal_scroll_down		dq	library_terminal_scroll_down
+	.terminal_scroll_up		dq	library_terminal_scroll_up
+	.terminal_empty_line		dq	library_terminal_empty_line
+	.terminal_string		dq	library_terminal_string
+	.terminal_number		dq	library_terminal_number
 	;-----------------------------------------------------------------------
 	.value_to_size			dq	library_value_to_size
 	;-----------------------------------------------------------------------

@@ -74,7 +74,7 @@ console_sequence:
 
 	; utwórz nowy nagłówek
 	mov	rdi,	console_window
-	call	library_bosu_header_set
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_header_set
 
 	; rozpoczęcie i zakończenie sekwencji
 	add	rcx,	0x04
@@ -211,7 +211,7 @@ console_sequence:
 	mov	bl,	byte [rsi + 0x05]	; podstawa
 	movzx	ecx,	byte [rsi + 0x06]	; rozmiar prefiksu
 	mov	dl,	byte [rsi + 0x07]	; wypełnienie prefiksu
-	call	library_terminal_number
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_number
 
 	; przywróć rozmiar ciągu
 	pop	rcx
@@ -237,7 +237,7 @@ console_sequence:
 	movzx	rcx,	word [rsi + 0x05 + STATIC_WORD_SIZE_byte]
 
 	; wykonaj
-	call	library_terminal_scroll_up
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_scroll_up
 
 	; przywróć rozmiar ciągu
 	pop	rcx
@@ -263,7 +263,7 @@ console_sequence:
 	movzx	rcx,	word [rsi + 0x05 + STATIC_WORD_SIZE_byte]
 
 	; wykonaj
-	call	library_terminal_scroll_down
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_scroll_down
 
 	; przywróć rozmiar ciągu
 	pop	rcx
@@ -281,7 +281,7 @@ console_sequence:
 
 	; numer linii do wyczyszczenia
 	mov	ebx,	dword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y]
-	call	library_terminal_empty_line
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_empty_line
 
 	; przetworzono sekwencję
 	sub	rcx,	THIS_SEQUENCE_LENGTH
@@ -295,7 +295,7 @@ console_sequence:
 	%strlen	THIS_SEQUENCE_LENGTH STATIC_SEQUENCE_CLEAR
 
 	; wyczyść przestrzeń znakową konsoli
-	call	library_terminal_clear
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_clear
 
 	; przetworzono sekwencję
 	sub	rcx,	THIS_SEQUENCE_LENGTH
@@ -347,7 +347,7 @@ console_sequence:
 	add	rsi,	THIS_SEQUENCE_LENGTH
 
 	; zaktualizuj pozycję kursora tekstowego w konsoli
-	call	library_terminal_cursor_set
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_cursor_set
 
 	; powrót z podprocedury
 	jmp	console_sequence.end
@@ -407,7 +407,7 @@ console_sequence:
 	mov	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.lock],	STATIC_EMPTY
 
 	; włącz kursor
-	call	library_terminal_cursor_enable
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_cursor_enable
 
 	; powrót z podprocedury
 	jmp	.terminal_cursor_visibility_end
@@ -415,7 +415,7 @@ console_sequence:
 ;-------------------------------------------------------------------------------
 .terminal_cursor_visibility_hide:
 	; ukryj kursor tekstowy
-	call	library_terminal_cursor_disable
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_cursor_disable
 
 	; powrót z podprocedury
 	jmp	.terminal_cursor_visibility_end
@@ -423,7 +423,7 @@ console_sequence:
 ;-------------------------------------------------------------------------------
 .terminal_cursor_visibility_show:
 	; pokaż kursor tekstowy
-	call	library_terminal_cursor_enable
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_cursor_enable
 
 	; powrót z podprocedury
 	jmp	.terminal_cursor_visibility_end
@@ -442,17 +442,17 @@ console_sequence:
 ;-------------------------------------------------------------------------------
 .terminal_cursor_visibility_restore:
 	; ukryj kursor tekstowy
-	call	library_terminal_cursor_disable
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_cursor_disable
 
 	; pobierz zapamiętaną pozycję kursora
 	mov	rax,	qword [console_terminal_cursor_position_save]
 
 	; poinformuj terminal
 	mov	qword [r8 + LIBRARY_TERMINAL_STRUCTURE.cursor],	rax
-	call	library_terminal_cursor_set
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_cursor_set
 
 	; pokaż kursor tekstowy
-	call	library_terminal_cursor_enable
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_cursor_enable
 
 	; powrót z podprocedury
 	jmp	.terminal_cursor_visibility_end
@@ -491,7 +491,7 @@ console_sequence:
 	; brak przesunięcia kursora w przestrzeni terminala
 
 	; przewiń zawartość terminala o linię w górę
-	call	library_terminal_scroll
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_scroll
 
 	; powrót z podprocedury
 	jmp	.terminal_cursor_visibility_end
@@ -517,7 +517,7 @@ console_sequence:
 ;-------------------------------------------------------------------------------
 .terminal_cursor_visibility_moved:
 	; ustaw kursor na pozycji
-	call	library_terminal_cursor_set
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_cursor_set
 
 	; powrót z podprocedury
 	jmp	.terminal_cursor_visibility_end

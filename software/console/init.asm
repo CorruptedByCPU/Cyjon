@@ -17,7 +17,7 @@
 
 	; utwórz okno
 	mov	rsi,	console_window
-	call	library_bosu
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu
 	jc	console.close	; brak wystarczającej przestrzeni pamięci
 
 	; wylicz adres wskaźnika przestrzeni danych elementu "terminal"
@@ -38,7 +38,7 @@
 
 	; inicjalizuj przestrzeń elementu "terminal"
 	mov	r8,	console_terminal_table
-	call	library_terminal
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal
 
 	; uruchom powłokę systemu
 	mov	ax,	KERNEL_SERVICE_PROCESS_run

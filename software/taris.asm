@@ -27,5 +27,4 @@ taris:
 	xor	ax,	ax
 	int	KERNEL_SERVICE
 
-	; debug
 	macro_debug	"software: taris"

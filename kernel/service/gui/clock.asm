@@ -58,7 +58,7 @@ kernel_gui_clock:
 	; aktualizuj element "etykieta zegar" w przestrzeni okna paska zadań
 	mov	rdi,	kernel_gui_window_taskbar
 	mov	rsi,	kernel_gui_window_taskbar.element_label_clock
-	call	library_bosu_element_label
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_element_label
 
 	; ustaw flagę okna: nowa zawartość
 	mov	al,	KERNEL_WM_WINDOW_update

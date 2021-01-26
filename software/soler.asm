@@ -56,11 +56,11 @@ soler:
 
 	; etykieta operacji
 	mov	rsi,	soler_window.element_label_operation
-	call	library_bosu_element_label
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_element_label
 
 	; etykieta wartości
 	mov	rsi,	soler_window.element_label_value
-	call	library_bosu_element_label
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_element_label
 
 	; aktualizuj zawartość okna
 	mov	al,	KERNEL_WM_WINDOW_update
@@ -109,7 +109,7 @@ soler:
 
 	; pobierz wskaźnik do elementu biorącego udział w zdarzeniu
 	mov	rsi,	soler_window
-	call	library_bosu_element
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_element
 	jc	.loop	; nie znaleziono elementu zależnego
 
 	; element typu "Button Close"?
@@ -127,7 +127,6 @@ soler:
 	xor	ax,	ax
 	int	KERNEL_SERVICE
 
-	; debug
 	macro_debug	"software: soler"
 
 	;-----------------------------------------------------------------------
@@ -135,7 +134,4 @@ soler:
 	%include	"software/soler/operation.asm"
 	%include	"software/soler/show.asm"
 	%include	"software/soler/fpu.asm"
-	;-----------------------------------------------------------------------
-	%include	"library/bosu.asm"
-	%include	"library/font.asm"
 	;-----------------------------------------------------------------------
