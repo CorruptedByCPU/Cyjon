@@ -175,7 +175,7 @@ kernel_gui_taskbar_event:
 
 	; sprawdź, którego elementu okna dotyczny akcja
 	mov	rsi,	kernel_gui_window_taskbar
-	call	library_bosu_element
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_element
 	jc	.end	; brak akcji
 
 	; akcja dotyczy elementu zegara?
@@ -386,7 +386,7 @@ kernel_gui_taskbar:
 	; przetwórz wszystkie elementy w łańcuchu
 	mov	rsi,	kernel_gui_window_taskbar.element_chain_0
 	mov	rdi,	kernel_gui_window_taskbar
-	call	library_bosu_element_chain
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_element_chain
 
 	; ustaw flagę okna: nowa zawartość
 	mov	al,	KERNEL_WM_WINDOW_update

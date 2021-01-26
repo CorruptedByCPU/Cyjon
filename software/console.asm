@@ -73,7 +73,7 @@ console:
 
 	; pobierz wskaźnik do elementu biorącego udział w zdarzeniu
 	mov	rsi,	console_window
-	call	library_bosu_element
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_element
 	jc	.input	; nie znaleziono elementu zależnego
 
 	; element posiada przypisaną procedurę obsługi akcji?
@@ -106,7 +106,7 @@ console:
 	mov	r8,	console_terminal_table
 
 	; wyłącz kursor w terminalu
-	call	library_terminal_cursor_disable
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_cursor_disable
 
 .parse:
 	; koniec ciągu?
@@ -129,7 +129,7 @@ console:
 
 	; wyświetl znak
 	mov	ecx,	1
-	call	library_terminal_char
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_char
 
 	; przywróć licznik
 	pop	rcx
@@ -141,7 +141,7 @@ console:
 
 .flush:
 	; włącz kursor w terminalu
-	call	library_terminal_cursor_enable
+	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_cursor_enable
 
 	; aktualizuj zawartość okna
 	mov	al,	KERNEL_WM_WINDOW_update
@@ -152,7 +152,6 @@ console:
 	; zatrzymaj dalsze wykonywanie kodu
 	jmp	.loop
 
-	; debug
 	macro_debug	"software: console"
 
 	;-----------------------------------------------------------------------
@@ -160,8 +159,4 @@ console:
 	%include	"software/console/transfer.asm"
 	%include	"software/console/sequence.asm"
 	%include	"software/console/meta.asm"
-	;-----------------------------------------------------------------------
-	%include	"library/bosu.asm"
-	%include	"library/font.asm"
-	%include	"library/terminal.asm"
 	;-----------------------------------------------------------------------

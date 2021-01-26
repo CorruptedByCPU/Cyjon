@@ -8,7 +8,7 @@
 
 	; utwórz okno
 	mov	rsi,	soler_window
-	call	library_bosu
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu
 	jc	soler.close	; brak wystarczającej przestrzeni pamięci
 
 	; wyświetl okno

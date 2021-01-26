@@ -34,7 +34,7 @@ kernel_gui_ipc_wm:
 
 	; sprawdź, którego elementu okna dotyczny akcja
 	mov	rsi,	kernel_gui_window_menu
-	call	library_bosu_element
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_element
 	jc	.end	; brak akcji
 
 	; element posiada przypisaną procedurę obsługi akcji?

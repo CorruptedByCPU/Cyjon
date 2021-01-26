@@ -151,7 +151,7 @@ kernel_gui_init:
 	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.address],	rdi
 
 	; utwórz okno paska zadań
-	call	library_bosu
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu
 
 	; przydziel identyfikator dla okna
 	call	kernel_wm_object_id_new
@@ -166,7 +166,7 @@ kernel_gui_init:
 	mov	rsi,	kernel_gui_window_menu
 
 	; ilość elementów wchodzących w skład menu oraz ich łączna wysokość względem siebie
-	call	library_bosu_elements_specification
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_elements_specification
 
 	; ustaw szerokość i wysokość okna menu
 	mov	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width],	r8w
@@ -187,7 +187,7 @@ kernel_gui_init:
 	mov	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.address],	rdi
 
 	; utwórz okno paska zadań
-	call	library_bosu
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu
 
 	; przydziel identyfikator dla okna
 	call	kernel_wm_object_id_new

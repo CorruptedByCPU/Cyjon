@@ -44,7 +44,6 @@ shell:
 	; przetwórz
 	%include	"software/shell/exec.asm"
 
-	; debug
 	macro_debug	"software: shell"
 
 	;-----------------------------------------------------------------------

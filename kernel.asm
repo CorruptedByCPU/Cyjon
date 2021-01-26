@@ -9,23 +9,7 @@
 	;-----------------------------------------------------------------------
 	; stałe, zmienne, globalne, struktury, obiekty, makra, nagłówki
 	;-----------------------------------------------------------------------
-	%include	"config.asm"	; globalne
-	;-----------------------------------------------------------------------
-	%include	"kernel/config.asm"	; lokalne
-	;-----------------------------------------------------------------------
-	%include	"kernel/macro/apic.asm"
-	%include	"kernel/macro/copy.asm"
-	%include	"kernel/macro/debug.asm"
-	%include	"kernel/macro/library.asm"
-	%include	"kernel/macro/lock.asm"
-	;-----------------------------------------------------------------------
-	%include	"kernel/header/ipc.asm"
-	%include	"kernel/header/library.asm"
-	%include	"kernel/header/service.asm"
-	%include	"kernel/header/stream.asm"
-	%include	"kernel/header/task.asm"
-	%include	"kernel/header/vfs.asm"
-	%include	"kernel/header/wm.asm"
+	%include	"kernel/header.asm"
 	;-----------------------------------------------------------------------
 
 ; 64 bitowy kod inicjalizacyjny jądra systemu
