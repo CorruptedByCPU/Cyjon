@@ -7,19 +7,8 @@
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
-	; stałe, zmienne, globalne, struktury, obiekty, makra
+	%include	"software/ls/config.asm"
 	;-----------------------------------------------------------------------
-	%include	"kernel/header.asm"
-	;-----------------------------------------------------------------------
-
-; 64 bitowy kod programu
-[bits 64]
-
-; adresowanie względne
-[default rel]
-
-; położenie kodu programu w pamięci logicznej
-[org SOFTWARE_base_address]
 
 ;===============================================================================
 ls:

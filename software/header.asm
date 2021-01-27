@@ -9,12 +9,14 @@
 	;-----------------------------------------------------------------------
 	; stałe, zmienne, globalne, struktury, obiekty, makra
 	;-----------------------------------------------------------------------
-	%include	"software/header.asm"
-	;-----------------------------------------------------------------------
-	%include	"software/console/header.asm"
+	%include	"kernel/header.asm"
 	;-----------------------------------------------------------------------
 
-%define	PROGRAM_NAME		"shell"
-%define	PROGRAM_VERSION		"0.63"
+; 64 bitowy kod programu
+[bits 64]
 
-SHELL_CACHE_SIZE_byte	equ	128
+; adresowanie względne
+[default rel]
+
+; położenie kodu programu w pamięci logicznej
+[org SOFTWARE_base_address]

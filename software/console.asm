@@ -7,22 +7,8 @@
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
-	; stałe, zmienne, globalne, struktury, obiekty, makra
-	;-----------------------------------------------------------------------
-	%include	"kernel/header.asm"
-	;-----------------------------------------------------------------------
 	%include	"software/console/config.asm"
-	%include	"software/console/header.asm"
 	;-----------------------------------------------------------------------
-
-; 64 bitowy kod programu
-[bits 64]
-
-; adresowanie względne
-[default rel]
-
-; położenie kodu programu w pamięci logicznej
-[org SOFTWARE_base_address]
 
 ;===============================================================================
 console:

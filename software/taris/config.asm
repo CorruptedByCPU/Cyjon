@@ -6,6 +6,15 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
+	;-----------------------------------------------------------------------
+	; stałe, zmienne, globalne, struktury, obiekty, makra
+	;-----------------------------------------------------------------------
+	%include	"software/header.asm"
+	;-----------------------------------------------------------------------
+
+%define	PROGRAM_NAME		"taris"
+%define	PROGRAM_VERSION		"0.1"
+
 TARIS_BRICK_PADDING_pixel	equ	1
 TARIS_BRICK_WIDTH_pixel		equ	6
 TARIS_BRICK_HEIGHT_pixel	equ	6

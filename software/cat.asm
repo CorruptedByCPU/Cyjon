@@ -7,19 +7,8 @@
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
-	; stałe, zmienne, globalne, struktury, obiekty, makra
+	%include	"software/cat/config.asm"
 	;-----------------------------------------------------------------------
-	%include	"kernel/header.asm"
-	;-----------------------------------------------------------------------
-
-; 64 bitowy kod programu
-[bits 64]
-
-; adresowanie względne
-[default rel]
-
-; położenie kodu programu w pamięci logicznej
-[org SOFTWARE_base_address]
 
 ;===============================================================================
 cat:
@@ -113,7 +102,6 @@ cat:
 	macro_debug	"software: cat"
 
 	;-----------------------------------------------------------------------
-	%include	"software/cat/config.asm"
 	%include	"software/cat/data.asm"
 	%include	"software/cat/text.asm"
 	;-----------------------------------------------------------------------

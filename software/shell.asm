@@ -7,23 +7,8 @@
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
-	; stałe, zmienne, globalne, struktury, obiekty, makra
-	;-----------------------------------------------------------------------
-	%include	"kernel/header.asm"
-	;-----------------------------------------------------------------------
-	%include	"software/console/header.asm"
-	;-----------------------------------------------------------------------
 	%include	"software/shell/config.asm"
 	;-----------------------------------------------------------------------
-
-; 64 bitowy kod programu
-[bits 64]
-
-; adresowanie względne
-[default rel]
-
-; położenie kodu programu w pamięci logicznej
-[org SOFTWARE_base_address]
 
 ;===============================================================================
 shell:
@@ -48,7 +33,7 @@ shell:
 
 	;-----------------------------------------------------------------------
 	%include	"software/shell/data.asm"
-	%include	"software/shell/prompt.asm"
 	%include	"software/shell/event.asm"
 	%include	"software/shell/header.asm"
+	%include	"software/shell/prompt.asm"
 	;-----------------------------------------------------------------------
