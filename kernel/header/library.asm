@@ -13,18 +13,19 @@ struc	LIBRARY_STRUCTURE_ENTRY
 	.bit_find			resb	8
 	;-----------------------------------------------------------------------
 	.bosu				resb	8
-	.bosu_header_set		resb	8
-	.bosu_elements_specification	resb	8
+	.bosu_element			resb	8
 	.bosu_element_chain		resb	8
 	.bosu_element_label		resb	8
-	.bosu_element			resb	8
+	.bosu_elements_specification	resb	8
+	.bosu_event			resb	8
+	.bosu_header_set		resb	8
 	;-----------------------------------------------------------------------
 	.bresenham			resb	8
 	;-----------------------------------------------------------------------
 	.color_alpha			resb	8
 	.color_alpha_invert		resb	8
 	;-----------------------------------------------------------------------
-	.font				resb	8
+	.font_matrix			resb	8
 	;-----------------------------------------------------------------------
 	.input				resb	8
 	;-----------------------------------------------------------------------
@@ -42,20 +43,20 @@ struc	LIBRARY_STRUCTURE_ENTRY
 	.string_word_next		resb	8
 	;-----------------------------------------------------------------------
 	.terminal			resb	8
+	.terminal_char			resb	8
 	.terminal_clear			resb	8
 	.terminal_cursor_disable	resb	8
 	.terminal_cursor_enable		resb	8
-	.terminal_cursor_switch		resb	8
 	.terminal_cursor_set		resb	8
-	.terminal_matrix		resb	8
+	.terminal_cursor_switch		resb	8
 	.terminal_empty_char		resb	8
-	.terminal_char			resb	8
+	.terminal_empty_line		resb	8
+	.terminal_matrix		resb	8
+	.terminal_number		resb	8
 	.terminal_scroll		resb	8
 	.terminal_scroll_down		resb	8
 	.terminal_scroll_up		resb	8
-	.terminal_empty_line		resb	8
 	.terminal_string		resb	8
-	.terminal_number		resb	8
 	;-----------------------------------------------------------------------
 	.value_to_size			resb	8
 	;-----------------------------------------------------------------------

@@ -87,7 +87,7 @@ console_window					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel
 						dw	CONSOLE_WINDOW_WIDTH_pixel
 						dw	CONSOLE_WINDOW_HEIGHT_pixel - LIBRARY_BOSU_HEADER_HEIGHT_pixel
-						dq	STATIC_EMPTY	; brak akcji związanej z elementem
+						dq	STATIC_EMPTY	; wskaźnik przestrzeni danych (uzupełnia Bosu)
 .element_terminal_end:				;-------------------------------
 						; koniec elementów okna
 						;-------------------------------

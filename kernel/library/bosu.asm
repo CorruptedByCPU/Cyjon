@@ -15,6 +15,12 @@
 
 ;===============================================================================
 ; wejście:
+library_bosu_event:
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
 ;	rsi - wskaźnik do struktury okna
 ; wyjście:
 ;	Flaga CF - jeśli nie udało się zainicjować okna
