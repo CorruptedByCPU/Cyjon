@@ -10,6 +10,9 @@ align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 taris_ipc_data:
 	times KERNEL_IPC_STRUCTURE.SIZE		db	STATIC_EMPTY
 
+taris_limit					dq	(taris_bricks_end - taris_bricks) / STATIC_QWORD_SIZE_byte
+taris_seed					dd	0x681560BA
+
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 ;===============================================================================
 taris_window					dw	STATIC_EMPTY	; pozycja na osi X
@@ -44,3 +47,13 @@ taris_window					dw	STATIC_EMPTY	; pozycja na osi X
 						;-------------------------------
 						db	STATIC_EMPTY
 taris_window_end:
+
+align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
+taris_bricks					dq	0x44440F00222200F0
+						dq	0x0660066006600660
+						dq	0xC4401700022300E8
+						dq	0x64400710022608E0
+						dq	0x4E002320007204C4
+						dq	0x2640318000990066
+						dq	0x8C4036000231006C
+taris_bricks_end:

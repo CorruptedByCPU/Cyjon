@@ -18,11 +18,14 @@ taris:
 	jc	taris.close	; brak wystarczającej przestrzeni pamięci
 
 .loop:
+	; wylosuj blok
+	call	taris_random
+
 	; sprawdź przychodzące zdarzenia
-	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_event
+	; macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_event
 
 	; debug
-	jmp	$
+	jmp	.loop
 
 .close:
 	; zakończ pracę programu
@@ -33,4 +36,5 @@ taris:
 
 	;-----------------------------------------------------------------------
 	%include	"software/taris/data.asm"
+	%include	"software/taris/random.asm"
 	;-----------------------------------------------------------------------

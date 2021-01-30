@@ -15,6 +15,7 @@ library_xorshift32:
 	; zachowaj oryginalne rejestry
 	push	rdx
 
+	; https://en.wikipedia.org/wiki/Xorshift
 	mov	edx,	eax
 	shl	eax,	13
 	xor	eax,	edx
