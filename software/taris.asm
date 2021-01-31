@@ -22,9 +22,11 @@ taris:
 	call	taris_random
 
 	; sprawdź przychodzące zdarzenia
-	; macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_event
+	mov	rsi,	taris_window
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_event
+	jc	.loop	; brak wyjątku związanego z klawiaturą
 
-	; debug
+	; cdn.
 	jmp	.loop
 
 .close:

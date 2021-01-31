@@ -61,7 +61,7 @@ library_input:
 
 .keyboard:
 	; pobierz kod klawisza
-	mov	dx,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
+	mov	dx,	word [rdi + KERNEL_IPC_STRUCTURE.data]
 
 	; klawisz typu Backspace?
 	cmp	dx,	STATIC_SCANCODE_BACKSPACE

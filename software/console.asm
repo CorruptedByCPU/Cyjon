@@ -35,45 +35,12 @@ console:
 	int	KERNEL_SERVICE
 
 .exist:
-	; pobierz wiadomość
-	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
-	mov	rdi,	console_ipc_data
-	int	KERNEL_SERVICE
-	jc	.input	; brak wiadomości
-
-	; komunikat typu: urządzenie wskazujące (klawiatura)?
-	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
-	je	.transfer	; tak
-
-	; komunikat typu: urządzenie wskazujące (myszka)?
-	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_MOUSE
-	jne	.input	; nie, zignoruj wiadomość
-
-	; naciśnięcie lewego klawisza myszki?
-	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.action],	KERNEL_WM_IPC_MOUSE_btn_left_press
-	jne	.input	; nie, zignoruj wiadomość
-
-	; pobierz współrzędne kursora
-	movzx	r8d,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]	; x
-	movzx	r9d,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value1]	; y
-
-	; pobierz wskaźnik do elementu biorącego udział w zdarzeniu
+	; sprawdź przychodzące zdarzenia
 	mov	rsi,	console_window
-	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_element
-	jc	.input	; nie znaleziono elementu zależnego
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_event
+	jc	.input	; brak wyjątku związanego z klawiaturą
 
-	; element posiada przypisaną procedurę obsługi akcji?
-	cmp	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	STATIC_EMPTY
-	je	.input	; nie, koniec obsługi akcji
-
-	; wykonaj procedurę powiązaną z elementem
-	mov	rax,	.input
-	push	rax	; powrót z procedury
-	push	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON_CLOSE.event]	; procedura do wykonania
-	ret	; call
-
-.transfer:
-	; prześlij komunikat do powłoki
+	; prześlij kod klawisza do powłoki
 	call	console_transfer
 
 .input:

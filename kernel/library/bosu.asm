@@ -15,7 +15,83 @@
 
 ;===============================================================================
 ; wejście:
+;	rsi - wskaźnik do właściwości okna
+; wyjście:
+;	Flaga CF - jeśli brak wyjątku związanego z klawiaturą
+;	dx - kod klawisza
 library_bosu_event:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rsi
+	push	rdi
+	push	r8
+	push	r9
+
+	; przygotuj przestrzeń pod przychodzący komunikat IPC
+	sub	rsp,	KERNEL_IPC_STRUCTURE.SIZE
+
+	; pobierz wiadomość (jeśli istneje)
+	mov	ax,	KERNEL_SERVICE_PROCESS_ipc_receive
+	mov	rdi,	rsp
+	int	KERNEL_SERVICE
+	jc	.error	; brak wiadomości
+
+	; komunikat typu: urządzenie wskazujące (klawiatura)?
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
+	je	.keyboard	; tak
+
+	; komunikat typu: urządzenie wskazujące (myszka)?
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_MOUSE
+	je	.mouse	; tak
+
+.error:
+	; zwolnij przestrzeń tymczasową
+	add	rsp,	KERNEL_IPC_STRUCTURE.SIZE
+
+	; brak obsługi wyjątku
+	stc
+
+	; koniec obsługi procedury
+	jmp	.end
+
+.mouse:
+	; naciśnięcie lewego klawisza myszki?
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_IPC_STRUCTURE_DATA_MOUSE.event],	KERNEL_IPC_MOUSE_EVENT_left_press
+	jne	.error	; nie, zignoruj wiadomość
+
+	; pobierz współrzędne kursora
+	movzx	r8d,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_IPC_STRUCTURE_DATA_MOUSE.x]	; x
+	movzx	r9d,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_IPC_STRUCTURE_DATA_MOUSE.y]	; y
+
+	; pobierz wskaźnik do elementu biorącego udział w zdarzeniu
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_element
+	jc	.error	; nie znaleziono elementu zależnego
+
+	; element posiada przypisaną procedurę obsługi akcji?
+	cmp	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	STATIC_EMPTY
+	je	.error	; nie, koniec obsługi akcji
+
+	; wykonaj procedurę powiązaną z elementem
+	mov	rax,	.error	; procedura obsłużona poprawnie, nie zwracamy danych
+	push	rax	; adres powrotu z procedury
+	push	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON_CLOSE.event]	; procedura do wykonania
+	ret	; wykonaj
+
+.keyboard:
+	; pobierz kod klawisza
+	mov	dx,	word [rdi + KERNEL_IPC_STRUCTURE.data]
+
+	; zwolnij przestrzeń tymczasową
+	add	rsp,	KERNEL_IPC_STRUCTURE.SIZE
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	r9
+	pop	r8
+	pop	rdi
+	pop	rsi
+	pop	rax
+
 	; powrót z procedury
 	ret
 

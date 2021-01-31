@@ -42,18 +42,24 @@ taris_window					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	TARIS_PLAYGROUND_WIDTH_pixel
 						dw	TARIS_WINDOW_HEIGHT_pixel
 						dq	STATIC_EMPTY	; wskaźnik przestrzeni danych (uzupełnia Bosu)
-.element_playground_end:				;-------------------------------
+.element_playground_end:			;-------------------------------
 						; koniec elementów okna
 						;-------------------------------
 						db	STATIC_EMPTY
 taris_window_end:
 
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
-taris_bricks					dq	0x44440F00222200F0
-						dq	0x0660066006600660
-						dq	0xC4401700022300E8
-						dq	0x64400710022608E0
-						dq	0x4E002320007204C4
-						dq	0x2640318000990066
-						dq	0x8C4036000231006C
+taris_bricks					dq	0x0270023200720262
+						dq	0x0226047003220071
+						dq	0x0063013200630132
+						dq	0x0066006600660066
+						dq	0x0036023100360231
+						dq	0x0223007406220170
+						dq	0x222200F0222200F0
 taris_bricks_end:
+
+taris_brick_position_x				dq	STATIC_EMPTY
+taris_brick_position_y				dq	STATIC_EMPTY
+
+taris_brick_platform:
+	TIMES TARIS_PLAYGROUND_HEIGHT_brick	dw	0000000000000000b	; najmłodsze 10 bitów

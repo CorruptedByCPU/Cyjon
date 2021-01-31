@@ -30,7 +30,7 @@ moko:
 	jne	.loop	; zignoruj
 
 	; pobierz kod klawisza
-	mov	ax,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
+	mov	ax,	word [rdi + KERNEL_IPC_STRUCTURE.data]
 
 	; wywołano skrót klawiszowy?
 	call	moko_shortcut

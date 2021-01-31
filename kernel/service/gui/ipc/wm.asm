@@ -13,12 +13,12 @@ kernel_gui_ipc_wm:
 	jne	.end	; nie
 
 	; pobierz identyfikator okna i koordynary wskaźnika kursora
-	mov	rax,	qword [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.id]
-	mov	r8w,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
-	mov	r9w,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value1]
+	mov	rax,	qword [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_IPC_STRUCTURE_DATA_MOUSE.object_id]
+	mov	r8w,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_IPC_STRUCTURE_DATA_MOUSE.x]
+	mov	r9w,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_IPC_STRUCTURE_DATA_MOUSE.y]
 
 	; naciśnięcie prawego klawisza myszki?
-	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.action],	KERNEL_WM_IPC_MOUSE_btn_right_press
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_IPC_STRUCTURE_DATA_MOUSE.event],	KERNEL_IPC_MOUSE_EVENT_right_press
 	je	.right_mouse_button	; tak
 
 	; akcja dotyczy okna "menu"?

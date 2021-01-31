@@ -64,11 +64,11 @@ tm:
 	jne	.no_event	; nie, zignoruj
 
 	; naciśnięto klawisz "q"?
-	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	"q"
+	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data],	"q"
 	je	.end	; tak, zakończ działanie procesu
 
 	; naciśnięto klawisz "d"?
-	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	"d"
+	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data],	"d"
 	jne	.no_event	; tak, zakończ działanie procesu
 
 	; włącz tryb debugowania (Bochs)
