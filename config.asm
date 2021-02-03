@@ -22,7 +22,8 @@ STATIC_PAGE_SIZE_shift					equ	12
 ;===============================================================================
 ; SOFTWARE
 ;===============================================================================
-SOFTWARE_base_address					equ	KERNEL_MEMORY_HIGH_REAL_address
+SOFTWARE_BASE_address					equ	0x0000200000000000
+SOFTWARE_BASE_stack_pointer				equ	0x0000800000000000
 
 ;===============================================================================
 ; STAŁE OGÓLNEGO PRZEZNACZENIA

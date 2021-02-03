@@ -19,4 +19,4 @@
 [default rel]
 
 ; położenie kodu programu w pamięci logicznej
-[org SOFTWARE_base_address]
+[org SOFTWARE_BASE_address]

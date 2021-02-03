@@ -27,7 +27,7 @@ moko_document_analyze:
 	call	moko_document_enter_remove
 
 	; ustaw rozmiar dokumentu w Bajtach
-	mov	qword [moko_document_size],		rcx
+	mov	qword [moko_document_size],	rcx
 
 	; zachowaj wskaźnik końca dokumentu
 	add	rdi,	rcx

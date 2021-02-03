@@ -67,7 +67,7 @@ kernel_exec:
 
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod przestrzeń kodu procesu
-	mov	rax,	KERNEL_MEMORY_HIGH_VIRTUAL_address
+	mov	rax,	SOFTWARE_BASE_address
 	mov	bx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user
 	mov	rcx,	r12
 	call	kernel_page_map_logical
@@ -103,7 +103,7 @@ kernel_exec:
 
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod stos procesu
-	mov	rax,	(KERNEL_MEMORY_HIGH_VIRTUAL_address << STATIC_MULTIPLE_BY_2_shift) - STATIC_PAGE_SIZE_byte
+	mov	rax,	KERNEL_TASK_STACK_address
 	or	bx,	KERNEL_PAGE_FLAG_user
 	mov	rcx,	STATIC_PAGE_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	call	kernel_page_map_logical
@@ -128,7 +128,7 @@ kernel_exec:
 	sub	rdi,	STATIC_QWORD_SIZE_byte
 
 	; zapamiętaj adres szczytu stosu procesu
-	mov	r14,	-STATIC_PAGE_SIZE_byte
+	mov	r14,	KERNEL_TASK_STACK_address
 	or	r14w,	di
 
 	; odłóż rozmiar danych na stosie dla procesu
@@ -164,7 +164,7 @@ kernel_exec:
 	add	rdi,	STATIC_PAGE_SIZE_byte - ( STATIC_QWORD_SIZE_byte * 0x05 )	; odłóż 5 rejestrów
 
 	; RIP
-	mov	rax,	KERNEL_MEMORY_HIGH_REAL_address
+	mov	rax,	SOFTWARE_BASE_address
 	stosq
 
 	; CS
@@ -192,7 +192,7 @@ kernel_exec:
 	mov	cr3,	r11
 
 	; załaduj kod programu do przestrzeni pamięci procesu
-	mov	rdi,	SOFTWARE_base_address
+	mov	rdi,	SOFTWARE_BASE_address
 	call	kernel_vfs_file_read
 	jc	.error	; nie udało się załadować pliku do przestrzeni pamięci
 

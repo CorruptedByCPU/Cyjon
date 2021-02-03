@@ -342,7 +342,7 @@ kernel_page_map_virtual:
 	push	r15
 
 	; koryguj adres przestrzeni logicznej
-	mov	rax,	KERNEL_MEMORY_HIGH_mask
+	mov	rax,	STATIC_EMPTY	; KERNEL_MEMORY_HIGH_mask
 	sub	rdi,	rax
 	mov	rax,	rdi
 

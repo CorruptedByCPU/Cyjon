@@ -157,10 +157,6 @@ kernel_wm_event:
 	cmp	qword [kernel_wm_object_selected_pointer],	STATIC_EMPTY
 	je	.end	; też nie
 
-	; oraz przytrzymano lewy klawisz ALT
-	cmp	byte [kernel_wm_keyboard_alt_left_semaphore],	STATIC_FALSE
-	je	.end	; nawet nie
-
 	; przemieść obiekt wraz z wskaźnikiem kursora
 	call	kernel_wm_object_move
 

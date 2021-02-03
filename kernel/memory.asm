@@ -11,8 +11,8 @@ KERNEL_MEMORY_MAP_SIZE_page		equ	0x01	; domyślny rozmiar 4088 Bajtów (~128 MiB
 kernel_memory_map_address		dq	STATIC_EMPTY
 kernel_memory_map_address_end		dq	STATIC_EMPTY
 
-kernel_memory_high_mask			dq	KERNEL_MEMORY_HIGH_mask
-kernel_memory_real_address		dq	KERNEL_MEMORY_HIGH_REAL_address
+kernel_memory_high_mask			dq	STATIC_EMPTY	; KERNEL_MEMORY_HIGH_mask
+kernel_memory_real_address		dq	STATIC_EMPTY	; KERNEL_MEMORY_HIGH_REAL_address
 
 kernel_memory_lock_semaphore		db	STATIC_FALSE
 
@@ -660,7 +660,6 @@ kernel_memory_alloc_task:
 
 	; mapuj przestrzeń
 	mov	rax,	rdi
-	sub	rax,	qword [kernel_memory_high_mask]	; zamień na adres bezpośredni
 	mov	bx,	KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_available
 	mov	r11,	cr3
 	call	kernel_page_map_logical
@@ -785,7 +784,8 @@ kernel_memory_alloc_task_secure:
 	shl	rbx,	STATIC_MULTIPLE_BY_PAGE_shift
 
 	; koryguj o adres początku opisanej przestrzeni przez binarną mapę pamięci procesu
-	add	rbx,	qword [kernel_memory_real_address]
+	mov	rax,	SOFTWARE_BASE_address
+	add	rbx,	rax
 
 	; zwróć adres do procesu
 	mov	qword [rsp + STATIC_QWORD_SIZE_byte * 0x02],	rbx
@@ -823,8 +823,8 @@ kernel_memory_release_task_secured:
 	mov	rsi,	qword [rdi + KERNEL_TASK_STRUCTURE.map]
 
 	; przelicz adres strony na numer bitu
-	mov	rax,	qword [rsp + STATIC_QWORD_SIZE_byte]
-	sub	rax,	qword [kernel_memory_real_address]
+	mov	rax,	-SOFTWARE_BASE_address
+	add	rax,	qword [rsp + STATIC_QWORD_SIZE_byte]
 	shr	rax,	STATIC_PAGE_SIZE_shift
 
 	; oblicz prdesunięcie względem początku binarnej mapy pamięci

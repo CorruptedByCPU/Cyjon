@@ -106,7 +106,7 @@ moko_shortcut:
 
 	; naciśnięto klawisz "o"?
 	cmp	ax,	"o"
-	je	.save_file	; tak
+	je	.write_file	; tak
 
 	; nie rozpoznano skrótu klawiszowego
 	jmp	.no_key
@@ -127,7 +127,7 @@ moko_shortcut:
 	ret
 
 ;-------------------------------------------------------------------------------
-.save_file:
+.write_file:
 	; pobierrz nazwę pliku od użyszkodnika
 	call	moko_shortcut_file
 	jc	moko_shortcut.restore_cursor	; nie podano nazwy pliku
