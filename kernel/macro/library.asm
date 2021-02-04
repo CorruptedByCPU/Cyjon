@@ -11,7 +11,7 @@
 	push	rbp
 
 	; odłóż na stos adres procedury docelowej
-	mov	rbp,	LIBRARY_base_address + %1
+	mov	rbp,	LIBRARY_BASE_address + %1
 	call	qword [rbp]	; wykonaj skok do biblioteki
 
 	; przywróć wartość procesu

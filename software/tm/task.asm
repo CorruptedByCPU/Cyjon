@@ -119,7 +119,7 @@ tm_task_show:
 
 	;-----------------------------------------------------------------------
 
-	; pobierz wartość APIC pierwszego procesu z listy
+	; pobierz rozmiar wykorzystanej przestrzeni pamięci w stronach
 	mov	eax,	dword [rdi + KERNEL_TASK_STRUCTURE_ENTRY.memory]
 
 	; przekształć wartość na procent bez reszty

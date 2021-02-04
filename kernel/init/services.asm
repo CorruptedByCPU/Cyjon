@@ -70,9 +70,10 @@ kernel_init_services:
 	pop	rsi
 
 	; dodaj usługę do kolejki zadań
+	mov	rbx,	KERNEL_STACK_pointer - (STATIC_QWORD_SIZE_byte * 0x14)
 	movzx	ecx,	byte [rsi + KERNEL_INIT_STRUCTURE_SERVICE.length]
-	add	rsi,	KERNEL_INIT_STRUCTURE_SERVICE.name
 	push	rcx	; zapamiętaj ilość znaków w nazwie procesu
+	add	rsi,	KERNEL_INIT_STRUCTURE_SERVICE.name
 	call	kernel_task_add
 
 	; podepnij domyślny strumień wyjścia
@@ -88,6 +89,7 @@ kernel_init_services:
 	; wstaw informacje o rozmiarze procesu w stronach
 	mov	rcx,	qword [rsi + (KERNEL_INIT_STRUCTURE_SERVICE.size - KERNEL_INIT_STRUCTURE_SERVICE.name)]
 	call	library_page_from_size
+	add	rcx,	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift	; wraz z przestrzenią stosu
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.memory],	rcx
 
 	; koniec tablicy?

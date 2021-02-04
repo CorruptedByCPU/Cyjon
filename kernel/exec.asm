@@ -105,7 +105,7 @@ kernel_exec:
 	; przygotuj miejsce pod stos procesu
 	mov	rax,	KERNEL_TASK_STACK_address
 	or	bx,	KERNEL_PAGE_FLAG_user
-	mov	rcx,	STATIC_PAGE_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
+	mov	rcx,	SOFTWARE_STACK_limit
 	call	kernel_page_map_logical
 	jc	.error
 
@@ -147,7 +147,7 @@ kernel_exec:
 .no_arguments:
 	;-----------------------------------------------------------------------
 	; przygotuj miejsce pod stos kontekstu (należy do jądra systemu)
-	mov	rax,	KERNEL_STACK_address
+	mov	rax,	SOFTWARE_BASE_address - KERNEL_STACK_SIZE_byte
 	mov	rbx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
 	mov	rcx,	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 	call	kernel_page_map_logical
@@ -204,11 +204,14 @@ kernel_exec:
 	mov	eax,	KERNEL_ERROR_memory_low	; kod błędu
 	movzx	ecx,	byte [rsi + KERNEL_VFS_STRUCTURE_KNOT.length]
 	add	rsi,	KERNEL_VFS_STRUCTURE_KNOT.name
+	mov	rbx,	(SOFTWARE_BASE_address - STATIC_PAGE_SIZE_byte) - (STATIC_QWORD_SIZE_byte * 0x14)
 	call	kernel_task_add
 	jc	.error
 
-	; rozmiar zajetej przestrzeni przez proces w stronach
+	; rozmiar zajętej przestrzeni przez proces w stronach
 	shr	r12,	STATIC_DIVIDE_BY_PAGE_shift
+	inc	r12	; przestrzeń binarnej mapy pamięci procesu w stronach
+	add	r12,	SOFTWARE_STACK_limit	; wraz z przestrzenią stosu
 	mov	qword [rdi +KERNEL_TASK_STRUCTURE.memory],	r12
 
 	; uzupełnij wpis o adres binarnej mapy pamięci procesu i jej rozmiar

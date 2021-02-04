@@ -19,7 +19,7 @@
 [default rel]
 
 ; położenie kodu programu w pamięci logicznej
-[org LIBRARY_base_address]
+[org LIBRARY_BASE_address]
 
 ;===============================================================================
 kernel_library:

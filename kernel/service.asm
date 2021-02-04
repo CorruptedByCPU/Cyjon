@@ -644,7 +644,7 @@ kernel_service:
 	call	library_page_from_size
 
 	; zwolnij przestrzeń
-	call	kernel_memory_release_foreign
+	call	kernel_memory_release_task
 
 	; zwolnij przestrzeń w binarnej mapie pamięci procesu
 	mov	rdi,	qword [rsp]
