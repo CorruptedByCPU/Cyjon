@@ -12,7 +12,7 @@ KERNEL_TASK_EFLAGS_cf			equ	000000000000000000000001b
 KERNEL_TASK_EFLAGS_df			equ	000000000000010000000000b
 KERNEL_TASK_EFLAGS_default		equ	KERNEL_TASK_EFLAGS_if
 
-KERNEL_TASK_STACK_address		equ	(KERNEL_MEMORY_HIGH_VIRTUAL_address << STATIC_MULTIPLE_BY_2_shift) - (KERNEL_TASK_STACK_SIZE_page << STATIC_MULTIPLE_BY_PAGE_shift)
+KERNEL_TASK_STACK_address		equ	SOFTWARE_STACK_pointer - (KERNEL_TASK_STACK_SIZE_page << STATIC_MULTIPLE_BY_PAGE_shift)
 KERNEL_TASK_STACK_SIZE_page		equ	1
 
 ; KERNEL_TASK_STRUCTURE.SIZE % STATIC_DWORD_SIZE_byte = 0
@@ -24,7 +24,7 @@ struc	KERNEL_TASK_STRUCTURE
 	.parent				resb	8	; identyfikator procesu rodzica
 	.time				resb	8	; czas uruchomienia procesu względem czasu życia jądra systemu
 	.apic				resb	4	; niewykorzystana ilość czasu procesora
-	.memory				resb	8	; rozmiar zajętej przestrzeni pamięci RAM w stronach (bez tablic stronicowania)
+	.memory				resb	8	; rozmiar zajętej przestrzeni logicznej w stronach (bez tablic stronicowania)
 	.knot				resb	8	; wskaźnik do supła katalogu roboczego procesu
 	.map				resb	8	; wskaźnik do przestrzeni binarnej mapy pamięci procesu
 	.map_size			resb	8	; rozmiar przestrzeni binarnej mapy pamięci procesu w bitach
@@ -297,6 +297,7 @@ kernel_task_child:
 
 ;===============================================================================
 ; wejście:
+;	rbx - wskaźnik szczytu stosu kontekstu zadania
 ;	cl - ilość znaków w nazwie procesu
 ;	rsi - wskaźni do nazwy procesu
 ;	r11 - adres tablicy PML4 zadania
@@ -322,8 +323,7 @@ kernel_task_add:
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.cr3],	r11
 
 	; zapisz spreparowany wskaźnik szczytu stosu kontekstu zadania
-	mov	rax,	KERNEL_STACK_pointer - (STATIC_QWORD_SIZE_byte * 0x14)
-	mov	qword [rdi + KERNEL_TASK_STRUCTURE.rsp],	rax
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.rsp],	rbx
 
 	; pobierz katalog roboczy i PID rodzica
 	call	kernel_task_active

@@ -635,9 +635,7 @@ kernel_service:
 	push	rdi
 
 	; adres przestrzeni do zwolnienia
-	mov	rax,	KERNEL_MEMORY_HIGH_mask
-	xchg	rdi,	rax
-	sub	rax,	rdi	; zamień na rzeczywisty
+	mov	rax,	rdi
 
 	; tablica stronicowania procesu
 	mov	r11,	cr3
@@ -646,7 +644,7 @@ kernel_service:
 	call	library_page_from_size
 
 	; zwolnij przestrzeń
-	call	kernel_memory_release_foreign
+	call	kernel_memory_release_task
 
 	; zwolnij przestrzeń w binarnej mapie pamięci procesu
 	mov	rdi,	qword [rsp]

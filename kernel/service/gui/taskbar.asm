@@ -170,7 +170,7 @@ kernel_gui_taskbar_event:
 	push	rsi
 
 	; lewy przycisk myszki?
-	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.action],	KERNEL_WM_IPC_MOUSE_btn_left_press
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_IPC_STRUCTURE_DATA_MOUSE.event],	KERNEL_IPC_MOUSE_EVENT_left_press
 	jne	.end	; nie
 
 	; sprawdź, którego elementu okna dotyczny akcja

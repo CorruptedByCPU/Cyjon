@@ -7,21 +7,8 @@
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
-	; stałe, zmienne, globalne, struktury, obiekty, makra
-	;-----------------------------------------------------------------------
-	%include	"kernel/header.asm"
-	;-----------------------------------------------------------------------
 	%include	"software/soler/config.asm"
 	;-----------------------------------------------------------------------
-
-; 64 bitowy kod programu
-[bits 64]
-
-; adresowanie względne
-[default rel]
-
-; położenie kodu programu w pamięci logicznej
-[org SOFTWARE_base_address]
 
 ;===============================================================================
 soler:
@@ -84,7 +71,7 @@ soler:
 	jne	.loop	; nie, zignoruj klawizs
 
 	; pobierz kod klawisza
-	mov	ax,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
+	mov	ax,	word [rdi + KERNEL_IPC_STRUCTURE.data]
 
 .operation:
 	; zrestartować wszystkie operacje?
@@ -100,12 +87,12 @@ soler:
 
 .mouse:
 	; naciśnięcie lewego klawisza myszki?
-	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.action],	KERNEL_WM_IPC_MOUSE_btn_left_press
+	cmp	byte [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_IPC_STRUCTURE_DATA_MOUSE.event],	KERNEL_IPC_MOUSE_EVENT_left_press
 	jne	.loop	; nie, zignoruj wiadomość
 
 	; pobierz współrzędne kursora
-	movzx	r8d,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]	; x
-	movzx	r9d,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value1]	; y
+	movzx	r8d,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_IPC_STRUCTURE_DATA_MOUSE.x]	; x
+	movzx	r9d,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_IPC_STRUCTURE_DATA_MOUSE.y]	; y
 
 	; pobierz wskaźnik do elementu biorącego udział w zdarzeniu
 	mov	rsi,	soler_window

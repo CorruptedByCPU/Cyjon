@@ -7,32 +7,8 @@
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
-	; stałe, zmienne, globalne, struktury, obiekty, makra
-	;-----------------------------------------------------------------------
-	%include	"kernel/header.asm"
-	;-----------------------------------------------------------------------
-	%include	"software/console/header.asm"
-	;-----------------------------------------------------------------------
 	%include	"software/moko/config.asm"
 	;-----------------------------------------------------------------------
-
-	; r8d	- szerokość przestrzeni dokumentu w znakach liczona od zera
-	; r9d	- wysokość przestrzeni dokumentu w znakach liczona od zera
-	; r10	- wskaźnik pozycji kursora w przestrzeni dokumentu
-	; r11	- przesunięcie wew. linii
-	; r12	- numer znaku (liczony od zera) od którego rozpocząć wyświetlanie linii
-	; r13	- rozmiar linii w znakach
-	; r14	- pozycja kursora na osi X
-	; r15	- pozycja kursora na osi Y
-
-; 64 bitowy kod programu
-[bits 64]
-
-; adresowanie względne
-[default rel]
-
-; położenie kodu programu w pamięci logicznej
-[org SOFTWARE_base_address]
 
 ;===============================================================================
 moko:
@@ -54,7 +30,7 @@ moko:
 	jne	.loop	; zignoruj
 
 	; pobierz kod klawisza
-	mov	ax,	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0]
+	mov	ax,	word [rdi + KERNEL_IPC_STRUCTURE.data]
 
 	; wywołano skrót klawiszowy?
 	call	moko_shortcut

@@ -11,15 +11,15 @@ KERNEL_MEMORY_MAP_SIZE_page		equ	0x01	; domyślny rozmiar 4088 Bajtów (~128 MiB
 kernel_memory_map_address		dq	STATIC_EMPTY
 kernel_memory_map_address_end		dq	STATIC_EMPTY
 
-kernel_memory_high_mask			dq	KERNEL_MEMORY_HIGH_mask
-kernel_memory_real_address		dq	KERNEL_MEMORY_HIGH_REAL_address
+kernel_memory_high_mask			dq	STATIC_EMPTY	; KERNEL_MEMORY_HIGH_mask
+kernel_memory_real_address		dq	STATIC_EMPTY	; KERNEL_MEMORY_HIGH_REAL_address
 
 kernel_memory_lock_semaphore		db	STATIC_FALSE
 
 ;===============================================================================
 ; wejście:
 ;	rcx - ilość stron do oznaczenia jako zajęte
-;	rsi - wskaźnik dp binarnej mapy pamięci
+;	rsi - wskaźnik do binarnej mapy pamięci
 kernel_memory_secure:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -180,19 +180,6 @@ kernel_memory_alloc:
 	dec	rdx
 	jnz	.lock	; nie, kontynuuj
 
-	; lista zadań aktywna?
-	cmp	qword [kernel_task_active_list],	STATIC_EMPTY
-	je	.init	; nie
-
-	; lista zadań procesorów logicznych uzupełniona?
-	call	kernel_task_active
-	jz	.init	; nie, trwa dalsza inicjalizacja jądra systemu
-
-	; dodaj wykorzystaną przestrzeń do stanu procesu
-	mov	rcx,	qword [rsp]
-	add	qword [rdi + KERNEL_TASK_STRUCTURE.memory],	rcx
-
-.init:
 	; przelicz numer pierwszej strony przestrzeni na adres WZGLĘDNY
 	mov	rdi,	rbx
 	shl	rdi,	STATIC_MULTIPLE_BY_PAGE_shift
@@ -268,9 +255,6 @@ kernel_memory_release_page:
 	call	kernel_task_active
 	jz	.end	; nie, trwa dalsza inicjalizacja jądra systemu
 
-	; dodaj wykorzystaną przestrzeń do stanu procesu
-	dec	qword [rdi + KERNEL_TASK_STRUCTURE.memory]
-
 .end:
 	; przywróć oryginalne rejestry i flagi
 	pop	rdi
@@ -320,99 +304,21 @@ kernel_memory_release:
 ;	r11 - wskaźnik do tablicy PML4 przestrzeni
 ; wyjście:
 ;	Flaga CF, jeśli nieoczekiwany koniec tablic stronicowania
-kernel_memory_release_foreign:
+kernel_memory_release_task:
 	; zachowaj oryginalne rejestry
-	push	rax
-	push	rdx
+	push	rcx
 	push	rdi
 	push	r8
 	push	r9
 	push	r10
+	push	r11
 	push	r12
 	push	r13
 	push	r14
 	push	r15
-	push	r11
-	push	rcx
 
-	;-----------------------------------------------------------------------
-	; oblicz numer wpisu w tablicy PML4 na podstawie otrzymanego adresu fizycznego/logicznego
-	mov	rcx,	KERNEL_PAGE_PML3_SIZE_byte
-	xor	rdx,	rdx	; wyczyść starszą część
-	div	rcx
-
-	; zachowaj
-	mov	r15,	rax
-
-	; przesuń wskaźnik w tablicy PML4 na dany wpis
-	shl	rax,	STATIC_MULTIPLE_BY_8_shift	; zamień na Bajty
-	add	r11,	rax
-
-	; pobierz wskaźnik tablicy PML3 z wpisu tablicy PML4
-	mov	rax,	qword [r11]
-	xor	al,	al	; usuń flagi wpisu
-
-	; zachowaj wskaźnik tablicy PML3
-	mov	r10,	rax
-
-	;-----------------------------------------------------------------------
-	; oblicz numer wpisu w tablicy PML3 na podstawie pozostałego adresu fizycznego/logicznego
-	mov	rax,	rdx	; przywróć resztę z dzielenia
-	mov	rcx,	KERNEL_PAGE_PML2_SIZE_byte
-	xor	rdx,	rdx	; wyczyść starszą część
-	div	rcx
-
-	; zachowaj
-	mov	r14,	rax
-
-	; przesuń wskaźnik w tablicy PML3 na wpis
-	shl	rax,	STATIC_MULTIPLE_BY_8_shift	; zamień na Bajty
-	add	r10,	rax
-
-	; pobierz adres tablicy PML2 z wpisu tablicy PML3
-	mov	rax,	qword [r10]
-	xor	al,	al	; usuń flagi wpisu
-
-	; zachowaj wskaźnik tablicy PML2
-	mov	r9,	rax
-
-	;-----------------------------------------------------------------------
-	; oblicz numer wpisu w tablicy PML2 na podstawie pozostałego adresu fizycznego/logicznego
-	mov	rax,	rdx	; przywróć resztę z dzielenia
-	mov	rcx,	KERNEL_PAGE_PML1_SIZE_byte
-	xor	rdx,	rdx	; wyczyść starszą część
-	div	rcx
-
-	; zachowaj
-	mov	r13,	rax
-
-	; przesuń wskaźnik w tablicy PML2 na wpis
-	shl	rax,	STATIC_MULTIPLE_BY_8_shift	; zamień na Bajty
-	add	r9,	rax
-
-	; pobierz adres tablicy PML1 z wpisu tablicy PML2
-	mov	rax,	qword [r9]
-	xor	al,	al	; usuń flagi wpisu
-
-	; zachowaj wskaźnik tablicy PML2
-	mov	r8,	rax
-
-	;-----------------------------------------------------------------------
-	; oblicz numer wpisu w tablicy PML1 na podstawie pozostałego adresu fizycznego/logicznego
-	mov	rax,	rdx	; przywróć resztę z dzielenia
-	mov	rcx,	STATIC_PAGE_SIZE_byte
-	xor	rdx,	rdx	; wyczyść starszą część
-	div	rcx
-
-	; zachowaj
-	mov	r12,	rax
-
-	; przesuń wskaźnik w tablicy PML1 na wpis
-	shl	rax,	STATIC_MULTIPLE_BY_8_shift	; zamień na Bajty
-	add	r8,	rax
-
-	; rozmiar przestrzeni do zwolnienia w stronach
-	mov	rcx,	qword [rsp]
+	; przygotuj środowisko pracy
+	call	kernel_page_convert
 
 .pml1:
 	; koniec przetwarzania?
@@ -438,10 +344,11 @@ kernel_memory_release_foreign:
 	; zwolnij wpis w tablicy PML1
 	mov	qword [r8],	STATIC_EMPTY
 
-.pml1_omit:
-	; "zwolniono" stronę z przestrzeni
+	; jeśli zakończono opróżnianie przestrzeni
 	dec	rcx
+	jz	.pml2_entry	; zwolnij puste tablice stronicowania
 
+.pml1_omit:
 	; następny wpis tablicy tablicy PML1
 	add	r8,	STATIC_QWORD_SIZE_byte
 	inc	r12
@@ -550,12 +457,6 @@ kernel_memory_release_foreign:
 	; usuń rekord z tablicy PML4
 	mov	qword [r11],	STATIC_EMPTY
 
-	; wyczyszczono strukturę tablic aż do poziomu PML4
-
-	; czy przestrzeń jest już przetworzona?
-	test	rcx,	rcx
-	jz	.end	; tak, koniec procedury
-
 .pml4:
 	; następny wpis w tablicy PML4
 	add	r11,	STATIC_QWORD_SIZE_byte
@@ -587,23 +488,21 @@ kernel_memory_release_foreign:
 
 .end:
 	; przywróć oryginalne rejestry
-	pop	rcx
-	pop	r11
 	pop	r15
 	pop	r14
 	pop	r13
 	pop	r12
+	pop	r11
 	pop	r10
 	pop	r9
 	pop	r8
 	pop	rdi
-	pop	rdx
-	pop	rax
+	pop	rcx
 
 	; powrót z procedury
 	ret
 
-	macro_debug	"kernel_memory_release_foreign"
+	macro_debug	"kernel_memory_release_task"
 
 ;===============================================================================
 ; wejście:
@@ -660,7 +559,6 @@ kernel_memory_alloc_task:
 
 	; mapuj przestrzeń
 	mov	rax,	rdi
-	sub	rax,	qword [kernel_memory_high_mask]	; zamień na adres bezpośredni
 	mov	bx,	KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_available
 	mov	r11,	cr3
 	call	kernel_page_map_logical
@@ -785,7 +683,8 @@ kernel_memory_alloc_task_secure:
 	shl	rbx,	STATIC_MULTIPLE_BY_PAGE_shift
 
 	; koryguj o adres początku opisanej przestrzeni przez binarną mapę pamięci procesu
-	add	rbx,	qword [kernel_memory_real_address]
+	mov	rax,	SOFTWARE_BASE_address
+	add	rbx,	rax
 
 	; zwróć adres do procesu
 	mov	qword [rsp + STATIC_QWORD_SIZE_byte * 0x02],	rbx
@@ -823,8 +722,8 @@ kernel_memory_release_task_secured:
 	mov	rsi,	qword [rdi + KERNEL_TASK_STRUCTURE.map]
 
 	; przelicz adres strony na numer bitu
-	mov	rax,	qword [rsp + STATIC_QWORD_SIZE_byte]
-	sub	rax,	qword [kernel_memory_real_address]
+	mov	rax,	-SOFTWARE_BASE_address
+	add	rax,	qword [rsp + STATIC_QWORD_SIZE_byte]
 	shr	rax,	STATIC_PAGE_SIZE_shift
 
 	; oblicz prdesunięcie względem początku binarnej mapy pamięci

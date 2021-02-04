@@ -22,7 +22,9 @@ STATIC_PAGE_SIZE_shift					equ	12
 ;===============================================================================
 ; SOFTWARE
 ;===============================================================================
-SOFTWARE_base_address					equ	KERNEL_MEMORY_HIGH_REAL_address
+SOFTWARE_BASE_address					equ	0x0000100000000000
+SOFTWARE_STACK_pointer					equ	0x0000700000000000
+SOFTWARE_STACK_limit					equ	STATIC_PAGE_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 
 ;===============================================================================
 ; STAŁE OGÓLNEGO PRZEZNACZENIA
@@ -53,6 +55,7 @@ STATIC_DIVIDE_BY_256_shift				equ	8
 STATIC_DIVIDE_BY_1024_shift				equ	10
 STATIC_DIVIDE_BY_PAGE_shift				equ	STATIC_PAGE_SIZE_shift
 
+STATIC_MOVE_AL_HALF_TO_LOW_shift			equ	4	; 11110000b => 00001111b
 STATIC_MOVE_AL_HALF_TO_HIGH_shift			equ	4	; 00001111b => 11110000b
 STATIC_MOVE_AL_TO_HIGH_shift				equ	8
 STATIC_MOVE_AX_TO_HIGH_shift				equ	16

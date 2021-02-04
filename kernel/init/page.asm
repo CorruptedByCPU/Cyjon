@@ -27,7 +27,7 @@ kernel_init_page:
 	call	kernel_page_map_physical	; opisz 1:1
 	jc	kernel_panic_memory
 
-	; utwórz stos/"stos kontekstu" dla jądra systemu na końcu pierwszej połowy przestrzeni pamięci logicznej
+	; utwórz stos/"stos kontekstu" dla jądra systemu
 	; jądro systemu otrzyma pierwszą połowę przestrzeni pamięci logicznej
 	mov	rax,	KERNEL_STACK_address
 	mov	ecx,	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift

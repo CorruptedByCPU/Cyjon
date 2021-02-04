@@ -46,26 +46,21 @@ kernel_gc:
 	; zapamiętaj adres tablicy PML4 procesu
 	mov	r11,	qword [rsi + KERNEL_TASK_STRUCTURE.cr3]
 
-	; ustaw wskaźnik na podstawę przestrzeni stosu kontekstu
-	mov	rax,	KERNEL_MEMORY_HIGH_VIRTUAL_address
+	; ustaw wskaźnik na podstawę przestrzeni stosu kontekstu procesu
+	mov	rax,	SOFTWARE_BASE_address
 	movzx	ecx,	word [rsi + KERNEL_TASK_STRUCTURE.stack]	; rozmiar stosu kontekstu wątku
 	shl	rcx,	STATIC_PAGE_SIZE_shift	; zamień na Bajty
 	sub	rax,	rcx	; koryguj pozycję wskaźnika
 
 	; zwolnij przestrzeń stosu kontekstu wątku
 	shr	rcx,	STATIC_PAGE_SIZE_shift
-	call	kernel_memory_release_foreign
-
-	; proces był wątkiem?
-	test	word [rsi + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_thread
-	jnz	.pml4	; tak, brak przestrzeni kodu/danych
+	call	kernel_memory_release_task
 
 	; zwolnij przestrzeń kodu/danych procesu
-	mov	rax,	KERNEL_MEMORY_HIGH_VIRTUAL_address
-	mov	rcx,	STATIC_MAX_unsigned	; do końca przestrzeni pamięci logicznej
-	call	kernel_memory_release_foreign
+	mov	rax,	SOFTWARE_BASE_address
+	mov	rcx,	KERNEL_PAGE_SOFTWARE_PML4_records
+	call	kernel_page_purge
 
-.pml4:
 	; zwolnij przestrzeń tablicy PML4 wątku
 	mov	rdi,	r11
 	call	kernel_memory_release_page	; zwolnij przestrzeń tablicy PML4

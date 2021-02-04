@@ -32,14 +32,14 @@ kernel_wm_ipc_mouse:
 	mov	byte [rsi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_MOUSE
 
 	; wyślij informacje o typie akcji
-	mov	byte [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.action],	cl
+	mov	byte [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_IPC_STRUCTURE_DATA_MOUSE.event],	cl
 
 	; wyślij informacje o ID okna biorącego udział
-	mov	qword [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.id],	rax
+	mov	qword [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_IPC_STRUCTURE_DATA_MOUSE.object_id],	rax
 
 	; wyślij informacje o pozycji wskaźnika kursora
-	mov	word [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	r8w	; x
-	mov	word [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value1],	r9w	; y
+	mov	word [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_IPC_STRUCTURE_DATA_MOUSE.x],	r8w	; x
+	mov	word [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_IPC_STRUCTURE_DATA_MOUSE.y],	r9w	; y
 
 	; wyślij komunikat
 	xor	ecx,	ecx	; standardowy rozmiar komunikatu pod adresem w rejestrze RSI
@@ -67,8 +67,7 @@ kernel_wm_ipc_keyboard:
 	push	rdx
 	push	rsi
 
-	; pobierz ID okna i PID
-	mov	rdx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.id]
+	; pobierz PID procesu okna
 	mov	rbx,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.pid]
 
 	; skomponuj komunikat dla procesu
@@ -77,14 +76,8 @@ kernel_wm_ipc_keyboard:
 	; typ komunikatu: klawiatura
 	mov	byte [rsi + KERNEL_IPC_STRUCTURE.type],	KERNEL_IPC_TYPE_KEYBOARD
 
-	; akcja jest zakodowana w klawiszu
-	mov	byte [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.action],	STATIC_EMPTY
-
-	; wyślij informacje o ID okna biorącego udział
-	mov	qword [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.id],	rdx
-
 	; wyślij informacje o kodzie klawisza
-	mov	word [rsi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	ax
+	mov	word [rsi + KERNEL_IPC_STRUCTURE.data],	ax
 
 	; wyślij komunikat
 	xor	ecx,	ecx	; standardowy rozmiar komunikatu pod adresem w rejestrze RSI

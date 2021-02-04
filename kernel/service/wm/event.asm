@@ -55,7 +55,7 @@ kernel_wm_event:
 	mov	qword [kernel_wm_object_active_pointer],	rsi
 
 	; wyślij komunikat do procesu "naciśnięcie lewego klawisza myszki"
-	mov	cl,	KERNEL_WM_IPC_MOUSE_btn_left_press
+	mov	cl,	KERNEL_IPC_MOUSE_EVENT_left_press
 	call	kernel_wm_ipc_mouse
 
 	; obiekt powinien zachować swoją warstwę?
@@ -115,7 +115,7 @@ kernel_wm_event:
 	call	kernel_wm_object_hide_fragile
 
 	; wyślij komunikat do procesu "naciśnięcie prawego klawisza myszki"
-	mov	cl,	KERNEL_WM_IPC_MOUSE_btn_right_press
+	mov	cl,	KERNEL_IPC_MOUSE_EVENT_right_press
 	call	kernel_wm_ipc_mouse
 
 .no_mouse_button_right_action:
@@ -156,10 +156,6 @@ kernel_wm_event:
 	; został wybrany obiekt aktywny/widoczny
 	cmp	qword [kernel_wm_object_selected_pointer],	STATIC_EMPTY
 	je	.end	; też nie
-
-	; oraz przytrzymano lewy klawisz ALT
-	cmp	byte [kernel_wm_keyboard_alt_left_semaphore],	STATIC_FALSE
-	je	.end	; nawet nie
 
 	; przemieść obiekt wraz z wskaźnikiem kursora
 	call	kernel_wm_object_move

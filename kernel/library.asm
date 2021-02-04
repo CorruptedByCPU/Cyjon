@@ -19,7 +19,7 @@
 [default rel]
 
 ; położenie kodu programu w pamięci logicznej
-[org LIBRARY_base_address]
+[org LIBRARY_BASE_address]
 
 ;===============================================================================
 kernel_library:
@@ -27,11 +27,12 @@ kernel_library:
 	.bit_find			dq	library_bit_find
 	;-----------------------------------------------------------------------
 	.bosu				dq	library_bosu
-	.bosu_header_set		dq	library_bosu_header_set
-	.bosu_elements_specification	dq	library_bosu_elements_specification
+	.bosu_element			dq	library_bosu_element
 	.bosu_element_chain		dq	library_bosu_element_chain
 	.bosu_element_label		dq	library_bosu_element_label
-	.bosu_element			dq	library_bosu_element
+	.bosu_elements_specification	dq	library_bosu_elements_specification
+	.bosu_event			dq	library_bosu_event
+	.bosu_header_set		dq	library_bosu_header_set
 	;-----------------------------------------------------------------------
 	.bresenham			dq	library_bresenham
 	;-----------------------------------------------------------------------
@@ -56,20 +57,20 @@ kernel_library:
 	.string_word_next		dq	library_string_word_next
 	;-----------------------------------------------------------------------
 	.terminal			dq	library_terminal
+	.terminal_char			dq	library_terminal_char
 	.terminal_clear			dq	library_terminal_clear
 	.terminal_cursor_disable	dq	library_terminal_cursor_disable
 	.terminal_cursor_enable		dq	library_terminal_cursor_enable
-	.terminal_cursor_switch		dq	library_terminal_cursor_switch
 	.terminal_cursor_set		dq	library_terminal_cursor_set
-	.terminal_matrix		dq	library_terminal_matrix
+	.terminal_cursor_switch		dq	library_terminal_cursor_switch
 	.terminal_empty_char		dq	library_terminal_empty_char
-	.terminal_char			dq	library_terminal_char
+	.terminal_empty_line		dq	library_terminal_empty_line
+	.terminal_matrix		dq	library_terminal_matrix
+	.terminal_number		dq	library_terminal_number
 	.terminal_scroll		dq	library_terminal_scroll
 	.terminal_scroll_down		dq	library_terminal_scroll_down
 	.terminal_scroll_up		dq	library_terminal_scroll_up
-	.terminal_empty_line		dq	library_terminal_empty_line
 	.terminal_string		dq	library_terminal_string
-	.terminal_number		dq	library_terminal_number
 	;-----------------------------------------------------------------------
 	.value_to_size			dq	library_value_to_size
 	;-----------------------------------------------------------------------

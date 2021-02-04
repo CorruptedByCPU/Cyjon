@@ -7,23 +7,8 @@
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
-	; stałe, zmienne, globalne, struktury, obiekty, makra
-	;-----------------------------------------------------------------------
-	%include	"kernel/header.asm"
-	;-----------------------------------------------------------------------
-	%include	"software/console/header.asm"
-	;-----------------------------------------------------------------------
 	%include	"software/tm/config.asm"
 	;-----------------------------------------------------------------------
-
-; 64 bitowy kod programu
-[bits 64]
-
-; adresowanie względne
-[default rel]
-
-; położenie kodu programu w pamięci logicznej
-[org SOFTWARE_base_address]
 
 ;===============================================================================
 tm:
@@ -79,11 +64,11 @@ tm:
 	jne	.no_event	; nie, zignoruj
 
 	; naciśnięto klawisz "q"?
-	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	"q"
+	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data],	"q"
 	je	.end	; tak, zakończ działanie procesu
 
 	; naciśnięto klawisz "d"?
-	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	"d"
+	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data],	"d"
 	jne	.no_event	; tak, zakończ działanie procesu
 
 	; włącz tryb debugowania (Bochs)

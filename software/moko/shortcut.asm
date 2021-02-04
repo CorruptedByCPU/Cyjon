@@ -106,7 +106,7 @@ moko_shortcut:
 
 	; naciśnięto klawisz "o"?
 	cmp	ax,	"o"
-	je	.save_file	; tak
+	je	.write_file	; tak
 
 	; nie rozpoznano skrótu klawiszowego
 	jmp	.no_key
@@ -127,7 +127,7 @@ moko_shortcut:
 	ret
 
 ;-------------------------------------------------------------------------------
-.save_file:
+.write_file:
 	; pobierrz nazwę pliku od użyszkodnika
 	call	moko_shortcut_file
 	jc	moko_shortcut.restore_cursor	; nie podano nazwy pliku
@@ -160,11 +160,11 @@ moko_shortcut:
 	jne	.write_file_wait	; tak
 
 	; klawisz "Enter"?
-	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	STATIC_SCANCODE_RETURN
+	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data],	STATIC_SCANCODE_RETURN
 	je	.write_file_answer	; tak
 
 	; klawisz "Esc"?
-	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	STATIC_SCANCODE_ESCAPE
+	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data],	STATIC_SCANCODE_ESCAPE
 	jne	.write_file_wait	; nie, czekaj dalej
 
 .write_file_answer:
@@ -181,7 +181,7 @@ moko_shortcut:
 	pop	rcx
 
 	; odpowiedź negatywna?
-	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data + KERNEL_WM_STRUCTURE_IPC.value0],	STATIC_SCANCODE_ESCAPE
+	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data],	STATIC_SCANCODE_ESCAPE
 	je	moko_shortcut.restore_cursor
 
 	; zapisz zawartość dokumentu do pliku o podanej nazwie

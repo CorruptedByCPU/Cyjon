@@ -6,31 +6,329 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-KERNEL_PAGE_FLAG_available	equ	1 << 0
-KERNEL_PAGE_FLAG_write		equ	1 << 1
-KERNEL_PAGE_FLAG_user		equ	1 << 2
-KERNEL_PAGE_FLAG_write_through	equ	1 << 3
-KERNEL_PAGE_FLAG_cache_disable	equ	1 << 4
-KERNEL_PAGE_FLAG_length		equ	1 << 7
-KERNEL_PAGE_FLAG_virtual	equ	1 << 9
+KERNEL_PAGE_FLAG_available		equ	1 << 0
+KERNEL_PAGE_FLAG_write			equ	1 << 1
+KERNEL_PAGE_FLAG_user			equ	1 << 2
+KERNEL_PAGE_FLAG_write_through		equ	1 << 3
+KERNEL_PAGE_FLAG_cache_disable		equ	1 << 4
+KERNEL_PAGE_FLAG_length			equ	1 << 7
+KERNEL_PAGE_FLAG_virtual		equ	1 << 9
 
-KERNEL_PAGE_RECORDS_amount	equ	512
+KERNEL_PAGE_RECORDS_amount		equ	512
 
-KERNEL_PAGE_PML4_SIZE_byte	equ	KERNEL_PAGE_RECORDS_amount * KERNEL_PAGE_PML3_SIZE_byte
-KERNEL_PAGE_PML3_SIZE_byte	equ	KERNEL_PAGE_RECORDS_amount * KERNEL_PAGE_PML2_SIZE_byte
-KERNEL_PAGE_PML2_SIZE_byte	equ	KERNEL_PAGE_RECORDS_amount * KERNEL_PAGE_PML1_SIZE_byte
-KERNEL_PAGE_PML1_SIZE_byte	equ	KERNEL_PAGE_RECORDS_amount * STATIC_PAGE_SIZE_byte
+KERNEL_PAGE_PML4_SIZE_byte		equ	KERNEL_PAGE_RECORDS_amount * KERNEL_PAGE_PML3_SIZE_byte
+KERNEL_PAGE_PML3_SIZE_byte		equ	KERNEL_PAGE_RECORDS_amount * KERNEL_PAGE_PML2_SIZE_byte
+KERNEL_PAGE_PML2_SIZE_byte		equ	KERNEL_PAGE_RECORDS_amount * KERNEL_PAGE_PML1_SIZE_byte
+KERNEL_PAGE_PML1_SIZE_byte		equ	KERNEL_PAGE_RECORDS_amount * STATIC_PAGE_SIZE_byte
+
+KERNEL_PAGE_LIBRARY_PML4_records	equ	32
+KERNEL_PAGE_SOFTWARE_PML4_records	equ	192
 
 ; wyrównaj pozycję zmiennych do pełnego adresu
-align	STATIC_QWORD_SIZE_byte,	db	STATIC_NOTHING
+align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
-kernel_page_pml4_address	dq	STATIC_EMPTY
+kernel_page_pml4_address		dq	STATIC_EMPTY
 
-kernel_page_total_count		dq	STATIC_EMPTY
-kernel_page_free_count		dq	STATIC_EMPTY
-kernel_page_reserved_count	dq	STATIC_EMPTY
-kernel_page_paged_count		dq	STATIC_EMPTY
-kernel_page_shared_count	dq	STATIC_EMPTY
+kernel_page_total_count			dq	STATIC_EMPTY
+kernel_page_free_count			dq	STATIC_EMPTY
+kernel_page_reserved_count		dq	STATIC_EMPTY
+kernel_page_paged_count			dq	STATIC_EMPTY
+kernel_page_shared_count		dq	STATIC_EMPTY
+
+;===============================================================================
+; wejście:
+;	rax - wskaźnik do początku przestrzeni
+;	rcx - rozmiar przestrzeni w stronach
+;	r11 - wskaźnik do tablicy PML4 przestrzeni
+kernel_page_purge:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rdi
+	push	r8
+	push	r9
+	push	r10
+	push	r11
+	push	r12
+	push	r13
+	push	r14
+	push	r15
+
+	; przygotuj środowisko pracy
+	call	kernel_page_convert
+
+.pml1:
+	; brak zarejestrowanej strony?
+	cmp	qword [r8],	STATIC_EMPTY
+	je	.pml1_omit	; tak, pomiń
+
+	; pobierz adres fizyczny strony
+	mov	rdi,	qword [r8]
+
+	; strona oznaczona jako wirtualna?
+	test	di,	KERNEL_PAGE_FLAG_virtual
+	jnz	.virtual	; tak, zignoruj
+
+	; zwolnij stronę
+	and	di,	STATIC_PAGE_mask
+	call	kernel_memory_release_page
+
+.virtual:
+	; zwolnij wpis w tablicy PML1
+	mov	qword [r8],	STATIC_EMPTY
+
+.pml1_omit:
+	; następny wpis tablicy tablicy PML1
+	add	r8,	STATIC_QWORD_SIZE_byte
+	inc	r12
+
+	; koniec tablicy PML1
+	cmp	r12,	KERNEL_PAGE_RECORDS_amount
+	jne	.pml1	; nie
+
+.pml2_entry:
+	; zwolnij przestrzeń tablicy PML1
+	mov	rdi,	qword [r9]
+	and	di,	STATIC_PAGE_mask
+	call	kernel_memory_release_page
+
+	; zwolniono tablicę stronicowania
+	dec	qword [kernel_page_paged_count]
+
+	; usuń rekord z tablicy PML2
+	mov	qword [r9],	STATIC_EMPTY
+
+.pml2:
+	; następny wpis w tablicy PML2
+	add	r9,	STATIC_QWORD_SIZE_byte
+	inc	r13
+
+	; koniec tablicy PML2?
+	cmp	r13,	KERNEL_PAGE_RECORDS_amount
+	je	.pml3_entry	; tak
+
+.pml2_record:
+	; pobierz adres tablicy PML1
+	mov	r8,	qword [r9]
+
+	; brak tablicy PML1
+	test	r8,	r8
+	jz	.pml2	; tak, następny rekord
+
+	; usuń flagi
+	xor	r8b,	r8b
+
+	; wyczyść ilość przetworzonych wpisów
+	xor	r12,	r12
+
+	; kontynuuj
+	jmp	.pml1
+
+.pml3_entry:
+	; zwolnij przestrzeń tablicy PML2
+	mov	rdi,	qword [r10]
+	and	di,	STATIC_PAGE_mask
+	call	kernel_memory_release_page
+
+	; zwolniono tablicę stronicowania
+	dec	qword [kernel_page_paged_count]
+
+	; usuń rekord z tablicy PML3
+	mov	qword [r10],	STATIC_EMPTY
+
+.pml3:
+	; następny wpis w tablicy PML3
+	add	r10,	STATIC_QWORD_SIZE_byte
+	inc	r14
+
+	; koniec tablicy PML3?
+	cmp	r14,	KERNEL_PAGE_RECORDS_amount
+	je	.pml4_entry	; tak
+
+.pml3_record:
+	; pobierz adres tablicy PML2
+	mov	r9,	qword [r10]
+
+	; brak tablicy PML2?
+	test	r9,	r9
+	jz	.pml3	; tak, następny rekord
+
+	; usuń flagi
+	xor	r9b,	r9b
+
+	; wyczyść ilość przetworzonych wpisów
+	xor	r13,	r13
+
+	; kontynuuj
+	jmp	.pml2_record
+
+.pml4_entry:
+	; zwolnij przestrzeń tablicy PML3
+	mov	rdi,	qword [r11]
+	and	di,	STATIC_PAGE_mask
+	call	kernel_memory_release_page
+
+	; zwolniono tablicę stronicowania
+	dec	qword [kernel_page_paged_count]
+
+	; usuń rekord z tablicy PML4
+	mov	qword [r11],	STATIC_EMPTY
+
+.pml4:
+	; zwolniono rekord PML4
+	dec	rcx
+	jz	.end	; przetworzono wszystkie rekordy tablicy PML4
+
+	; następny wpis w tablicy PML4
+	add	r11,	STATIC_QWORD_SIZE_byte
+	inc	r15
+
+	; koniec tablicy PML4?
+	cmp	r15,	KERNEL_PAGE_RECORDS_amount
+	je	.pml5	; tak... że jak?
+
+	; pobierz adres tablicy PML3
+	mov	r10,	qword [r11]
+
+	; brak tablicy PML3?
+	test	r10,	r10
+	jz	.pml4	; tak, następny rekord
+
+	; usuń flagi
+	xor	r10b,	r10b
+
+	; wyczyść ilość przetworzonych wpisów
+	xor	r14,	r14
+
+	; kontynuuj
+	jmp	.pml3_record
+
+.pml5:
+	; flaga, błąd
+	stc
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	r15
+	pop	r14
+	pop	r13
+	pop	r12
+	pop	r11
+	pop	r10
+	pop	r9
+	pop	r8
+	pop	rdi
+	pop	rcx
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"kernel_page_purge"
+
+;===============================================================================
+; wejście:
+;	rax - wskaźnik do przestrzeni pamięci do oczyszczenia
+;	rcx - ilość rekordów tablicy PML4 do przejrzenia
+;	r11 - wskaźnik do tablicy PML4
+; wyjście:
+;	r8 - wskaźnik rekordu w tablicy PML1
+;	r9 - wskaźnik rekordu w tablicy PML2
+;	r10 - wskaźnik rekordu w tablicy PML3
+;	r11 - wskaźnik rekordu w tablicy PML4
+;	r12 - numer rekordu w tablicy PML1
+;	r13 - numer rekordu w tablicy PML2
+;	r14 - numer rekordu w tablicy PML3
+;	r15 - numer rekordu w tablicy PML4
+kernel_page_convert:
+	; zachowa oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rdx
+
+	;-----------------------------------------------------------------------
+	; oblicz numer wpisu w tablicy PML4 na podstawie otrzymanego adresu fizycznego/logicznego
+	mov	rcx,	KERNEL_PAGE_PML3_SIZE_byte
+	xor	rdx,	rdx	; wyczyść starszą część
+	div	rcx
+
+	; zachowaj
+	mov	r15,	rax
+
+	; przesuń wskaźnik w tablicy PML4 na dany wpis
+	shl	rax,	STATIC_MULTIPLE_BY_8_shift	; zamień na Bajty
+	add	r11,	rax
+
+	; pobierz wskaźnik tablicy PML3 z wpisu tablicy PML4
+	mov	rax,	qword [r11]
+	xor	al,	al	; usuń flagi wpisu
+
+	; zachowaj wskaźnik tablicy PML3
+	mov	r10,	rax
+
+	;-----------------------------------------------------------------------
+	; oblicz numer wpisu w tablicy PML3 na podstawie pozostałego adresu fizycznego/logicznego
+	mov	rax,	rdx	; przywróć resztę z dzielenia
+	mov	rcx,	KERNEL_PAGE_PML2_SIZE_byte
+	xor	rdx,	rdx	; wyczyść starszą część
+	div	rcx
+
+	; zachowaj
+	mov	r14,	rax
+
+	; przesuń wskaźnik w tablicy PML3 na wpis
+	shl	rax,	STATIC_MULTIPLE_BY_8_shift	; zamień na Bajty
+	add	r10,	rax
+
+	; pobierz adres tablicy PML2 z wpisu tablicy PML3
+	mov	rax,	qword [r10]
+	xor	al,	al	; usuń flagi wpisu
+
+	; zachowaj wskaźnik tablicy PML2
+	mov	r9,	rax
+
+	;-----------------------------------------------------------------------
+	; oblicz numer wpisu w tablicy PML2 na podstawie pozostałego adresu fizycznego/logicznego
+	mov	rax,	rdx	; przywróć resztę z dzielenia
+	mov	rcx,	KERNEL_PAGE_PML1_SIZE_byte
+	xor	rdx,	rdx	; wyczyść starszą część
+	div	rcx
+
+	; zachowaj
+	mov	r13,	rax
+
+	; przesuń wskaźnik w tablicy PML2 na wpis
+	shl	rax,	STATIC_MULTIPLE_BY_8_shift	; zamień na Bajty
+	add	r9,	rax
+
+	; pobierz adres tablicy PML1 z wpisu tablicy PML2
+	mov	rax,	qword [r9]
+	xor	al,	al	; usuń flagi wpisu
+
+	; zachowaj wskaźnik tablicy PML2
+	mov	r8,	rax
+
+	;-----------------------------------------------------------------------
+	; oblicz numer wpisu w tablicy PML1 na podstawie pozostałego adresu fizycznego/logicznego
+	mov	rax,	rdx	; przywróć resztę z dzielenia
+	mov	rcx,	STATIC_PAGE_SIZE_byte
+	xor	rdx,	rdx	; wyczyść starszą część
+	div	rcx
+
+	; zachowaj
+	mov	r12,	rax
+
+	; przesuń wskaźnik w tablicy PML1 na wpis
+	shl	rax,	STATIC_MULTIPLE_BY_8_shift	; zamień na Bajty
+	add	r8,	rax
+
+	; przywróć oryginalne rejestry
+	pop	rdx
+	pop	rcx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"kernel_page_convert"
 
 ;===============================================================================
 ; wejście:
@@ -342,7 +640,7 @@ kernel_page_map_virtual:
 	push	r15
 
 	; koryguj adres przestrzeni logicznej
-	mov	rax,	KERNEL_MEMORY_HIGH_mask
+	mov	rax,	STATIC_EMPTY	; KERNEL_MEMORY_HIGH_mask
 	sub	rdi,	rax
 	mov	rax,	rdi
 

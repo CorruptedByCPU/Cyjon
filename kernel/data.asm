@@ -31,7 +31,7 @@ kernel_gdt_tss_cpu_selector				dw	STATIC_EMPTY
 align	STATIC_QWORD_SIZE_byte,				db	STATIC_NOTHING
 kernel_gdt_tss_table:
 							dd	STATIC_EMPTY
-							dq	KERNEL_STACK_pointer	; RSP0
+							dq	SOFTWARE_BASE_address - STATIC_PAGE_SIZE_byte	; RSP0
 					times	92	db	STATIC_EMPTY
 kernel_gdt_tss_table_end:
 
