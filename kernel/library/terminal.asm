@@ -890,9 +890,9 @@ library_terminal_string:
 ;===============================================================================
 ; wejście:
 ;	rax - wartość do wyświetlenia
-;	rbx - system liczbowy
-;	rcx - rozmiar wypełnienia przed liczbą
-;	rdx  - kod ASCII wypełnienia
+;	bl - system liczbowy
+;	ecx - rozmiar wypełnienia przed liczbą
+;	dl  - kod ASCII wypełnienia
 ;	r8 - wskaźnik do struktury terminala
 library_terminal_number:
 	; zachowaj oryginalne rejestry
@@ -914,7 +914,7 @@ library_terminal_number:
 	ja	.error	; nie
 
 	; zachowaj wartość prefiksa
-	mov	r9,	rdx
+	movzx	r9,	dl
 	sub	r9,	0x30
 
 	; wyczyść starszą część / resztę z dzielenia

@@ -67,12 +67,7 @@ tm:
 	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data],	"q"
 	je	.end	; tak, zakończ działanie procesu
 
-	; naciśnięto klawisz "d"?
-	cmp	word [rdi + KERNEL_IPC_STRUCTURE.data],	"d"
-	jne	.no_event	; tak, zakończ działanie procesu
-
 	; włącz tryb debugowania (Bochs)
-	xchg	bx,bx
 	jmp	.loop
 
 .no_event:
