@@ -44,11 +44,11 @@ kernel_exec:
 
 	; ogranicz ilość przesyłanych argumentów do procesu
 	mov	eax,	KERNEL_ERROR_memory_low	; kod błędu
-	cmp	r8,	STATIC_PAGE_SIZE_byte	; zainicjowany rozmiar stosu procesu w Bajtach
+	cmp	r8,	SOFTWARE_STACK_LIMIT_page << STATIC_MULTIPLE_BY_PAGE_shift	; zainicjowany rozmiar stosu procesu w Bajtach
 	ja	.error	; przepełnienie
 
 	; zarezerwuj ilość stron, niezbędną do inicjalizacji procesu
-	add	rcx,	15	; 14 stron na przestrzeń procesu, +1 do rozszerzenia serpentyny jeśli brak miejsca
+	add	rcx,	15	; 14 stron na podstawową przestrzeń procesu, +1 do rozszerzenia serpentyny jeśli brak miejsca
 	call	kernel_page_secure
 	jc	.error	; brak wystarczającej ilości pamięci
 
@@ -105,7 +105,7 @@ kernel_exec:
 	; przygotuj miejsce pod stos procesu
 	mov	rax,	KERNEL_TASK_STACK_address
 	or	bx,	KERNEL_PAGE_FLAG_user
-	mov	rcx,	SOFTWARE_STACK_limit
+	mov	rcx,	SOFTWARE_STACK_LIMIT_page
 	call	kernel_page_map_logical
 	jc	.error
 
@@ -210,8 +210,9 @@ kernel_exec:
 
 	; rozmiar zajętej przestrzeni przez proces w stronach
 	shr	r12,	STATIC_DIVIDE_BY_PAGE_shift
-	inc	r12	; przestrzeń binarnej mapy pamięci procesu w stronach
-	add	r12,	SOFTWARE_STACK_limit	; wraz z przestrzenią stosu
+	add	r12,	KERNEL_MEMORY_MAP_SIZE_page	; przestrzeń binarnej mapy pamięci procesu w stronach
+	add	r12,	SOFTWARE_STACK_LIMIT_page	; wraz z przestrzenią stosu
+	add	r12,	KERNEL_STACK_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift	; i stosem kontekstu
 	mov	qword [rdi +KERNEL_TASK_STRUCTURE.memory],	r12
 
 	; uzupełnij wpis o adres binarnej mapy pamięci procesu i jej rozmiar

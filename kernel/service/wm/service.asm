@@ -16,7 +16,11 @@ kernel_wm_irq:
 	je	kernel_wm_irq	; nie, czekaj
 
 	; zachowaj oryginalne rejestry
+	push	rbp
 	push	rax
+
+	; zresetuj rejestr zastrzeżony
+	xor	ebp,	ebp
 
 	; wyłącz Direction Flag
 	cld
@@ -44,10 +48,11 @@ kernel_wm_irq:
 
 	; zwróć flagi do procesu (usuń które nie biorą udziału w komunikacji)
 	and	ax,	KERNEL_TASK_EFLAGS_cf | KERNEL_TASK_EFLAGS_zf
-	or	word [rsp + KERNEL_TASK_STRUCTURE_IRETQ.eflags + STATIC_QWORD_SIZE_byte],	ax
+	or	word [rsp + KERNEL_TASK_STRUCTURE_IRETQ.eflags + STATIC_QWORD_SIZE_byte * 0x02],	ax
 
 	; przywróć oryginalny rejestr
 	pop	rax
+	pop	rbp
 
 	; koniec obsługi przerwania programowego
 	iretq
