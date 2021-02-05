@@ -232,12 +232,12 @@ kernel_memory_release_page:
 	sub	rax,	KERNEL_BASE_address
 	shr	rax,	STATIC_PAGE_SIZE_shift
 
-	; oblicz prdesunięcie względem początku binarnej mapy pamięci
+	; oblicz przesunięcie względem początku binarnej mapy pamięci
 	mov	rcx,	64
 	xor	rdx,	rdx	; wyczyść starszą część
 	div	rcx
 
-	; prdesuń wskaźnik na "pakiet"
+	; przesuń wskaźnik na "pakiet"
 	shl	rax,	STATIC_MULTIPLE_BY_8_shift
 	add	rsi,	rax
 
@@ -589,7 +589,7 @@ kernel_memory_alloc_task:
 ; wyjście:
 ;	Flaga CF, jeśli brak dostępnej
 ;	rax - kod błędu, jeśli Flaga CF jest podniesiona
-;	rdi - wskaźnik do przydzielonej przestrzeni
+;	rdi - wskaźnik do przydzielonej przestrzeni logicznej procesu
 kernel_memory_alloc_task_secure:
 	; zachowaj oryginalne rejestry
 	push	rbx

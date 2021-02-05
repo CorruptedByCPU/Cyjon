@@ -24,7 +24,7 @@ STATIC_PAGE_SIZE_shift					equ	12
 ;===============================================================================
 SOFTWARE_BASE_address					equ	0x0000100000000000
 SOFTWARE_STACK_pointer					equ	0x0000700000000000
-SOFTWARE_STACK_limit					equ	STATIC_PAGE_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
+SOFTWARE_STACK_LIMIT_page				equ	STATIC_PAGE_SIZE_byte >> STATIC_DIVIDE_BY_PAGE_shift
 
 ;===============================================================================
 ; STAŁE OGÓLNEGO PRZEZNACZENIA
