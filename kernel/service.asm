@@ -15,6 +15,9 @@ kernel_service:
 	; zresetuj Direction Flag
 	cld
 
+	; zresetuj rejestr zastrzeżony
+	xor	ebp,	ebp
+
 	; usługa związana z procesem?
 	cmp	al,	KERNEL_SERVICE_PROCESS
 	je	.process	; tak
