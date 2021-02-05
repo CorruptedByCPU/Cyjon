@@ -19,6 +19,9 @@ kernel_wm_irq:
 	push	rbp
 	push	rax
 
+	; zresetuj Direction Flag
+	cld
+
 	; zresetuj rejestr zastrzeżony
 	xor	ebp,	ebp
 
