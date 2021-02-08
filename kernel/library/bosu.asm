@@ -68,7 +68,7 @@ library_bosu_event:
 	jc	.error	; nie znaleziono elementu zależnego
 
 	; element posiada przypisaną procedurę obsługi akcji?
-	cmp	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	STATIC_EMPTY
+	cmp	qword [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.SIZE + LIBRARY_BOSU_STRUCTURE_ELEMENT.event],	STATIC_EMPTY
 	je	.error	; nie, koniec obsługi akcji
 
 	; wykonaj procedurę powiązaną z elementem
@@ -228,10 +228,48 @@ library_bosu:
 	pop	rbx
 	pop	rax
 
-	; powrót z liblioteki
+	; powrót z biblioteki
 	ret
 
 	macro_debug	"library_bosu"
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do elementu
+;	rdi - wskaźnik do struktury okna
+library_bosu_element_draw:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rdx
+
+	; wylicz adres wskaźnika przestrzeni danych elementu "draw"
+
+	; pozycja na osi Y
+	movzx	eax,	word [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_DRAW.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
+	movzx	ecx,	word [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
+	mul	rcx
+
+	; pozycja na osi Y
+	mov	cx,	word [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_DRAW.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
+	add	rax,	rcx
+
+	; pozycja w przestrzeni okna
+	shl	rax,	KERNEL_VIDEO_DEPTH_shift
+	add	rax,	qword [rdi + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
+
+	; zachowaj informację w strukturze elementu draw
+	mov	qword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_DRAW.address],	rax
+
+	; przywróć oryginalne rejestry
+	pop	rdx
+	pop	rcx
+	pop	rax
+
+	; powrót z biblioteki
+	ret
+
+	macro_debug	"library_bosu_element_draw"
 
 ;===============================================================================
 ; wejście:
@@ -630,10 +668,6 @@ library_bosu_elements:
 	cmp	al,	LIBRARY_BOSU_ELEMENT_TYPE_none
 	je	.ready	; tak
 
-	; element typu "draw"?
-	cmp	al,	LIBRARY_BOSU_ELEMENT_TYPE_draw
-	je	.leave	; tak, brak obłsugi
-
 	; element typu "chain"?
 	cmp	al,	LIBRARY_BOSU_ELEMENT_TYPE_chain
 	jne	.other	; nie
@@ -816,10 +850,6 @@ library_bosu_element_chain:
 	movzx	eax,	byte [rsi + LIBRARY_BOSU_STRUCTURE_TYPE.set]
 	cmp	al,	LIBRARY_BOSU_ELEMENT_TYPE_none
 	je	.ready	; tak
-
-	; element typu "draw"?
-	cmp	al,	LIBRARY_BOSU_ELEMENT_TYPE_draw
-	je	.leave	; tak, brak obłsugi
 
 	; przejdź do procedury obsługi elementu
 	call	qword [rbx + rax * STATIC_QWORD_SIZE_byte]

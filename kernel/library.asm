@@ -48,6 +48,8 @@ kernel_library:
 	.page_align_up			dq	library_page_align_up
 	.page_from_size			dq	library_page_from_size
 	;-----------------------------------------------------------------------
+	.rgl_square			dq	library_rgl_square
+	;-----------------------------------------------------------------------
 	.string_compare			dq	library_string_compare
 	.string_cut			dq	library_string_cut
 	.string_digits			dq	library_string_digits
@@ -87,6 +89,7 @@ kernel_library:
 %include	"kernel/library/integer_to_string.asm"
 %include	"kernel/library/page_align_up.asm"
 %include	"kernel/library/page_from_size.asm"
+%include	"kernel/library/rgl.asm"
 %include	"kernel/library/string_compare.asm"
 %include	"kernel/library/string_cut.asm"
 %include	"kernel/library/string_digits.asm"

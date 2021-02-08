@@ -56,7 +56,7 @@ console:
 	mov	rsi,	rdi
 
 	; przywróć wskaźnik do struktury terminala
-	mov	r8,	console_terminal_table
+	mov	r8,	console_terminal_properties
 
 	; wyłącz kursor w terminalu
 	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal_cursor_disable

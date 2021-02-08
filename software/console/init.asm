@@ -20,24 +20,16 @@
 	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu
 	jc	console.close	; brak wystarczającej przestrzeni pamięci
 
-	; wylicz adres wskaźnika przestrzeni danych elementu "terminal"
-	movzx	eax,	word [console_window.element_terminal + LIBRARY_BOSU_STRUCTURE_ELEMENT_DRAW.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.y]
-	movzx	ecx,	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.field + LIBRARY_BOSU_STRUCTURE_FIELD.width]
-	mul	rcx
-	mov	cx,	word [console_window.element_terminal + LIBRARY_BOSU_STRUCTURE_ELEMENT_DRAW.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.field + LIBRARY_BOSU_STRUCTURE_FIELD.x]
-	add	rax,	rcx
-	shl	rax,	KERNEL_VIDEO_DEPTH_shift
-	add	rax,	qword [console_window + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
-
 	; uzupełnij tablicę "terminal" o adres przestrzeni
-	mov	qword [console_terminal_table + LIBRARY_TERMINAL_STRUCTURE.address],	rax
+	mov	rax,	qword [console_window.element_terminal + LIBRARY_BOSU_STRUCTURE_ELEMENT_DRAW.address]
+	mov	qword [console_terminal_properties + LIBRARY_TERMINAL_STRUCTURE.address],	rax
 
 	; uzupełnij tablicę "terminal" o scanline okna
 	mov	eax,	dword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.scanline_byte]
-	mov	qword [console_terminal_table + LIBRARY_TERMINAL_STRUCTURE.scanline_byte],	rax
+	mov	qword [console_terminal_properties + LIBRARY_TERMINAL_STRUCTURE.scanline_byte],	rax
 
 	; inicjalizuj przestrzeń elementu "terminal"
-	mov	r8,	console_terminal_table
+	mov	r8,	console_terminal_properties
 	macro_library	LIBRARY_STRUCTURE_ENTRY.terminal
 
 	; uruchom powłokę systemu

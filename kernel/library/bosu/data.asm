@@ -11,7 +11,7 @@ align	STATIC_QWORD_SIZE_byte,	db	STATIC_NOTHING
 library_bosu_element_entry:
 	.null:			dq	STATIC_EMPTY				; 0x00
 	.label:			dq	library_bosu_element_label		; 0x01
-	.draw:			dq	STATIC_EMPTY				; 0x02
+	.draw:			dq	library_bosu_element_draw		; 0x02
 	.chain:			dq	STATIC_EMPTY				; 0x03
 	.button:		dq	library_bosu_element_button		; 0x04
 	.taskbar:		dq	library_bosu_element_taskbar		; 0x05

@@ -136,7 +136,7 @@ library_input:
 	; flaga, sukces
 	clc
 
-	; koniec liblioteki
+	; koniec biblioteki
 	jmp	.end
 
 .empty:

@@ -13,7 +13,7 @@
 	;-----------------------------------------------------------------------
 
 %define	PROGRAM_NAME		"taris"
-%define	PROGRAM_VERSION		"0.1"
+%define	PROGRAM_VERSION		"0.2"
 
 TARIS_BRICK_START_POSITION_x	equ	6
 TARIS_BRICK_START_POSITION_y	equ	0
@@ -22,8 +22,8 @@ TARIS_BRICK_STRUCTURE_width	equ	4
 TARIS_BRICK_STRUCTURE_height	equ	4
 
 TARIS_BRICK_PADDING_pixel	equ	1
-TARIS_BRICK_WIDTH_pixel		equ	6
-TARIS_BRICK_HEIGHT_pixel	equ	6
+TARIS_BRICK_WIDTH_pixel		equ	12
+TARIS_BRICK_HEIGHT_pixel	equ	12
 
 TARIS_PLAYGROUND_WIDTH_brick	equ	10
 TARIS_PLAYGROUND_HEIGHT_brick	equ	22

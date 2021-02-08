@@ -12,17 +12,21 @@
 
 ;===============================================================================
 taris:
-	; utwórz okno
-	mov	rsi,	taris_window
-	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu
-	jc	taris.close	; brak wystarczającej przestrzeni pamięci
+	; inicjalizuj środowisko pracy
+	%include	"software/taris/init.asm"
 
+	; debug
+	mov	rsi,	taris_rgl_square
+	mov	r8,	taris_rgl_properties
+	macro_library	LIBRARY_STRUCTURE_ENTRY.rgl_square
+
+.restart:
 	; wylosuj blok i jego model
 	call	taris_random_block
 
 	; startowa pozycja bloku
-	mov	r8,	TARIS_BRICK_START_POSITION_x
-	mov	r9,	TARIS_BRICK_START_POSITION_y
+	mov	r9,	TARIS_BRICK_START_POSITION_x
+	mov	r10,	TARIS_BRICK_START_POSITION_y
 
 .loop:
 	; sprawdź czy nowy blok koliduje z aktualnie istniejącymi
@@ -32,8 +36,19 @@ taris:
 	mov	rsi,	taris_window
 	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_event
 
-	; cdn.
-	jmp	$
+	; aktualizuj zawartość okna
+	mov	al,	KERNEL_WM_WINDOW_update
+	mov	rsi,	taris_window
+	or	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
+	int	KERNEL_WM_IRQ
+
+	; odczekaj ilość określoną ilość czasu na przesunięcie bloku
+	mov	ax,	KERNEL_SERVICE_PROCESS_sleep
+	mov	ecx,	dword [taris_microtime]
+	int	KERNEL_SERVICE
+
+	; kontnuuj
+	jmp	.loop
 
 .close:
 	; zakończ pracę programu

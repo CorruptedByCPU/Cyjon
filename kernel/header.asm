@@ -29,5 +29,6 @@
 	;-----------------------------------------------------------------------
 	%include	"kernel/library/bosu/header.asm"
 	%include	"kernel/library/font/header.asm"
+	%include	"kernel/library/rgl/header.asm"
 	%include	"kernel/library/terminal/header.asm"
 	;-----------------------------------------------------------------------

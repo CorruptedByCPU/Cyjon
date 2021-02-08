@@ -11,9 +11,9 @@
 ;	rejestry zniszczone
 console_meta:
 	; aktualna pozycja kursora
-	mov	ax,	word [console_terminal_table + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.x]
+	mov	ax,	word [console_terminal_properties + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.x]
 	mov	word [console_stream_meta + CONSOLE_STRUCTURE_STREAM_META.x],	ax
-	mov	ax,	word [console_terminal_table + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y]
+	mov	ax,	word [console_terminal_properties + LIBRARY_TERMINAL_STRUCTURE.cursor + LIBRARY_TERMINAL_STURCTURE_CURSOR.y]
 	mov	word [console_stream_meta + CONSOLE_STRUCTURE_STREAM_META.y],	ax
 
 	; zachowaj oryginalne rejestry
