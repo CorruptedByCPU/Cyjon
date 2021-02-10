@@ -207,5 +207,6 @@ kernel_gui_init:
 
 	; uruchom domyślnie program Console
 	call	kernel_gui_event_console
+	; call	kernel_gui_event_taris
 
 	macro_debug	"kernel_gui_init"

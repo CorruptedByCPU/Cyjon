@@ -211,7 +211,6 @@ kernel_service:
 ;-------------------------------------------------------------------------------
 ; wejście:
 ;	rcx - rozmiar przestrzeni do zaalokowania
-;	rdi - wskaźnik do przestrzeni jądra systemu
 ; wyjście:
 ;	Flaga CF - jeśli brak miejsca
 ;	rdi - wskaźnik do zaalokowanej przestrzeni

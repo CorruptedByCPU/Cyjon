@@ -62,6 +62,7 @@ taris_random_model:
 	macro_library	LIBRARY_STRUCTURE_ENTRY.xorshift32
 
 	; zwróć wartość z przedziału ilości dostępnych modeli
+	xor	edx,	edx
 	div	qword [taris_limit_model]
 
 	; modyfikuj

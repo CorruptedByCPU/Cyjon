@@ -87,7 +87,8 @@ console_window					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel
 						dw	CONSOLE_WINDOW_WIDTH_pixel
 						dw	CONSOLE_WINDOW_HEIGHT_pixel - LIBRARY_BOSU_HEADER_HEIGHT_pixel
-						dq	STATIC_EMPTY	; wskaźnik przestrzeni danych (uzupełnia Bosu)
+						dq	STATIC_EMPTY	; brak obsługi wyjątku
+						dq	STATIC_EMPTY	; adres przestrzeni elementu (uzupełnia Bosu)
 .element_terminal_end:				;-------------------------------
 						; koniec elementów okna
 						;-------------------------------
@@ -95,7 +96,7 @@ console_window					dw	STATIC_EMPTY	; pozycja na osi X
 console_window_end:
 
 ;===============================================================================
-console_terminal_table				dq	CONSOLE_WINDOW_WIDTH_pixel	; szerokość w pikselach
+console_terminal_properties			dq	CONSOLE_WINDOW_WIDTH_pixel	; szerokość w pikselach
 						dq	CONSOLE_WINDOW_HEIGHT_pixel - LIBRARY_BOSU_HEADER_HEIGHT_pixel	; wysokość w pikselach
 						dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych terminala
 						dq	(CONSOLE_WINDOW_WIDTH_pixel * (CONSOLE_WINDOW_HEIGHT_pixel - LIBRARY_BOSU_HEADER_HEIGHT_pixel)) << KERNEL_VIDEO_DEPTH_shift	; rozmiar przestrzeni w Bajtach

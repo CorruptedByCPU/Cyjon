@@ -152,6 +152,7 @@ endstruc
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_DRAW
 	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
 	.element				resb	LIBRARY_BOSU_STRUCTURE_ELEMENT.SIZE
+	.address				resb	8
 	.SIZE:
 endstruc
 

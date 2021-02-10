@@ -34,6 +34,11 @@ struc	LIBRARY_STRUCTURE_ENTRY
 	.page_align_up			resb	8
 	.page_from_size			resb	8
 	;-----------------------------------------------------------------------
+	.rgl				resb	8
+	.rgl_clear			resb	8
+	.rgl_flush			resb	8
+	.rgl_square			resb	8
+	;-----------------------------------------------------------------------
 	.string_compare			resb	8
 	.string_cut			resb	8
 	.string_digits			resb	8

@@ -15,7 +15,7 @@ taris_collision:
 	push	rbx
 	push	rcx
 	push	rdx
-	push	r9
+	push	r10
 
 	; zamienna lokalna
 	push	TARIS_BRICK_STRUCTURE_height
@@ -26,12 +26,12 @@ taris_collision:
 	and	al,	STATIC_BYTE_LOW_mask
 
 	; przesuń linię struktury bloku na miejsce
-	mov	cl,	r8b
+	mov	cl,	r9b
 	shl	ax,	cl
 
 	; pobierz linię przestrzeni planszy odpowiadającej pozycji linii struktury bloku
 	mov	rdx,	taris_brick_platform
-	mov	dx,	word [rdx + r9 * STATIC_WORD_SIZE_byte]
+	mov	dx,	word [rdx + r10 * STATIC_WORD_SIZE_byte]
 
 	; wystąpiła kolizja?
 	test	ax,	dx
@@ -45,7 +45,7 @@ taris_collision:
 	shr	bx,	STATIC_MOVE_AL_HALF_TO_LOW_shift
 
 	; następna linia przestrzeni planszy
-	inc	r9
+	inc	r10
 
 	; przetworzono cały model bloku?
 	dec	qword [rsp]
@@ -56,7 +56,7 @@ taris_collision:
 	pop	rax
 
 	; przywróć oryginalne rejestry
-	pop	r9
+	pop	r10
 	pop	rdx
 	pop	rcx
 	pop	rbx
