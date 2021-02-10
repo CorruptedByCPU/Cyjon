@@ -12,6 +12,7 @@ struc	LIBRARY_RGL_STRUCTURE_PROPERTIES
 	.address		resb	8
 	.size			resb	8
 	.scanline		resb	8
+	.workspace_address	resb	8
 	.background_color	resb	4
 endstruc
 

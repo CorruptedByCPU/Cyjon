@@ -10,7 +10,7 @@ align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 taris_ipc_data:
 	times KERNEL_IPC_STRUCTURE.SIZE		db	STATIC_EMPTY
 
-taris_microtime					dd	1024	; 1024 == 1 sekunda
+taris_microtime					dd	10	; 1024 == 1 sekunda
 
 taris_limit					dq	(taris_bricks_end - taris_bricks) / STATIC_QWORD_SIZE_byte
 taris_limit_model				dq	STATIC_QWORD_SIZE_byte / STATIC_WORD_SIZE_byte
@@ -21,7 +21,7 @@ align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 taris_window					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	STATIC_EMPTY	; pozycja na osi Y
 						dw	TARIS_WINDOW_WIDTH_pixel	; szerokość okna
-						dw	TARIS_WINDOW_HEIGHT_pixel	; wysokość okna
+						dw	TARIS_WINDOW_HEIGHT_pixel + LIBRARY_BOSU_HEADER_HEIGHT_pixel	; wysokość okna
 						dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna (uzupełnia Bosu)
 .extra:						dd	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach (uzupełnia Bosu)
 						dw	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_header | LIBRARY_BOSU_WINDOW_FLAG_border | LIBRARY_BOSU_WINDOW_FLAG_BUTTON_close
@@ -43,7 +43,7 @@ taris_window					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	0	; pozycja na osi X względem przestrzeni danych okna
 						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel
 						dw	TARIS_PLAYGROUND_WIDTH_pixel
-						dw	TARIS_WINDOW_HEIGHT_pixel
+						dw	TARIS_PLAYGROUND_HEIGHT_pixel
 						dq	STATIC_EMPTY	; brak obsługi wyjątku
 						dq	STATIC_EMPTY	; adres przestrzeni elementu (uzupełnia Bosu)
 .element_playground_end:			;-------------------------------
@@ -78,11 +78,12 @@ taris_rgl_properties				dw	TARIS_PLAYGROUND_WIDTH_pixel	; szerokość w pikselac
 						dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych
 						dq	(TARIS_PLAYGROUND_WIDTH_pixel * TARIS_PLAYGROUND_HEIGHT_pixel) << KERNEL_VIDEO_DEPTH_shift	; rozmiar przestrzeni w Bajtach
 						dq	(TARIS_PLAYGROUND_WIDTH_pixel + (LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel << STATIC_MULTIPLE_BY_2_shift)) << KERNEL_VIDEO_DEPTH_shift	; scanline w Bajtach
+						dq	STATIC_EMPTY	; wskaźnik do przestrzeni tymczasowej (uzupełnia RGL)
 						dd	STATIC_COLOR_BACKGROUND_default	; domyślny kolor tła
 
 ;===============================================================================
-taris_rgl_square:				dw	(TARIS_PLAYGROUND_WIDTH_pixel / 2) - (TARIS_BRICK_WIDTH_pixel / 2)
-						dw	((TARIS_PLAYGROUND_HEIGHT_pixel / 2) - (TARIS_BRICK_HEIGHT_pixel / 2)) + LIBRARY_BOSU_HEADER_HEIGHT_pixel
+taris_rgl_square:				dw	0
+						dw	0
 						dw	TARIS_BRICK_WIDTH_pixel
 						dw	TARIS_BRICK_HEIGHT_pixel
 						dd	STATIC_COLOR_red_light

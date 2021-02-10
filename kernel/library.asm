@@ -48,6 +48,9 @@ kernel_library:
 	.page_align_up			dq	library_page_align_up
 	.page_from_size			dq	library_page_from_size
 	;-----------------------------------------------------------------------
+	.rgl				dq	library_rgl
+	.rgl_clear			dq	library_rgl_clear
+	.rgl_flush			dq	library_rgl_flush
 	.rgl_square			dq	library_rgl_square
 	;-----------------------------------------------------------------------
 	.string_compare			dq	library_string_compare
