@@ -10,7 +10,7 @@ align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 taris_ipc_data:
 	times KERNEL_IPC_STRUCTURE.SIZE		db	STATIC_EMPTY
 
-taris_microtime					dd	10	; 1024 == 1 sekunda
+taris_microtime					dq	16	; 1024 == 1 sekunda
 
 taris_limit					dq	(taris_bricks_end - taris_bricks) / STATIC_QWORD_SIZE_byte
 taris_limit_model				dq	STATIC_QWORD_SIZE_byte / STATIC_WORD_SIZE_byte
@@ -62,6 +62,15 @@ taris_bricks					dq	0x0720232027002620
 						dq	0x0710226047003220
 						dq	0x0F0022220F002222
 taris_bricks_end:
+
+taris_colors					dd	STATIC_COLOR_red_light
+						dd	STATIC_COLOR_green_light
+						dd	STATIC_COLOR_blue_light
+						dd	STATIC_COLOR_yellow
+						dd	STATIC_COLOR_white
+						dd	STATIC_COLOR_magenta_light
+						dd	STATIC_COLOR_cyan_light
+
 
 taris_brick_position_x				dq	STATIC_EMPTY
 taris_brick_position_y				dq	STATIC_EMPTY

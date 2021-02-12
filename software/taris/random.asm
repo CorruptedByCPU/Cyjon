@@ -9,6 +9,7 @@
 ;===============================================================================
 ; wyjście:
 ;	bx - model wylosowanego bloku
+;	r11d - kolor bloku
 taris_random_block:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -31,6 +32,9 @@ taris_random_block:
 	; zwróć wartość z przedziału ilości dostępnych bloków
 	div	qword [taris_limit]
 
+	; zachowaj numer bloku
+	push	rdx
+
 	; zwróć wynik
 	mov	rbx,	taris_bricks
 	mov	rbx,	qword [rbx + rdx * STATIC_QWORD_SIZE_byte]
@@ -38,6 +42,14 @@ taris_random_block:
 
 	; usuń pozostałe modele z pamięci
 	and	rbx,	STATIC_WORD_mask
+
+	; przywróć numer bloku
+	pop	rdx
+
+	; pobierz kolor przypisany do bloku
+	shl	rdx,	STATIC_MULTIPLE_BY_4_shift
+	mov	r11,	taris_colors
+	mov	r11d,	dword [r11 + rdx]
 
 	; przywróć oryginalne rejestry
 	pop	rdx
