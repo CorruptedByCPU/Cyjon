@@ -7,20 +7,19 @@
 ;===============================================================================
 
 ;===============================================================================
-; wejście:
-;	bx - model bloku
-; wyjście:
-;	Flaga ZF - jeśli wystapiła kolizja
-taris_collision:
+taris_inject:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rbx
 	push	rcx
-	push	rdx
+	push	rdi
 	push	r10
 
 	; zamienna lokalna
 	push	TARIS_BRICK_STRUCTURE_height
+
+	; wskaźnik do przestrzeni platformy
+	mov	rdi,	taris_brick_platform
 
 .loop:
 	; pobierz pierwszą linię struktury bloku
@@ -31,13 +30,8 @@ taris_collision:
 	mov	cl,	r9b
 	shl	ax,	cl
 
-	; pobierz linię przestrzeni planszy odpowiadającej pozycji linii struktury bloku
-	mov	rdx,	taris_brick_platform
-	mov	dx,	word [rdx + r10 * STATIC_WORD_SIZE_byte]
-
-	; wystąpiła kolizja?
-	test	ax,	dx
-	jnz	.end	; tak
+	; połącz linię bloku z przestrzenią gry
+	or	word [rdi + r10 * STATIC_WORD_SIZE_byte],	ax
 
 	; następna linia struktury modelu bloku
 	shr	bx,	STATIC_MOVE_AL_HALF_TO_LOW_shift
@@ -55,7 +49,7 @@ taris_collision:
 
 	; przywróć oryginalne rejestry
 	pop	r10
-	pop	rdx
+	pop	rdi
 	pop	rcx
 	pop	rbx
 	pop	rax

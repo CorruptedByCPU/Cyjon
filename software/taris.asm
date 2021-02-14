@@ -24,11 +24,15 @@ taris:
 	mov	r10,	TARIS_BRICK_START_POSITION_y
 
 .loop:
-	; sprawdź czy nowy blok koliduje z aktualnie istniejącymi
+	; sprawdź czy blok koliduje z aktualnie istniejącymi
 	call	taris_collision
+	jnz	.check	; wystąpiła kolizja obiektów
 
 	; wyczyść przestrzeń roboczą
 	macro_library	LIBRARY_STRUCTURE_ENTRY.rgl_clear
+
+	; wyświetl przestrzeń gry
+	call	taris_show_playground
 
 	; wyświetl blok na nowej pozycji
 	call	taris_show_block
@@ -49,7 +53,28 @@ taris:
 	inc	r10
 
 	; kontnuuj
-	jmp	.init	; debug
+	jmp	.loop	; debug
+
+.check:
+	; kolizja wystąpiła na pozycji startowej?
+	cmp	r9,	TARIS_BRICK_START_POSITION_x
+	jne	.not_begin	; nie
+	test	r10,	r10
+	jz	.end	; tak
+
+.not_begin:
+	; cofnij blok na oryginalną pozycję
+	dec	r10
+
+	; scal blok z przestrzenią gry
+	call	taris_inject
+
+	; powrót do głównej pętli gry
+	jmp	.init
+
+.end:
+	; debug
+	jmp	$
 
 .close:
 	; zakończ pracę programu
@@ -64,4 +89,5 @@ taris:
 	%include	"software/taris/collision.asm"
 	%include	"software/taris/wait.asm"
 	%include	"software/taris/show.asm"
+	%include	"software/taris/inject.asm"
 	;-----------------------------------------------------------------------
