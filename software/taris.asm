@@ -15,6 +15,10 @@ taris:
 	; inicjalizuj środowisko pracy
 	%include	"software/taris/init.asm"
 
+.restart:
+	; wyczyść przestrzeń gry
+	call	taris_show_empty
+
 .init:
 	; wylosuj blok i jego model
 	call	taris_random_block
@@ -28,23 +32,8 @@ taris:
 	call	taris_collision
 	jnz	.check	; wystąpiła kolizja obiektów
 
-	; wyczyść przestrzeń roboczą
-	macro_library	LIBRARY_STRUCTURE_ENTRY.rgl_clear
-
-	; wyświetl przestrzeń gry
-	call	taris_show_playground
-
-	; wyświetl blok na nowej pozycji
-	call	taris_show_block
-
-	; synchronizacja zawartości z przestrzenią roboczą
-	macro_library	LIBRARY_STRUCTURE_ENTRY.rgl_flush
-
-	; aktualizuj zawartość okna
-	mov	al,	KERNEL_WM_WINDOW_update
-	mov	rsi,	taris_window
-	or	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
-	int	KERNEL_WM_IRQ
+	; wyświetl aktualny stan gry
+	call	taris_redraw
 
 	; czekaj na reakcję gracza
 	call	taris_wait
@@ -59,8 +48,8 @@ taris:
 	; kolizja wystąpiła na pozycji startowej?
 	cmp	r9,	TARIS_BRICK_START_POSITION_x
 	jne	.not_begin	; nie
-	test	r10,	r10
-	jz	.end	; tak
+	cmp	r10,	TARIS_BRICK_START_POSITION_y
+	je	.end	; tak
 
 .not_begin:
 	; cofnij blok na oryginalną pozycję
@@ -73,8 +62,16 @@ taris:
 	jmp	.init
 
 .end:
+	; sprawdź przychodzące zdarzenia
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_event
+	jc	.end	; brak wyjątku
+
+	; naciśnięto klawisz ESC?
+	cmp	dx,	STATIC_SCANCODE_ESCAPE
+	jne	.end	; nie
+
 	; debug
-	jmp	$
+	jmp	.restart
 
 .close:
 	; zakończ pracę programu
@@ -90,4 +87,6 @@ taris:
 	%include	"software/taris/wait.asm"
 	%include	"software/taris/show.asm"
 	%include	"software/taris/inject.asm"
+	%include	"software/taris/keyboard.asm"
+	%include	"software/taris/redraw.asm"
 	;-----------------------------------------------------------------------

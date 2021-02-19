@@ -11,6 +11,7 @@ taris_wait:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rcx
+	push	rdx
 	push	rsi
 
 	; pobierz aktualny microtime systemu
@@ -26,8 +27,17 @@ taris_wait:
 
 .loop:
 	; sprawdź przychodzące zdarzenia
-	; macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_event
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_event
+	jnc	.no_event	; brak wyjątku
 
+	; sprawdź typ klawisza i wykonaj przypisaną akcję
+	call	taris_keyboard
+	jc	.end	; odłóż blok na miejsce
+
+	; usuń informację o klawiszu
+	xor	dx,dx
+
+.no_event:
 	; zwolnij pozostały czas procesora
 	mov	ax,	KERNEL_SERVICE_PROCESS_release
 	int	KERNEL_SERVICE
@@ -40,8 +50,10 @@ taris_wait:
 	cmp	rax,	rcx
 	jbe	.loop	; nie
 
+.end:
 	; przywróć oryginalne rejestry
 	pop	rsi
+	pop	rdx
 	pop	rcx
 	pop	rax
 

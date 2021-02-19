@@ -7,6 +7,27 @@
 ;===============================================================================
 
 ;===============================================================================
+taris_show_empty:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
+	push	rdi
+
+	; wyczyść przestrzeń gry
+	mov	ax,	TARIS_PLAYGROUND_EMPTY_bits
+	mov	ecx,	TARIS_PLAYGROUND_HEIGHT_brick
+	mov	rdi,	taris_brick_platform
+	rep	stosw
+
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rcx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
 taris_show_playground:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -33,7 +54,10 @@ taris_show_playground:
 
 .next:
 	; pobierz pierwszą linię przestrzeni gry
-	mov	bx,	word [rdi]
+	movzx	ebx,	word [rdi]
+
+	; ukryj pierwsze dwie kolumny
+	shr	bx,	STATIC_DIVIDE_BY_4_shift
 
 .loop:
 	; pobierz pozycję bitu od najmłodszego
@@ -89,10 +113,14 @@ taris_show_playground:
 taris_show_block:
 	; zachowaj oryginalne rejestry
 	push	rax
+	push	rbx
 	push	rcx
 	push	rdx
 	push	rsi
-	push	rbx
+	push	r9
+
+	; pierwsze dwie kolumny są niewidoczne
+	sub	r9,	STATIC_WORD_SIZE_byte
 
 	; struktura figury do wyświetlania
 	mov	rsi,	taris_rgl_square
@@ -150,10 +178,11 @@ taris_show_block:
 
 .end:
 	; przywróć oryginalne rejestry
-	pop	rbx
+	pop	r9
 	pop	rsi
 	pop	rdx
 	pop	rcx
+	pop	rbx
 	pop	rax
 
 	; powrót z procedury
