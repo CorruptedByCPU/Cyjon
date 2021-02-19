@@ -10,7 +10,7 @@ align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 taris_ipc_data:
 	times KERNEL_IPC_STRUCTURE.SIZE		db	STATIC_EMPTY
 
-taris_microtime					dd	10	; 1024 == 1 sekunda
+taris_microtime					dq	1024	; 1024 == 1 sekunda
 
 taris_limit					dq	(taris_bricks_end - taris_bricks) / STATIC_QWORD_SIZE_byte
 taris_limit_model				dq	STATIC_QWORD_SIZE_byte / STATIC_WORD_SIZE_byte
@@ -54,22 +54,32 @@ taris_window_end:
 
 ;===============================================================================
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
-taris_bricks					dq	0x0720232027002620
-						dq	0x6220074022301700
-						dq	0x2310360023103600
-						dq	0x6600660066006600
-						dq	0x1320630013206300
-						dq	0x0710226047003220
-						dq	0x0F0022220F002222
+taris_bricks:					dq	0010011000100000000001110010000000100011001000000010011100000000b	; T
+						dq	0010001001100000000001110001000000110010001000000100011100000000b	; J
+						dq	0010011001000000011000110000000000100110010000000110001100000000b	; Z
+						dq	0000001100110000000000110011000000000011001100000000001100110000b	; O
+						dq	0100011000100000001101100000000001000110001000000011011000000000b	; S
+						dq	0110001000100000000001110100000000100010001100000001011100000000b	; L
+						dq	0010001000100010000011110000000000100010001000100000111100000000b	; I
 taris_bricks_end:
+
+taris_colors					dd	0x00ff0000	; T
+						dd	0x00ffdb00	; J
+						dd	0x0049ff00	; Z
+						dd	0x0000ff92	; O
+						dd	0x000092ff	; S
+						dd	0x004900ff	; L
+						dd	0x00ff00db	; I
+
 
 taris_brick_position_x				dq	STATIC_EMPTY
 taris_brick_position_y				dq	STATIC_EMPTY
 
 ;===============================================================================
+taris_brick_platform_clean			dw	TARIS_PLAYGROUND_EMPTY_bits
 taris_brick_platform:
-	TIMES TARIS_PLAYGROUND_HEIGHT_brick	dw	0000100000000001b
-						dw	0000111111111111b
+	TIMES TARIS_PLAYGROUND_HEIGHT_brick	dw	STATIC_EMPTY
+taris_brick_platform_end:			dw	STATIC_MAX_unsigned
 
 ;===============================================================================
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
