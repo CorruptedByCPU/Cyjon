@@ -76,9 +76,10 @@ taris_brick_position_x				dq	STATIC_EMPTY
 taris_brick_position_y				dq	STATIC_EMPTY
 
 ;===============================================================================
+taris_brick_platform_clean			dw	TARIS_PLAYGROUND_EMPTY_bits
 taris_brick_platform:
 	TIMES TARIS_PLAYGROUND_HEIGHT_brick	dw	STATIC_EMPTY
-						dw	STATIC_MAX_unsigned
+taris_brick_platform_end:			dw	STATIC_MAX_unsigned
 
 ;===============================================================================
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING

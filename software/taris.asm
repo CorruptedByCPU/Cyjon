@@ -58,6 +58,9 @@ taris:
 	; scal blok z przestrzenią gry
 	call	taris_inject
 
+	; usuń z przestrzeni gry wszystkie bloki które tworzą ciągłą linię poziomą
+	call	taris_redraw_no_lines
+
 	; powrót do głównej pętli gry
 	jmp	.init
 
@@ -81,12 +84,12 @@ taris:
 	macro_debug	"software: taris"
 
 	;-----------------------------------------------------------------------
-	%include	"software/taris/data.asm"
-	%include	"software/taris/random.asm"
 	%include	"software/taris/collision.asm"
-	%include	"software/taris/wait.asm"
-	%include	"software/taris/show.asm"
+	%include	"software/taris/data.asm"
 	%include	"software/taris/inject.asm"
 	%include	"software/taris/keyboard.asm"
+	%include	"software/taris/random.asm"
 	%include	"software/taris/redraw.asm"
+	%include	"software/taris/show.asm"
+	%include	"software/taris/wait.asm"
 	;-----------------------------------------------------------------------
