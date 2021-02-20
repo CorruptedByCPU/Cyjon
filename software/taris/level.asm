@@ -31,6 +31,7 @@ taris_level:
 	; aktualizuj aktualny poziom
 	call	taris_interface_level
 
+.end:
 	; pobierz szybkość przemieszczania się bloków
 	shl	eax,	STATIC_MULTIPLE_BY_2_shift
 	mov	rsi,	taris_speed_table
@@ -39,7 +40,6 @@ taris_level:
 	; aktualizuj
 	mov	qword [taris_microtime],	rax
 
-.end:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rsi

@@ -11,6 +11,8 @@ taris_ipc_data:
 	times KERNEL_IPC_STRUCTURE.SIZE		db	STATIC_EMPTY
 
 taris_microtime					dq	819	; 1024 == 1 sekunda
+taris_microtime_delay				dq	102	; 6 klatek
+taris_microtime_softdrop			dq	102	; hmm, ile być powinno?
 
 taris_limit					dq	(taris_bricks_end - taris_bricks) / STATIC_QWORD_SIZE_byte
 taris_limit_model				dq	STATIC_QWORD_SIZE_byte / STATIC_WORD_SIZE_byte
@@ -168,13 +170,13 @@ taris_bricks:					dq	00100110001000000000011100100000001000110010000000100111000
 						dq	0010001000100010000011110000000000100010001000100000111100000000b	; I
 taris_bricks_end:
 
-taris_colors:					dd	0x00ff0000	; T
-						dd	0x00ffdb00	; J
-						dd	0x0049ff00	; Z
-						dd	0x0000ff92	; O
-						dd	0x000092ff	; S
-						dd	0x004900ff	; L
-						dd	0x00ff00db	; I
+taris_colors:					dd	0x00EE0000	; T
+						dd	0x00EEB900	; J
+						dd	0x0027EE00	; Z
+						dd	0x0000EE70	; O
+						dd	0x000070EE	; S
+						dd	0x002700EE	; L
+						dd	0x00EE00b9	; I
 
 taris_brick_position_x				dq	STATIC_EMPTY
 taris_brick_position_y				dq	STATIC_EMPTY
