@@ -72,7 +72,7 @@ taris_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
 .element_label_points_value_length:		db	1
 .element_label_points_value_string:		db	"0"
-						db	0x00, 0x00, 0x00, 0x00, 0x00
+						db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, STATIC_EMPTY
 .element_label_points_value_end:		;-------------------------------
 						; element "label level"
 						;-------------------------------

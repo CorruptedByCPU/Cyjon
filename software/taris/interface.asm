@@ -21,6 +21,8 @@
 	ret
 
 ;===============================================================================
+; wyjście:
+;	Flaga CF - jeśli rozmiar punktów przekracza 7 cyfr
 taris_interface_points:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -44,6 +46,14 @@ taris_interface_points:
 	mov	rdi,	taris_window
 	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_element_label
 
+	; przepełnienie sumy punktów?
+	cmp	cl,	8
+	jne	.end	; nie
+
+	; flaga błąd
+	stc
+
+.end:
 	; przywróć oryginalne rejestry
 	pop	rdi
 	pop	rsi

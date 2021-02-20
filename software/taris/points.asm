@@ -45,6 +45,7 @@ taris_points:
 
 	; aktualizuj ilość punktów
 	call	taris_interface_points
+	jc	.end	;
 
 	; aktualizuj zawartość okna
 	mov	al,	KERNEL_WM_WINDOW_update
