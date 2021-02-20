@@ -10,13 +10,13 @@ align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 taris_ipc_data:
 	times KERNEL_IPC_STRUCTURE.SIZE		db	STATIC_EMPTY
 
-taris_microtime					dq	1024	; 1024 == 1 sekunda
+taris_microtime					dq	819	; 1024 == 1 sekunda
 
 taris_limit					dq	(taris_bricks_end - taris_bricks) / STATIC_QWORD_SIZE_byte
 taris_limit_model				dq	STATIC_QWORD_SIZE_byte / STATIC_WORD_SIZE_byte
 taris_seed					dd	0x681560BA
 
-taris_speed_table:				dw	1024, 917, 811, 704, 597, 491, 384, 277, 171, 128, 107, 107, 107, 85, 85, 85, 64, 64, 64, 43, 43, 43, 43, 43, 43, 43, 43, 43, 43, 21
+taris_speed_table:				dw	819, 734, 649, 563, 478, 393, 307, 222, 137, 102, 85, 85, 85, 68, 68, 68, 51, 51, 51, 34, 34, 34, 34, 34, 34, 34, 34, 34, 34, 17
 
 taris_level_current				dd	STATIC_EMPTY
 taris_lines					dd	STATIC_EMPTY
