@@ -54,6 +54,11 @@ taris:
 	; scal blok z przestrzenią gry
 	call	taris_merge
 
+	; odczekaj ustalony czas zanim pojawi sie na stępny klocek
+	push	qword [taris_microtime_delay]
+	pop	qword [taris_microtime]
+	call	taris_wait
+
 	; sprawdź czy przyznać punkty
 	call	taris_points
 
