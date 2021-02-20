@@ -50,24 +50,6 @@ taris_keyboard:
 	cmp	dx,	STATIC_SCANCODE_UP
 	jne	.no_up	; nie
 
-	; obróć blok w lewo
-	rol	rbx,	STATIC_MOVE_HIGH_TO_AX_shift
-
-	; sprawdź czy blok koliduje z aktualnie istniejącymi
-	call	taris_collision
-	jz	.redraw	; brak kolizji
-
-	; cofnij obrót
-	ror	rbx,	STATIC_MOVE_AX_TO_HIGH_shift
-
-	; koniec obsługi klawisza
-	jmp	.done
-
-.no_up:
-	; naciśnięto klawisze ARROW DOWN
-	cmp	dx,	STATIC_SCANCODE_DOWN
-	jne	.no_down	; nie
-
 	; obróć blok w prawo
 	ror	rbx,	STATIC_MOVE_HIGH_TO_AX_shift
 
@@ -80,6 +62,27 @@ taris_keyboard:
 
 	; koniec obsługi klawisza
 	jmp	.done
+
+.no_up:
+	; naciśnięto klawisze ARROW DOWN
+	cmp	dx,	STATIC_SCANCODE_DOWN
+	jne	.no_down	; nie
+
+	; przesuń blok o wiersz w dół
+	inc	r10
+
+	; sprawdź czy blok koliduje z aktualnie istniejącymi
+	call	taris_collision
+	jz	.redraw	; brak kolizji
+
+	; skoryguj pozycję bloku
+	dec	r10
+
+	; wystąpiła kolizja
+	stc
+
+	; koniec obsługi klawisza
+	jmp	.end
 
 .no_down:
 	; naciśnięto klawisze SPACE

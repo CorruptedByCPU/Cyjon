@@ -16,6 +16,11 @@ kernel_init_string_error_acpi			db	"Error: RSDT/XSDT not recognized.", STATIC_SC
 kernel_init_string_error_apic			db	"Error: APIC not found.", STATIC_SCANCODE_TERMINATOR
 kernel_init_string_error_ioapic			db	"Error: I/O APIC not found.", STATIC_SCANCODE_TERMINATOR
 
+kernel_init_string_serial			db	"COM1: initialized.", STATIC_SCANCODE_TERMINATOR
+kernel_init_string_video_address		db	STATIC_SCANCODE_NEW_LINE, "Video: Memory location 0x", STATIC_SCANCODE_TERMINATOR
+
+kernel_init_string_value_cache	TIMES	21	db	STATIC_EMPTY
+
 kernel_init_string_storage_ide_hd_path		db	"/dev/hd"
 kernel_init_string_storage_ide_hd_letter	db	"a"
 kernel_init_string_storage_ide_hd_end:
@@ -171,4 +176,5 @@ kernel_init_boot_file_end:
 
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 kernel_init_library_file			incbin	"build/library"
+align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 kernel_init_library_file_end:

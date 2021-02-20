@@ -34,5 +34,5 @@ FOR /F "usebackq" %%A IN ('build/zero') DO set ZERO_SIZE=%%~zA
 ..\nasm -f bin disk.asm			-o build/disk.raw	&& echo. || set PASS=1
 
 IF %PASS% == 1 (
-	pause
+	PAUSE
 )

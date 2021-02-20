@@ -16,9 +16,20 @@ taris_limit					dq	(taris_bricks_end - taris_bricks) / STATIC_QWORD_SIZE_byte
 taris_limit_model				dq	STATIC_QWORD_SIZE_byte / STATIC_WORD_SIZE_byte
 taris_seed					dd	0x681560BA
 
+taris_speed_table:				dw	1024, 917, 811, 704, 597, 491, 384, 277, 171, 128, 107, 107, 107, 85, 85, 85, 64, 64, 64, 43, 43, 43, 43, 43, 43, 43, 43, 43, 43, 21
+
+taris_level_current				dd	STATIC_EMPTY
+taris_lines					dd	STATIC_EMPTY
+taris_points_total				dd	STATIC_EMPTY
+taris_points_table:				dd	STATIC_EMPTY
+						dd	0x28
+						dd	0x64
+						dd	0x012C
+						dd	0x04B0
+
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 ;===============================================================================
-taris_window					dw	STATIC_EMPTY	; pozycja na osi X
+taris_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	STATIC_EMPTY	; pozycja na osi Y
 						dw	TARIS_WINDOW_WIDTH_pixel	; szerokość okna
 						dw	TARIS_WINDOW_HEIGHT_pixel + LIBRARY_BOSU_HEADER_HEIGHT_pixel	; wysokość okna
@@ -36,12 +47,106 @@ taris_window					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	.element_button_close_end - .element_button_close
 						dq	taris.close
 .element_button_close_end:			;-------------------------------
+						; element "label points"
+						;-------------------------------
+.element_label_points:				db	LIBRARY_BOSU_ELEMENT_TYPE_label
+						dw	.element_label_points_end - .element_label_points
+						dw	0
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel
+						dw	TARIS_WINDOW_WIDTH_pixel / 3
+						dw	LIBRARY_FONT_HEIGHT_pixel
+						dq	STATIC_EMPTY
+						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
+						db	6
+						db	"Points"
+.element_label_points_end:			;-------------------------------
+						; element "label points value"
+						;-------------------------------
+.element_label_points_value:			db	LIBRARY_BOSU_ELEMENT_TYPE_label
+						dw	.element_label_points_value_end - .element_label_points_value
+						dw	0
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + LIBRARY_FONT_HEIGHT_pixel
+						dw	TARIS_WINDOW_WIDTH_pixel / 3
+						dw	LIBRARY_FONT_HEIGHT_pixel
+						dq	STATIC_EMPTY
+						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
+.element_label_points_value_length:		db	1
+.element_label_points_value_string:		db	"0"
+						db	0x00, 0x00, 0x00, 0x00, 0x00
+.element_label_points_value_end:		;-------------------------------
+						; element "label level"
+						;-------------------------------
+.element_label_level:				db	LIBRARY_BOSU_ELEMENT_TYPE_label
+						dw	.element_label_level_end - .element_label_level
+						dw	TARIS_WINDOW_WIDTH_pixel / 3
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel
+						dw	TARIS_WINDOW_WIDTH_pixel / 3
+						dw	LIBRARY_FONT_HEIGHT_pixel
+						dq	STATIC_EMPTY
+						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
+						db	5
+						db	"Level"
+.element_label_level_end:			;-------------------------------
+						; element "label level value"
+						;-------------------------------
+.element_label_level_value:			db	LIBRARY_BOSU_ELEMENT_TYPE_label
+						dw	.element_label_level_value_end - .element_label_level_value
+						dw	TARIS_WINDOW_WIDTH_pixel / 3
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + LIBRARY_FONT_HEIGHT_pixel
+						dw	TARIS_WINDOW_WIDTH_pixel / 3
+						dw	LIBRARY_FONT_HEIGHT_pixel
+						dq	STATIC_EMPTY
+						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
+.element_label_level_value_length:		db	1
+.element_label_level_value_string:		db	"0"
+						db	0x00, 0x00
+.element_label_level_value_end:			;-------------------------------
+						; element "label lines"
+						;-------------------------------
+.element_label_lines:				db	LIBRARY_BOSU_ELEMENT_TYPE_label
+						dw	.element_label_lines_end - .element_label_lines
+						dw	TARIS_WINDOW_WIDTH_pixel - (TARIS_WINDOW_WIDTH_pixel / 3)
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel
+						dw	TARIS_WINDOW_WIDTH_pixel / 3
+						dw	LIBRARY_FONT_HEIGHT_pixel
+						dq	STATIC_EMPTY
+						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
+						db	5
+						db	"Lines"
+.element_label_lines_end:			;-------------------------------
+						; element "label lines value"
+						;-------------------------------
+.element_label_lines_value:			db	LIBRARY_BOSU_ELEMENT_TYPE_label
+						dw	.element_label_lines_value_end - .element_label_lines_value
+						dw	TARIS_WINDOW_WIDTH_pixel - (TARIS_WINDOW_WIDTH_pixel / 3)
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + LIBRARY_FONT_HEIGHT_pixel
+						dw	TARIS_WINDOW_WIDTH_pixel / 3
+						dw	LIBRARY_FONT_HEIGHT_pixel
+						dq	STATIC_EMPTY
+						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
+.element_label_lines_value_length:		db	1
+.element_label_lines_value_string:		db	"0"
+						db	0x00, 0x00
+.element_label_lines_value_end:			;-------------------------------
+						; element "label game over"
+						;-------------------------------
+.element_label_game_over:			db	LIBRARY_BOSU_ELEMENT_TYPE_label
+						dw	.element_label_game_over_end - .element_label_game_over
+						dw	0
+						dw	(TARIS_PLAYGROUND_HEIGHT_pixel >> STATIC_DIVIDE_BY_2_shift) + (LIBRARY_FONT_HEIGHT_pixel << STATIC_MULTIPLE_BY_2_shift)
+						dw	TARIS_WINDOW_WIDTH_pixel
+						dw	LIBRARY_FONT_HEIGHT_pixel + (LIBRARY_FONT_HEIGHT_pixel >> STATIC_DIVIDE_BY_2_shift)
+						dq	STATIC_EMPTY
+						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
+						db	9
+						db	"Game Over"
+.element_label_game_over_end:			;-------------------------------
 						; element "playground"
 						;-------------------------------
 .element_playground:				db	LIBRARY_BOSU_ELEMENT_TYPE_draw
 						dw	.element_playground_end - .element_playground
 						dw	0	; pozycja na osi X względem przestrzeni danych okna
-						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel
+						dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + (LIBRARY_FONT_HEIGHT_pixel << STATIC_MULTIPLE_BY_2_shift)
 						dw	TARIS_PLAYGROUND_WIDTH_pixel
 						dw	TARIS_PLAYGROUND_HEIGHT_pixel
 						dq	STATIC_EMPTY	; brak obsługi wyjątku
@@ -63,7 +168,7 @@ taris_bricks:					dq	00100110001000000000011100100000001000110010000000100111000
 						dq	0010001000100010000011110000000000100010001000100000111100000000b	; I
 taris_bricks_end:
 
-taris_colors					dd	0x00ff0000	; T
+taris_colors:					dd	0x00ff0000	; T
 						dd	0x00ffdb00	; J
 						dd	0x0049ff00	; Z
 						dd	0x0000ff92	; O
@@ -83,11 +188,11 @@ taris_brick_platform_end:			dw	STATIC_MAX_unsigned
 
 ;===============================================================================
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
-taris_rgl_properties				dw	TARIS_PLAYGROUND_WIDTH_pixel	; szerokość w pikselach
+taris_rgl_properties:				dw	TARIS_PLAYGROUND_WIDTH_pixel	; szerokość w pikselach
 						dw	TARIS_PLAYGROUND_HEIGHT_pixel	; wysokość w pikselach
 						dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych
 						dq	(TARIS_PLAYGROUND_WIDTH_pixel * TARIS_PLAYGROUND_HEIGHT_pixel) << KERNEL_VIDEO_DEPTH_shift	; rozmiar przestrzeni w Bajtach
-						dq	(TARIS_PLAYGROUND_WIDTH_pixel + (LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel << STATIC_MULTIPLE_BY_2_shift)) << KERNEL_VIDEO_DEPTH_shift	; scanline w Bajtach
+						dq	(TARIS_WINDOW_WIDTH_pixel + (LIBRARY_BOSU_WINDOW_BORDER_THICKNESS_pixel << STATIC_MULTIPLE_BY_2_shift)) << KERNEL_VIDEO_DEPTH_shift	; scanline w Bajtach
 						dq	STATIC_EMPTY	; wskaźnik do przestrzeni tymczasowej (uzupełnia RGL)
 						dd	STATIC_COLOR_BACKGROUND_default	; domyślny kolor tła
 

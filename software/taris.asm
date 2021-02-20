@@ -15,11 +15,7 @@ taris:
 	; inicjalizuj środowisko pracy
 	%include	"software/taris/init.asm"
 
-.restart:
-	; wyczyść przestrzeń gry
-	call	taris_show_empty
-
-.init:
+.next:
 	; wylosuj blok i jego model
 	call	taris_random_block
 
@@ -49,20 +45,32 @@ taris:
 	cmp	r9,	TARIS_BRICK_START_POSITION_x
 	jne	.not_begin	; nie
 	cmp	r10,	TARIS_BRICK_START_POSITION_y
-	je	.end	; tak
+	je	.game_over	; tak
 
 .not_begin:
 	; cofnij blok na oryginalną pozycję
 	dec	r10
 
 	; scal blok z przestrzenią gry
-	call	taris_inject
+	call	taris_merge
 
-	; usuń z przestrzeni gry wszystkie bloki które tworzą ciągłą linię poziomą
-	call	taris_redraw_no_lines
+	; sprawdź czy przyznać punkty
+	call	taris_points
 
 	; powrót do głównej pętli gry
-	jmp	.init
+	jmp	.next
+
+.game_over:
+	; wyświetl etykietę "Game Over"
+	mov	rsi,	taris_window.element_label_game_over
+	mov	rdi,	taris_window
+	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu_element_label
+
+	; aktualizuj zawartość okna
+	mov	al,	KERNEL_WM_WINDOW_update
+	mov	rsi,	rdi
+	or	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_flush
+	int	KERNEL_WM_IRQ
 
 .end:
 	; sprawdź przychodzące zdarzenia
@@ -86,8 +94,11 @@ taris:
 	;-----------------------------------------------------------------------
 	%include	"software/taris/collision.asm"
 	%include	"software/taris/data.asm"
-	%include	"software/taris/inject.asm"
+	%include	"software/taris/interface.asm"
 	%include	"software/taris/keyboard.asm"
+	%include	"software/taris/level.asm"
+	%include	"software/taris/merge.asm"
+	%include	"software/taris/points.asm"
 	%include	"software/taris/random.asm"
 	%include	"software/taris/redraw.asm"
 	%include	"software/taris/show.asm"

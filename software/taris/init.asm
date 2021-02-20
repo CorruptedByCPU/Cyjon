@@ -21,3 +21,16 @@
 	; inicjalizuj bibliotekę
 	macro_library	LIBRARY_STRUCTURE_ENTRY.rgl
 	jc	taris.close	; brak wystarczającej przestrzeni pamięci
+
+.restart:
+	; wyczyść przestrzeń gry
+	call	taris_show_empty
+
+	; ilość punktów
+	mov	dword [taris_points_total],	STATIC_EMPTY
+
+	; ilość skasowanych linii
+	mov	dword [taris_lines],	STATIC_EMPTY
+
+	; aktualizuj interfejs gry
+	call	taris_interface
