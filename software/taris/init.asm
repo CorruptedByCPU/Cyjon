@@ -6,6 +6,14 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
+	; przygotuj przestrzeń pod tablicę kolorów
+	mov	ax,	KERNEL_SERVICE_PROCESS_memory_alloc
+	mov	ecx,	STATIC_PAGE_SIZE_byte	; jedna strona wystarczy
+	int	KERNEL_SERVICE
+
+	; zachowaj wskaźnik
+	mov	qword [taris_playground_colors_table],	rdi
+
 	; utwórz okno
 	mov	rsi,	taris_window
 	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu

@@ -56,7 +56,9 @@ taris:
 
 	; sprawdź czy przyznać punkty
 	call	taris_points
-	jnc	.next	; powrót do głównej pętli gry
+
+	; powrót do głównej pętli gry
+	jmp	.next
 
 .game_over:
 	; wyświetl etykietę "Game Over"

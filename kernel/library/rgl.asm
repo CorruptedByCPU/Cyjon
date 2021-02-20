@@ -135,6 +135,7 @@ library_rgl_square:
 	push	r10
 	push	r11
 	push	r12
+	push	r13
 
 	; zmienne lokalne
 	sub	rsp,	STATIC_QWORD_SIZE_byte
@@ -266,6 +267,7 @@ library_rgl_square:
 	add	rsp,	STATIC_QWORD_SIZE_byte
 
 	; przywróć oryginalne rejestry
+	pop	r13
 	pop	r12
 	pop	r11
 	pop	r10

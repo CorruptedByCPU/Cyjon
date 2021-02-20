@@ -70,8 +70,8 @@ taris_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_FONT_HEIGHT_pixel
 						dq	STATIC_EMPTY
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
-.element_label_points_value_length:		db	1
-.element_label_points_value_string:		db	"0"
+.element_label_points_value_length		db	1
+.element_label_points_value_string		db	"0"
 						db	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, STATIC_EMPTY
 .element_label_points_value_end:		;-------------------------------
 						; element "label level"
@@ -97,8 +97,8 @@ taris_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_FONT_HEIGHT_pixel
 						dq	STATIC_EMPTY
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
-.element_label_level_value_length:		db	1
-.element_label_level_value_string:		db	"0"
+.element_label_level_value_length		db	1
+.element_label_level_value_string		db	"0"
 						db	0x00, 0x00
 .element_label_level_value_end:			;-------------------------------
 						; element "label lines"
@@ -124,8 +124,8 @@ taris_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_FONT_HEIGHT_pixel
 						dq	STATIC_EMPTY
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
-.element_label_lines_value_length:		db	1
-.element_label_lines_value_string:		db	"0"
+.element_label_lines_value_length		db	1
+.element_label_lines_value_string		db	"0"
 						db	0x00, 0x00
 .element_label_lines_value_end:			;-------------------------------
 						; element "label game over"
@@ -138,8 +138,8 @@ taris_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	LIBRARY_FONT_HEIGHT_pixel + (LIBRARY_FONT_HEIGHT_pixel >> STATIC_DIVIDE_BY_2_shift)
 						dq	STATIC_EMPTY
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
-						db	9
-						db	"Game Over"
+						db	13
+						db	"~ Game Over ~"
 .element_label_game_over_end:			;-------------------------------
 						; element "playground"
 						;-------------------------------
@@ -176,9 +176,10 @@ taris_colors:					dd	0x00ff0000	; T
 						dd	0x004900ff	; L
 						dd	0x00ff00db	; I
 
-
 taris_brick_position_x				dq	STATIC_EMPTY
 taris_brick_position_y				dq	STATIC_EMPTY
+
+taris_playground_colors_table			dq	STATIC_EMPTY
 
 ;===============================================================================
 taris_brick_platform_clean			dw	TARIS_PLAYGROUND_EMPTY_bits

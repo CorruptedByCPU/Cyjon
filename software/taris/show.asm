@@ -36,9 +36,13 @@ taris_show_playground:
 	push	rdx
 	push	rsi
 	push	r12
+	push	r13
 
 	; struktura figury do wyświetlania
 	mov	rsi,	taris_rgl_square
+
+	; wskaźnik do tablicy kolorów
+	mov	r13,	qword [taris_playground_colors_table]
 
 	; ustaw pozycję na osi Y pierwszego bloku przestrzeni gry
 	mov	word [rsi + LIBRARY_RGL_STRUCTURE_SQUARE.y],	STATIC_EMPTY
@@ -61,7 +65,7 @@ taris_show_playground:
 
 .loop:
 	; pobierz pozycję bitu od najmłodszego
-	bsf	ax,	bx
+	bsf	eax,	ebx
 	jz	.end	; wyświetlono cały blok
 
 	; nie bierz pod uwagę prawej krawędzi
@@ -71,12 +75,25 @@ taris_show_playground:
 	; wyłącz
 	btr	bx,	ax
 
+	; zachowaj oryginalny numer bitu
+	push	rax
+
 	; przesuń numer bitu na pozycję
 	mov	cx,	TARIS_BRICK_WIDTH_pixel + TARIS_BRICK_PADDING_pixel
 	mul	cx
 
 	; uzupełnij strukturę figury
 	mov	word [rsi + LIBRARY_RGL_STRUCTURE_SQUARE.x],	ax
+
+	; przywróć oryginalny numer bitu
+	pop	rax
+	add	rax,	STATIC_MULTIPLE_BY_4_shift	; weź pod uwagę pierwsze dwie kolumny
+
+	; pobierz kolor figury
+	mov	eax,	dword [r13 + rax * STATIC_DWORD_SIZE_byte]
+
+	; uzupełnij kolor
+	mov	dword [rsi + LIBRARY_RGL_STRUCTURE_SQUARE.color],	eax
 
 	; wyświetl pierwszy fragment bloku
 	macro_library	LIBRARY_STRUCTURE_ENTRY.rgl_square
@@ -91,11 +108,15 @@ taris_show_playground:
 	; następne bloki rysuj od nastepnej linii
 	add	word [rsi + LIBRARY_RGL_STRUCTURE_SQUARE.y],	TARIS_BRICK_WIDTH_pixel + TARIS_BRICK_PADDING_pixel
 
+	; koryguj wskaźnik o następny wiersz
+	add	r13,	STATIC_DWORD_SIZE_byte << STATIC_MULTIPLE_BY_16_shift
+
 	; przetworzono całą przestrzeń gry?
 	dec	r12
 	jnz	.next	; nie
 
 	; przywróć oryginalne rejestry
+	pop	r13
 	pop	r12
 	pop	rsi
 	pop	rdx
