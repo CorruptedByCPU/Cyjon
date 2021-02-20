@@ -60,3 +60,12 @@ kernel_init_video:
 	mov	rax,	qword [kernel_video_width_pixel]
 	shl	rax,	KERNEL_VIDEO_DEPTH_shift
 	mov	qword [kernel_video_scanline_byte],	rax
+
+	; wyświetl informacje o trybie graficznym
+
+	; adres przestrzeni pamięci trybu graficznego
+	mov	rsi,	kernel_init_string_video_address
+	call	driver_serial_send
+	mov	rax,	rdi
+	mov	ecx,	STATIC_NUMBER_SYSTEM_hexadecimal
+	call	driver_serial_send_value

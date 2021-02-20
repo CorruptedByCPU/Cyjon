@@ -61,6 +61,8 @@ driver_serial:
 	; powrót z procedury
 	ret
 
+	macro_debug	"driver_serial"
+
 ;===============================================================================
 ; wejście:
 ;	rsi - wskaźnik do danych zakończony terminatorem
@@ -70,9 +72,6 @@ driver_serial_send:
 	push	rdx
 	push	rsi
 
-	; numer portu wyjściowego
-	mov	dx,	DRIVER_SERIAL_PORT_COM1 + DRIVER_SERIAL_STRUCTURE_REGISTERS.data_or_divisor_low
-
 .loop:
 	; pobierz znak z ciągu
 	lodsb
@@ -81,11 +80,8 @@ driver_serial_send:
 	test	al,	al
 	jz	.end	; tak
 
-	; odczekaj na gotowość kontrolera
-	call	driver_serial_ready
-
-	; wyślij znak na port
-	out	dx,	al
+	; wyślij znak z ciągu
+	call	driver_serial_send_char
 
 	; wyświetl pozostałe dane ciągu
 	jmp	.loop
@@ -99,6 +95,92 @@ driver_serial_send:
 	; powrót z procedury
 	ret
 
+	macro_debug	"driver_serial_send"
+
+;===============================================================================
+; wejście:
+;	al - kod ASCII znaku do wysłania
+driver_serial_send_char:
+	; zachowaj oryginalne rejestry
+	push	rdx
+
+	; odczekaj na gotowość kontrolera
+	call	driver_serial_ready
+
+	; numer portu wyjściowego
+	mov	dx,	DRIVER_SERIAL_PORT_COM1 + DRIVER_SERIAL_STRUCTURE_REGISTERS.data_or_divisor_low
+
+	; wyślij znak na port
+	out	dx,	al
+
+	; przywróć oryginalne rejestry
+	pop	rdx
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"driver_serial_send_char"
+
+;===============================================================================
+; wejście:
+;	rax - wartość do wyświetlenia
+;	rcx - system liczbowy
+driver_serial_send_value:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rdx
+	push	rbp
+
+	; utwórz stos zmiennych lokalnych
+	mov	rbp,	rsp
+
+.loop:
+	; oblicz resztę z dzielenia
+	div	rcx
+
+	; zachowaj do wysłania
+	add	dl,	STATIC_SCANCODE_DIGIT_0	; przemianuj cyfrę na kod ASCII
+	push	rdx
+
+	; wyczyść resztę z dzielenia
+	xor	edx,	edx
+
+	; przeliczać dalej?
+	test	rax,	rax
+	jnz	.loop	; tak
+
+.return:
+	; pozostały cyfry do wyświetlenia?
+	cmp	rsp,	rbp
+	je	.end	; nie
+
+	; pobierz cyfrę
+	pop	rax
+
+	; sprawdź czy system liczbowy powyżej podstawy 10
+	cmp	al,	0x3A
+	jb	.no	; jeśli nie, kontynuuj
+
+	; koryguj kod ASCII do odpowiedniej podstawy liczbowej
+	add	al,	0x07
+
+.no:
+	; wyślij cyfrę na wyjście
+	call	driver_serial_send_char
+
+	; kontynuuj
+	jmp	.return
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rbp
+	pop	rdx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"driver_serial_send_value"
 
 ;===============================================================================
 driver_serial_ready:
@@ -123,3 +205,5 @@ driver_serial_ready:
 
 	; powrót z procedury
 	ret
+
+	macro_debug	"driver_serial_ready"
