@@ -12,7 +12,7 @@ taris_ipc_data:
 
 taris_microtime					dq	819	; 1024 == 1 sekunda
 taris_microtime_delay				dq	102	; 6 klatek
-taris_microtime_softdrop			dq	102	; hmm, ile być powinno?
+taris_microtime_softdrop			dq	34	; 2 klatki
 
 taris_limit					dq	(taris_bricks_end - taris_bricks) / STATIC_QWORD_SIZE_byte
 taris_limit_model				dq	STATIC_QWORD_SIZE_byte / STATIC_WORD_SIZE_byte
