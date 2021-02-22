@@ -12,6 +12,21 @@ taris_redraw:
 	push	rax
 	push	rsi
 
+	; ustaw wskaźnik na właściwości przestrzeni gry
+	mov	r8,	taris_rgl_foresee_properties
+
+	; wyczyść przestrzeń roboczą
+	macro_library	LIBRARY_STRUCTURE_ENTRY.rgl_clear
+
+	; wyświetl następny klocek
+	call	taris_show_foresee
+
+	; synchronizacja zawartości z przestrzenią roboczą
+	macro_library	LIBRARY_STRUCTURE_ENTRY.rgl_flush
+
+	; ustaw wskaźnik na właściwości przestrzeni gry
+	mov	r8,	taris_rgl_playground_properties
+
 	; wyczyść przestrzeń roboczą
 	macro_library	LIBRARY_STRUCTURE_ENTRY.rgl_clear
 

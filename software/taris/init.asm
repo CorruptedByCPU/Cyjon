@@ -19,11 +19,18 @@
 	macro_library	LIBRARY_STRUCTURE_ENTRY.bosu
 	jc	taris.close	; brak wystarczającej przestrzeni pamięci
 
-	; ustaw zmienną globalną
-	mov	r8,	taris_rgl_properties
-
-	; uzupełnij właściwości danych biblioteki RGL
+	; uzupełnij właściwości danych biblioteki RGL dla przestrzeni gry
+	mov	r8,	taris_rgl_playground_properties
 	mov	rax,	qword [taris_window.element_playground + LIBRARY_BOSU_STRUCTURE_ELEMENT_DRAW.address]
+	mov	qword [r8 + LIBRARY_RGL_STRUCTURE_PROPERTIES.address],	rax
+
+	; inicjalizuj bibliotekę
+	macro_library	LIBRARY_STRUCTURE_ENTRY.rgl
+	jc	taris.close	; brak wystarczającej przestrzeni pamięci
+
+	; uzupełnij właściwości danych biblioteki RGL dla przestrzeni przewidywania
+	mov	r8,	taris_rgl_foresee_properties
+	mov	rax,	qword [taris_window.element_foresee + LIBRARY_BOSU_STRUCTURE_ELEMENT_DRAW.address]
 	mov	qword [r8 + LIBRARY_RGL_STRUCTURE_PROPERTIES.address],	rax
 
 	; inicjalizuj bibliotekę
@@ -42,3 +49,6 @@
 
 	; aktualizuj interfejs gry
 	call	taris_interface
+
+	; wylosuj pierwszy klocek
+	call	taris_random_block

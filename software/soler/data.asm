@@ -36,7 +36,8 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dq	STATIC_EMPTY	; identyfikator okna (uzupełnia Bosu)
 						db	5
 						db	"Soler                          "	; wypełnij do 31 Bajtów znakami STATIC_SCANCODE_SPACE
-						dq	STATIC_EMPTY	; szerokość okna w Bajtach (uzupełnia Bosu)
+						dd	STATIC_EMPTY	; szerokość okna w Bajtach (uzupełnia Bosu)
+						dd	STATIC_COLOR_black	; kolor tła okna
 .elements:					;-------------------------------
 						; element "window close"
 						;-------------------------------
@@ -53,6 +54,8 @@ soler_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	SOLER_INPUT_OPERATION_WIDTH_pixel
 						dw	SOLER_INPUT_HEIGHT_pixel
 						dq	STATIC_EMPTY
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_right
 .element_label_operation_length:		db	1
 .element_label_operation_string:		db	STATIC_SCANCODE_SPACE
@@ -67,6 +70,8 @@ times	SOLER_INPUT_OPERATION_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_INPUT_VALUE_WIDTH_pixel
 						dw	SOLER_INPUT_HEIGHT_pixel
 						dq	STATIC_EMPTY
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_right
 .element_label_value_length:			db	1
 .element_label_value_string:			db	"0"
@@ -81,6 +86,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel	; szerokość
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel	; wysokość
 						dq	STATIC_SCANCODE_ESCAPE	; wartość przechowywana przez element
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1	; ilość znaków reprezentujących nazwę przycisku
 						db	"C"	; ciąg znaków reprezentujący nazwę przycisku
@@ -94,6 +101,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dq	STATIC_SCANCODE_DIGIT_7
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"7"
@@ -107,6 +116,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dq	STATIC_SCANCODE_DIGIT_4
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"4"
@@ -120,6 +131,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dq	STATIC_SCANCODE_DIGIT_1
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"1"
@@ -133,6 +146,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dq	STATIC_SCANCODE_DIGIT_0
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"0"
@@ -146,6 +161,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dq	"/"
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"/"
@@ -159,6 +176,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dq	STATIC_SCANCODE_DIGIT_8
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"8"
@@ -172,6 +191,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dq	STATIC_SCANCODE_DIGIT_5
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"5"
@@ -185,6 +206,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dq	STATIC_SCANCODE_DIGIT_2
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"2"
@@ -198,6 +221,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dq	"*"
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"*"
@@ -211,6 +236,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dq	STATIC_SCANCODE_DIGIT_9
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"9"
@@ -224,6 +251,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dq	STATIC_SCANCODE_DIGIT_6
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"6"
@@ -237,6 +266,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dq	STATIC_SCANCODE_DIGIT_3
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"3"
@@ -250,6 +281,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dq	","
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	","
@@ -263,6 +296,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dq	STATIC_SCANCODE_MINUS
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"-"
@@ -276,6 +311,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel
 						dq	"+"
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"+"
@@ -289,6 +326,8 @@ times	SOLER_INPUT_VALUE_WIDTH_char - 0x01	db	STATIC_EMPTY
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel
 						dw	SOLER_WINDOW_ELEMENT_SIZE_pixel + SOLER_WINDOW_ELEMENT_AREA_pixel
 						dq	STATIC_SCANCODE_RETURN
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 						db	LIBRARY_BOSU_ELEMENT_BUTTON_FLAG_ALIGN_default
 						db	1
 						db	"="

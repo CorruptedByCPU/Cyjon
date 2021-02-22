@@ -16,7 +16,7 @@ taris:
 	%include	"software/taris/init.asm"
 
 .next:
-	; wylosuj blok i jego model
+	; wylosuj następny klocek
 	call	taris_random_block
 
 	; startowa pozycja bloku

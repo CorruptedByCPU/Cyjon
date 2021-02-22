@@ -71,7 +71,8 @@ console_window					dw	STATIC_EMPTY	; pozycja na osi X
 						dq	STATIC_EMPTY	; identyfikator okna (uzupełnia Bosu)
 						db	7
 						db	"Console                        "	; wypełnij do 31 Bajtów znakami STATIC_SCANCODE_SPACE
-						dq	STATIC_EMPTY	; szerokość okna w Bajtach (uzupełnia Bosu)
+						dd	STATIC_EMPTY	; szerokość okna w Bajtach (uzupełnia Bosu)
+						dd	STATIC_COLOR_black	; kolor tła okna
 .elements:					;-------------------------------
 .element_button_close:				; element "window close"
 						;-------------------------------

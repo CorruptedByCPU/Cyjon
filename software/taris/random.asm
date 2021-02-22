@@ -49,6 +49,10 @@ taris_random_block:
 	mov	r11,	taris_colors
 	mov	r11d,	dword [r11 + rdx]
 
+	; zachowaj klocek na później
+	xchg	qword [taris_block_next],	rbx
+	xchg	dword [taris_block_next_color],	r11d
+
 	; przywróć oryginalne rejestry
 	pop	rdx
 	pop	rax

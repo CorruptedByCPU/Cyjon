@@ -41,6 +41,10 @@ taris_show_playground:
 	; struktura figury do wyświetlania
 	mov	rsi,	taris_rgl_square
 
+	; uzupełnij wysokość i szerokość klocka
+	mov	word [rsi + LIBRARY_RGL_STRUCTURE_SQUARE.width],	TARIS_BRICK_WIDTH_pixel
+	mov	word [rsi + LIBRARY_RGL_STRUCTURE_SQUARE.height],	TARIS_BRICK_HEIGHT_pixel
+
 	; wskaźnik do tablicy kolorów
 	mov	r13,	qword [taris_playground_colors_table]
 
@@ -129,6 +133,90 @@ taris_show_playground:
 
 ;===============================================================================
 ; wejście:
+;	r8 - wskaźnik do struktury elementu draw
+taris_show_foresee:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+
+	; pobierz następny klocek
+	mov	bx,	word [taris_block_next]
+
+	; struktura figury do wyświetlania
+	mov	rsi,	taris_rgl_square
+
+	; uzupełnij wysokość i szerokość klocka
+	mov	word [rsi + LIBRARY_RGL_STRUCTURE_SQUARE.width],	TARIS_BRICK_WIDTH_pixel >> STATIC_DIVIDE_BY_2_shift
+	mov	word [rsi + LIBRARY_RGL_STRUCTURE_SQUARE.height],	TARIS_BRICK_HEIGHT_pixel >> STATIC_DIVIDE_BY_2_shift
+
+	; ustaw kolor figury
+	mov	eax,	dword [taris_block_next_color]
+	mov	dword [rsi + LIBRARY_RGL_STRUCTURE_SQUARE.color],	eax
+
+.loop:
+	; wyczyść akumulator
+	xor	eax,	eax
+
+	; 4 bity na wiersz
+	mov	cx,	TARIS_BRICK_STRUCTURE_width
+
+	; wyczyść starszą część
+	xor	edx,	edx
+
+	; pobierz pozycję bitu od najmłodszego
+	bsf	ax,	bx
+	jz	.end	; wyświetlono cały blok
+
+	; wyłącz
+	btr	bx,	ax
+
+	; wylicz numer wiersza
+	div	cx
+
+	; zachowaj względną pozycję na osi X
+	push	rdx
+
+	; wylicz bezwzględną pozycję na osi Y
+	mov	ecx,	(TARIS_BRICK_HEIGHT_pixel + TARIS_BRICK_PADDING_pixel) >> STATIC_DIVIDE_BY_2_shift
+	mul	rcx
+
+	; uzupełnij strukturę figury
+	add	ax,	TARIS_FORESEE_ALIGN_height
+	mov	word [rsi + LIBRARY_RGL_STRUCTURE_SQUARE.y],	ax
+
+	; przywróć względną pozycję na osi Y
+	pop	rax
+
+	; wylicz bezwzględną pozycję na osi X
+	mov	ecx,	(TARIS_BRICK_WIDTH_pixel + TARIS_BRICK_PADDING_pixel) >> STATIC_DIVIDE_BY_2_shift
+	mul	rcx
+
+	; uzupełnij strukturę figury
+	add	ax,	TARIS_FORESEE_ALIGN_width
+	mov	word [rsi + LIBRARY_RGL_STRUCTURE_SQUARE.x],	ax
+
+	; wyświetl pierwszy fragment bloku
+	macro_library	LIBRARY_STRUCTURE_ENTRY.rgl_square
+
+	; następna figura bloku
+	jmp	.loop
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+	pop	rax
+
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
 ;	bx - struktura bloku
 ;	r8 - wskaźnik do struktury elementu draw
 taris_show_block:
@@ -145,6 +233,10 @@ taris_show_block:
 
 	; struktura figury do wyświetlania
 	mov	rsi,	taris_rgl_square
+
+	; uzupełnij wysokość i szerokość klocka
+	mov	word [rsi + LIBRARY_RGL_STRUCTURE_SQUARE.width],	TARIS_BRICK_WIDTH_pixel
+	mov	word [rsi + LIBRARY_RGL_STRUCTURE_SQUARE.height],	TARIS_BRICK_HEIGHT_pixel
 
 	; ustaw kolor figury
 	mov	dword [rsi + LIBRARY_RGL_STRUCTURE_SQUARE.color],	r11d
