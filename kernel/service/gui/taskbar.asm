@@ -325,13 +325,14 @@ kernel_gui_taskbar:
 	mov	byte [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.length],	cl
 	add	word [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.element + LIBRARY_BOSU_STRUCTURE_ELEMENT.size],	cx
 	;-----------------------------------------------------------------------
-	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background],	LIBRARY_BOSU_ELEMENT_TASKBAR_BG_color
+	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.color_foreground],	LIBRARY_BOSU_ELEMENT_TASKBAR_FG_color
+	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.color_background],	LIBRARY_BOSU_ELEMENT_TASKBAR_BG_color
 	; okno jest widoczne?
 	test	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
 	jnz	.visible	; tak
 
 	; oznacz okno na pasku zadań jako widoczne
-	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background],	LIBRARY_BOSU_ELEMENT_TASKBAR_BG_HIDDEN_color
+	mov	dword [rdi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.color_background],	LIBRARY_BOSU_ELEMENT_TASKBAR_BG_HIDDEN_color
 
 .visible:
 	;-----------------------------------------------------------------------

@@ -44,7 +44,8 @@ taris_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dq	STATIC_EMPTY	; identyfikator okna (uzupełnia Bosu)
 						db	5
 						db	"Taris                          "	; wypełnij do 31 Bajtów znakami STATIC_SCANCODE_SPACE
-						dq	STATIC_EMPTY	; szerokość okna w Bajtach (uzupełnia Bosu)
+						dd	STATIC_EMPTY	; szerokość okna w Bajtach (uzupełnia Bosu)
+						dd	STATIC_COLOR_black	; kolor tła okna
 .elements:					;-------------------------------
 .element_button_close:				; element "window close"
 						;-------------------------------
@@ -72,6 +73,8 @@ taris_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	TARIS_WINDOW_WIDTH_pixel - TARIS_PLAYGROUND_WIDTH_pixel
 						dw	LIBRARY_FONT_HEIGHT_pixel
 						dq	STATIC_EMPTY
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	STATIC_COLOR_black
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
 						db	6
 						db	"Points"
@@ -85,6 +88,8 @@ taris_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	TARIS_WINDOW_WIDTH_pixel - TARIS_PLAYGROUND_WIDTH_pixel
 						dw	LIBRARY_FONT_HEIGHT_pixel
 						dq	STATIC_EMPTY
+						dd	STATIC_COLOR_blue_light
+						dd	STATIC_COLOR_black
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
 .element_label_points_value_length		db	1
 .element_label_points_value_string		db	"0"
@@ -99,6 +104,8 @@ taris_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	TARIS_WINDOW_WIDTH_pixel - TARIS_PLAYGROUND_WIDTH_pixel
 						dw	LIBRARY_FONT_HEIGHT_pixel
 						dq	STATIC_EMPTY
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	STATIC_COLOR_black
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
 						db	5
 						db	"Level"
@@ -112,6 +119,8 @@ taris_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	TARIS_WINDOW_WIDTH_pixel - TARIS_PLAYGROUND_WIDTH_pixel
 						dw	LIBRARY_FONT_HEIGHT_pixel
 						dq	STATIC_EMPTY
+						dd	STATIC_COLOR_red_light
+						dd	STATIC_COLOR_black
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
 .element_label_level_value_length		db	1
 .element_label_level_value_string		db	"0"
@@ -126,6 +135,8 @@ taris_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	TARIS_WINDOW_WIDTH_pixel - TARIS_PLAYGROUND_WIDTH_pixel
 						dw	LIBRARY_FONT_HEIGHT_pixel
 						dq	STATIC_EMPTY
+						dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+						dd	STATIC_COLOR_black
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
 						db	5
 						db	"Lines"
@@ -139,6 +150,8 @@ taris_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	TARIS_WINDOW_WIDTH_pixel - TARIS_PLAYGROUND_WIDTH_pixel
 						dw	LIBRARY_FONT_HEIGHT_pixel
 						dq	STATIC_EMPTY
+						dd	STATIC_COLOR_green_light
+						dd	STATIC_COLOR_black
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
 .element_label_lines_value_length		db	1
 .element_label_lines_value_string		db	"0"
@@ -149,10 +162,12 @@ taris_window:					dw	STATIC_EMPTY	; pozycja na osi X
 .element_label_game_over:			db	LIBRARY_BOSU_ELEMENT_TYPE_label
 						dw	.element_label_game_over_end - .element_label_game_over
 						dw	0
-						dw	(TARIS_PLAYGROUND_HEIGHT_pixel >> STATIC_DIVIDE_BY_2_shift) + (LIBRARY_FONT_HEIGHT_pixel << STATIC_MULTIPLE_BY_2_shift)
+						dw	(TARIS_PLAYGROUND_HEIGHT_pixel >> STATIC_DIVIDE_BY_2_shift) -  (LIBRARY_FONT_HEIGHT_pixel >> STATIC_DIVIDE_BY_2_shift)
 						dw	TARIS_PLAYGROUND_WIDTH_pixel
 						dw	LIBRARY_FONT_HEIGHT_pixel + (LIBRARY_FONT_HEIGHT_pixel >> STATIC_DIVIDE_BY_2_shift)
 						dq	STATIC_EMPTY
+						dd	STATIC_COLOR_white
+						dd	STATIC_COLOR_red
 						db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center	; domyślne wyrównanie tekstu
 						db	13
 						db	"~ Game Over ~"

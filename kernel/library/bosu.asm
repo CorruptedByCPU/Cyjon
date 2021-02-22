@@ -154,8 +154,8 @@ library_bosu:
 	mov	qword [rsp],	rcx
 
 .unregistered:
-	; wypełnij przestrzeń okna domyślnym kolorem tła
-	mov	eax,	LIBRARY_BOSU_WINDOW_BACKGROUND_color
+	; wyczyść przestrzeń okna wybranym kolorem
+	mov	eax,	dword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.color_background]
 	mov	ecx,	dword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.size]
 	shr	rcx,	KERNEL_VIDEO_DEPTH_shift
 	mov	rdi,	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
@@ -759,7 +759,7 @@ library_bosu_element_taskbar:
 	add	rdi,	qword [rbx + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
 
 	; wyczyść przestrzeń elementu
-	mov	eax,	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.background]
+	mov	eax,	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.color_background]
 	call	library_bosu_element_drain
 
 	; zachowaj wskaźnik początku przestrzeni elementu
@@ -796,7 +796,7 @@ library_bosu_element_taskbar:
 	add	rdi,	rax
 
 	; wyświetl ciąg o domyślnym kolorze czcionki
-	mov	ebx,	LIBRARY_BOSU_ELEMENT_TASKBAR_FOREGROUND_color
+	mov	ebx,	LIBRARY_BOSU_ELEMENT_TASKBAR_FG_color
 	movzx	ecx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.length]
 	add	rsi,	LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.string
 	add	rdi,	LIBRARY_BOSU_ELEMENT_TASKBAR_PADDING_LEFT_pixel << KERNEL_VIDEO_DEPTH_shift
@@ -1320,7 +1320,7 @@ library_bosu_element_label:
 	add	rdi,	qword [rbx + LIBRARY_BOSU_STRUCTURE_WINDOW.address]
 
 	; wyczyść przestrzeń elementu domyślnym kolorem tła
-	mov	eax,	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
+	mov	eax,	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.color_background]
 	call	library_bosu_element_drain
 
 	; rozmiar ciągu do wypisania w etykiecie
@@ -1376,7 +1376,7 @@ library_bosu_element_label:
 
 .aligned:
 	; wyświetl ciąg o domyślnym kolorze czcionki
-	mov	ebx,	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+	mov	ebx,	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.color_foreground]
 	movzx	ecx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.length]
 	add	rsi,	LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL.string
 	call	library_bosu_string

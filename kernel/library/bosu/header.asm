@@ -53,7 +53,7 @@ LIBRARY_BOSU_ELEMENT_BUTTON_BACKGROUND_color	equ	0x00303030
 LIBRARY_BOSU_ELEMENT_BUTTON_CLOSE_width		equ	LIBRARY_BOSU_HEADER_HEIGHT_pixel
 
 LIBRARY_BOSU_ELEMENT_TASKBAR_PADDING_LEFT_pixel	equ	0x04
-LIBRARY_BOSU_ELEMENT_TASKBAR_FOREGROUND_color	equ	0x00F5F5F5
+LIBRARY_BOSU_ELEMENT_TASKBAR_FG_color		equ	0x00F5F5F5
 LIBRARY_BOSU_ELEMENT_TASKBAR_BG_color		equ	0x00282828
 LIBRARY_BOSU_ELEMENT_TASKBAR_BG_HIDDEN_color	equ	0x00101010
 
@@ -85,7 +85,7 @@ struc	LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA
 	.name					resb	LIBRARY_BOSU_WINDOW_NAME_length
 	;--- dane specyficzne dla Bosu
 	.scanline_byte				resb	4
-	.reserved				resb	4
+	.color_background			resb	4
 	.SIZE:
 endstruc
 
@@ -104,6 +104,8 @@ endstruc
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_LABEL
 	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
 	.element				resb	LIBRARY_BOSU_STRUCTURE_ELEMENT.SIZE
+	.color_foreground			resb	4
+	.color_background			resb	4
 	.flags					resb	1
 	.length					resb	1
 	.string:
@@ -113,6 +115,8 @@ endstruc
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_BUTTON
 	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
 	.element				resb	LIBRARY_BOSU_STRUCTURE_ELEMENT.SIZE
+	.color_foreground			resb	4
+	.color_background			resb	4
 	.flags					resb	1
 	.length					resb	1
 	.string:
@@ -143,7 +147,8 @@ endstruc
 struc	LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR
 	.type					resb	LIBRARY_BOSU_STRUCTURE_TYPE.SIZE
 	.element				resb	LIBRARY_BOSU_STRUCTURE_ELEMENT.SIZE
-	.background				resb	4
+	.color_foreground			resb	4
+	.color_background			resb	4
 	.length					resb	1
 	.string:
 	.SIZE:
