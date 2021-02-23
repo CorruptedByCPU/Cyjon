@@ -4,8 +4,8 @@ rem MS/Windows build fix ... even if I'm compiling a new kernel ... the file con
 IF EXIST "build\kernel" ( DEL build\kernel )
 
 rem select a resolution supported by the BIOS
-set WIDTH=1280
-set HEIGHT=720
+set WIDTH=640
+set HEIGHT=480
 
 set PASS=0
 
@@ -16,9 +16,9 @@ set PASS=0
 ..\nasm -f bin software/ls.asm		-o build/ls		&& echo. || set PASS=1
 ..\nasm -f bin software/cat.asm		-o build/cat		&& echo. || set PASS=1
 ..\nasm -f bin software/moko.asm	-o build/moko		&& echo. || set PASS=1
-..\nasm -f bin software/redia.asm	-o build/redia		&& echo. || set PASS=1
 ..\nasm -f bin software/soler.asm	-o build/soler		&& echo. || set PASS=1
 ..\nasm -f bin software/taris.asm	-o build/taris		&& echo. || set PASS=1
+..\nasm -f bin software/mural.asm	-o build/mural		&& echo. || set PASS=1
 
 
 ..\nasm -f bin kernel/init/boot.asm	-o build/boot		&& echo. || set PASS=1

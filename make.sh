@@ -9,9 +9,9 @@ nasm -f bin software/shell.asm		-o build/shell
 nasm -f bin software/ls.asm		-o build/ls
 nasm -f bin software/cat.asm		-o build/cat
 nasm -f bin software/moko.asm		-o build/moko
-nasm -f bin software/redia.asm		-o build/redia
 nasm -f bin software/soler.asm		-o build/soler
 nasm -f bin software/taris.asm		-o build/taris
+nasm -f bin software/mural.asm		-o build/mural
 
 
 nasm -f bin kernel/init/boot.asm	-o build/boot

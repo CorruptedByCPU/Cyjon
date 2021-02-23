@@ -210,6 +210,7 @@ STATIC_SEQUENCE_length_min				equ	0x05
 
 STATIC_COLOR_BACKGROUND_default				equ	STATIC_COLOR_black
 STATIC_COLOR_default					equ	STATIC_COLOR_gray_light
+STATIC_COLOR_transparent				equ	0xFF000000
 STATIC_COLOR_black					equ	0x00101010
 STATIC_COLOR_blue					equ	0x000000AA
 STATIC_COLOR_green					equ	0x0000AA00

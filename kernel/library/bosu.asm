@@ -214,9 +214,14 @@ library_bosu:
 	pop	r8
 
 .no_draw_border:
+	; wyświetlić nagłówek?
+	test	word [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_header
+	jz	.no_header	; nie
+
 	; wyświetl nagłówek okna
 	call	library_bosu_header_update
 
+.no_header:
 	; przetwórz wszystkie elementy wchodzące w skład okna
 	call	library_bosu_elements
 
