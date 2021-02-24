@@ -7,13 +7,13 @@
 ;===============================================================================
 
 	;-----------------------------------------------------------------------
-	%include	"software/redia/config.asm"
+	; stałe, zmienne, globalne, struktury, obiekty, makra
+	;-----------------------------------------------------------------------
+	%include	"software/header.asm"
 	;-----------------------------------------------------------------------
 
-;===============================================================================
-redia:
-	; zakończ pracę programu
-	xor	ax,	ax
-	int	KERNEL_SERVICE
+%define	PROGRAM_NAME		"mural"
+%define	PROGRAM_VERSION		"0.1"
 
-	macro_debug	"software: redia"
+MUTSU_WINDOW_WIDTH_pixel	equ	320
+MUTSU_WINDOW_HEIGHT_pixel	equ	180

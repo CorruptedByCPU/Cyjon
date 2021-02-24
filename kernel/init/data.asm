@@ -109,12 +109,6 @@ kernel_init_vfs_files:
 						db	9
 						db	"/bin/moko"
 
-						dq	kernel_init_vfs_file_redia
-						dq	kernel_init_vfs_file_redia_end - kernel_init_vfs_file_redia
-						dw	KERNEL_VFS_FILE_MODE_USER_full_control | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
-						db	10
-						db	"/bin/redia"
-
 						dq	kernel_init_vfs_file_soler
 						dq	kernel_init_vfs_file_soler_end - kernel_init_vfs_file_soler
 						dw	KERNEL_VFS_FILE_MODE_USER_full_control | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
@@ -126,6 +120,12 @@ kernel_init_vfs_files:
 						dw	KERNEL_VFS_FILE_MODE_USER_full_control | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
 						db	10
 						db	"/bin/taris"
+
+						dq	kernel_init_vfs_file_mural
+						dq	kernel_init_vfs_file_mural_end - kernel_init_vfs_file_mural
+						dw	KERNEL_VFS_FILE_MODE_USER_full_control | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
+						db	10
+						db	"/bin/mural"
 
 						dq	kernel_init_vfs_file_hostname
 						dq	kernel_init_vfs_file_hostname_end - kernel_init_vfs_file_hostname
@@ -157,12 +157,12 @@ kernel_init_vfs_file_cat			incbin	"build/cat"
 kernel_init_vfs_file_cat_end:
 kernel_init_vfs_file_moko			incbin	"build/moko"
 kernel_init_vfs_file_moko_end:
-kernel_init_vfs_file_redia			incbin	"build/redia"
-kernel_init_vfs_file_redia_end:
 kernel_init_vfs_file_soler			incbin	"build/soler"
 kernel_init_vfs_file_soler_end:
 kernel_init_vfs_file_taris			incbin	"build/taris"
 kernel_init_vfs_file_taris_end:
+kernel_init_vfs_file_mural			incbin	"build/mural"
+kernel_init_vfs_file_mural_end:
 
 kernel_init_vfs_file_hostname			incbin	"fs/etc/hostname"
 kernel_init_vfs_file_hostname_end:

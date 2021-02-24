@@ -234,7 +234,7 @@ kernel_wm_object:
 	test	rax,	rax
 	jz	.end	; tak
 
-	; przerysować zawartość pod obiektem?
+	; usunąć obiekt z przestrzeni?
 	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_undraw
 	jnz	.undraw	; tak
 

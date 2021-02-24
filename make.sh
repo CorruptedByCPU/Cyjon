@@ -1,6 +1,6 @@
 # select a resolution supported by the BIOS
-WIDTH=1280
-HEIGHT=720
+WIDTH=1920
+HEIGHT=1080
 
 nasm -f bin software/tm.asm		-o build/tm
 nasm -f bin software/hello.asm		-o build/hello
@@ -9,9 +9,9 @@ nasm -f bin software/shell.asm		-o build/shell
 nasm -f bin software/ls.asm		-o build/ls
 nasm -f bin software/cat.asm		-o build/cat
 nasm -f bin software/moko.asm		-o build/moko
-nasm -f bin software/redia.asm		-o build/redia
 nasm -f bin software/soler.asm		-o build/soler
 nasm -f bin software/taris.asm		-o build/taris
+nasm -f bin software/mural.asm		-o build/mural
 
 
 nasm -f bin kernel/init/boot.asm	-o build/boot

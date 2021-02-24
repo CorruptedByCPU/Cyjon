@@ -77,8 +77,8 @@ kernel_gui_window_taskbar		dw	0	; pozycja na osi X
 					dw	LIBRARY_FONT_WIDTH_pixel * (.element_label_clock_end - .element_label_clock_string_hour)	; szerokość elementu w pikselach
 					dw	18	; wysokość elementu w pikselach
 					dq	STATIC_EMPTY	; wskaźnik procedury obsługi zdarzenia
-					dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
-					dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
+					dd	STATIC_COLOR_white
+					dd	STATIC_COLOR_black
 					db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_center
 					db	.element_label_clock_end - .element_label_clock_string   ; rozmiar ciągu w znakach
 .element_label_clock_string:		db	" "
@@ -100,7 +100,7 @@ kernel_gui_window_menu			dw	160	; pozycja na osi X względem wskaźnika kursora
 					dw	STATIC_EMPTY	; wysokość okna względem zawartości elementów
 					dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna
 .extra:					dd	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach
-					dw	LIBRARY_BOSU_WINDOW_FLAG_fragile | LIBRARY_BOSU_WINDOW_FLAG_unregistered | LIBRARY_BOSU_WINDOW_FLAG_border
+					dw	LIBRARY_BOSU_WINDOW_FLAG_fragile | LIBRARY_BOSU_WINDOW_FLAG_unregistered | LIBRARY_BOSU_WINDOW_FLAG_border | LIBRARY_BOSU_WINDOW_FLAG_header
 					dq	STATIC_EMPTY	; identyfikator okna nadawany przez menedżer okien
 					db	4
 					db	"Menu                           "	; wypełnij do 31 Bajtów znakami STATIC_SCANCODE_SPACE

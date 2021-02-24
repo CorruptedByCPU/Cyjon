@@ -17,6 +17,7 @@ KERNEL_WM_OBJECT_FLAG_fragile				equ	1 << 4	; obiekt ukrywany przy wystąpieniu 
 KERNEL_WM_OBJECT_FLAG_pointer				equ	1 << 5	; obiekt typu "kursor"
 KERNEL_WM_OBJECT_FLAG_arbiter				equ	1 << 6	; nadobiekt
 KERNEL_WM_OBJECT_FLAG_undraw				equ	1 << 7	; przerysuj przestrzeń pod obiektem
+KERNEL_WM_OBJECT_FLAG_transparent			equ	1 << 8	; tło okna jest przeźroczyste (w pełni lub częściowo)
 
 ; ostatni element listy zawsze pusty
 KERNEL_WM_OBJECT_LIST_limit				equ	(STATIC_PAGE_SIZE_byte / KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE) - 0x01

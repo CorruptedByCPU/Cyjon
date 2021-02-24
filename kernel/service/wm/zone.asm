@@ -215,8 +215,16 @@ kernel_wm_zone:
 
 	; wystąpiła interferencja z obiektem przetwarzanym? (samym sobą)
 	cmp	rax,	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.object]
-	je	.fill	; tak
+	jne	.no_interference	; nie
 
+	; obiekt posiada cechy przeźroczystości?
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_transparent
+	jz	.fill	; nie
+
+	; debug
+	xchg	bx,bx
+
+.no_interference:
 	; pobierz współrzędne obiektu
 
 	; lewa krawędź na oxi X

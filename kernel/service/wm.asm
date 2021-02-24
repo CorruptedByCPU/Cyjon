@@ -46,6 +46,11 @@ kernel_wm:
 	call	kernel_wm_cursor
 
 	;-----------------------------------------------------------------------
+	; synchronizuj zawartość bufora z pamięcią karty graficznej
+	;-----------------------------------------------------------------------
+	call	kernel_wm_flush
+
+	;-----------------------------------------------------------------------
 	; zwolnij pozostały czas procesora
 	;-----------------------------------------------------------------------
 	call	kernel_sleep
@@ -54,15 +59,17 @@ kernel_wm:
 	jmp	.loop
 
 	;-----------------------------------------------------------------------
-	%include	"kernel/service/wm/data.asm"
-	%include	"kernel/service/wm/zone.asm"
 	%include	"kernel/service/wm/cursor.asm"
-	%include	"kernel/service/wm/object.asm"
-	%include	"kernel/service/wm/fill.asm"
+	%include	"kernel/service/wm/data.asm"
 	%include	"kernel/service/wm/event.asm"
-	%include	"kernel/service/wm/service.asm"
+	%include	"kernel/service/wm/fill.asm"
+	%include	"kernel/service/wm/flush.asm"
 	%include	"kernel/service/wm/ipc.asm"
 	%include	"kernel/service/wm/keyboard.asm"
+	%include	"kernel/service/wm/merge.asm"
+	%include	"kernel/service/wm/object.asm"
+	%include	"kernel/service/wm/service.asm"
+	%include	"kernel/service/wm/zone.asm"
 	;-----------------------------------------------------------------------
 
 kernel_wm_end:
