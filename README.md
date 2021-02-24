@@ -17,7 +17,7 @@ To move the window around the screen, hold down the left ALT key.
 
 ### Requirements:
 
-  - 16 MiB of RAM (for Full HD resolution)
+  - 32 MiB of RAM (for Full HD resolution)
   - keyboard and mouse at PS2 port
 
 ### Optional:

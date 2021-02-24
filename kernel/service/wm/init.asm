@@ -17,17 +17,17 @@
 
 	; pobierz rozmiar przestrzeni pamięci karty graficznej w pikselach i Bajtach
 	mov	bx,	word [kernel_video_width_pixel]
-	mov	cx,	word [kernel_video_height_pixel]
-	mov	edx,	dword [kernel_video_size_byte]
+	mov	dx,	word [kernel_video_height_pixel]
+	mov	ecx,	dword [kernel_video_size_byte]
 
 	; aktualizuj właściwości bufora
 	mov	word [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width],	bx
-	mov	word [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height],	cx
-	mov	dword [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size],	edx
+	mov	word [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height],	dx
+	mov	dword [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size],	ecx
 
-	; dla większej wydajności w wirtualizacji, rezygnujemy z podwójnego buforowania
-	; buforem będzie dla nasz bezpośrednio przestrzeń pamięci karty graficznej
-	mov	rdi,	qword [kernel_video_base_address]
+	; przygotuj przestrzeń pod bufor
+	macro_library	LIBRARY_STRUCTURE_ENTRY.page_from_size
+	call	kernel_memory_alloc
 
 	; zachowaj wskaźnik początku przestrzeni bufora
 	mov	qword [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.address],	rdi
