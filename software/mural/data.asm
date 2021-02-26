@@ -19,7 +19,7 @@ mural_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						db	5
 						db	"Mural                          "	; wypełnij do 31 Bajtów znakami STATIC_SCANCODE_SPACE
 						dd	STATIC_EMPTY	; szerokość okna w Bajtach (uzupełnia Bosu)
-						dd	0x80000000 | STATIC_COLOR_yellow	; kolor tła okna
+						dd	0xD0000000	; kolor tła okna
 .elements:					;-------------------------------
 						; koniec elementów okna
 						;-------------------------------

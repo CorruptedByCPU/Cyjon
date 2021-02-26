@@ -7,6 +7,8 @@
 ;===============================================================================
 
 ;===============================================================================
+; wejście:
+;	r14w oraz r15w - delty dla kursora
 kernel_wm_cursor:
 	; zachowaj oryginalne rejestry
 	push	rsi
@@ -16,6 +18,10 @@ kernel_wm_cursor:
 	;-----------------------------------------------------------------------
 	test	word [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_flush
 	jz	.no	; nie
+
+	; ; aktualizuj specyfikacje obiektu kursora
+	; add	word [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x],	r14w
+	; add	word [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y],	r15w
 
 	; zarejestruj strefę kursora
 	mov	rsi,	kernel_wm_object_cursor

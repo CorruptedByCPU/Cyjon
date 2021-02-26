@@ -6,8 +6,6 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-;-------------------------------------------------------------------------------
-
 ;===============================================================================
 ; wejście:
 ;	rax - wskaźnik do rekordu tablicy obiektów
@@ -22,7 +20,7 @@ kernel_wm_zone_insert_by_object:
 	macro_lock	kernel_wm_zone_semaphore,	0
 
 	; lista stref jest pełna?
-	cmp	qword [kernel_wm_zone_list_records],	KERNEL_WM_ZONE_LIST_limit
+	cmp	qword [kernel_wm_zone_list_records],	KERNEL_WM_FRAGMENT_LIST_limit
 	jb	.insert	; nie
 
 	xchg	bx,bx
@@ -30,7 +28,7 @@ kernel_wm_zone_insert_by_object:
 
 .insert:
 	; wskaźnik pośredni na koniec listy stref
-	mov	eax,	KERNEL_WM_STRUCTURE_ZONE.SIZE
+	mov	eax,	KERNEL_WM_STRUCTURE_FRAGMENT.SIZE
 	mul	qword [kernel_wm_zone_list_records]	; pozycja za ostatnią strefą listy
 
 	; ustaw wskaźniki na miejsca
@@ -39,10 +37,7 @@ kernel_wm_zone_insert_by_object:
 	add	rdi,	rax
 
 	; wstaw właściwości strefy
-	movsw	; pozycja na osi X
-	movsw	; pozycja na osi Y
-	movsw	; szerokość
-	movsw	; wysokość
+	movsq
 
 	; oraz informacje o obiekcie zależnym
 	mov	rax,	qword [rsp]
@@ -82,7 +77,7 @@ kernel_wm_zone_insert_by_register:
 	macro_lock	kernel_wm_zone_semaphore,	0
 
 	; lista stref jest pełna?
-	cmp	qword [kernel_wm_zone_list_records],	KERNEL_WM_ZONE_LIST_limit
+	cmp	qword [kernel_wm_zone_list_records],	KERNEL_WM_FRAGMENT_LIST_limit
 	jb	.insert	; nie
 
 	xchg	bx,bx
@@ -90,7 +85,7 @@ kernel_wm_zone_insert_by_register:
 
 .insert:
 	; wskaźnik pośredni na koniec listy stref
-	mov	eax,	KERNEL_WM_STRUCTURE_ZONE.SIZE
+	mov	eax,	KERNEL_WM_STRUCTURE_FRAGMENT.SIZE
 	mul	qword [kernel_wm_zone_list_records]	; pozycja za ostatnią strefą listy
 
 	; wskaźnik bezpośredni końca listy stref
@@ -98,13 +93,13 @@ kernel_wm_zone_insert_by_register:
 	add	rsi,	rax
 
 	; dodaj do listy nową strefę
-	mov	word [rsi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.x],	r8w
-	mov	word [rsi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.y],	r9w
-	mov	word [rsi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.width],	r10w
-	mov	word [rsi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.height],	r11w
+	mov	word [rsi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.x],	r8w
+	mov	word [rsi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.y],	r9w
+	mov	word [rsi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.width],	r10w
+	mov	word [rsi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.height],	r11w
 
 	; oraz jej obiekt zależny
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_ZONE.object],	rdi
+	mov	qword [rsi + KERNEL_WM_STRUCTURE_FRAGMENT.object],	rdi
 
 	; ilość stref na liście
 	inc	qword [kernel_wm_zone_list_records]
@@ -123,6 +118,22 @@ kernel_wm_zone_insert_by_register:
 	macro_debug	"kernel_wm_zone_insert_by_register"
 
 ;===============================================================================
+; wyjście:
+;	rsi - wskaźnik do obiektu rozpoczynającego
+kernel_wm_zone_select:
+	; wskaźnik pośredni na koniec listy obiektów
+	mov	rsi,	qword [kernel_wm_object_list_length]
+	shl	rsi,	KERNEL_WM_OBJECT_LIST_ENTRY_SIZE_shift	; pozycja za ostatnim obiektem listy
+	add	rsi,	qword [kernel_wm_object_list_address]
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"kernel_wm_zone_select"
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do obiektu rozpoczynającego analizę
 kernel_wm_zone:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -149,14 +160,14 @@ kernel_wm_zone:
 
 .loop:
 	; zwolnij strefę z listy
-	mov	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.object],	STATIC_EMPTY
+	mov	qword [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.object],	STATIC_EMPTY
 
 	; przesuń wskaźnik na pierwszą/następną strefę do przetworzenia
-	add	rdi,	KERNEL_WM_STRUCTURE_ZONE.SIZE
+	add	rdi,	KERNEL_WM_STRUCTURE_FRAGMENT.SIZE
 
 .entry:
 	; brak strefy do przetworzenia?
-	cmp	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.object],	STATIC_EMPTY
+	cmp	qword [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.object],	STATIC_EMPTY
 	je	.end	; tak
 
 	;-----------------------------------------------------------------------
@@ -164,14 +175,14 @@ kernel_wm_zone:
 	;-----------------------------------------------------------------------
 
 	; lewa krawędź na osi X
-	mov	r8w,	word [rdi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	mov	r8w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.x]
 	; górna krawędź na osi Y
-	mov	r9w,	word [rdi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	mov	r9w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.y]
 	; prawa krawędź na osi X
-	mov	r10w,	word [rdi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	mov	r10w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.width]
 	add	r10w,	r8w
 	; dolna krawędź na osi Y
-	mov	r11w,	word [rdi + KERNEL_WM_STRUCTURE_ZONE.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	mov	r11w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.height]
 	add	r11w,	r9w
 
 	; opisana strefa znajduje się w przestrzeni "ekranu"?
@@ -206,7 +217,7 @@ kernel_wm_zone:
 	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.object_address]
 
 	; rozpatrywany obiekt jest pierwszy na liście?
-	cmp	rsi,	qword [kernel_wm_object_list_address]
+	cmp	rax,	qword [kernel_wm_object_list_address]
 	je	.fill	; tak
 
 	; obiekt widoczny?
@@ -214,15 +225,18 @@ kernel_wm_zone:
 	jz	.object	; nie
 
 	; wystąpiła interferencja z obiektem przetwarzanym? (samym sobą)
-	cmp	rax,	qword [rdi + KERNEL_WM_STRUCTURE_ZONE.object]
+	cmp	rax,	qword [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.object]
 	jne	.no_interference	; nie
 
 	; obiekt posiada cechy przeźroczystości?
 	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_transparent
 	jz	.fill	; nie
 
-	; debug
-	xchg	bx,bx
+	; nałóż przeźroczysty obiekt na aktalny bufor
+	call	kernel_wm_merge_insert_by_object
+
+	; przetwórz następne obiekty z listy, które mogą znajdować się pod aktualnym
+	jmp	.object
 
 .no_interference:
 	; pobierz współrzędne obiektu
@@ -385,6 +399,21 @@ kernel_wm_zone:
 	cmp	r10w,	STATIC_EMPTY
 	jle	.loop
 
+	; obiekt posiada cechy przeźroczystości?
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_transparent
+	jz	.not_transparent	; nie
+
+	; nałóż przeźroczysty obiekt na aktalny bufor
+	call	kernel_wm_merge_insert_by_register
+
+	; pzrywróć oryginalne wartości dla fragmentu
+	add	r10w,	r8w	; szerokość strefy
+	add	r11w,	r9w	; wysokość strefy
+
+	; przetwórz następne obiekty z listy, które mogą znajdować się pod aktualnym
+	jmp	.object
+
+.not_transparent:
 	; zarejestruj do wypełnienia
 	call	kernel_wm_fill_insert_by_register
 

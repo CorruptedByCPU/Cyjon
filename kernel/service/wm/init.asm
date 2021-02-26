@@ -52,6 +52,16 @@
 	call	kernel_page_drain	; wyczyść
 	mov	qword [kernel_wm_zone_list_address],	rdi
 
+	; przygotuj przestrzeń dla listy scaleń
+	call	kernel_memory_alloc_page
+	call	kernel_page_drain	; wyczyść
+	mov	qword [kernel_wm_merge_list_address],	rdi
+
+	; ; przygotuj przestrzeń dla listy przeźroczystości
+	; call	kernel_memory_alloc_page
+	; call	kernel_page_drain	; wyczyść
+	; mov	qword [kernel_wm_transparent_list_address],	rdi
+
 	; podłącz procedurę obsługi "systemu zarządzania oknami"
 	mov	rax,	KERNEL_WM_IRQ
 	mov	bx,	KERNEL_IDT_TYPE_isr
