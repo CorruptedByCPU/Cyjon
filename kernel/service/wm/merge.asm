@@ -15,48 +15,35 @@
 ;	r11w - wysokość strefy
 kernel_wm_merge_insert_by_register:
 	; zachowaj oryginalne rejestry
-	push	rcx
-	push	rdi
+	push	rax
 
-	; maksymalna ilość miejsc na liście
-	mov	ecx,	KERNEL_WM_FRAGMENT_LIST_limit
+	; brak miejsca?
+	cmp	qword [kernel_wm_merge_list_records],	KERNEL_WM_FRAGMENT_LIST_limit
+	je	.end	; tak
 
-	; ustaw wskaźnik na listy
-	mov	rdi,	qword [kernel_wm_merge_list_address]
+	; zachowaj wskaźnik do obiektu wypełniającego
+	push	rax
 
-.loop:
-	; wolne miejsce?
-	cmp	qword [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.object],	STATIC_EMPTY
-	jne	.next	; nie
+	; ustaw wskaźnik na koniec listy
+	mov	rax,	qword [kernel_wm_merge_list_records]
+	shl	rax,	STATIC_MULTIPLE_BY_16_shift
+	add	rax,	qword [kernel_wm_merge_list_address]
 
 	; dodaj do listy nową strefę
-	mov	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.x],	r8w
-	mov	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.y],	r9w
-	mov	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.width],	r10w
-	mov	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.height],	r11w
+	mov	word [rax + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.x],	r8w
+	mov	word [rax + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.y],	r9w
+	mov	word [rax + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.width],	r10w
+	mov	word [rax + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.height],	r11w
 
 	; oraz jej obiekt zależny
-	mov	qword [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.object],	rax
+	pop	qword [rax + KERNEL_WM_STRUCTURE_FRAGMENT.object]
 
-	; zrealizowano
-	jmp	.end
-
-.next:
-	; przesuń wskaźnik na następny wpis
-	add	rdi,	KERNEL_WM_STRUCTURE_FRAGMENT.SIZE
-
-	; koniec wpisów
-	dec	rcx
-	jnz	.loop	; nie
-
-	; błąd
-	xchg	bx,bx
-	jmp	$
+	; zwiększono ilość elementów na liście
+	inc	qword [kernel_wm_merge_list_records]
 
 .end:
 	; przywróć oryginalne rejestry
-	pop	rdi
-	pop	rcx
+	pop	rax
 
 	; powrót z procedury
 	ret
@@ -68,48 +55,30 @@ kernel_wm_merge_insert_by_register:
 ;	rax - wskaźnik do obiektu
 kernel_wm_merge_insert_by_object:
 	; zachowaj oryginalne rejestry
-	push	rcx
-	push	rsi
-	push	rdi
+	push	rbx
 
-	; maksymalna ilość miejsc na liście
-	mov	ecx,	KERNEL_WM_FRAGMENT_LIST_limit
+	; brak miejsca?
+	cmp	qword [kernel_wm_merge_list_records],	KERNEL_WM_FRAGMENT_LIST_limit
+	je	.end	; tak
 
-	; ustaw wskaźnik na listy
-	mov	rdi,	qword [kernel_wm_merge_list_address]
+	; ustaw wskaźnik na koniec listy
+	mov	rbx,	qword [kernel_wm_merge_list_records]
+	shl	rbx,	STATIC_MULTIPLE_BY_16_shift
+	add	rbx,	qword [kernel_wm_merge_list_address]
 
-.loop:
-	; wolne miejsce?
-	cmp	qword [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.object],	STATIC_EMPTY
-	jne	.next	; nie
+	; dodaj do listy nową strefę
+	push	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field]
+	pop	qword [rbx + KERNEL_WM_STRUCTURE_FRAGMENT.field]
 
-	; wstaw właściwości wypełnienia
-	mov	rsi,	rax
-	movsq
+	; oraz jej obiekt zależny
+	mov	qword [rbx + KERNEL_WM_STRUCTURE_FRAGMENT.object],	rax
 
-	; oraz informacje o obiekcie zależnym
-	mov	qword [rdi],	rax
-
-	; zrealizowano
-	jmp	.end
-
-.next:
-	; przesuń wskaźnik na następny wpis
-	add	rdi,	KERNEL_WM_STRUCTURE_FRAGMENT.SIZE
-
-	; koniec wpisów
-	dec	rcx
-	jnz	.loop	; nie
-
-	; błąd
-	xchg	bx,bx
-	jmp	$
+	; zwiększono ilość elementów na liście
+	inc	qword [kernel_wm_merge_list_records]
 
 .end:
 	; przywróć oryginalne rejestry
-	pop	rdi
-	pop	rsi
-	pop	rcx
+	pop	rbx
 
 	; powrót z procedury
 	ret
@@ -148,6 +117,9 @@ kernel_wm_merge:
 
 	; usuń wpis
 	mov	qword [rsi + KERNEL_WM_STRUCTURE_FRAGMENT.object],	STATIC_EMPTY
+
+	; zmniejszono ilość elementów na liście
+	dec	qword [kernel_wm_merge_list_records]
 
 .next:
 	; przesuń wskaźnik na następne wypełnienie

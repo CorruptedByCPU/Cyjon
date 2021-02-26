@@ -39,7 +39,7 @@ kernel_wm_zone_list_address				dq	STATIC_EMPTY
 kernel_wm_zone_list_records				dq	STATIC_EMPTY
 
 kernel_wm_merge_list_address				dq	STATIC_EMPTY
-; kernel_wm_transparent_list_address			dq	STATIC_EMPTY
+kernel_wm_merge_list_records				dq	STATIC_EMPTY
 
 kernel_wm_ipc_data:
 		times	KERNEL_IPC_STRUCTURE.SIZE	db	STATIC_EMPTY

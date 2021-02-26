@@ -23,8 +23,14 @@ mural:
 	or	qword [rsi + LIBRARY_BOSU_STRUCTURE_WINDOW.SIZE + LIBRARY_BOSU_STRUCTURE_WINDOW_EXTRA.flags],	LIBRARY_BOSU_WINDOW_FLAG_flush
 	int	KERNEL_WM_IRQ
 
+.loop:
+	; zwolnij pozostały czas procesora
+	mov	ax,	KERNEL_SERVICE_PROCESS_sleep
+	xor	ecx,	ecx	; brak oczekiwania w czasie
+	int	KERNEL_SERVICE
+
 	; debug
-	jmp	$
+	jmp	.loop
 
 .end:
 	; zakończ pracę programu
