@@ -13,7 +13,7 @@ kernel_gui_clock_colon			db	STATIC_SCANCODE_SPACE
 
 kernel_gui_background_mixer		dd	0x001B1B1B, 0x00212121
 
-kernel_gui_event_console_file		db	"/bin/mural"
+kernel_gui_event_console_file		db	"/bin/console"
 kernel_gui_event_console_file_end:
 kernel_gui_event_soler_file		db	"/bin/soler"
 kernel_gui_event_soler_file_end:

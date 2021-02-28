@@ -7,116 +7,6 @@
 ;===============================================================================
 
 ;===============================================================================
-; wejście:
-;	rax - wskaźnik do obiektu wypełniającego
-;	r8w - pozycja na osi X
-;	r9w - pozycja na osi Y
-;	r10w - szerokość strefy
-;	r11w - wysokość strefy
-kernel_wm_fill_insert_by_register:
-	; zachowaj oryginalne rejestry
-	push	rcx
-	push	rdi
-
-	; maksymalna ilość miejsc na liście
-	mov	ecx,	KERNEL_WM_FRAGMENT_LIST_limit
-
-	; ustaw wskaźnik na listy
-	mov	rdi,	qword [kernel_wm_fill_list_address]
-
-.loop:
-	; wolne miejsce?
-	cmp	qword [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.object],	STATIC_EMPTY
-	jne	.next	; nie
-
-	; dodaj do listy nową strefę
-	mov	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.x],	r8w
-	mov	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.y],	r9w
-	mov	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.width],	r10w
-	mov	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.height],	r11w
-
-	; oraz jej obiekt zależny
-	mov	qword [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.object],	rax
-
-	; zrealizowano
-	jmp	.end
-
-.next:
-	; przesuń wskaźnik na następny wpis
-	add	rdi,	KERNEL_WM_STRUCTURE_FRAGMENT.SIZE
-
-	; koniec wpisów
-	dec	rcx
-	jnz	.loop	; nie
-
-	; błąd
-	xchg	bx,bx
-	jmp	$
-
-.end:
-	; przywróć oryginalne rejestry
-	pop	rdi
-	pop	rcx
-
-	; powrót z procedury
-	ret
-
-	macro_debug	"kernel_wm_fill_insert_by_register"
-
-;===============================================================================
-; wejście:
-;	rsi - wskaźnik do obiektu
-kernel_wm_fill_insert_by_object:
-	; zachowaj oryginalne rejestry
-	push	rcx
-	push	rdi
-	push	rsi
-
-	; maksymalna ilość miejsc na liście
-	mov	ecx,	KERNEL_WM_FRAGMENT_LIST_limit
-
-	; ustaw wskaźnik na listy
-	mov	rdi,	qword [kernel_wm_fill_list_address]
-
-.loop:
-	; wolne miejsce?
-	cmp	qword [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.object],	STATIC_EMPTY
-	jne	.next	; nie
-
-	; wstaw właściwości wypełnienia
-	movsq
-
-	; oraz informacje o obiekcie zależnym
-	mov	rcx,	qword [rsp]
-	mov	qword [rdi],	rcx
-
-	; zrealizowano
-	jmp	.end
-
-.next:
-	; przesuń wskaźnik na następny wpis
-	add	rdi,	KERNEL_WM_STRUCTURE_FRAGMENT.SIZE
-
-	; koniec wpisów
-	dec	rcx
-	jnz	.loop	; nie
-
-	; błąd
-	xchg	bx,bx
-	jmp	$
-
-.end:
-	; przywróć oryginalne rejestry
-	pop	rsi
-	pop	rdi
-	pop	rcx
-
-	; powrót z procedury
-	ret
-
-	macro_debug	"kernel_wm_fill_insert_by_object"
-
-;===============================================================================
 kernel_wm_fill:
 	; zachowaj oryginalne rejestry
 	push	rax
@@ -309,6 +199,9 @@ kernel_wm_fill:
 	; pobierz wskaźnik do obiektu wypełniającego
 	mov	rsi,	qword [rsi + KERNEL_WM_STRUCTURE_FRAGMENT.object]
 
+	; włącz obiekt spowrotem do retrospekcji
+	and	word [rsi + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_disabled
+
 	;-----------------------------------------------------------------------
 	; scanlines
 	; r12 - scanline wypelnienia w Bajtach
@@ -361,3 +254,113 @@ kernel_wm_fill:
 	ret
 
 	macro_debug	"kernel_wm_fill.prepare"
+
+;===============================================================================
+; wejście:
+;	rax - wskaźnik do obiektu wypełniającego
+;	r8w - pozycja na osi X
+;	r9w - pozycja na osi Y
+;	r10w - szerokość strefy
+;	r11w - wysokość strefy
+kernel_wm_fill_insert_by_register:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rdi
+
+	; maksymalna ilość miejsc na liście
+	mov	ecx,	KERNEL_WM_FRAGMENT_LIST_limit
+
+	; ustaw wskaźnik na listy
+	mov	rdi,	qword [kernel_wm_fill_list_address]
+
+.loop:
+	; wolne miejsce?
+	cmp	qword [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.object],	STATIC_EMPTY
+	jne	.next	; nie
+
+	; dodaj do listy nową strefę
+	mov	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.x],	r8w
+	mov	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.y],	r9w
+	mov	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.width],	r10w
+	mov	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.height],	r11w
+
+	; oraz jej obiekt zależny
+	mov	qword [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.object],	rax
+
+	; zrealizowano
+	jmp	.end
+
+.next:
+	; przesuń wskaźnik na następny wpis
+	add	rdi,	KERNEL_WM_STRUCTURE_FRAGMENT.SIZE
+
+	; koniec wpisów
+	dec	rcx
+	jnz	.loop	; nie
+
+	; błąd
+	xchg	bx,bx
+	jmp	$
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rdi
+	pop	rcx
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"kernel_wm_fill_insert_by_register"
+
+;===============================================================================
+; wejście:
+;	rsi - wskaźnik do obiektu
+kernel_wm_fill_insert_by_object:
+	; zachowaj oryginalne rejestry
+	push	rcx
+	push	rdi
+	push	rsi
+
+	; maksymalna ilość miejsc na liście
+	mov	ecx,	KERNEL_WM_FRAGMENT_LIST_limit
+
+	; ustaw wskaźnik na listy
+	mov	rdi,	qword [kernel_wm_fill_list_address]
+
+.loop:
+	; wolne miejsce?
+	cmp	qword [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.object],	STATIC_EMPTY
+	jne	.next	; nie
+
+	; wstaw właściwości wypełnienia
+	movsq
+
+	; oraz informacje o obiekcie zależnym
+	mov	rcx,	qword [rsp]
+	mov	qword [rdi],	rcx
+
+	; zrealizowano
+	jmp	.end
+
+.next:
+	; przesuń wskaźnik na następny wpis
+	add	rdi,	KERNEL_WM_STRUCTURE_FRAGMENT.SIZE
+
+	; koniec wpisów
+	dec	rcx
+	jnz	.loop	; nie
+
+	; błąd
+	xchg	bx,bx
+	jmp	$
+
+.end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rdi
+	pop	rcx
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"kernel_wm_fill_insert_by_object"

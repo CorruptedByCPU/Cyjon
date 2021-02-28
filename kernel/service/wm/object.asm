@@ -250,6 +250,7 @@ kernel_wm_object:
 	; przetwórz strefę
 	; rax - wskaźnik do obiektu
 	call	kernel_wm_zone_insert_by_object
+	call	kernel_wm_merge_insert_by_object
 
 	; wyłącz flagę aktualizacji obiektu lub przerysowania zawartości pod obiektem
 	and	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_flush & ~KERNEL_WM_OBJECT_FLAG_undraw

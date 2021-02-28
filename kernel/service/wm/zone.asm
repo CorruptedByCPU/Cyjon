@@ -7,136 +7,10 @@
 ;===============================================================================
 
 ;===============================================================================
-; wejście:
-;	rax - wskaźnik do rekordu tablicy obiektów
-kernel_wm_zone_insert_by_object:
-	; zachowaj oryginalne rejestry
-	push	rdx
-	push	rdi
-	push	rsi
-	push	rax
-
-	; zablokuj dostęp do modyfikacji listy stref
-	macro_lock	kernel_wm_zone_semaphore,	0
-
-	; lista stref jest pełna?
-	cmp	qword [kernel_wm_zone_list_records],	KERNEL_WM_FRAGMENT_LIST_limit
-	jb	.insert	; nie
-
-	xchg	bx,bx
-	jmp	$
-
-.insert:
-	; wskaźnik pośredni na koniec listy stref
-	mov	eax,	KERNEL_WM_STRUCTURE_FRAGMENT.SIZE
-	mul	qword [kernel_wm_zone_list_records]	; pozycja za ostatnią strefą listy
-
-	; ustaw wskaźniki na miejsca
-	mov	rsi,	qword [rsp]
-	mov	rdi,	qword [kernel_wm_zone_list_address]
-	add	rdi,	rax
-
-	; wstaw właściwości strefy
-	movsq
-
-	; oraz informacje o obiekcie zależnym
-	mov	rax,	qword [rsp]
-	mov	qword [rdi],	rax
-
-	; ilość stref na liście
-	inc	qword [kernel_wm_zone_list_records]
-
-	; odblokuj listę stref do modyfikacji
-	mov	byte [kernel_wm_zone_semaphore],	STATIC_FALSE
-
-	; przywróć oryginalne rejestry
-	pop	rax
-	pop	rsi
-	pop	rdi
-	pop	rdx
-
-	; powrót z procedury
-	ret
-
-	macro_debug	"kernel_wm_zone_insert_by_object"
-
-;===============================================================================
-; wejście:
-;	rdi - wskaźnik do rekordu tablicy obiektów
-;	r8 - pozycja na osi X
-;	r9 - pozycja na osi Y
-;	r10 - szerokość strefy
-;	r11 - wysokość strefy
-kernel_wm_zone_insert_by_register:
-	; zachowaj oryginalne rejestry
-	push	rax
-	push	rdx
-	push	rsi
-
-	; zablokuj dostęp do modyfikacji listy stref
-	macro_lock	kernel_wm_zone_semaphore,	0
-
-	; lista stref jest pełna?
-	cmp	qword [kernel_wm_zone_list_records],	KERNEL_WM_FRAGMENT_LIST_limit
-	jb	.insert	; nie
-
-	xchg	bx,bx
-	jmp	$
-
-.insert:
-	; wskaźnik pośredni na koniec listy stref
-	mov	eax,	KERNEL_WM_STRUCTURE_FRAGMENT.SIZE
-	mul	qword [kernel_wm_zone_list_records]	; pozycja za ostatnią strefą listy
-
-	; wskaźnik bezpośredni końca listy stref
-	mov	rsi,	qword [kernel_wm_zone_list_address]
-	add	rsi,	rax
-
-	; dodaj do listy nową strefę
-	mov	word [rsi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.x],	r8w
-	mov	word [rsi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.y],	r9w
-	mov	word [rsi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.width],	r10w
-	mov	word [rsi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.height],	r11w
-
-	; oraz jej obiekt zależny
-	mov	qword [rsi + KERNEL_WM_STRUCTURE_FRAGMENT.object],	rdi
-
-	; ilość stref na liście
-	inc	qword [kernel_wm_zone_list_records]
-
-	; odblokuj listę stref do modyfikacji
-	mov	byte [kernel_wm_zone_semaphore],	STATIC_FALSE
-
-	; przywróć oryginalne rejestry
-	pop	rsi
-	pop	rdx
-	pop	rax
-
-	; powrót z procedury
-	ret
-
-	macro_debug	"kernel_wm_zone_insert_by_register"
-
-;===============================================================================
-; wyjście:
-;	rsi - wskaźnik do obiektu rozpoczynającego
-kernel_wm_zone_select:
-	; wskaźnik pośredni na koniec listy obiektów
-	mov	rsi,	qword [kernel_wm_object_list_length]
-	shl	rsi,	KERNEL_WM_OBJECT_LIST_ENTRY_SIZE_shift	; pozycja za ostatnim obiektem listy
-	add	rsi,	qword [kernel_wm_object_list_address]
-
-	; powrót z procedury
-	ret
-
-	macro_debug	"kernel_wm_zone_select"
-
-;===============================================================================
-; wejście:
-;	rsi - wskaźnik do obiektu rozpoczynającego analizę
 kernel_wm_zone:
 	; zachowaj oryginalne rejestry
 	push	rax
+	push	rbx
 	push	rsi
 	push	rdi
 	push	r8
@@ -151,6 +25,9 @@ kernel_wm_zone:
 	; brak stref na liście?
 	cmp	qword [kernel_wm_zone_list_records],	STATIC_EMPTY
 	je	.end	; tak
+
+	; pobierz wskaźnik początku przestrzeni listy obiektów
+	mov	rbx,	qword [kernel_wm_object_list_address]
 
 	; ustaw wskaźnik na pierwszą opisaną strefę na liście
 	mov	rdi,	qword [kernel_wm_zone_list_address]
@@ -173,32 +50,8 @@ kernel_wm_zone:
 	;-----------------------------------------------------------------------
 	; pobierz właściwości strefy
 	;-----------------------------------------------------------------------
-
-	; lewa krawędź na osi X
-	mov	r8w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.x]
-	; górna krawędź na osi Y
-	mov	r9w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.y]
-	; prawa krawędź na osi X
-	mov	r10w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	add	r10w,	r8w
-	; dolna krawędź na osi Y
-	mov	r11w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.height]
-	add	r11w,	r9w
-
-	; opisana strefa znajduje się w przestrzeni "ekranu"?
-
-	; poza prawą krawędzią ekranu?
-	cmp	r8w,	word [kernel_video_width_pixel]
-	jge	.loop	; tak
-	; poza dolną krawędzią ekranu?
-	cmp	r9w,	word [kernel_video_height_pixel]
-	jge	.loop	; tak
-	; poza lewą krawędzią ekranu?
-	cmp	r10w,	STATIC_EMPTY
-	jle	.loop	; tak
-	; poza górną krawędzią ekranu?
-	cmp	r11w,	STATIC_EMPTY
-	jle	.loop	; nie
+	call	kernel_wm_zone_properties
+	jc	.loop	; strefa poza przestrzenią ekranu
 
 	;-----------------------------------------------------------------------
 	; interferencja
@@ -207,74 +60,42 @@ kernel_wm_zone:
 	; wskaźnik pośredni na koniec listy obiektów
 	mov	rsi,	qword [kernel_wm_object_list_length]
 	shl	rsi,	KERNEL_WM_OBJECT_LIST_ENTRY_SIZE_shift	; pozycja za ostatnim obiektem listy
-	add	rsi,	qword [kernel_wm_object_list_address]
+	add	rsi,	rbx	; początek przestrzeni listy obiektów
 
 .object:
 	; ustaw wskaźnik na rozpatrywany obiekt
 	sub	rsi,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
 
-	; pobierz wskaźnik rekordu tablicy obiektów
+	; pobierz wskaźnik do rekordu tablicy obiektów
 	mov	rax,	qword [rsi + KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.object_address]
 
 	; rozpatrywany obiekt jest pierwszy na liście?
-	cmp	rax,	qword [kernel_wm_object_list_address]
+	cmp	rax,	qword [rbx + KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.object_address]
 	je	.fill	; tak
 
 	; obiekt widoczny?
 	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
 	jz	.object	; nie
 
+	; obiekt posiada cechę przeźroczystości?
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_transparent
+	jnz	.object	; tak
+
 	; wystąpiła interferencja z obiektem przetwarzanym? (samym sobą)
 	cmp	rax,	qword [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.object]
-	jne	.no_interference	; nie
+	je	.fill	; tak
 
-	; obiekt posiada cechy przeźroczystości?
-	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_transparent
-	jz	.fill	; nie
-
-	; nałóż przeźroczysty obiekt na aktalny bufor
-	call	kernel_wm_merge_insert_by_object
-
-	; przetwórz następne obiekty z listy, które mogą znajdować się pod aktualnym
-	jmp	.object
-
-.no_interference:
+	;-----------------------------------------------------------------------
 	; pobierz współrzędne obiektu
-
-	; lewa krawędź na oxi X
-	mov	r12w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
-	; górna krawędź na osi Y
-	mov	r13w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
-	; prawa krawędź na osi X
-	mov	r14w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	add	r14w,	r12w
-	; dolna krawędź na osi Y
-	mov	r15w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
-	add	r15w,	r13w
-
-	;--------------------------------
-	;      r9	       r13	X
-	;    -------	     -------
-	; r8 |  S  | r10 r12 |  O  | r14
-	;    -------	     -------
-	;      r11	       r15
-	; Y
-
-	; obiekt znajduje się poza przetwarzaną strefą?
-	cmp	r12w,	r10w	; lewa krawędź obiektu za prawą krawędzią strefy?
-	jge	.object	; tak
-	cmp	r13w,	r11w	; górna krawędź obiektu za dolną krawędzią strefy?
-	jge	.object	; tak
-	cmp	r14w,	r8w	; prawa krawędź obiektu przed lewą krawędzią strefy?
-	jle	.object	; tak
-	cmp	r15w,	r9w	; dolna krawędź obiektu przed górną krawędzią strefy?
-	jle	.object	; tak
+	;-----------------------------------------------------------------------
+	call	kernel_wm_zone_properties_object
+	jc	.object	; obiekt poza analizowaną strefą
 
 	;-----------------------------------------------------------------------
 	; przycinanie
 	;-----------------------------------------------------------------------
 
-.left: ;)
+.left:
 	; lewa krawędź strefy przed lewą krawędzią obiektu?
 	cmp	r8w,	r12w
 	jge	.up	; nie
@@ -399,21 +220,6 @@ kernel_wm_zone:
 	cmp	r10w,	STATIC_EMPTY
 	jle	.loop
 
-	; obiekt posiada cechy przeźroczystości?
-	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_transparent
-	jz	.not_transparent	; nie
-
-	; nałóż przeźroczysty obiekt na aktalny bufor
-	call	kernel_wm_merge_insert_by_register
-
-	; pzrywróć oryginalne wartości dla fragmentu
-	add	r10w,	r8w	; szerokość strefy
-	add	r11w,	r9w	; wysokość strefy
-
-	; przetwórz następne obiekty z listy, które mogą znajdować się pod aktualnym
-	jmp	.object
-
-.not_transparent:
 	; zarejestruj do wypełnienia
 	call	kernel_wm_fill_insert_by_register
 
@@ -435,9 +241,203 @@ kernel_wm_zone:
 	pop	r8
 	pop	rdi
 	pop	rsi
+	pop	rbx
 	pop	rax
 
 	; powrót z procedury
 	ret
 
 	macro_debug	"kernel_wm_zone"
+
+;===============================================================================
+; wejście:
+;	rax - wskaźnik do obiektu
+kernel_wm_zone_insert_by_object:
+	; zachowaj oryginalne rejestry
+	push	rbx
+
+	; zablokuj dostęp do modyfikacji listy stref
+	macro_lock	kernel_wm_zone_semaphore,	0
+
+	; brak miejsca?
+	cmp	qword [kernel_wm_zone_list_records],	KERNEL_WM_FRAGMENT_LIST_limit
+	je	.end	; tak
+
+	; ustaw wskaźnik na koniec listy
+	mov	rbx,	qword [kernel_wm_zone_list_records]
+	shl	rbx,	STATIC_MULTIPLE_BY_16_shift
+	add	rbx,	qword [kernel_wm_zone_list_address]
+
+	; dodaj do listy nową strefę
+	push	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field]
+	pop	qword [rbx + KERNEL_WM_STRUCTURE_FRAGMENT.field]
+
+	; oraz jej obiekt zależny
+	mov	qword [rbx + KERNEL_WM_STRUCTURE_FRAGMENT.object],	rax
+
+	; zwiększono ilość elementów na liście
+	inc	qword [kernel_wm_zone_list_records]
+
+.end:
+	; odblokuj listę stref do modyfikacji
+	mov	byte [kernel_wm_zone_semaphore],	STATIC_FALSE
+
+	; przywróć oryginalne rejestry
+	pop	rbx
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"kernel_wm_zone_insert_by_object"
+
+;===============================================================================
+; wejście:
+;	rdi - wskaźnik do obiektu wypełniającego
+;	r8w - pozycja na osi X
+;	r9w - pozycja na osi Y
+;	r10w - szerokość strefy
+;	r11w - wysokość strefy
+kernel_wm_zone_insert_by_register:
+	; zachowaj oryginalne rejestry
+	push	rbx
+
+	; zablokuj dostęp do modyfikacji listy stref
+	macro_lock	kernel_wm_zone_semaphore,	0
+
+	; brak miejsca?
+	cmp	qword [kernel_wm_zone_list_records],	KERNEL_WM_FRAGMENT_LIST_limit
+	je	.end	; tak
+
+	; ustaw wskaźnik na koniec listy
+	mov	rbx,	qword [kernel_wm_zone_list_records]
+	shl	rbx,	STATIC_MULTIPLE_BY_16_shift
+	add	rbx,	qword [kernel_wm_zone_list_address]
+
+	; dodaj do listy nową strefę
+	mov	word [rbx + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.x],	r8w
+	mov	word [rbx + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.y],	r9w
+	mov	word [rbx + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.width],	r10w
+	mov	word [rbx + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.height],	r11w
+
+	; oraz jej obiekt zależny
+	mov	qword [rbx + KERNEL_WM_STRUCTURE_FRAGMENT.object],	rdi
+
+	; zwiększono ilość elementów na liście
+	inc	qword [kernel_wm_zone_list_records]
+
+.end:
+	; odblokuj listę stref do modyfikacji
+	mov	byte [kernel_wm_zone_semaphore],	STATIC_FALSE
+
+	; przywróć oryginalne rejestry
+	pop	rbx
+
+	; powrót z procedury
+	ret
+
+	macro_debug	"kernel_wm_zone_insert_by_register"
+
+;===============================================================================
+; wejście:
+;	rax - wskaźnik do obiektu
+; wyjście:
+;	Flaga CF - jeśli błąd
+;	r12w - pozycja lewej krawędzi na osi X
+;	r13w - pozycja górnej krawędzi na osi Y
+;	r14w - pozycja prawej krawędzi na osi X
+;	r15w - pozycja dolnej krawędzi na osi Y
+kernel_wm_zone_properties_object:
+	; lewa krawędź na oxi X
+	mov	r12w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	; górna krawędź na osi Y
+	mov	r13w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	; prawa krawędź na osi X
+	mov	r14w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	add	r14w,	r12w
+	; dolna krawędź na osi Y
+	mov	r15w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	add	r15w,	r13w
+
+	;--------------------------------
+	;      r9	       r13	X
+	;    -------	     -------
+	; r8 |  S  | r10 r12 |  O  | r14
+	;    -------	     -------
+	;      r11	       r15
+	; Y
+
+	; obiekt znajduje się poza przetwarzaną strefą?
+	cmp	r12w,	r10w	; lewa krawędź obiektu za prawą krawędzią strefy?
+	jge	.error	; tak
+	cmp	r13w,	r11w	; górna krawędź obiektu za dolną krawędzią strefy?
+	jge	.error	; tak
+	cmp	r14w,	r8w	; prawa krawędź obiektu przed lewą krawędzią strefy?
+	jle	.error	; tak
+	cmp	r15w,	r9w	; dolna krawędź obiektu przed górną krawędzią strefy?
+	jg	.done	; tak
+
+.error:
+	; flaga, błąd
+	stc
+
+	; kontynuj
+	jmp	.end
+
+.done:
+	; flaga, sukces
+	clc
+
+.end:
+	; powrót z procedury
+	ret
+
+;===============================================================================
+; wejście:
+;	rdi - wskaźnik do strefy
+; wyjście:
+;	Flaga CF - jeśli błąd
+;	r8w - pozycja lewej krawędzi na osi X
+;	r9w - pozycja górnej krawędzi na osi Y
+;	r10w - pozycja prawej krawędzi na osi X
+;	r11w - pozycja dolnej krawędzi na osi Y
+kernel_wm_zone_properties:
+	; lewa krawędź na osi X
+	mov	r8w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.x]
+	; górna krawędź na osi Y
+	mov	r9w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.y]
+	; prawa krawędź na osi X
+	mov	r10w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	add	r10w,	r8w
+	; dolna krawędź na osi Y
+	mov	r11w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	add	r11w,	r9w
+
+	; opisana strefa znajduje się w przestrzeni "ekranu"?
+
+	; poza prawą krawędzią ekranu?
+	cmp	r8w,	word [kernel_video_width_pixel]
+	jge	.error	; tak
+	; poza dolną krawędzią ekranu?
+	cmp	r9w,	word [kernel_video_height_pixel]
+	jge	.error	; tak
+	; poza lewą krawędzią ekranu?
+	cmp	r10w,	STATIC_EMPTY
+	jle	.error	; tak
+	; poza górną krawędzią ekranu?
+	cmp	r11w,	STATIC_EMPTY
+	jg	.done	; nie
+
+.error:
+	; flaga, błąd
+	stc
+
+	; kontynuj
+	jmp	.end
+
+.done:
+	; flaga, sukces
+	clc
+
+.end:
+	; powrót z procedury
+	ret
