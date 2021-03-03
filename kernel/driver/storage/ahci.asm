@@ -73,14 +73,14 @@ driver_ahci_init:
 	mov	eax,	DRIVER_PCI_REGISTER_bar5
 	call	driver_pci_read
 
+	; zapamiętaj
+	mov	dword [driver_ahci_base_address],	eax
+
 	; wyświetl informacje o przestrzeni adresowej
 	mov	rsi,	kernel_init_string_ahci_address
 	call	driver_serial_send
 	mov	ecx,	STATIC_NUMBER_SYSTEM_hexadecimal
 	call	driver_serial_send_value
-
-	; zapamiętaj
-	mov	dword [driver_ahci_base_address],	eax
 
 	; mapuj przestrzeń pamięci rejestrów kontrolera AHCI do jądra systemu
 	mov	ebx,	KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_available
