@@ -18,6 +18,7 @@ kernel_init_string_error_ioapic			db	"Error: I/O APIC not found.", STATIC_SCANCO
 
 kernel_init_string_serial			db	"COM1: initialized.", STATIC_SCANCODE_TERMINATOR
 kernel_init_string_video_address		db	STATIC_SCANCODE_NEW_LINE, "Video: Memory location 0x", STATIC_SCANCODE_TERMINATOR
+kernel_init_string_ahci_address			db	STATIC_SCANCODE_NEW_LINE, "AHCI: HBA Registers 0x", STATIC_SCANCODE_TERMINATOR
 
 kernel_init_string_value_cache	TIMES	21	db	STATIC_EMPTY
 

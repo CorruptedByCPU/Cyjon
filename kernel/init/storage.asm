@@ -70,3 +70,12 @@ kernel_init_storage:
 	jnz	.ide_loop	; nie
 
 .ide_end:
+	; odszukaj kontroler AHCI na magistrali
+	mov	ax,	DRIVER_PCI_CLASS_SUBCLASS_ahci
+	call	driver_pci_find_class_and_subclass
+	jc	.end	; nie znaleziono
+
+	; inicjalizuj dostępne nośniki na kontrolerze AHCI
+	call	driver_ahci_init
+
+.end:

@@ -17,8 +17,9 @@
 ;===============================================================================
 STATIC_PAGE_mask					equ	0xF000
 
-STATIC_PAGE_SIZE_byte					equ	0x1000
+STATIC_PAGE_SIZE_page					equ	1
 STATIC_PAGE_SIZE_shift					equ	12
+STATIC_PAGE_SIZE_byte					equ	0x1000
 
 ;===============================================================================
 ; SOFTWARE
