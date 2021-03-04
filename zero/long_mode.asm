@@ -6,7 +6,7 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-ZERO_LONG_MODE_PML4_address		equ	0xA000	; adres fizyczny
+ZERO_LONG_MODE_PAGE_SIZE_bytes		equ	0x1000 * 0x06	; tablica PML4, PML3 i cztery razy PML2 (1 GiB opisanej przestrzeni na każdą tablicę PML2)
 
 ZERO_LONG_MODE_PAGE_FLAG_available	equ	00000001b
 ZERO_LONG_MODE_PAGE_FLAG_writeable	equ	00000010b
@@ -19,25 +19,40 @@ zero_long_mode:
 	; utwórz podstawową tablicę stronicowania dla trybu 64 bitowego
 	;-----------------------------------------------------------------------
 
+	; określ pozycję tablicy PML4
+	mov	edi,	dword [zero_graphics_mode_info_block_address]
+	add	edi,	ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.SIZE
+	call	zero_page_align_up
+
+	; zachowaj wskaźnik początku przestrzeni
+	mov	dword [zero_page_table_address],	edi
+
 	; wyczyść wszystkie wpisy w tabelach
 	xor	eax,	eax
-	mov	ecx,	(0x1000 * 0x06) / 0x04	; tablica PML4, PML3 i cztery razy PML2 (1 GiB opisanej przestrzeni na każdą tablicę PML2)
-	mov	edi,	ZERO_LONG_MODE_PML4_address
+	mov	ecx,	ZERO_LONG_MODE_PAGE_SIZE_bytes / 0x04
 	rep	stosd
 
+	; przywróć wskaźnik do tabliy PML4
+	mov	edi,	dword [zero_page_table_address]
+
 	; uzupełnij pierwszy wiersz tablicy PML4 wskazujący adres tablicy PML3 (flagi domyślne)
-	mov	dword [ZERO_LONG_MODE_PML4_address],	ZERO_LONG_MODE_PML4_address + 0x1000 + ZERO_LONG_MODE_PAGE_FLAG_default
+	mov	dword [edi],	edi
+	add	dword [edi],	0x1000 + ZERO_LONG_MODE_PAGE_FLAG_default
 
 	; uzupełnij 4 wiersze tablicy PML3 wskazujące na adresy tablic PML2 (flagi domyślne)
-	mov	dword [ZERO_LONG_MODE_PML4_address + 0x1000],	ZERO_LONG_MODE_PML4_address + (0x1000 * 0x02) + ZERO_LONG_MODE_PAGE_FLAG_default
-	mov	dword [ZERO_LONG_MODE_PML4_address + 0x1000 + 0x08],	ZERO_LONG_MODE_PML4_address + (0x1000 * 0x03) + ZERO_LONG_MODE_PAGE_FLAG_default
-	mov	dword [ZERO_LONG_MODE_PML4_address + 0x1000 + 0x10],	ZERO_LONG_MODE_PML4_address + (0x1000 * 0x04) + ZERO_LONG_MODE_PAGE_FLAG_default
-	mov	dword [ZERO_LONG_MODE_PML4_address + 0x1000 + 0x18],	ZERO_LONG_MODE_PML4_address + (0x1000 * 0x05) + ZERO_LONG_MODE_PAGE_FLAG_default
+	mov	dword [edi + 0x1000],	edi
+	add	dword [edi + 0x1000],	(0x1000 * 0x02) + ZERO_LONG_MODE_PAGE_FLAG_default
+	mov	dword [edi + 0x1000 + 0x08],	edi
+	add	dword [edi + 0x1000 + 0x08],	(0x1000 * 0x03) + ZERO_LONG_MODE_PAGE_FLAG_default
+	mov	dword [edi + 0x1000 + 0x10],	edi
+	add	dword [edi + 0x1000 + 0x10],	(0x1000 * 0x04) + ZERO_LONG_MODE_PAGE_FLAG_default
+	mov	dword [edi + 0x1000 + 0x18],	edi
+	add	dword [edi + 0x1000 + 0x18],	(0x1000 * 0x05) + ZERO_LONG_MODE_PAGE_FLAG_default
 
 	; uzupełnij wszystkie wiersze tablic PML2 (flagi domyślne + każdy wpis opisuje przestrzeń fizyczną o rozmiarze 2 MiB)
 	mov	eax,	ZERO_LONG_MODE_PAGE_FLAG_default + ZERO_LONG_MODE_PAGE_FLAG_2MiB_size	; flagi: rozmiar strony 2 MiB, zapisywalna, dostępna
 	mov	ecx,	512 * 0x04	; 512 wierszy na jedną tablicę PML2
-	mov	edi,	ZERO_LONG_MODE_PML4_address + (0x1000 * 0x02)
+	add	edi,	0x1000 * 0x02	; adres pierwszej tablicy PML2
 
 .next:
 	; konfiguruj wpis
@@ -64,7 +79,7 @@ zero_long_mode:
 					; OSFXSR (bit 9) - obsługa rejestrów XMM0-15
 
 	; załaduj do CR3 adres fizyczny tablicy PML4 programu rozruchowego
-	mov	eax,	ZERO_LONG_MODE_PML4_address
+	mov	eax,	dword [zero_page_table_address]
 	mov	cr3,	eax
 
 	; włącz w rejestrze EFER MSR tryb LME (bit 9)

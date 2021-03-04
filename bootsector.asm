@@ -22,6 +22,11 @@ bootsector:
 	; ustaw adres segmentu kodu (CS) na początek pamięci fizycznej
 	jmp	0x0000:.repair_cs
 
+.header:
+; nagłówek sektora rozruchowego wyrównaj do pełnego adresu
+align 0x04
+	db	"ZERO"
+
 .repair_cs:
 	; ustaw adresy segmentów danych (DS), ekstra (ES) i stosu (SS) na początek pamięci fizycznej
 	xor	ax,	ax

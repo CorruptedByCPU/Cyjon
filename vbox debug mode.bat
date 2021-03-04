@@ -1,1 +1,1 @@
-VirtualBoxVM --startvm Cyjon --debug-command-line
+start VirtualBoxVM --startvm Cyjon --debug-command-line
