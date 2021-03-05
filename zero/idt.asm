@@ -6,7 +6,7 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-ZERO_IDT_address	equ	0x9000
+ZERO_IDT_address	equ	0xA000
 
 ZERO_IDT_TYPE_exception	equ	0x8E00
 ZERO_IDT_TYPE_irq	equ	0x8F00
@@ -18,8 +18,12 @@ endstruc
 
 ;===============================================================================
 zero_idt:
-	; adres tablicy IDT
-	mov	edi,	ZERO_IDT_address
+	; określ pozycję Tablicy Deskryptorów Przerwań
+	mov	edi,	dword [zero_page_table_address]
+	add	edi,	ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.SIZE
+
+	; zachowaj wskaźnik początku przestrzeni
+	mov	dword [zero_idt_table_address],	edi
 
 	; zarejestruj wszystkie wyjątki procesora pod domyślną procedurę obsługi
 	mov	rax,	zero_idt_default_exception
@@ -30,12 +34,12 @@ zero_idt:
 	; podłącz procedurę obsługi przerwania zegara
 	mov	rax,	zero_idt_clock
 	mov	bx,	ZERO_IDT_TYPE_irq
-	mov	ecx,	1	; wszystkie wyjątki procesora
+	mov	ecx,	1
 	call	zero_idt_set
 
 	; zarejestruj pozostałe przerwania sprzętowe pod domyślną procedurę obsługi
 	mov	rax,	zero_idt_default_interrupt
-	mov	ecx,	15	; wszystkie wyjątki procesora
+	mov	ecx,	15	; pozostałe przerwania sprzętowe
 	call	zero_idt_set
 
 	; załaduj Tablicę Deskryptorów Przerwań

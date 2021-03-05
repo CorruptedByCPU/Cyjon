@@ -14,7 +14,7 @@ zero_memory:
 	; ciąg znaków "SMAP", specjalna wartość wymagana przez procedurę
 	mov	edx,	0x534D4150
 
-	; utwórz mapę pamięci pod fizycznym adresem 0x0000:0x1000
+	; utwórz mapę pamięci pod fizycznym adresem końca programu rozruchowego
 	mov	edi,	zero_end
 	call	zero_page_align_up
 

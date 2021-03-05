@@ -1,1 +1,1 @@
-VirtualBoxVM --startvm Cyjon
+start VirtualBoxVM --startvm Cyjon

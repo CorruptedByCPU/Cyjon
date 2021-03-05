@@ -6,8 +6,6 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-ZERO_GRAPHICS_MODE_INFO_BLOCK_SIZE_byte	equ	0x1000
-
 ZERO_GRAPHICS_DEPTH_bit			equ	32
 ZERO_GRAPHICS_MODE_clean		equ	0x8000
 ZERO_GRAPHICS_MODE_linear		equ	0x4000
@@ -53,6 +51,7 @@ struc	ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK
 	.direct_color_mode_info		resb	2
 	.physical_base_address		resb	4
 	.reserved1			resb	212
+	.SIZE:
 endstruc
 
 ;===============================================================================
@@ -65,7 +64,7 @@ zero_graphics:
 
 	; pobierz dostępne tryby graficzne
 	mov	ax,	0x4F00
-	add	edi,	ZERO_GRAPHICS_MODE_INFO_BLOCK_SIZE_byte
+	add	edi,	ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.SIZE
 	int	0x10
 
 	; funkcja wywołana prawidłowo?

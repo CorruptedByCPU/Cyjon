@@ -14,6 +14,12 @@ zero_kernel:
 	; wyłącz obsługę wyjątków procesora i przerwań sprzętowych
 	cli
 
+	; kopiuj kod jądra systemu w miejsce docelowe
+	mov	ecx,	KERNEL_FILE_SIZE_bytes / 0x01
+	mov	esi,	0x00010000
+	mov	edi,	0x00100000
+	rep	movsb
+
 	; zwróć informację o adresie i rozmiarze mapy pamięci
 	mov	ebx,	dword [zero_memory_map_address]
 

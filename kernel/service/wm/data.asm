@@ -11,7 +11,7 @@ kernel_wm_pid						dq	STATIC_EMPTY
 
 kernel_wm_object_semaphore				db	STATIC_FALSE
 kernel_wm_object_arbiter_semaphore			db	STATIC_FALSE
-kernel_wm_fill_semaphore				db	STATIC_FALSE
+
 kernel_wm_zone_semaphore				db	STATIC_FALSE
 
 kernel_wm_keyboard_alt_left_semaphore			db	STATIC_FALSE
@@ -37,6 +37,9 @@ kernel_wm_fill_list_address				dq	STATIC_EMPTY
 
 kernel_wm_zone_list_address				dq	STATIC_EMPTY
 kernel_wm_zone_list_records				dq	STATIC_EMPTY
+
+kernel_wm_merge_list_address				dq	STATIC_EMPTY
+kernel_wm_merge_list_records				dq	STATIC_EMPTY
 
 kernel_wm_ipc_data:
 		times	KERNEL_IPC_STRUCTURE.SIZE	db	STATIC_EMPTY

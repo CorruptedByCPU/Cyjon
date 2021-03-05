@@ -9,13 +9,13 @@
 ;===============================================================================
 ; 16 bitowy kod głównego programu rozruchowego =================================
 ;===============================================================================
-[bits 16]
+[bits 32]
 
 ;===============================================================================
 ; wejście:
-;	di - adres w przestrzeni logicznej
+;	edi - adres w przestrzeni logicznej
 ; wyjście:
-;	di - adres wyrównany do pełnej strony
+;	edi - adres wyrównany do pełnej strony
 zero_page_align_up:
 	; utwórz zmienną lokalną
 	push	edi

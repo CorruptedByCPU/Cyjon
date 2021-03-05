@@ -8,38 +8,27 @@
 
 ;===============================================================================
 zero_storage:
-	; inicjalizuj dostępne nośniki
-	call	driver_ide_init
+	; zachowaj orginalny segment ekstra
+	push	es
 
-	; TODO: systemy plików, więcej sektorów na raz
+	; adres docelowy jądra systemu
+	mov	ax,	0x1000
+	mov	es,	ax	; segment
+	xor	bx,	bx	; przesunięcie
 
-	; wczytaj plik jądra systemu
+	; załaduj drugą część programu rozruchowego
+	mov	cl,	(((zero_end - zero) + 0x200) / 0x200) + 0x01	; rozpocznij od "drugiego" sektora
+	mov	di,	KERNEL_FILE_SIZE_bytes / 0x0200	; rozmiar programu rozruchowego
+	call	zero_floppy
+	jnc	.end	; wczytano popwanie
 
-	; pierwszy sektor zawierający dane pliku jądra systemu
-	mov	eax,	((zero_end - zero) + 0x200) / 0x200
+	jmp	$
 
-	; nośnik Master na kontrolerze IDE0
-	xor	ebx,	ebx
+	;-----------------------------------------------------------------------
+	; procedura wczytująca plik jądra systemu z nośnika
+	;-----------------------------------------------------------------------
+	%include	"zero/floppy.asm"
 
-	; odczytujemy plik po jednym sektorze na raz
-	mov	ecx,	1
-
-	; rozmiar pliku jądra systemu w sektorach
-	mov	edx,	(KERNEL_FILE_SIZE_bytes / 0x200)
-
-	; wskaźnik docelowy w przestrzeni pamięci fizycznej/logicznej
-	mov	edi,	0x00100000
-
-.loop:
-	; wczytaj sektor
-	call	driver_ide_read
-
-	; następny sektor
-	inc	eax
-
-	; przesuń wskaźnik docelowy
-	add	edi,	0x0200
-
-	; koniec sektorów należących do pliku?
-	dec	edx
-	jnz	.loop	; nie
+zero_storage.end:
+	; przywróć oryginalny segment ekstra
+	pop	es

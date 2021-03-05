@@ -21,12 +21,13 @@ LIBRARY_BOSU_WINDOW_FLAG_fixed_z		equ	1 << 3	; okno nieruchome na osi Z
 LIBRARY_BOSU_WINDOW_FLAG_fragile		equ	1 << 4	; okno ukrywane przy wystąpieniu akcji z LPM lub PPM
 LIBRARY_BOSU_WINDOW_FLAG_arbiter		equ	1 << 6	; nadobiekt, np. decyduje o trybie pełnoekranowym (domyślnie jest nim GUI)
 LIBRARY_BOSU_WINDOW_FLAG_transparent		equ	1 << 8	; tło okna posiada stopień przeźroczystości
-							; powyżej 8, przeznaczone dla GUI
-LIBRARY_BOSU_WINDOW_FLAG_unregistered		equ	1 << 9	; nie rejestruj okna w menedżerze okien
-LIBRARY_BOSU_WINDOW_FLAG_header			equ	1 << 10	; pokaż nagłówek okna
-LIBRARY_BOSU_WINDOW_FLAG_border			equ	1 << 11	; rysuj krawędź wokół okna
-LIBRARY_BOSU_WINDOW_FLAG_BUTTON_close		equ	1 << 12 ; przycisk zamknięcia okna
-LIBRARY_BOSU_WINDOW_FLAG_BUTTON_min		equ	1 << 13 ; przycisk minimalizacji okna
+LIBRARY_BOSU_WINDOW_FLAG_reserved		equ	1 << 9	; obiekt wyłączony z przetwarzania (zone)
+							; powyżej 9, przeznaczone dla GUI
+LIBRARY_BOSU_WINDOW_FLAG_unregistered		equ	1 << 10	; nie rejestruj okna w menedżerze okien
+LIBRARY_BOSU_WINDOW_FLAG_header			equ	1 << 11	; pokaż nagłówek okna
+LIBRARY_BOSU_WINDOW_FLAG_border			equ	1 << 12	; rysuj krawędź wokół okna
+LIBRARY_BOSU_WINDOW_FLAG_BUTTON_close		equ	1 << 13 ; przycisk zamknięcia okna
+LIBRARY_BOSU_WINDOW_FLAG_BUTTON_min		equ	1 << 14 ; przycisk minimalizacji okna
 ;-------------------------------------------------------------------------------
 
 LIBRARY_BOSU_HEADER_HEIGHT_pixel		equ	18

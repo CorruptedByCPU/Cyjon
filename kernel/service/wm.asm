@@ -36,9 +36,9 @@ kernel_wm:
 	call	kernel_wm_zone
 
 	;-----------------------------------------------------------------------
-	; wypełnij wszystkie zarejestrowane fragmenty
+	; scal fragmenty przeźroczyste
 	;-----------------------------------------------------------------------
-	call	kernel_wm_fill
+	; call	kernel_wm_merge
 
 	;-----------------------------------------------------------------------
 	; sprawdź położenie i stan kursora
@@ -46,9 +46,16 @@ kernel_wm:
 	call	kernel_wm_cursor
 
 	;-----------------------------------------------------------------------
+	; wypełnij wszystkie zarejestrowane fragmenty
+	;-----------------------------------------------------------------------
+	call	kernel_wm_fill
+
+%ifdef	TRANSPARENCY
+	;-----------------------------------------------------------------------
 	; synchronizuj zawartość bufora z pamięcią karty graficznej
 	;-----------------------------------------------------------------------
 	call	kernel_wm_flush
+%endif
 
 	;-----------------------------------------------------------------------
 	; zwolnij pozostały czas procesora

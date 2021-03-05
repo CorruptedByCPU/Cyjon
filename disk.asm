@@ -23,5 +23,5 @@
 
 	; VirtualBox wymaga obrazu o rozmiarze min. 1 MiB
 
-; wyrównaj rozmiar obrazu dysku do pełnego 1 MiB
-align	1048576
+; wyrównaj rozmiar obrazu dysku do pełnego 1,44 MiB
+times	1474560 - ($ - $$)	db	0x00
