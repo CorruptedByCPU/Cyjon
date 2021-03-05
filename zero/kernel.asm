@@ -8,8 +8,6 @@
 
 ;===============================================================================
 zero_kernel:
-	xchg	bx,bx
-
 	; wyłącz przerwania sprzętowe na kontrolerze PIC
 	call	zero_pic_disable
 

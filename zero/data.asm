@@ -22,10 +22,10 @@ align 0x04
 zero_table_disk_address_packet:
 					db	0x10	; rozmiar tablicy
 					db	0x00	; wartość zastrzeżona
-					dw	0x0001	; wczytuj po jednym sektorze
-.offset:				dw	0x0000	; przesunięcie
-.segment:				dw	0x1000	; segment
-.sector:				dq	((zero_end - zero) + 0x200) / 0x200	; adres LBA pierwszego sektora dołączonego pliku jądra systemu
+					dw	KERNEL_FILE_SIZE_bytes / 0x0200	; rozmiar kodu jądra systemu w sektorach
+					dw	0x0000	; przesunięcie
+					dw	0x1000	; segment
+					dq	((zero_end - zero) + 0x200) / 0x200	; adres LBA pierwszego sektora dołączonego pliku jądra systemu
 
 ; wyrównaj pozycję nagłówka do pełnego adresu
 align	0x08,				db	0x90
