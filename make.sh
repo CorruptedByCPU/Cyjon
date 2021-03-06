@@ -24,4 +24,4 @@ ZERO_SIZE=`wc -c < build/zero`
 
 nasm -f bin bootsector.asm		-o build/bootsector	-dZERO_FILE_SIZE_bytes=${ZERO_SIZE}
 
-nasm -f bin disk.asm			-o build/disk.raw
+nasm -f bin disk.asm			-o build/cyjon.img
