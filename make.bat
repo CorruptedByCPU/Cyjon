@@ -4,8 +4,8 @@ rem MS/Windows build fix ... even if I'm compiling a new kernel ... the file con
 IF EXIST "build\kernel" ( DEL build\kernel )
 
 rem select a resolution supported by the BIOS
-set WIDTH=1920
-set HEIGHT=1080
+set WIDTH=1024
+set HEIGHT=768
 
 set PASS=0
 
@@ -31,7 +31,7 @@ FOR /F "usebackq" %%A IN ('build/zero') DO set ZERO_SIZE=%%~zA
 
 ..\nasm -f bin bootsector.asm		-o build/bootsector	-dZERO_FILE_SIZE_bytes=%ZERO_SIZE%	&& echo. || set PASS=1
 
-..\nasm -f bin disk.asm			-o build/disk.raw	&& echo. || set PASS=1
+..\nasm -f bin disk.asm			-o build/cyjon.img	&& echo. || set PASS=1
 
 IF %PASS% == 1 (
 	PAUSE

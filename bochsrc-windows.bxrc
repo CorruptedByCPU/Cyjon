@@ -3,15 +3,15 @@ plugin_ctrl: unmapped=true, biosdev=true, speaker=true, extfpuirq=true, parallel
 config_interface: win32config
 display_library: win32, options="gui_debug"
 memory: host=16, guest=16
-romimage: file="..\bochs/BIOS-bochs-latest", address=0x00000000, options=none
-vgaromimage: file="..\bochs/VGABIOS-lgpl-latest"
+romimage: file="../bochs/BIOS-bochs-latest", address=0x00000000, options=none
+vgaromimage: file="../bochs/VGABIOS-lgpl-latest"
 boot: floppy
 floppy_bootsig_check: disabled=0
-floppya: type=1_44, 1_44="build\disk.raw", status=inserted, write_protected=0
+floppya: type=1_44, 1_44="build/cyjon.img", status=inserted, write_protected=0
 # no floppyb
 ata0: enabled=true, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
-ata0-master: type=none
-ata0-slave: type=none
+ata0-master: type=disk, path="build/fat32.img", mode=flat, cylinders=1, heads=1, spt=1, sect_size=512, model="FAT32", biosdetect=auto, translation=auto
+ata0-slave: type=disk, path="build/ext2.img", mode=flat, cylinders=1, heads=1, spt=1, sect_size=512, model="Ext2", biosdetect=auto, translation=auto
 ata1: enabled=true, ioaddr1=0x170, ioaddr2=0x370, irq=15
 ata1-master: type=none
 ata1-slave: type=none
@@ -48,7 +48,7 @@ error: action=report
 panic: action=ask
 keyboard: type=mf, serial_delay=250, paste_delay=100000, user_shortcut=none
 mouse: type=ps2, enabled=false, toggle=ctrl+mbutton
-sound: waveoutdrv=win, waveout=none, waveindrv=win, wavein=none, midioutdrv=win, midiout=none
+sound: waveoutdrv=dummy, waveout=none, waveindrv=dummy, wavein=none, midioutdrv=dummy, midiout=none
 speaker: enabled=true, mode=sound
 parport1: enabled=true, file=none
 parport2: enabled=false

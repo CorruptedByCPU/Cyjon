@@ -293,6 +293,7 @@ kernel_vfs_path_resolve:
 ;===============================================================================
 ; wejście:
 ;	rcx - ilość znaków w nazwie pliku
+;	bx - uprawnienia
 ;	dl - typ pliku
 ;	rsi - wskaźnik do nazwy pliku
 ;	rdi - supeł/identyfikator katalogu w którym utworzyć nowy plik
@@ -372,6 +373,9 @@ kernel_vfs_file_touch:
 	pop	rsi
 
 .no_directory:
+	; uprawnienia pliku
+	mov	word [rdi + KERNEL_VFS_STRUCTURE_KNOT.mode],	bx
+
 	; ilość znaków w nazwie pliku
 	mov	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.length],	cl
 

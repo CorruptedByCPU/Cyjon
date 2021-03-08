@@ -91,10 +91,6 @@ driver_ahci_init:
 	; pobierz specyfikacje portów (dostępnych)
 	mov	eax,	dword [rsi + DRIVER_AHCI_HBA_MEMORY_REGISTER_PI]
 
-	; debug
-	mov	ecx,	STATIC_NUMBER_SYSTEM_binary
-	call	driver_serial_send_value
-
 .end:
 	; przywróć oryginalne rejestry
 	pop	r11

@@ -17,8 +17,12 @@ ls_string_separator_end:
 
 ls_string_color_file		db	STATIC_SEQUENCE_COLOR_DEFAULT
 ls_string_color_file_end:
+ls_string_color_executable	db	STATIC_SEQUENCE_COLOR_GREEN_LIGHT
+ls_string_color_executable_end:
 ls_string_color_directory	db	STATIC_SEQUENCE_COLOR_BLUE_LIGHT
 ls_string_color_directory_end:
+ls_string_color_block_device	db	STATIC_SEQUENCE_COLOR_YELLOW
+ls_string_color_block_device_end:
 
 ls_string_error_not_found	db	"File not found."
 ls_string_error_not_found_end:

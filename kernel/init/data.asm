@@ -55,17 +55,21 @@ kernel_init_services_list:
 						dq	STATIC_EMPTY
 
 kernel_init_vfs_directory_structure:
+						dw	KERNEL_VFS_FILE_MODE_USER_full_control | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
 						db	0x04
 						db	"/bin"
+						dw	KERNEL_VFS_FILE_MODE_USER_full_control | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
 						db	0x04
 						db	"/etc"
+						dw	KERNEL_VFS_FILE_MODE_USER_full_control | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
 						db	0x04
 						db	"/dev"
+						dw	KERNEL_VFS_FILE_MODE_USER_full_control | KERNEL_VFS_FILE_MODE_GROUP_execute_or_traverse | KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse
 						db	0x04
 						db	"/var"
 
 						; koniec struktury katalogów
-						db	STATIC_EMPTY
+						dw	STATIC_EMPTY
 
 kernel_init_vfs_files:
 						dq	kernel_init_vfs_file_shell
