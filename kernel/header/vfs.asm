@@ -30,6 +30,17 @@ KERNEL_VFS_FILE_MODE_OTHER_write			equ	0000000000000010b
 KERNEL_VFS_FILE_MODE_OTHER_execute_or_traverse		equ	0000000000000001b
 KERNEL_VFS_FILE_MODE_OTHER_full_control			equ	0000000000000111b
 
+struc	KERNEL_VFS_STRUCTURE_META
+	.data						resb	0x12
+	.SIZE:
+endstruc
+
+struc	KERNEL_VFS_STRUCTURE_BLOCK_DEVICE
+	.read						resb	8
+	.write						resb	8
+	.sector_size					resb	2
+endstruc
+
 ; struktura supła w drzewie katalogu głównego
 struc	KERNEL_VFS_STRUCTURE_KNOT
 	.data						resb	8
@@ -40,5 +51,6 @@ struc	KERNEL_VFS_STRUCTURE_KNOT
 	.flags						resb	2
 	.time_modified					resb	8
 	.name						resb	255
+	.meta:						resb	KERNEL_VFS_STRUCTURE_META.SIZE
 	.SIZE:
 endstruc

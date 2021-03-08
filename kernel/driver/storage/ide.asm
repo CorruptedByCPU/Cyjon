@@ -86,6 +86,8 @@ struc	DRIVER_IDE_STRUCTURE_DEVICE
 	.SIZE:
 endstruc
 
+driver_ide_
+
 driver_ide_devices_count				db	STATIC_EMPTY
 
 ; wyrównaj pozycję tablicy do pełnego adresu
