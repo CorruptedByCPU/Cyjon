@@ -24,7 +24,7 @@ ls:
 	mov	rbx,	rcx
 
 .loop:
-	; domyślnie kolorystyka dla pliku
+	; domyślnia kolorystyka dla pliku
 	mov	ecx,	ls_string_color_file_end - ls_string_color_file
 	mov	rsi,	ls_string_color_file
 
@@ -35,7 +35,26 @@ ls:
 	; ustaw kolorystykę dla katalogu
 	mov	rsi,	ls_string_color_directory
 
+	; wyświetl
+	jmp	.change
+
 .no_directory:
+	; plik wykonywalny?
+	test	word [rdi + KERNEL_VFS_STRUCTURE_KNOT.mode],	KERNEL_VFS_FILE_MODE_USER_execute_or_traverse
+	jz	.no_executable
+
+	; ustaw kolorystykę dla pliku wykonywalnego
+	mov	rsi,	ls_string_color_executable
+
+.no_executable:
+	; plik typu urządzenie blokowe?
+	test	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.type],	KERNEL_VFS_FILE_TYPE_block_device
+	jz	.change	; nie
+
+	; ustaw kolorystykę dla katalogu
+	mov	rsi,	ls_string_color_block_device
+
+.change:
 	; zmień kolorystykę
 	mov	ax,	KERNEL_SERVICE_PROCESS_stream_out
 	int	KERNEL_SERVICE

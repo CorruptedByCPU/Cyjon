@@ -6,6 +6,13 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
+struc	KERNEL_INIT_STRUCTURE_VFS_DIRECTORY
+	.mode		resb	2
+	.length		resb	1
+	.path:
+	.SIZE:
+endstruc
+
 struc	KERNEL_INIT_STRUCTURE_VFS_FILE
 	.data_pointer	resb	8
 	.size		resb	8
@@ -38,19 +45,22 @@ kernel_init_vfs:
 	mov	rsi,	kernel_init_vfs_directory_structure
 
 .dir:
+	; pobierz uprawnienia do katalogu
+	mov	bx,	word [rsi + KERNEL_INIT_STRUCTURE_VFS_DIRECTORY.mode]
+
 	; pobierz rozmiar ścieżki
-	movzx	ecx,	byte [rsi]
+	movzx	ecx,	byte [rsi + KERNEL_INIT_STRUCTURE_VFS_DIRECTORY.length]
 
 	; koniec struktury?
-	test	cl,	cl
+	test	bx,	bx
 	jz	.next	; tak
-
-	; przesuń wskaźnik na ścieżkę
-	inc	rsi
 
 	; zachowaj oryginalne rejestry
 	push	rcx
 	push	rsi
+
+	; ustaw wskaźnik na ścieżkę
+	add	rsi,	KERNEL_INIT_STRUCTURE_VFS_DIRECTORY.path
 
 	; rozwiąż ścieżkę
 	call	kernel_vfs_path_resolve
@@ -64,6 +74,7 @@ kernel_init_vfs:
 	pop	rcx
 
 	; przesuń wskaźnik na następny wpis
+	add	rsi,	KERNEL_INIT_STRUCTURE_VFS_DIRECTORY.SIZE
 	add	rsi,	rcx
 
 	; przetwórz następny wpis
@@ -84,6 +95,7 @@ kernel_init_vfs:
 	push	rsi
 
 	; utwórz "pusty" plik w systemie plików
+	mov	bx,	word [rsi + KERNEL_INIT_STRUCTURE_VFS_FILE.mode]
 	movzx	ecx,	byte [rsi + KERNEL_INIT_STRUCTURE_VFS_FILE.length]
 	mov	dl,	KERNEL_VFS_FILE_TYPE_regular_file
 	add	rsi,	KERNEL_INIT_STRUCTURE_VFS_FILE.path
