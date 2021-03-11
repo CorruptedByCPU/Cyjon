@@ -23,6 +23,11 @@ struc	KERNEL_VFS_STRUCTURE_META_CHARACTER_DEVICE
 	.SIZE:
 endstruc
 
+struc	KERNEL_VFS_STRUCTURE_META_BLOCK_DEVICE
+	.driver						resb	8
+	.filesystem					resb	8
+endstruc
+
 kernel_vfs_semaphore					db	STATIC_FALSE
 
 ; wyrównaj pozycję supła do pełnego adresu
