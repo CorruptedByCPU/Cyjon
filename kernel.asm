@@ -59,8 +59,9 @@ kernel:
 	%include	"kernel/driver/ps2.asm"
 	%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/serial.asm"
-	%include	"kernel/driver/storage/ahci.asm"
-	%include	"kernel/driver/storage/ide.asm"
+	%include	"kernel/driver/storage/controller/ahci.asm"
+	%include	"kernel/driver/storage/controller/ide.asm"
+	%include	"kernel/driver/storage/filesystem/fat32.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/service/gc.asm"
 	%include	"kernel/service/gui.asm"

@@ -49,6 +49,10 @@ kernel_init_storage:
 	mov	dl,	KERNEL_VFS_FILE_TYPE_block_device
 	call	kernel_vfs_file_touch
 
+	; uzupełnij metadata urządzenia blokowego
+	mov	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.meta + KERNEL_VFS_STRUCTURE_META.data + KERNEL_VFS_STRUCTURE_META_BLOCK_DEVICE.driver],	driver_ide_entry_table
+	mov	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.meta + KERNEL_VFS_STRUCTURE_META.data + KERNEL_VFS_STRUCTURE_META_BLOCK_DEVICE.filesystem],	STATIC_EMPTY
+
 	; aktualizuj rozmiar urządzenia blokowego
 	mov	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.size],	rax
 

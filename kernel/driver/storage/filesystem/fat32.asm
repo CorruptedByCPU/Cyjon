@@ -6,4 +6,5 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-; to be continued
+filesystem_fat32_entry_table:	dq	driver_ide_read	; read procedure
+				dq	STATIC_EMPTY	; write procedure
