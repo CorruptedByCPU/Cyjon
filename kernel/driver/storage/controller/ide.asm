@@ -80,9 +80,11 @@ DRIVER_IDE_ERROR_uncorrectble_data			equ	01000000b
 DRIVER_IDE_ERROR_bad_block				equ	10000000b
 
 struc	DRIVER_IDE_STRUCTURE_DEVICE
-	.size_sectors					resb	8
+	.blocks						resb	8
+	.block_size					resb	4
 	.channel					resb	2
 	.drive						resb	1
+	.reserved					resb	1
 	.SIZE:
 endstruc
 
@@ -347,7 +349,7 @@ driver_ide_init_drive:
 
 	; zachowaj rozmiar nośnika w sektorach
 	mov	eax,	dword [rdi + DRIVER_IDE_IDENTIFY_max_lba_extended]
-	mov	qword [rcx + DRIVER_IDE_STRUCTURE_DEVICE.size_sectors],	rax
+	mov	qword [rcx + DRIVER_IDE_STRUCTURE_DEVICE.blocks],	rax
 
 	; zarejestrowano nośnik danych
 	inc	byte [driver_ide_devices_count]
