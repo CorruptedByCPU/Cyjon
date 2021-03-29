@@ -31,6 +31,11 @@ kernel_wm:
 	call	kernel_wm_object
 
 	;-----------------------------------------------------------------------
+	; scal nakładające się na siebie strefy
+	;-----------------------------------------------------------------------
+	call	kernel_wm_deduplication
+
+	;-----------------------------------------------------------------------
 	; przetwórz wszystkie zarejestrowane strefy
 	;-----------------------------------------------------------------------
 	call	kernel_wm_zone
@@ -68,6 +73,7 @@ kernel_wm:
 	;-----------------------------------------------------------------------
 	%include	"kernel/service/wm/cursor.asm"
 	%include	"kernel/service/wm/data.asm"
+	%include	"kernel/service/wm/deduplication.asm"
 	%include	"kernel/service/wm/event.asm"
 	%include	"kernel/service/wm/fill.asm"
 	%include	"kernel/service/wm/flush.asm"
