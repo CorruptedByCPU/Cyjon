@@ -19,6 +19,8 @@ kernel_gui_event_soler_file		db	"/bin/soler"
 kernel_gui_event_soler_file_end:
 kernel_gui_event_taris_file		db	"/bin/taris"
 kernel_gui_event_taris_file_end:
+kernel_gui_event_mural_file		db	"/bin/mural"
+kernel_gui_event_mural_file_end:
 
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 

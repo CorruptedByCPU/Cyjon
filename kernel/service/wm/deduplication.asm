@@ -252,7 +252,7 @@ kernel_wm_deduplication:
 	call	kernel_wm_zone_insert_by_register
 
 	; zarejestruj na liście scaleń
-	; call	kernel_wm_merge_insert_by_register
+	call	kernel_wm_merge_insert_by_register
 
 	; usuń element z listy
 	call	kernel_wm_deduplication_remove

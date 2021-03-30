@@ -136,6 +136,8 @@ kernel_wm_event:
 	jz	.end	; nie
 
 .move:
+	xchg	bx,bx
+
 	; przetwórz strefę na pozycji kursora
 	mov	rax,	kernel_wm_object_cursor
 	call	kernel_wm_deduplication_insert_by_object

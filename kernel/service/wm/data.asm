@@ -14,6 +14,7 @@ kernel_wm_object_arbiter_semaphore				db	STATIC_FALSE
 
 kernel_wm_zone_semaphore					db	STATIC_FALSE
 kernel_wm_deduplication_semaphore				db	STATIC_FALSE
+kernel_wm_merge_semaphore					db	STATIC_FALSE
 
 kernel_wm_keyboard_alt_left_semaphore				db	STATIC_FALSE
 kernel_wm_mouse_button_left_semaphore				db	STATIC_FALSE

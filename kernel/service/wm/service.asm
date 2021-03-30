@@ -208,19 +208,21 @@ kernel_wm_irq:
 	; pozycjonuj obiekt domyślnie na środku przestrzeni roboczej
 
 	; oś X
-	mov	ax,	word [kernel_video_width_pixel]
-	mov	bx,	word [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	shr	ax,	STATIC_DIVIDE_BY_2_shift
-	shr	bx,	STATIC_DIVIDE_BY_2_shift
-	sub	ax,	bx
+	mov	ax,	8
+	; mov	ax,	word [kernel_video_width_pixel]
+	; mov	bx,	word [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	; shr	ax,	STATIC_DIVIDE_BY_2_shift
+	; shr	bx,	STATIC_DIVIDE_BY_2_shift
+	; sub	ax,	bx
 	mov	word [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x],	ax
 
 	; oś Y
-	mov	ax,	word [kernel_video_height_pixel]
-	mov	bx,	word [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
-	shr	ax,	STATIC_DIVIDE_BY_2_shift
-	shr	bx,	STATIC_DIVIDE_BY_2_shift
-	sub	ax,	bx
+	mov	ax,	8
+	; mov	ax,	word [kernel_video_height_pixel]
+	; mov	bx,	word [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	; shr	ax,	STATIC_DIVIDE_BY_2_shift
+	; shr	bx,	STATIC_DIVIDE_BY_2_shift
+	; sub	ax,	bx
 	mov	word [rdx + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y],	ax
 
 	; powrót z podprocedury
