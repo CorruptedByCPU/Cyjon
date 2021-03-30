@@ -9,6 +9,8 @@
 ;===============================================================================
 kernel_wm_deduplication:
 	; zachowaj oryginalne rejestry
+	push	rax
+	push	rcx
 	push	rsi
 	push	rdi
 	push	r8
@@ -37,7 +39,7 @@ kernel_wm_deduplication:
 .entry:
 	; zdeduplikowano wszystkie strefy?
 	cmp	qword [rsi],	STATIC_EMPTY
-	je	.end	; tak
+	je	.ready	; tak
 
 	; właściwości strefy źródłowej
 	mov	r8w,	word [rsi + KERNEL_WM_STRUCTURE_FIELD.x]	; lewa krawędź na osi X
@@ -102,7 +104,7 @@ kernel_wm_deduplication:
 	cmp	r14w,	r8w	; prawa krawędź strefy przed lewą krawędzią strefy?
 	jle	.zone	; tak
 	cmp	r15w,	r9w	; dolna krawędź strefy przed górną krawędzią strefy?
-	jg	.zone	; tak
+	jle	.zone	; tak
 
 	;-----------------------------------------------------------------------
 	; przycinanie
@@ -229,6 +231,36 @@ kernel_wm_deduplication:
 	; porzuć duplikującą się strefę
 	jmp	.remove
 
+.ready:
+	; zdeduplikowano strefy
+
+	; dla wszystkich obiektów podstawowym wypełnieniem jest pierwszy obiekt na liście
+	mov	rax,	qword [kernel_wm_object_list_address]
+	mov	rax,	qword [rax + KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.object_address]
+
+	; ustaw wskaźnik na początek przestrzeni listy stref zdeduplikowanych
+	mov	rsi,	qword [kernel_wm_deduplication_list_address]
+
+.forward:
+	; pobierz informacje o fragmencie
+	mov	r8w,	word [rsi + KERNEL_WM_STRUCTURE_FIELD.x]
+	mov	r9w,	word [rsi + KERNEL_WM_STRUCTURE_FIELD.y]
+	mov	r10w,	word [rsi + KERNEL_WM_STRUCTURE_FIELD.width]
+	mov	r11w,	word [rsi + KERNEL_WM_STRUCTURE_FIELD.height]
+
+	; zarejestruj na liście fragmentów
+	call	kernel_wm_zone_insert_by_register
+
+	; zarejestruj na liście scaleń
+	; call	kernel_wm_merge_insert_by_register
+
+	; usuń element z listy
+	call	kernel_wm_deduplication_remove
+
+	; koniec listy elementów do przetransferowania?
+	cmp	qword [rsi],	STATIC_EMPTY
+	jne	.forward	; nie
+
 .end:
 	; przywróć oryginalne rejestry
 	pop	r15
@@ -241,6 +273,8 @@ kernel_wm_deduplication:
 	pop	r8
 	pop	rdi
 	pop	rsi
+	pop	rcx
+	pop	rax
 
 	; powrót z procedury
 	ret
@@ -292,7 +326,7 @@ kernel_wm_deduplication_insert_by_object:
 	push	rdi
 
 	; zablokuj dostęp do modyfikacji listy stref
-	macro_lock	kernel_wm_zone_semaphore,	0
+	macro_lock	kernel_wm_deduplication_semaphore,	0
 
 	; brak miejsca?
 	cmp	qword [kernel_wm_deduplication_list_records],	KERNEL_WM_FRAGMENT_LIST_limit

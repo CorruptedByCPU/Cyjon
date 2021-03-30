@@ -56,38 +56,3 @@ kernel_wm_merge_insert_by_register:
 	ret
 
 	macro_debug	"kernel_wm_merge_insert_by_register"
-
-;===============================================================================
-; wejście:
-;	rax - wskaźnik do obiektu
-kernel_wm_merge_insert_by_object:
-	; zachowaj oryginalne rejestry
-	push	rbx
-
-	; brak miejsca?
-	cmp	qword [kernel_wm_merge_list_records],	KERNEL_WM_FRAGMENT_LIST_limit
-	je	.end	; tak
-
-	; ustaw wskaźnik na koniec listy
-	mov	rbx,	qword [kernel_wm_merge_list_records]
-	shl	rbx,	STATIC_MULTIPLE_BY_16_shift
-	add	rbx,	qword [kernel_wm_merge_list_address]
-
-	; dodaj do listy nową strefę
-	push	qword [rax + KERNEL_WM_STRUCTURE_OBJECT.field]
-	pop	qword [rbx + KERNEL_WM_STRUCTURE_FRAGMENT.field]
-
-	; oraz jej obiekt zależny
-	mov	qword [rbx + KERNEL_WM_STRUCTURE_FRAGMENT.object],	rax
-
-	; zwiększono ilość elementów na liście
-	inc	qword [kernel_wm_merge_list_records]
-
-.end:
-	; przywróć oryginalne rejestry
-	pop	rbx
-
-	; powrót z procedury
-	ret
-
-	macro_debug	"kernel_wm_merge_insert_by_object"
