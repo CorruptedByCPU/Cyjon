@@ -92,7 +92,7 @@ kernel_wm_event:
 
 .no_mouse_button_left_action_release_selected:
 	; usuń informacje o aktywnym obiekcie
-	; mov	qword [kernel_wm_object_selected_pointer],	STATIC_EMPTY
+	mov	qword [kernel_wm_object_selected_pointer],	STATIC_EMPTY
 
 .no_mouse_button_left_release:
 	;-----------------------------------------------------------------------
@@ -136,10 +136,9 @@ kernel_wm_event:
 	jz	.end	; nie
 
 .move:
-	; przetwórz strefę zajętą przez obiekt kursora
+	; przetwórz strefę na pozycji kursora
 	mov	rax,	kernel_wm_object_cursor
-	call	kernel_wm_zone_insert_by_object
-	call	kernel_wm_merge_insert_by_object
+	call	kernel_wm_deduplication_insert_by_object
 
 	; aktualizuj specyfikacje obiektu kursora
 	add	word [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x],	r14w
