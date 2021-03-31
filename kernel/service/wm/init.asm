@@ -25,14 +25,9 @@
 	mov	word [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height],	dx
 	mov	dword [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.size],	ecx
 
-%ifdef	TRANSPARENCY
 	; przygotuj przestrzeń pod bufor
 	macro_library	LIBRARY_STRUCTURE_ENTRY.page_from_size
 	call	kernel_memory_alloc
-%else
-	; bezpośredni zapis do przestrzeni pamięci karty graficznej
-	mov	rdi,	qword [kernel_video_base_address]
-%endif
 
 	; zachowaj wskaźnik początku przestrzeni bufora
 	mov	qword [kernel_wm_object_framebuffer + KERNEL_WM_STRUCTURE_OBJECT.address],	rdi
@@ -61,6 +56,11 @@
 	call	kernel_memory_alloc_page
 	call	kernel_page_drain	; wyczyść
 	mov	qword [kernel_wm_merge_list_address],	rdi
+
+	; przygotuj przestrzeń dla tablicy deduplikacji
+	call	kernel_memory_alloc_page
+	call	kernel_page_drain	; wyczyść
+	mov	qword [kernel_wm_deduplication_list_address],	rdi
 
 	; podłącz procedurę obsługi "systemu zarządzania oknami"
 	mov	rax,	KERNEL_WM_IRQ

@@ -7,7 +7,7 @@
 ;===============================================================================
 
 ;===============================================================================
-kernel_init_storage:
+kernel_bd:
 	; sprawdź czy dostępny jest kontroler IDE
 	mov	eax,	DRIVER_PCI_CLASS_SUBCLASS_ide
 	call	driver_pci_find_class_and_subclass
@@ -20,10 +20,8 @@ kernel_init_storage:
 	cmp	byte [driver_ide_devices_count],	STATIC_EMPTY
 	je	.ide_end	; nie
 
-	; maksymalna ilość urządzeń IDE
-	mov	cl,	0x04
-
 	; zarejestruj wszystkie dostępne nośniki danych
+	xor	cl,	cl	; zaczynając od pierwszego wpisu
 	mov	rdi,	driver_ide_devices
 
 .ide_loop:
@@ -33,12 +31,13 @@ kernel_init_storage:
 
 	; zachowaj oryginalne rejestry
 	push	rax
+	push	rbx
 	push	rcx
 	push	rsi
 	push	rdi
 
 	; pobierz rozmiar nośnika w Bajtach
-	mov	rax,	qword [rdi + DRIVER_IDE_STRUCTURE_DEVICE.size_sectors]
+	mov	rax,	qword [rdi + DRIVER_IDE_STRUCTURE_DEVICE.blocks]
 	shl	rax,	STATIC_MULTIPLE_BY_512_shift	; zamień na Bajty
 
 	; utwórz urządzenie blokowe w wirtualnym systemie plików
@@ -50,8 +49,8 @@ kernel_init_storage:
 	call	kernel_vfs_file_touch
 
 	; uzupełnij metadata urządzenia blokowego
-	mov	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.meta + KERNEL_VFS_STRUCTURE_META.data + KERNEL_VFS_STRUCTURE_META_BLOCK_DEVICE.driver],	driver_ide_entry_table
-	mov	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.meta + KERNEL_VFS_STRUCTURE_META.data + KERNEL_VFS_STRUCTURE_META_BLOCK_DEVICE.filesystem],	STATIC_EMPTY
+	mov	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.meta + KERNEL_VFS_STRUCTURE_META.data + KERNEL_VFS_STRUCTURE_META_BLOCK_DEVICE.entry],	driver_ide_entry_table
+	mov	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.meta + KERNEL_VFS_STRUCTURE_META.data + KERNEL_VFS_STRUCTURE_META_BLOCK_DEVICE.properties],	cl
 
 	; aktualizuj rozmiar urządzenia blokowego
 	mov	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.size],	rax
@@ -60,6 +59,7 @@ kernel_init_storage:
 	pop	rdi
 	pop	rsi
 	pop	rcx
+	pop	rbx
 	pop	rax
 
 .ide_next:
@@ -69,9 +69,12 @@ kernel_init_storage:
 	; przesuń wskaźnik na następny wpis
 	add	rdi,	DRIVER_IDE_STRUCTURE_DEVICE.SIZE
 
-	; koniec wpisów
-	dec	cl
-	jnz	.ide_loop	; nie
+	; następny wpis
+	inc	cl
+
+	; koniec tablicy?
+	cmp	cl,	4
+	jb	.ide_loop	; nie
 
 .ide_end:
 	; ; odszukaj kontroler AHCI na magistrali
@@ -83,3 +86,8 @@ kernel_init_storage:
 	; call	driver_ahci_init
 
 .end:
+
+	; debug
+	jmp	$
+
+kernel_bd_end:

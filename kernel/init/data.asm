@@ -35,21 +35,22 @@ kernel_init_ap_count				db	STATIC_EMPTY
 kernel_init_apic_id_highest			db	STATIC_EMPTY
 
 kernel_init_services_list:
+						dq	kernel_bd
+						dq	kernel_bd_end - kernel_bd
+						db	15
+						db	"[block devices]"
 						dq	kernel_gc
 						dq	kernel_gc_end - kernel_gc
-						db	17
-						db	"garbage collector"
+						db	19
+						db	"[garbage collector]"
 						dq	kernel_wm
 						dq	kernel_wm_end - kernel_wm
-						db	14
-						db	"window manager"
+						db	16
+						db	"[window manager]"
 						dq	kernel_gui
 						dq	kernel_gui_end - kernel_gui
 						db	24
-						db	"graphical user interface"
-						; dq	service_tx
-						; dq	service_network
-						; dq	service_http
+						db	"[graphic user interface]"
 
 						; koniec usług
 						dq	STATIC_EMPTY

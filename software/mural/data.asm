@@ -14,7 +14,7 @@ mural_window:					dw	STATIC_EMPTY	; pozycja na osi X
 						dw	MUTSU_WINDOW_HEIGHT_pixel	; wysokość okna
 						dq	STATIC_EMPTY	; wskaźnik do przestrzeni danych okna (uzupełnia Bosu)
 .extra:						dd	STATIC_EMPTY	; rozmiar przestrzeni danych okna w Bajtach (uzupełnia Bosu)
-						dw	LIBRARY_BOSU_WINDOW_FLAG_transparent | LIBRARY_BOSU_WINDOW_FLAG_visible
+						dw	LIBRARY_BOSU_WINDOW_FLAG_transparent | LIBRARY_BOSU_WINDOW_FLAG_visible | LIBRARY_BOSU_WINDOW_FLAG_border
 						dq	STATIC_EMPTY	; identyfikator okna (uzupełnia Bosu)
 						db	5
 						db	"Mural                          "	; wypełnij do 31 Bajtów znakami STATIC_SCANCODE_SPACE

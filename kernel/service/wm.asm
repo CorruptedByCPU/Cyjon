@@ -30,15 +30,24 @@ kernel_wm:
 	;-----------------------------------------------------------------------
 	call	kernel_wm_object
 
+%ifdef	TEST_TRANSPARENCY
+	;-----------------------------------------------------------------------
+	; scal nakładające się na siebie strefy
+	;-----------------------------------------------------------------------
+	call	kernel_wm_deduplication
+%endif
+
 	;-----------------------------------------------------------------------
 	; przetwórz wszystkie zarejestrowane strefy
 	;-----------------------------------------------------------------------
 	call	kernel_wm_zone
 
+%ifdef	TEST_TRANSPARENCY
 	;-----------------------------------------------------------------------
 	; scal fragmenty przeźroczyste
 	;-----------------------------------------------------------------------
-	; call	kernel_wm_merge
+	call	kernel_wm_merge
+%endif
 
 	;-----------------------------------------------------------------------
 	; sprawdź położenie i stan kursora
@@ -50,12 +59,10 @@ kernel_wm:
 	;-----------------------------------------------------------------------
 	call	kernel_wm_fill
 
-%ifdef	TRANSPARENCY
 	;-----------------------------------------------------------------------
 	; synchronizuj zawartość bufora z pamięcią karty graficznej
 	;-----------------------------------------------------------------------
 	call	kernel_wm_flush
-%endif
 
 	;-----------------------------------------------------------------------
 	; zwolnij pozostały czas procesora
@@ -68,6 +75,7 @@ kernel_wm:
 	;-----------------------------------------------------------------------
 	%include	"kernel/service/wm/cursor.asm"
 	%include	"kernel/service/wm/data.asm"
+	%include	"kernel/service/wm/deduplication.asm"
 	%include	"kernel/service/wm/event.asm"
 	%include	"kernel/service/wm/fill.asm"
 	%include	"kernel/service/wm/flush.asm"

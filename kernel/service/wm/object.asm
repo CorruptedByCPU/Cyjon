@@ -247,10 +247,13 @@ kernel_wm_object:
 	jz	.loop	; nie
 
 .undraw:
-	; przetwórz strefę
-	; rax - wskaźnik do obiektu
+%ifdef	TEST_TRANSPARENCY
+	; zarejestruj
+	call	kernel_wm_deduplication_insert_by_object
+%else
+	; zarejestruj
 	call	kernel_wm_zone_insert_by_object
-	call	kernel_wm_merge_insert_by_object
+%endif
 
 	; wyłącz flagę aktualizacji obiektu lub przerysowania zawartości pod obiektem
 	and	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	~KERNEL_WM_OBJECT_FLAG_flush & ~KERNEL_WM_OBJECT_FLAG_undraw
@@ -704,8 +707,13 @@ kernel_wm_object_move:
 	; szerokość strefy
 	mov	r10w,	r14w
 
+%ifdef	TEST_TRANSPARENCY
+	; zarejestruj
+	call	kernel_wm_deduplication_insert_by_register
+%else
 	; zarejestruj
 	call	kernel_wm_zone_insert_by_register
+%endif
 
 	; koryguj pozycję strefy na osi X
 	add	r8w,	r14w
@@ -723,8 +731,13 @@ kernel_wm_object_move:
 	sub	r8w,	r14w
 	mov	r10w,	r14w
 
+%ifdef	TEST_TRANSPARENCY
+	; zarejestruj
+	call	kernel_wm_deduplication_insert_by_register
+%else
 	; zarejestruj
 	call	kernel_wm_zone_insert_by_register
+%endif
 
 	; koryguj pozycję strefy na osi X
 	mov	r8w,	r12w
@@ -753,8 +766,13 @@ kernel_wm_object_move:
 	; wysokość strefy
 	mov	r11w,	r15w
 
+%ifdef	TEST_TRANSPARENCY
+	; zarejestruj
+	call	kernel_wm_deduplication_insert_by_register
+%else
 	; zarejestruj
 	call	kernel_wm_zone_insert_by_register
+%endif
 
 	; koryguj pozycję strefy na osi Y
 	add	r9w,	r15w
@@ -772,8 +790,13 @@ kernel_wm_object_move:
 	sub	r9w,	r15w
 	mov	r11w,	r15w
 
+%ifdef	TEST_TRANSPARENCY
+	; zarejestruj
+	call	kernel_wm_deduplication_insert_by_register
+%else
 	; zarejestruj
 	call	kernel_wm_zone_insert_by_register
+%endif
 
 	; koryguj pozycję strefy na osi Y
 	mov	r9w,	r12w
