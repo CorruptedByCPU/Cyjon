@@ -13,7 +13,7 @@ kernel_bd:
 	call	driver_pci_find_class_and_subclass
 	jc	.ide_end	; brak
 
-	; inicjalizuj dostępne nośniki na kontrolerze IDE
+	; ; inicjalizuj dostępne nośniki na kontrolerze IDE
 	call	driver_ide_init
 
 	; znaleziono jakiekolwiek nośniki danych?

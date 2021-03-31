@@ -7,7 +7,9 @@
 ;===============================================================================
 
 DRIVER_IDE_CHANNEL_PRIMARY				equ	0x01F0
+DRIVER_IDE_CHANNEL_PRIMARY_control			equ	0x03F6
 DRIVER_IDE_CHANNEL_SECONDARY				equ	0x0170
+DRIVER_IDE_CHANNEL_SECONDARY_control			equ	0x0376
 
 DRIVER_IDE_REGISTER_data				equ	0x0000
 DRIVER_IDE_REGISTER_error				equ	0x0001
@@ -23,7 +25,6 @@ DRIVER_IDE_REGISTER_command_OR_status			equ	0x0007
 ; DRIVER_IDE_REGISTER_lba5				equ	0x000B	; niewykorzystywane
 DRIVER_IDE_REGISTER_control_OR_altstatus		equ	0x000C	; niewykorzystywane
 ; DRIVER_IDE_REGISTER_device_address			equ	0x000D	; niewykorzystywane
-DRIVER_IDE_REGISTER_channel_control_OR_altstatus	equ	0x0206
 
 DRIVER_IDE_DRIVE_master					equ	11100000b	; 1, LBA(1), 1, Master(0), 000
 DRIVER_IDE_DRIVE_slave					equ	11110000b	; 1, LBA(1), 1, Slave(1), 000
@@ -396,17 +397,16 @@ driver_ide_init:
 	;-----------------------------------------------------------------------
 	; wyłącz przerwania na kanale PRIMARY
 	mov	al,	DRIVER_IDE_CONTROL_nIEN
-	mov	dx,	DRIVER_IDE_CHANNEL_PRIMARY + DRIVER_IDE_REGISTER_channel_control_OR_altstatus
+	mov	dx,	DRIVER_IDE_CHANNEL_PRIMARY + DRIVER_IDE_REGISTER_control_OR_altstatus
 	out	dx,	al
 
 	; czekaj na wykonanie polecenia
 	mov	dx,	DRIVER_IDE_CHANNEL_PRIMARY
 	call	driver_ide_pool
-	jc	.next	; brak urządzeń na kanale
 
 	; przełącz urządzenia na kanale w tryb RESET
 	mov	al,	DRIVER_IDE_CONTROL_SRST
-	mov	dx,	DRIVER_IDE_CHANNEL_PRIMARY + DRIVER_IDE_REGISTER_channel_control_OR_altstatus
+	mov	dx,	DRIVER_IDE_CHANNEL_PRIMARY_control
 	out	dx,	al
 	; wyłącz tryb RESET
 	xor	al,	al
@@ -430,17 +430,16 @@ driver_ide_init:
 	;-----------------------------------------------------------------------
 	; wyłącz przerwania na kanale SECONDARY
 	mov	al,	DRIVER_IDE_CONTROL_nIEN
-	mov	dx,	DRIVER_IDE_CHANNEL_SECONDARY + DRIVER_IDE_REGISTER_channel_control_OR_altstatus
+	mov	dx,	DRIVER_IDE_CHANNEL_SECONDARY + DRIVER_IDE_REGISTER_control_OR_altstatus
 	out	dx,	al
 
 	; czekaj na wykonanie polecenia
 	mov	dx,	DRIVER_IDE_CHANNEL_SECONDARY
 	call	driver_ide_pool
-	jc	.end	; brak urządzeń na kanale
 
 	; przełącz urządzenia na kanale w tryb RESET
 	mov	al,	DRIVER_IDE_CONTROL_SRST
-	mov	dx,	DRIVER_IDE_CHANNEL_SECONDARY + DRIVER_IDE_REGISTER_channel_control_OR_altstatus
+	mov	dx,	DRIVER_IDE_CHANNEL_SECONDARY_control
 	out	dx,	al
 	; wyłącz tryb RESET
 	xor	al,	al
@@ -474,19 +473,22 @@ driver_ide_init:
 
 ;===============================================================================
 ; wejście:
-;	dx - identyfikator nośnika
+;	dx - kontroler PRIMARY/SECONDARY
 driver_ide_pool:
 	; zachowaj oryginalne rejestry
 	push	rax
 	push	rdx
 
-	;-----------------------------------------------------------------------
-	; odłóż w czasie sprawdzenie stanu kanału
+	; odczekaj 400ms
+	add	dx,	DRIVER_IDE_REGISTER_control_OR_altstatus
+	in	al,	dx
+	in	al,	dx
+	in	al,	dx
+	in	al,	dx
+
+	; wybierz rejestr kontrolera
+	mov	dx,	word [rsp]
 	add	dx,	DRIVER_IDE_REGISTER_command_OR_status
-	in	al,	dx
-	in	al,	dx
-	in	al,	dx
-	in	al,	dx
 
 	; brak urządzeń?
 	test	al,	al
