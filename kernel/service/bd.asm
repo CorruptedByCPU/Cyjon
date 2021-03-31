@@ -86,7 +86,6 @@ kernel_bd:
 	; call	driver_ahci_init
 
 .end:
-
 	; debug
 	jmp	$
 

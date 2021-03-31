@@ -21,7 +21,7 @@ DRIVER_IDE_REGISTER_command_OR_status			equ	0x0007
 ; DRIVER_IDE_REGISTER_lba3				equ	0x0009	; niewykorzystywane
 ; DRIVER_IDE_REGISTER_lba4				equ	0x000A	; niewykorzystywane
 ; DRIVER_IDE_REGISTER_lba5				equ	0x000B	; niewykorzystywane
-; DRIVER_IDE_REGISTER_control_OR_altstatus		equ	0x000C	; niewykorzystywane
+DRIVER_IDE_REGISTER_control_OR_altstatus		equ	0x000C	; niewykorzystywane
 ; DRIVER_IDE_REGISTER_device_address			equ	0x000D	; niewykorzystywane
 DRIVER_IDE_REGISTER_channel_control_OR_altstatus	equ	0x0206
 
@@ -263,7 +263,6 @@ driver_ide_lba:
 	; powrót z procedury
 	ret
 
-
 ;===============================================================================
 ; wejście:
 ;	al - urządzenie MASTER lub SLAVE
@@ -483,7 +482,7 @@ driver_ide_pool:
 
 	;-----------------------------------------------------------------------
 	; odłóż w czasie sprawdzenie stanu kanału
-	add	dx,	DRIVER_IDE_REGISTER_channel_control_OR_altstatus
+	add	dx,	DRIVER_IDE_REGISTER_command_OR_status
 	in	al,	dx
 	in	al,	dx
 	in	al,	dx
