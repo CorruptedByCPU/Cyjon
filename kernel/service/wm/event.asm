@@ -136,11 +136,16 @@ kernel_wm_event:
 	jz	.end	; nie
 
 .move:
-	xchg	bx,bx
-
 	; przetwórz strefę na pozycji kursora
 	mov	rax,	kernel_wm_object_cursor
+
+%ifdef	TEST_TRANSPARENCY
+	; zarejestruj
 	call	kernel_wm_deduplication_insert_by_object
+%else
+	; zarejestruj
+	call	kernel_wm_zone_insert_by_object
+%endif
 
 	; aktualizuj specyfikacje obiektu kursora
 	add	word [kernel_wm_object_cursor + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x],	r14w

@@ -25,14 +25,16 @@ kernel_wm_merge:
 	cmp	qword [kernel_wm_merge_list_records],	STATIC_EMPTY
 	je	.end	; tak
 
-	xchg	bx,bx
-
 	; ustaw wskaźnik na początek przestrzeni listy obiektów
 	mov	rsi,	qword [kernel_wm_object_list_length]
 	shl	rsi,	STATIC_MULTIPLE_BY_8_shift
 	add	rsi,	qword [kernel_wm_object_list_address]
 
 .next:
+	; koniec listy obiektów?
+	cmp	rsi,	qword [kernel_wm_object_list_address]
+	je	.end	; tak
+
 	; przesuń wskaźnik na następny obiekt
 	sub	rsi,	KERNEL_WM_STRUCTURE_OBJECT_LIST_ENTRY.SIZE
 
@@ -49,27 +51,27 @@ kernel_wm_merge:
 	jz	.next	; nie
 
 	; pobierz właściwości obiektu
-	mov	r8w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]	; lewa krawędź na oxi X
-	mov	r9w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]	; górna krawędź na osi Y
-	mov	r10w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	add	r10w,	r8w	; prawa krawędź na osi X
-	mov	r11w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
-	add	r11w,	r9w	; dolna krawędź na osi Y
+	mov	r12w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.x]	; lewa krawędź na oxi X
+	mov	r13w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.y]	; górna krawędź na osi Y
+	mov	r14w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	add	r14w,	r12w	; prawa krawędź na osi X
+	mov	r15w,	word [rax + KERNEL_WM_STRUCTURE_OBJECT.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	add	r15w,	r13w	; dolna krawędź na osi Y
 
 	; obiekt znajduje się w przestrzeni ekranu?
-	cmp	r8w,	word [kernel_video_width_pixel]
+	cmp	r12w,	word [kernel_video_width_pixel]
 	jge	.next	; za daleko w prawo
-	cmp	r9w,	word [kernel_video_height_pixel]
+	cmp	r13w,	word [kernel_video_height_pixel]
 	jge	.next	; za daleko w dół
-	cmp	r10w,	STATIC_EMPTY
+	cmp	r14w,	STATIC_EMPTY
 	jle	.next	; za daleko w lewo
-	cmp	r11w,	STATIC_EMPTY
+	cmp	r15w,	STATIC_EMPTY
 	jle	.next	; za daleko w górę
 
 	;--------------------------------
 	;      r9	       r13	X
 	;    -------	     -------
-	; r8 | rsi | r10 r12 | rdi | r14
+	; r8 | rdi | r10 r12 | rsi | r14
 	;    -------	     -------
 	;      r11	       r15
 	; Y
@@ -88,21 +90,21 @@ kernel_wm_merge:
 	je	.next	; tak
 
 	; pobierz właściwości fragmentu scaleń
-	mov	r12w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.x]	; lewa krawędź na osi X
-	mov	r13w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.y]	; górna krawędź na osi Y
-	mov	r14w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.width]
-	add	r14w,	r12w	; prawa krawędź na osi X
-	mov	r15w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.height]
-	add	r15w,	r13w	; dolna krawędź na osi Y
+	mov	r8w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.x]	; lewa krawędź na osi X
+	mov	r9w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.y]	; górna krawędź na osi Y
+	mov	r10w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.width]
+	add	r10w,	r8w	; prawa krawędź na osi X
+	mov	r11w,	word [rdi + KERNEL_WM_STRUCTURE_FRAGMENT.field + KERNEL_WM_STRUCTURE_FIELD.height]
+	add	r11w,	r9w	; dolna krawędź na osi Y
 
 	; fragment znajduje się w przestrzeni obiektu?
-	cmp	r12w,	word [kernel_video_width_pixel]
+	cmp	r12w,	r10w
 	jge	.merge	; za dalego w prawo
-	cmp	r13w,	word [kernel_video_height_pixel]
+	cmp	r13w,	r11w
 	jge	.merge	; za dalego w dół
-	cmp	r14w,	STATIC_EMPTY
+	cmp	r14w,	r8w
 	jle	.merge	; za dalego w lewo
-	cmp	r15w,	STATIC_EMPTY
+	cmp	r15w,	r9w
 	jle	.merge	; za dalego w górę
 
 	;-----------------------------------------------------------------------
@@ -125,7 +127,7 @@ kernel_wm_merge:
 	sub	r11w,	r9w
 
 	; obiekt posiada cechę przeźroczystości?
-	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_transparent
 	jnz	.left_omit	; tak
 
 	; odłóż na listę stref
@@ -159,7 +161,7 @@ kernel_wm_merge:
 	sub	r11w,	r9w
 
 	; obiekt posiada cechę przeźroczystości?
-	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_transparent
 	jnz	.up_omit	; tak
 
 	; odłóż na listę stref
@@ -196,7 +198,7 @@ kernel_wm_merge:
 	mov	r8w,	r14w
 
 	; obiekt posiada cechę przeźroczystości?
-	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_transparent
 	jnz	.right_omit	; tak
 
 	; odłóż na listę stref
@@ -231,7 +233,7 @@ kernel_wm_merge:
 	mov	r9w,	r15w
 
 	; obiekt posiada cechę przeźroczystości?
-	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_transparent
 	jnz	.down_omit	; tak
 
 	; odłóż na listę stref
@@ -253,7 +255,7 @@ kernel_wm_merge:
 	jle	.merge	; błąd, fragment niewidoczny
 
 	; obiekt posiada cechę przeźroczystości?
-	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_visible
+	test	word [rax + KERNEL_WM_STRUCTURE_OBJECT.SIZE + KERNEL_WM_STRUCTURE_OBJECT_EXTRA.flags],	KERNEL_WM_OBJECT_FLAG_transparent
 	jnz	.fill	; tak
 
 	; usuń fragment z listy

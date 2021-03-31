@@ -15,5 +15,5 @@
 %define	PROGRAM_NAME		"mural"
 %define	PROGRAM_VERSION		"0.1"
 
-MUTSU_WINDOW_WIDTH_pixel	equ	128
-MUTSU_WINDOW_HEIGHT_pixel	equ	128
+MUTSU_WINDOW_WIDTH_pixel	equ	64
+MUTSU_WINDOW_HEIGHT_pixel	equ	64
