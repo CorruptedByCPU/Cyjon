@@ -35,10 +35,10 @@ kernel_init_ap_count				db	STATIC_EMPTY
 kernel_init_apic_id_highest			db	STATIC_EMPTY
 
 kernel_init_services_list:
-						dq	kernel_bd
-						dq	kernel_bd_end - kernel_bd
-						db	15
-						db	"[block devices]"
+						; dq	kernel_bd
+						; dq	kernel_bd_end - kernel_bd
+						; db	15
+						; db	"[block devices]"
 						dq	kernel_gc
 						dq	kernel_gc_end - kernel_gc
 						db	19
