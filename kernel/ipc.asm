@@ -9,7 +9,7 @@
 KERNEL_IPC_SIZE_page_default	equ	1
 KERNEL_IPC_ENTRY_limit		equ	(KERNEL_IPC_SIZE_page_default << STATIC_PAGE_SIZE_shift) / KERNEL_IPC_STRUCTURE.SIZE
 
-KERNEL_IPC_TTL_default		equ	DRIVER_RTC_Hz / 10	; ~100ms
+KERNEL_IPC_TTL_default		equ	DRIVER_RTC_Hz / 100	; ~100ms
 
 kernel_ipc_semaphore		db	STATIC_FALSE
 kernel_ipc_base_address		dq	STATIC_EMPTY
