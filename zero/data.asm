@@ -17,7 +17,7 @@ zero_string_new_line			db	0x0D, 0x0A, "  ", 0x00
 
 zero_string_welcome			db	0x0D, 0x0A, " Kernel loading... ", 0x00
 zero_string_kernel			db	"OK.", 0x0D, 0x0A, 0x0A, 0x00
-zero_string_resolution			db	" Choose from the available resolutions:", 0x0D, 0x0A, 0x00
+zero_string_resolution			db	" Choose from the available resolutions:", 0x00
 
 zero_string_error_kernel		db	"FAILED.", 0x0D, 0x0A, " Please, check the consistency of the data on the floppy disk.", 0x00
 zero_string_error_vbe			db	" VESA BIOS Extension not available. Cannot select graphics resolution."

@@ -10,7 +10,7 @@ ZERO_GRAPHICS_DEPTH_bit			equ	32
 ZERO_GRAPHICS_MODE_clean		equ	0x8000
 ZERO_GRAPHICS_MODE_linear		equ	0x4000
 
-ZERO_GRAPHICS_RESOLUTION_list		equ	20
+ZERO_GRAPHICS_RESOLUTION_list		equ	24
 
 struc	ZERO_STRUCTURE_GRAPHICS_VGA_INFO_BLOCK
 	.vesa_signature			resb	4
@@ -91,6 +91,7 @@ zero_graphics:
 	; przygotuj przestrzeń pod listę trybów
 	sub	sp,	ZERO_GRAPHICS_RESOLUTION_list * 0x02
 	mov	bp,	sp
+	sub	bp,	0x02	; korekcja względem pętli
 
 	; przeszukaj tablicę dostępnych trybów za porządanym
 	mov	esi,	dword [di + ZERO_STRUCTURE_GRAPHICS_VGA_INFO_BLOCK.video_mode_ptr]
@@ -110,19 +111,19 @@ zero_graphics:
 	cmp	byte [di + ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.bits_per_pixel],	ZERO_GRAPHICS_DEPTH_bit
 	jne	.next	; nie
 
+	; ustaw wskaźnik na wolny rekord
+	add	bp,	0x02
+
 	; zachowaj identyfikator rozdzielczości
 	mov	ax,	word [esi]
 	mov	word [bp],	ax
 
-	; wyświetlono całą kolumnę trybów?
-	dec	dx
-	jz	.ready	; tak
-
-	; następna pozycja
-	add	bp,	0x02
-
 	; wyświetl dostępną rozdzielczość
 	call	.show
+
+	; wyświetlono zestaw trybów graficznych?
+	dec	dx
+	jz	.ready	; tak
 
 .next:
 	; przesuń wskaźnik na następny wpis
@@ -132,9 +133,6 @@ zero_graphics:
 	jmp	.loop
 
 .ready:
-	; koryguj na ostatnią pozycję na liście
-	sub	bp,	0x02
-
 	; wylicz ilość wyświetlonych trybów
 	mov	cx,	ZERO_GRAPHICS_RESOLUTION_list
 	sub	cx,	dx
@@ -214,8 +212,6 @@ zero_graphics:
 	jmp	.key
 
 .error:
-	jmp	$
-
 	; wyświetl komunikat błędu
 	mov	si,	zero_string_error_vbe
 	call	zero_print_string
@@ -253,6 +249,11 @@ zero_graphics:
 .found:
 	; usuń zmienne lokalne
 	mov	sp,	bp
+
+	; pobierz właściwości danego trybu graficznego
+	mov	ax,	0x4F01
+	mov	cx,	word [ebp]
+	int	0x10
 
 	; włącz dany tryb graficzny
 	mov	ax,	0x4F02
