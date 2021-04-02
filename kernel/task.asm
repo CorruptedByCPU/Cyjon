@@ -211,7 +211,7 @@ kernel_task:
 .leave:
 	; wywołaj przerwanie czasowe po upłynięciu (jednej jednostki czasu) cdn.
 	mov	rdi,	qword [kernel_apic_base_address]
-	mov	dword [rdi + KERNEL_APIC_TICR_register],	DRIVER_RTC_Hz
+	mov	dword [rdi + KERNEL_APIC_TICR_register],	KERNEL_APIC_TICR_value
 
 	; poinformuj APIC o obsłużeniu aktualnego przerwania sprzętowego
 	mov	dword [rdi + KERNEL_APIC_EOI_register],	STATIC_EMPTY

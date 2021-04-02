@@ -118,7 +118,7 @@ kernel_init:
 	call	kernel_init_apic
 
 	; ustaw domyślny czas pomiędzy wywołaniami przerwania (jednostki)
-	mov	dword [rsi + KERNEL_APIC_TICR_register],	DRIVER_RTC_Hz
+	mov	dword [rsi + KERNEL_APIC_TICR_register],	KERNEL_APIC_TICR_value
 
 	; poinformuj APIC o obsłużeniu aktualnego przerwania sprzętowego lokalnego
 	mov	dword [rsi + KERNEL_APIC_EOI_register],	STATIC_EMPTY

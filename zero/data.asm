@@ -13,6 +13,15 @@ zero_graphics_mode_info_block_address	dd	0x00000000
 zero_page_table_address			dd	0x00000000
 zero_idt_table_address			dd	0x00000000
 
+zero_string_new_line			db	0x0D, 0x0A, "  ", 0x00
+
+zero_string_welcome			db	0x0D, 0x0A, " Kernel loading... ", 0x00
+zero_string_kernel			db	"OK.", 0x0D, 0x0A, 0x0A, 0x00
+zero_string_resolution			db	" Choose from the available resolutions:", 0x00
+
+zero_string_error_kernel		db	"FAILED.", 0x0D, 0x0A, " Please, check the consistency of the data on the floppy disk.", 0x00
+zero_string_error_vbe			db	" VESA BIOS Extension not available. Cannot select graphics resolution."
+
 ;-------------------------------------------------------------------------------
 ; format danych w postaci tablicy, wykorzystywany przez funkcję AH=0x42, przerwanie 0x13
 ; http://www.ctyme.com/intr/rb-0708.htm

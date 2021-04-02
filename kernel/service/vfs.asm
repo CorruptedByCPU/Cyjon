@@ -8,7 +8,12 @@
 
 ;===============================================================================
 kernel_vfs:
-	; debug
-	jmp	$
+
+.loop:
+	; zwolnij pozostały czas procesora
+	call	kernel_sleep
+
+	; powrót do głównej pętli
+	jmp	.loop
 
 kernel_vfs_end:

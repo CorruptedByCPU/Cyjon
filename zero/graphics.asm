@@ -10,6 +10,8 @@ ZERO_GRAPHICS_DEPTH_bit			equ	32
 ZERO_GRAPHICS_MODE_clean		equ	0x8000
 ZERO_GRAPHICS_MODE_linear		equ	0x4000
 
+ZERO_GRAPHICS_RESOLUTION_list		equ	24
+
 struc	ZERO_STRUCTURE_GRAPHICS_VGA_INFO_BLOCK
 	.vesa_signature			resb	4
 	.vesa_version			resb	2
@@ -71,13 +73,33 @@ zero_graphics:
 	test	ax,	0x4F00
 	jnz	.error	; nie
 
+	; wyświetl dostępne rozdzielczości
+	mov	si,	zero_string_resolution
+	call	zero_print_string
+
+	; zmień kształt kursora na "blok"
+	mov	al,	0x0A
+	mov	dx,	0x03D4
+	out	dx,	al
+	mov	al,	0x00
+	inc	dx
+	out	dx,	al
+
+	; wyświetl maksymalnie 19 trybów
+	mov	dx,	ZERO_GRAPHICS_RESOLUTION_list
+
+	; przygotuj przestrzeń pod listę trybów
+	sub	sp,	ZERO_GRAPHICS_RESOLUTION_list * 0x02
+	mov	bp,	sp
+	sub	bp,	0x02	; korekcja względem pętli
+
 	; przeszukaj tablicę dostępnych trybów za porządanym
 	mov	esi,	dword [di + ZERO_STRUCTURE_GRAPHICS_VGA_INFO_BLOCK.video_mode_ptr]
 
 .loop:
 	; koniec tablicy?
 	cmp	word [esi],	0xFFFF
-	je	.error	; tak
+	je	.ready	; tak
 
 	; pobierz właściwości danego trybu graficznego
 	mov	ax,	0x4F01
@@ -85,17 +107,23 @@ zero_graphics:
 	mov	edi,	dword [zero_graphics_mode_info_block_address]
 	int	0x10
 
-	; oczekiwana szerokość w pikselach?
-	cmp	word [di + ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.x_resolution],	SELECTED_VIDEO_WIDTH_pixel
-	jne	.next	; nie
-
-	; oczekiwana wysokość w pikselach?
-	cmp	word [di + ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.y_resolution],	SELECTED_VIDEO_HEIGHT_pixel
-	jne	.next	; nie
-
 	; oczekiwana głębia kolorów?
 	cmp	byte [di + ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.bits_per_pixel],	ZERO_GRAPHICS_DEPTH_bit
-	je	.found	; tak
+	jne	.next	; nie
+
+	; ustaw wskaźnik na wolny rekord
+	add	bp,	0x02
+
+	; zachowaj identyfikator rozdzielczości
+	mov	ax,	word [esi]
+	mov	word [bp],	ax
+
+	; wyświetl dostępną rozdzielczość
+	call	.show
+
+	; wyświetlono zestaw trybów graficznych?
+	dec	dx
+	jz	.ready	; tak
 
 .next:
 	; przesuń wskaźnik na następny wpis
@@ -104,14 +132,132 @@ zero_graphics:
 	; sprawdź następny tryb
 	jmp	.loop
 
+.ready:
+	; wylicz ilość wyświetlonych trybów
+	mov	cx,	ZERO_GRAPHICS_RESOLUTION_list
+	sub	cx,	dx
+	dec	cx
+
+	; zachowaj licznik
+	push	cx
+
+	; pobierz aktualną pozycję kursora
+	mov	ah,	0x03
+	xor	bh,	bh	; brak strony
+	int	0x10
+
+	; zawsze pierwsza kolumna
+	xor	dl,	dl
+
+	; przywróć licznik
+	mov	cx,	word [esp]
+
+.select:
+	; ustaw kursor na początek linii ostatnio wyświetlonego trybu
+	mov	al,	0x0D
+	call	zero_print_char
+
+.key:
+	; pobierz klawisz od użyszkodnika
+	xor	ah,	ah
+	int	0x16
+
+	; klawisz enter?
+	cmp	al,	0x0D
+	je	.found	; tak
+
+	; klawisz "strzałka w górę?"
+	cmp	ah,	0x48
+	jne	.no_arrow_up	; nie
+
+	; kursor znajduje się już na początku listy?
+	test	cx,	cx
+	jz	.key	; tak, zignoruj
+
+	; poprzednia pozycja na liście
+	dec	cx
+
+	; przesuń wskaźnik na wpis
+	sub	bp,	0x02
+
+	; ustaw kursor na wybraną pozycję
+	mov	ah,	0x02
+	dec	dh
+	int	0x10
+
+	; kontynuuj
+	jmp	.key
+
+.no_arrow_up:
+	; klawisz "strzałka w dół"?
+	cmp	ah,	0x50
+	jne	.key	; nie
+
+	; kursor znajduje się już na końcu listy?
+	cmp	cx,	word [esp]
+	je	.key	; tak, zignoruj
+
+	; poprzednia pozycja na liście
+	inc	cx
+
+	; przesuń wskaźnik na wpis
+	add	bp,	0x02
+
+	; ustaw kursor na wybraną pozycję
+	mov	ah,	0x02
+	inc	dh
+	int	0x10
+
+	; kontynuuj
+	jmp	.key
+
 .error:
+	; wyświetl komunikat błędu
+	mov	si,	zero_string_error_vbe
+	call	zero_print_string
+
 	; zatrzymaj dalsze wykonywanie kodu
 	jmp	$
 
+.show:
+	; zachowaj oryginalne rejestry
+	push	ax
+	push	si
+
+	; ustaw kursor na linię
+	mov	si,	zero_string_new_line
+	call	zero_print_string
+
+	; szerokość w pikselaxch
+	mov	ax,	word [di + ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.x_resolution]
+	call	zero_print_number
+
+	mov	al,	"x"
+	call	zero_print_char
+
+	; wysokość w pikselach
+	mov	ax,	word [di + ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.y_resolution]
+	call	zero_print_number
+
+	; przywróć oryginalne rejestry
+	pop	si
+	pop	ax
+
+	; powrót z podprocedury
+	ret
+
 .found:
+	; usuń zmienne lokalne
+	mov	sp,	bp
+
+	; pobierz właściwości danego trybu graficznego
+	mov	ax,	0x4F01
+	mov	cx,	word [ebp]
+	int	0x10
+
 	; włącz dany tryb graficzny
 	mov	ax,	0x4F02
-	mov	bx,	word [esi]
+	pop	bx
 	or	bx,	ZERO_GRAPHICS_MODE_linear | ZERO_GRAPHICS_MODE_clean
 	int	0x10
 

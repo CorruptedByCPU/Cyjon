@@ -207,7 +207,6 @@ kernel_gui_init:
 
 %ifdef	TEST_TRANSPARENCY
 	; debug
-	call	kernel_gui_event_task_manager
 	call	kernel_gui_event_mural
 %endif
 

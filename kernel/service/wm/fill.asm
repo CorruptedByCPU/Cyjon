@@ -55,11 +55,11 @@ kernel_wm_fill:
 	cmp	byte [rsi + 0x03],	STATIC_MAX_unsigned
 	je	.transparent_max	; tak
 
-%ifdef	TEST_TRANSPARENCY
+; %ifdef	TEST_TRANSPARENCY
 	; przeliczyć wartość koloru na podstawie kanału alfa?
 	cmp	byte [rsi + 0x03],	STATIC_EMPTY
 	ja	.alpha	; tak
-%endif
+; %endif
 
 .fill:
 	; wypełnij wiersz pikseli wypełniaczem

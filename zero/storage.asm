@@ -16,12 +16,21 @@ zero_storage:
 	mov	es,	ax	; segment
 	xor	bx,	bx	; przesunięcie
 
-	; załaduj drugą część programu rozruchowego
-	mov	cl,	(((zero_end - zero) + 0x200) / 0x200) + 0x01	; rozpocznij od "drugiego" sektora
-	mov	di,	KERNEL_FILE_SIZE_bytes / 0x0200	; rozmiar programu rozruchowego
+	; wyświetl informację o aktualnej czynności
+	mov	si,	zero_string_welcome
+	call	zero_print_string
+
+	; plik jądra systemu
+	mov	cl,	(((zero_end - zero) + 0x200) / 0x200) + 0x01	; pozycja pliku jądra systemu za programem rozruchowym
+	mov	di,	KERNEL_FILE_SIZE_bytes / 0x0200	; rozmiar w sektorach
 	call	zero_floppy
 	jnc	.end	; wczytano popwanie
 
+	; wyświetl komunikat o błędzie
+	mov	si,	zero_string_error_kernel
+	call	zero_print_string
+
+	; zatrzymaj dalsze wykonywanie kodu
 	jmp	$
 
 	;-----------------------------------------------------------------------
@@ -30,5 +39,9 @@ zero_storage:
 	%include	"zero/floppy.asm"
 
 zero_storage.end:
+	; wyświetl poetwierdzenie
+	mov	si,	zero_string_kernel
+	call	zero_print_string
+
 	; przywróć oryginalny segment ekstra
 	pop	es
