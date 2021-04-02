@@ -63,12 +63,12 @@ kernel:
 	%include	"kernel/driver/storage/controller/ide.asm"
 	%include	"kernel/driver/storage/filesystem/fat32.asm"
 	;-----------------------------------------------------------------------
-	; %include	"kernel/service/bd.asm"
 	%include	"kernel/service/gc.asm"
 	%include	"kernel/service/gui.asm"
 	%include	"kernel/service/http.asm"
 	%include	"kernel/service/network.asm"
 	%include	"kernel/service/tx.asm"
+	%include	"kernel/service/vfs.asm"
 	%include	"kernel/service/wm.asm"
 	;-----------------------------------------------------------------------
 	%include	"kernel/library/page_align_up.asm"

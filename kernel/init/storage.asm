@@ -12,61 +12,8 @@ kernel_init_storage:
 	call	driver_pci_find_class_and_subclass
 	jc	.ide_end	; brak, np. na mojej płycie głównej
 
-	; inicjalizuj kontroler IDE
-	call	driver_ide_reset
-
 	; zarejestruj wszystkie dostępne nośniki danych
 	call	driver_ide_init
-
-	; utwórz urządzenia blokowe, reprezentujące nośniki danych
-	xor	cl,	cl
-	mov	rsi,	driver_ide_devices
-
-.ide_loop:
-	; wpis uzupełniony?
-	cmp	word [rsi + DRIVER_IDE_STRUCTURE_DEVICE.channel],	STATIC_EMPTY
-	je	.ide_next	; nie
-
-	; zachowaj oryginalne rejestry
-	push	rcx
-	push	rsi
-
-	; pobierz rozmiar nośnika w Bajtach
-	mov	rax,	qword [rdi + DRIVER_IDE_STRUCTURE_DEVICE.blocks]
-	shl	rax,	STATIC_MULTIPLE_BY_512_shift	; zamień na Bajty
-
-	; utwórz urządzenie blokowe w wirtualnym systemie plików
-	mov	ecx,	kernel_init_string_storage_ide_hd_end - kernel_init_string_storage_ide_hd_path
-	mov	rsi,	kernel_init_string_storage_ide_hd_path
-	call	kernel_vfs_path_resolve
-	mov	rbx,	qword [rsp]
-	mov	dl,	KERNEL_VFS_FILE_TYPE_block_device
-	call	kernel_vfs_file_touch
-
-	; uzupełnij metadata urządzenia blokowego
-	mov	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.meta + KERNEL_VFS_STRUCTURE_META.data + KERNEL_VFS_STRUCTURE_META_BLOCK_DEVICE.entry],	driver_ide_entry_table
-	mov	byte [rdi + KERNEL_VFS_STRUCTURE_KNOT.meta + KERNEL_VFS_STRUCTURE_META.data + KERNEL_VFS_STRUCTURE_META_BLOCK_DEVICE.properties],	cl
-
-	; aktualizuj rozmiar urządzenia blokowego
-	mov	qword [rdi + KERNEL_VFS_STRUCTURE_KNOT.size],	rax
-
-	; przywróć oryginalne rejestry
-	pop	rsi
-	pop	rcx
-
-.ide_next:
-	; następna litera nośnika
-	inc	byte [kernel_init_string_storage_ide_hd_letter]
-
-	; przesuń wskaźnik na następny wpis
-	add	rsi,	DRIVER_IDE_STRUCTURE_DEVICE.SIZE
-
-	; następny wpis
-	inc	cl
-
-	; koniec tablicy?
-	cmp	cl,	4
-	jb	.ide_loop	; nie
 
 .ide_end:
 	; ; odszukaj kontroler AHCI na magistrali

@@ -206,12 +206,9 @@ kernel_gui_init:
 	mov	qword [kernel_gui_taskbar_list_address],	rdi	; zachowaj wskaźnik
 
 %ifdef	TEST_TRANSPARENCY
-	; call	kernel_gui_event_soler
+	; debug
+	call	kernel_gui_event_task_manager
 	call	kernel_gui_event_mural
-%else
-	call	kernel_gui_event_console
-	; call	kernel_gui_event_taris
-	; call	kernel_gui_event_soler
 %endif
 
 	macro_debug	"kernel_gui_init"

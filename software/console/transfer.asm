@@ -19,7 +19,7 @@ console_transfer:
 
 	; wyślij komunikat do powłoki
 	mov	rax,	KERNEL_SERVICE_PROCESS_ipc_send
-	mov	rbx,	qword [console_shell_pid]
+	mov	rbx,	qword [console_process_pid]
 	xor	ecx,	ecx	; domyślny rozmiar komunikatu
 	int	KERNEL_SERVICE
 

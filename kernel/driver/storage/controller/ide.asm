@@ -431,6 +431,9 @@ driver_ide_init:
 	push	rdx
 	push	rdi
 
+	; inicjalizuj kontroler IDE
+	call	driver_ide_reset
+
 	; przygotuj przestrzeń roboczą
 	call	kernel_memory_alloc_page
 
