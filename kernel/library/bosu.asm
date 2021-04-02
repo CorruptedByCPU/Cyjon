@@ -767,29 +767,6 @@ library_bosu_element_taskbar:
 	mov	eax,	dword [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.color_background]
 	call	library_bosu_element_drain
 
-	; zachowaj wskaźnik początku przestrzeni elementu
-	push	rdi
-
-	; wylicz pozycję bezwzględną linii w przestrzeni elementu
-	mov	rax,	r12
-	dec	rax	; ostatni wiersz pikseli w przestrzeni elementu
-	mul	r10	; * scanline
-
-	; szerokość linii
-	mov	rcx,	r11
-
-	; wskaźnik bezpośredni do rysowanej linii
-	add	rdi,	rax
-
-	; rysuj dolną krawędź elementu
-	mov	eax,	0x0000FF00
-	rep	stosd
-
-.under_line:
-
-	; przywróć wksaźnik początku przestrzeni elementu
-	pop	rdi
-
 	; rozmiar ciągu do wypisania w etykiecie
 	movzx	rcx,	byte [rsi + LIBRARY_BOSU_STRUCTURE_ELEMENT_TASKBAR.length]
 
@@ -1083,9 +1060,6 @@ library_bosu_char:
 
 	; zmień kolor
 	stosd
-
-	; wyświetl cień za pikselem
-	mov	dword [rdi],	STATIC_EMPTY
 
 	; kontynuuj
 	jmp	.continue

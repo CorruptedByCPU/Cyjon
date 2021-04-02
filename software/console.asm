@@ -25,7 +25,7 @@ console:
 
 	; proces powłoki jest uruchomiony?
 	mov	ax,	KERNEL_SERVICE_PROCESS_check
-	mov	rcx,	qword [console_shell_pid]
+	mov	rcx,	qword [console_process_pid]
 	int	KERNEL_SERVICE
 	jnc	.exist	; tak
 
