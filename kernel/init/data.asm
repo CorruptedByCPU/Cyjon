@@ -6,6 +6,12 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
+; nagłówek poszukiwany przez program rozruchowy Zero
+align	STATIC_QWORD_SIZE_byte	; wyrównaj nagłówek do pełnego adresu
+kernel_header:
+						db	"Z E R O "	; czysta magija
+						dq	init		; wskaźnik do głównej procedury jądra systemu
+
 kernel_init_string_name				db	KERNEL_name
 kernel_init_string_name_end:
 
