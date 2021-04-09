@@ -10,7 +10,7 @@ ZERO_GRAPHICS_DEPTH_bit			equ	32
 ZERO_GRAPHICS_MODE_clean		equ	0x8000
 ZERO_GRAPHICS_MODE_linear		equ	0x4000
 
-ZERO_GRAPHICS_RESOLUTION_list		equ	24
+ZERO_GRAPHICS_RESOLUTION_list		equ	25
 
 struc	ZERO_STRUCTURE_GRAPHICS_VGA_INFO_BLOCK
 	.vesa_signature			resb	4
@@ -58,6 +58,10 @@ endstruc
 
 ;===============================================================================
 zero_graphics:
+	; wyczyść przestrzeń trybu tekstowego
+	mov	ax,	0x0003
+	int	0x10
+
 	; wyrównaj adres końca mapy pamięci do pełnej strony
 	call	zero_page_align_up
 
@@ -74,8 +78,15 @@ zero_graphics:
 	jnz	.error	; nie
 
 	; wyświetl dostępne rozdzielczości
+	mov	si,	zero_string_header
+	call	zero_print_string
 	mov	si,	zero_string_resolution
 	call	zero_print_string
+
+	; ustaw kursor na początek wtorzonej listy dostępnych rozdzielczości
+	mov	ah,	0x02
+	mov	dx,	0x0002
+	int	0x10
 
 	; zmień kształt kursora na "blok"
 	mov	al,	0x0A
@@ -85,7 +96,7 @@ zero_graphics:
 	inc	dx
 	out	dx,	al
 
-	; wyświetl maksymalnie 19 trybów
+	; wyświetl maksymalnie N trybów
 	mov	dx,	ZERO_GRAPHICS_RESOLUTION_list
 
 	; przygotuj przestrzeń pod listę trybów
@@ -121,7 +132,7 @@ zero_graphics:
 	; wyświetl dostępną rozdzielczość
 	call	.show
 
-	; wyświetlono zestaw trybów graficznych?
+	; wyświetlono N trybów graficznych?
 	dec	dx
 	jz	.ready	; tak
 
@@ -132,30 +143,52 @@ zero_graphics:
 	; sprawdź następny tryb
 	jmp	.loop
 
-.ready:
-	; wylicz ilość wyświetlonych trybów
-	mov	cx,	ZERO_GRAPHICS_RESOLUTION_list
-	sub	cx,	dx
-	dec	cx
+.error:
+	; wyświetl komunikat błędu
+	mov	si,	zero_string_error_vbe
+	call	zero_print_string
 
-	; zachowaj licznik
-	push	cx
+	; zatrzymaj dalsze wykonywanie kodu
+	jmp	$
 
-	; pobierz aktualną pozycję kursora
-	mov	ah,	0x03
-	xor	bh,	bh	; brak strony
-	int	0x10
+.show:
+	; zachowaj oryginalne rejestry
+	push	ax
+	push	si
 
-	; zawsze pierwsza kolumna
-	xor	dl,	dl
+	; szerokość w pikselaxch
+	mov	ax,	word [di + ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.x_resolution]
+	call	zero_print_number
 
-	; przywróć licznik
-	mov	cx,	word [esp]
+	mov	al,	"x"
+	call	zero_print_char
+
+	; wysokość w pikselach
+	mov	ax,	word [di + ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.y_resolution]
+	call	zero_print_number
+
+	; ustaw kursor na następną linię
+	mov	si,	zero_string_new_line
+	call	zero_print_string
+
+	; przywróć oryginalne rejestry
+	pop	si
+	pop	ax
+
+	; powrót z podprocedury
+	ret
 
 .select:
-	; ustaw kursor na początek linii ostatnio wyświetlonego trybu
-	mov	al,	0x0D
-	call	zero_print_char
+	; zachowaj informacje
+	push	cx
+
+	; rozpocznij od pierwszego trybu
+	xor	cx,	cx
+
+	; ustaw kursor na pierwszy element listy
+	mov	ah,	0x02
+	xor	dx,	dx
+	int	0x10
 
 .key:
 	; pobierz klawisz od użyszkodnika
@@ -164,7 +197,7 @@ zero_graphics:
 
 	; klawisz enter?
 	cmp	al,	0x0D
-	je	.found	; tak
+	je	.done	; tak
 
 	; klawisz "strzałka w górę?"
 	cmp	ah,	0x48
@@ -197,7 +230,7 @@ zero_graphics:
 	cmp	cx,	word [esp]
 	je	.key	; tak, zignoruj
 
-	; poprzednia pozycja na liście
+	; następna pozycja na liście
 	inc	cx
 
 	; przesuń wskaźnik na wpis
@@ -211,48 +244,31 @@ zero_graphics:
 	; kontynuuj
 	jmp	.key
 
-.error:
-	; wyświetl komunikat błędu
-	mov	si,	zero_string_error_vbe
-	call	zero_print_string
+.done:
+	; usuń zmienną lokalną
+	pop	cx
 
-	; zatrzymaj dalsze wykonywanie kodu
-	jmp	$
-
-.show:
-	; zachowaj oryginalne rejestry
-	push	ax
-	push	si
-
-	; ustaw kursor na linię
-	mov	si,	zero_string_new_line
-	call	zero_print_string
-
-	; szerokość w pikselaxch
-	mov	ax,	word [di + ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.x_resolution]
-	call	zero_print_number
-
-	mov	al,	"x"
-	call	zero_print_char
-
-	; wysokość w pikselach
-	mov	ax,	word [di + ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.y_resolution]
-	call	zero_print_number
-
-	; przywróć oryginalne rejestry
-	pop	si
-	pop	ax
+	; pobierz wybrany tryb graficzny
+	mov	cx,	word [bp]
 
 	; powrót z podprocedury
 	ret
 
-.found:
-	; usuń zmienne lokalne
-	mov	sp,	bp
+.ready:
+	; ustaw wskaźnik na początek listy
+	mov	bp,	sp
+
+	; wylicz ilość wyświetlonych trybów
+	mov	cx,	ZERO_GRAPHICS_RESOLUTION_list
+	sub	cx,	dx
+	dec	cx
+
+	; czekaj na użyszkodnika aż wybierze jeden z trybów graficznych
+	call	.select
 
 	; pobierz właściwości danego trybu graficznego
 	mov	ax,	0x4F01
-	mov	cx,	word [ebp]
+	push	cx
 	int	0x10
 
 	; włącz dany tryb graficzny

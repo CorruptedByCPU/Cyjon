@@ -17,7 +17,9 @@ zero_storage:
 	xor	bx,	bx	; przesunięcie
 
 	; wyświetl informację o aktualnej czynności
-	mov	si,	zero_string_welcome
+	mov	si,	zero_string_header
+	call	zero_print_string
+	mov	si,	zero_string_loading
 	call	zero_print_string
 
 	; plik jądra systemu
@@ -39,9 +41,5 @@ zero_storage:
 	%include	"zero/floppy.asm"
 
 zero_storage.end:
-	; wyświetl poetwierdzenie
-	mov	si,	zero_string_kernel
-	call	zero_print_string
-
 	; przywróć oryginalny segment ekstra
 	pop	es

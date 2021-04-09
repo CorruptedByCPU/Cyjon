@@ -15,12 +15,13 @@ zero_idt_table_address			dd	0x00000000
 
 zero_string_new_line			db	0x0D, 0x0A, "  ", 0x00
 
-zero_string_welcome			db	0x0D, 0x0A, " Kernel loading... ", 0x00
-zero_string_kernel			db	"OK.", 0x0D, 0x0A, 0x0A, 0x00
-zero_string_resolution			db	" Choose from the available resolutions:", 0x00
+zero_string_header			db	0x0A, "              [Zero Bootloader]", 0x0D, 0x0A, 0x0D, 0x0A, 0x00
+zero_string_loading			db	"              Loading kernel file... please wait.", 0x00
+zero_string_resolution			db	"              Select (Up/Down)", 0x0D, 0x0A
+					db	"              Confirm (Enter)", 0x00
 
-zero_string_error_kernel		db	"FAILED.", 0x0D, 0x0A, " Please, check the consistency of the data on the floppy disk.", 0x00
-zero_string_error_vbe			db	" VESA BIOS Extension not available. Cannot select graphics resolution."
+zero_string_error_kernel		db	0x0D, 0x0A, 0x0D, 0x0A, "              Please, check consistency of data on floppy disk.", 0x00
+zero_string_error_vbe			db	0x0D, 0x0A, 0x0D, 0x0A, 0x0D, 0x0A, 0x0D, 0x0A, 0x0D, 0x0A, 0x0D, 0x0A, 0x0D, 0x0A, 0x0D, 0x0A, 0x0D, 0x0A, 0x0D, 0x0A, 0x0D, 0x0A, "     VESA BIOS Extension not available. Cannot select graphics resolution.", 0x00
 
 ;-------------------------------------------------------------------------------
 ; format danych w postaci tablicy, wykorzystywany przez funkcję AH=0x42, przerwanie 0x13

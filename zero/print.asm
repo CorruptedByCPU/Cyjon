@@ -36,9 +36,6 @@ zero_print_string:
 	push	ax
 	push	si
 
-	; procedura - wyświetl znak w miejscu kursora, przesuń kursor w prawo
-	mov	ah,	0x0E
-
 .loop:
 	; pobierz do AL wartość z adresu pod wskaźnikiem SI, zwiększ wskaźnik SI o 1
 	lodsb
@@ -48,7 +45,7 @@ zero_print_string:
 	je	.end
 
 	; wyświetl znak na ekranie
-	int	0x10
+	call	zero_print_char
 
 	; załaduj i wyświetl następny znak
 	jmp	.loop
