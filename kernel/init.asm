@@ -33,7 +33,7 @@ kernel_init:
 	%include	"kernel/init/serial.asm"
 
 	;-----------------------------------------------------------------------
-	; inicjalizacja przestrzeni trybu tekstowego
+	; inicjalizacja przestrzeni trybu graficznego
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/video.asm"
 
