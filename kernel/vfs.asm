@@ -9,7 +9,7 @@
 KERNEL_VFS_FILE_FLAGS_reserved				equ	00000001b
 
 KERNEL_VFS_ERROR_FILE_exists				equ	0x01
-KERNEL_VFS_ERROR_DIRECTORY_full				equ	0x02
+KERNEL_VFS_ERROR_FILE_full				equ	0x02
 KERNEL_VFS_ERROR_FILE_name_long				equ	0x04
 KERNEL_VFS_ERROR_FILE_name_short			equ	0x05
 KERNEL_VFS_ERROR_FILE_low_memory			equ	0x06
@@ -20,6 +20,19 @@ struc	KERNEL_VFS_STRUCTURE_META_CHARACTER_DEVICE
 	.height						resb	8
 	.start						resb	8
 	.end						resb	8
+	.SIZE:
+endstruc
+
+struc	KERNEL_VFS_STRUCTURE_META_BLOCK_DEVICE
+	.entry						resb	8
+	.properties					resb	1
+	.reserved					resb	7
+	.SIZE:
+endstruc
+
+struc	KERNEL_VFS_STRUCTURE_META_VOLUME
+	.lba						resb	8	; numer pierwszego bloku danych rozpoczynający wolumen
+	.length						resb	8	; rozmiar wolumenu w blokach danych nośnika
 	.SIZE:
 endstruc
 
@@ -329,7 +342,7 @@ kernel_vfs_file_touch:
 	jnc	.error	; istnieje plik o podanej nazwie
 
 	; kod błędu: brak miejsca
-	mov	rax,	KERNEL_VFS_ERROR_DIRECTORY_full
+	mov	rax,	KERNEL_VFS_ERROR_FILE_full
 
 	; szukaj wolnego rekordu w katalogu głównym
 	call	kernel_vfs_knot_prepare

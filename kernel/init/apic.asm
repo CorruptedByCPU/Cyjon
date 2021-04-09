@@ -34,7 +34,7 @@ kernel_init_apic:
 	mov	dword [rsi + KERNEL_APIC_LVT_TR_register],	KERNEL_APIC_IRQ_number
 
 	; przelicznik odliczanego czasu
-	mov	dword [rsi + KERNEL_APIC_TDC_register],	KERNEL_APIC_TDC_divide_by_16
+	mov	dword [rsi + KERNEL_APIC_TDC_register],	KERNEL_APIC_TDC_divide_by_1
 
 	; powróc z procedury
 	ret

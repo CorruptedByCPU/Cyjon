@@ -205,8 +205,9 @@ kernel_gui_init:
 	call	kernel_page_drain
 	mov	qword [kernel_gui_taskbar_list_address],	rdi	; zachowaj wskaźnik
 
-	; uruchom domyślnie program Console
-	call	kernel_gui_event_console
-	; call	kernel_gui_event_taris
+%ifdef	TEST_TRANSPARENCY
+	; debug
+	call	kernel_gui_event_mural
+%endif
 
 	macro_debug	"kernel_gui_init"

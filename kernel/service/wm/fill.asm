@@ -40,6 +40,7 @@ kernel_wm_fill:
 
 	; przygotuj rejestry do pracy
 	call	.prepare
+	jc	.leave	; niewidoczny
 
 	;-----------------------------------------------------------------------
 	; Wypełnianie
@@ -54,9 +55,11 @@ kernel_wm_fill:
 	cmp	byte [rsi + 0x03],	STATIC_MAX_unsigned
 	je	.transparent_max	; tak
 
+; %ifdef	TEST_TRANSPARENCY
 	; przeliczyć wartość koloru na podstawie kanału alfa?
 	cmp	byte [rsi + 0x03],	STATIC_EMPTY
 	ja	.alpha	; tak
+; %endif
 
 .fill:
 	; wypełnij wiersz pikseli wypełniaczem
@@ -156,7 +159,7 @@ kernel_wm_fill:
 	; przesuń na początek osi X
 	xor	r8w,	r8w
 
-	.x_positive:
+.x_positive:
 	; opisana strefa znajduje się na ujemnej osi Y?
 	bt	r9w,	STATIC_QWORD_BIT_sign
 	jnc	.y_positive	; nie
@@ -169,7 +172,7 @@ kernel_wm_fill:
 	; przesuń na początek osi Y
 	xor	r9w,	r9w
 
-	.y_positive:
+.y_positive:
 	; opisana strefa wykracza poza oś X?
 	mov	ax,	r8w
 	add	ax,	r10w
@@ -180,7 +183,7 @@ kernel_wm_fill:
 	sub	ax,	word [kernel_video_width_pixel]
 	sub	r10w,	ax
 
-	.x_inside:
+.x_inside:
 	; opisana strefa wykracza poza oś Y?
 	mov	ax,	r9w
 	add	ax,	r11w
@@ -191,7 +194,25 @@ kernel_wm_fill:
 	sub	ax,	word [kernel_video_height_pixel]
 	sub	r11w,	ax
 
-	.y_inside:
+.y_inside:
+	; obiekt znajduje się w przestrzeni ekranu?
+	cmp	r8w,	word [kernel_video_width_pixel]
+	jge	.error	; nie
+	cmp	r9w,	word [kernel_video_height_pixel]
+	jge	.error	; nie
+	cmp	r10w,	STATIC_EMPTY
+	jle	.error	; nie
+	cmp	r11w,	STATIC_EMPTY
+	jg	.visible	; tak
+
+.error:
+	; flaga błąd
+	stc
+
+	; powrót z podprocedury
+	ret
+
+.visible:
 	;-----------------------------------------------------------------------
 	; wylicz zmienne do opracji kopiowania przestrzeni
 	;-----------------------------------------------------------------------

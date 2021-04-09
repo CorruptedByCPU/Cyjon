@@ -15,10 +15,18 @@ kernel_gui_background_mixer		dd	0x001B1B1B, 0x00212121
 
 kernel_gui_event_console_file		db	"/bin/console"
 kernel_gui_event_console_file_end:
+kernel_gui_event_task_manager_file	db	"/bin/console"
+kernel_gui_event_task_manager_file_end:	db	" /bin/tm"
+kernel_gui_event_task_manager_args_end:
+kernel_gui_event_moko_file		db	"/bin/console"
+kernel_gui_event_moko_file_end:		db	" /bin/moko"
+kernel_gui_event_moko_args_end:
 kernel_gui_event_soler_file		db	"/bin/soler"
 kernel_gui_event_soler_file_end:
 kernel_gui_event_taris_file		db	"/bin/taris"
 kernel_gui_event_taris_file_end:
+kernel_gui_event_mural_file		db	"/bin/mural"
+kernel_gui_event_mural_file_end:
 
 align	STATIC_QWORD_SIZE_byte,		db	STATIC_NOTHING
 
@@ -105,53 +113,83 @@ kernel_gui_window_menu			dw	160	; pozycja na osi X względem wskaźnika kursora
 					db	4
 					db	"Menu                           "	; wypełnij do 31 Bajtów znakami STATIC_SCANCODE_SPACE
 					dd	STATIC_EMPTY	; szerokość okna w Bajtach (uzupełnia Bosu)
-					dd	STATIC_COLOR_black	; kolor tła okna
+					dd	LIBRARY_BOSU_WINDOW_BACKGROUND_color	; kolor tła okna
 .elements:				;---------------------------------------
-					; element "label 0"
+					; element "Console"
 					;---------------------------------------
-.element_label_0:			db	LIBRARY_BOSU_ELEMENT_TYPE_label
-					dw	.element_label_0_end - .element_label_0 ; rozmiar elementu w Bajtach
-					dw	1	; pozycja na osi X względem przestrzeni danych okna
+.element_console:			db	LIBRARY_BOSU_ELEMENT_TYPE_label
+					dw	.element_console_end - .element_console ; rozmiar elementu w Bajtach
+					dw	0	; pozycja na osi X względem przestrzeni danych okna
 					dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel	; pozycja na osi Y względem przestrzeni danych okna
-					dw	((.element_label_0_end - .element_label_0_string) * LIBRARY_FONT_WIDTH_pixel)	; szerokość elementu
-					dw	0x10	; wysokość elementu
+					dw	((.element_console_end - .element_console_string) * LIBRARY_FONT_WIDTH_pixel)	; szerokość elementu
+					dw	KERNEL_GUI_WINDOW_MENU_ELEMENT_HEIGHT_pixel	; wysokość elementu
 					dq	kernel_gui_event_console
 					dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
 					dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 					db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_default
-					db	.element_label_0_end - .element_label_0_string
-.element_label_0_string:		db	"Console"
-.element_label_0_end:			;---------------------------------------
-					; element "label 1"
+					db	.element_console_end - .element_console_string
+.element_console_string:		db	" Console "
+.element_console_end:			;---------------------------------------
+					; element "Moko"
 					;---------------------------------------
-.element_label_1:			db	LIBRARY_BOSU_ELEMENT_TYPE_label
-					dw	.element_label_1_end - .element_label_1 ; rozmiar elementu w Bajtach
-					dw	1	; pozycja na osi X względem przestrzeni danych okna
-					dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 0x10	; pozycja na osi Y względem przestrzeni danych okna
-					dw	((.element_label_1_end - .element_label_1_string) * LIBRARY_FONT_WIDTH_pixel)	; szerokość elementu
-					dw	0x10	; wysokość elementu
+.element_moko:				db	LIBRARY_BOSU_ELEMENT_TYPE_label
+					dw	.element_moko_end - .element_moko ; rozmiar elementu w Bajtach
+					dw	0	; pozycja na osi X względem przestrzeni danych okna
+					dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + (KERNEL_GUI_WINDOW_MENU_ELEMENT_HEIGHT_pixel)	; pozycja na osi Y względem przestrzeni danych okna
+					dw	((.element_moko_end - .element_moko_string) * LIBRARY_FONT_WIDTH_pixel)	; szerokość elementu
+					dw	KERNEL_GUI_WINDOW_MENU_ELEMENT_HEIGHT_pixel	; wysokość elementu
+					dq	kernel_gui_event_moko
+					dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+					dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
+					db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_default
+					db	.element_moko_end - .element_moko_string
+.element_moko_string:			db	" Moko "
+.element_moko_end:			;---------------------------------------
+					; element "Soler"
+					;---------------------------------------
+.element_soler:				db	LIBRARY_BOSU_ELEMENT_TYPE_label
+					dw	.element_soler_end - .element_soler ; rozmiar elementu w Bajtach
+					dw	0	; pozycja na osi X względem przestrzeni danych okna
+					dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + (KERNEL_GUI_WINDOW_MENU_ELEMENT_HEIGHT_pixel * 0x02)	; pozycja na osi Y względem przestrzeni danych okna
+					dw	((.element_soler_end - .element_soler_string) * LIBRARY_FONT_WIDTH_pixel)	; szerokość elementu
+					dw	KERNEL_GUI_WINDOW_MENU_ELEMENT_HEIGHT_pixel	; wysokość elementu
 					dq	kernel_gui_event_soler
 					dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
 					dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 					db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_default
-					db	.element_label_1_end - .element_label_1_string
-.element_label_1_string:		db	"Soler"
-.element_label_1_end:			;---------------------------------------
-					; element "label 2"
+					db	.element_soler_end - .element_soler_string
+.element_soler_string:			db	" Soler "
+.element_soler_end:			;---------------------------------------
+					; element "Taris"
 					;---------------------------------------
-.element_label_2:			db	LIBRARY_BOSU_ELEMENT_TYPE_label
-					dw	.element_label_2_end - .element_label_2 ; rozmiar elementu w Bajtach
-					dw	1	; pozycja na osi X względem przestrzeni danych okna
-					dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + 0x10 * 0x02	; pozycja na osi Y względem przestrzeni danych okna
-					dw	((.element_label_2_end - .element_label_2_string) * LIBRARY_FONT_WIDTH_pixel)	; szerokość elementu
-					dw	0x10	; wysokość elementu
+.element_taris:				db	LIBRARY_BOSU_ELEMENT_TYPE_label
+					dw	.element_taris_end - .element_taris ; rozmiar elementu w Bajtach
+					dw	0	; pozycja na osi X względem przestrzeni danych okna
+					dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + (KERNEL_GUI_WINDOW_MENU_ELEMENT_HEIGHT_pixel * 0x03)	; pozycja na osi Y względem przestrzeni danych okna
+					dw	((.element_taris_end - .element_taris_string) * LIBRARY_FONT_WIDTH_pixel)	; szerokość elementu
+					dw	KERNEL_GUI_WINDOW_MENU_ELEMENT_HEIGHT_pixel	; wysokość elementu
 					dq	kernel_gui_event_taris
 					dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
 					dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
 					db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_default
-					db	.element_label_2_end - .element_label_2_string
-.element_label_2_string:		db	"Taris"
-.element_label_2_end:			;---------------------------------------
+					db	.element_taris_end - .element_taris_string
+.element_taris_string:			db	" Taris "
+.element_taris_end:			;---------------------------------------
+					; element "Task Manager"
+					;---------------------------------------
+.element_tm:				db	LIBRARY_BOSU_ELEMENT_TYPE_label
+					dw	.element_tm_end - .element_tm ; rozmiar elementu w Bajtach
+					dw	0	; pozycja na osi X względem przestrzeni danych okna
+					dw	LIBRARY_BOSU_HEADER_HEIGHT_pixel + (KERNEL_GUI_WINDOW_MENU_ELEMENT_HEIGHT_pixel * 0x04)	; pozycja na osi Y względem przestrzeni danych okna
+					dw	((.element_tm_end - .element_tm_string) * LIBRARY_FONT_WIDTH_pixel)	; szerokość elementu
+					dw	KERNEL_GUI_WINDOW_MENU_ELEMENT_HEIGHT_pixel	; wysokość elementu
+					dq	kernel_gui_event_task_manager
+					dd	LIBRARY_BOSU_ELEMENT_LABEL_FOREGROUND_color
+					dd	LIBRARY_BOSU_ELEMENT_LABEL_BACKGROUND_color
+					db	LIBRARY_BOSU_ELEMENT_LABEL_FLAG_ALIGN_default
+					db	.element_tm_end - .element_tm_string
+.element_tm_string:			db	" Task Manager "
+.element_tm_end:			;---------------------------------------
 					; koniec elementów okna
 					;---------------------------------------
 					db	LIBRARY_BOSU_ELEMENT_TYPE_none

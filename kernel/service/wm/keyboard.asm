@@ -11,6 +11,10 @@
 ;	Flaga ZF - jeśli brak klawisza (lub okno nie było do tego uprawnione)
 ;	ax - kod ASCII klawisza lub jego sekwencja
 kernel_wm_keyboard:
+	; zachowaj oryginalne rejestry
+	push	rax
+	push	rsi
+
 	; pobierz kod klawisza z bufora
 	call	driver_ps2_keyboard_read
 	jz	.end	; brak
@@ -26,6 +30,10 @@ kernel_wm_keyboard:
 	call	kernel_wm_ipc_keyboard
 
 .end:
+	; przywróć oryginalne rejestry
+	pop	rsi
+	pop	rax
+
 	; powrót z procedury
 	ret
 

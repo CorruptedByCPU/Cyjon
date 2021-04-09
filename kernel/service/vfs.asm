@@ -6,4 +6,14 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
-; to be continued
+;===============================================================================
+kernel_vfs:
+
+.loop:
+	; zwolnij pozostały czas procesora
+	call	kernel_sleep
+
+	; powrót do głównej pętli
+	jmp	.loop
+
+kernel_vfs_end:

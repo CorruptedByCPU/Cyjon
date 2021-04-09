@@ -26,7 +26,7 @@ console_window_close:
 	jc	.wait	; brak wiadomości, czekaj dalej
 
 	; komunikat od procesu potomnego?
-	mov	rbx,	qword [console_shell_pid]
+	mov	rbx,	qword [console_process_pid]
 	cmp	qword [rdi + KERNEL_IPC_STRUCTURE.pid_source],	rbx
 	jne	.wait	; nie, czekaj dalej
 
