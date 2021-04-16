@@ -47,7 +47,7 @@ kernel_init_gdt:
 	stosq	; zapisz
 
 	; utwórz deskryptor danych/stosu ring3 (DS/SS)
-	mov	rax,	0000000000100000111100100000000100000000000000000000000000000000b
+	mov	rax,	0000000000100000111100100000000000000000000000000000000000000000b
 	stosq	; zapisz
 
 	; zachowaj adres pośredni pierwszego deskryptora TSS
