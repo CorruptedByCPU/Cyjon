@@ -10,8 +10,6 @@ zero_microtime				dq	0x0000000000000000
 
 zero_memory_map_address			dd	0x00000000
 zero_graphics_mode_info_block_address	dd	0x00000000
-zero_page_table_address			dd	0x00000000
-zero_idt_table_address			dd	0x00000000
 
 zero_string_new_line			db	0x0D, 0x0A, "  ", 0x00
 
@@ -42,6 +40,11 @@ align	0x08,				db	0x90
 zero_idt_header:
 					dw	0x1000
 					dq	ZERO_IDT_address
+
+; wyrównaj pozycję pliku do pełnego adresu
+align	0x08,				db	0x90
+zero_file_ap:				incbin	"build/ap"
+zero_file_ap_end:
 
 ; wyrównaj rozmiar programu rozruchowego do pełnego rozmiaru sektora
 align	0x0200

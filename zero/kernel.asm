@@ -20,6 +20,12 @@ zero_kernel:
 	mov	edi,	0x00100000
 	rep	movsb
 
+	; kopiuj kod programu rozruchowego dla procesorów logicznych w miejsce docelowe
+	mov	ecx,	zero_file_ap_end - zero_file_ap
+	mov	esi,	zero_file_ap
+	mov	edi,	zero
+	rep	movsb
+
 	; zwróć informację o adresie i rozmiarze mapy pamięci
 	mov	ebx,	dword [zero_memory_map_address]
 
@@ -55,6 +61,9 @@ zero_kernel:
 	xor	esi,	esi
 	xor	edi,	edi
 	xor	ebp,	ebp
+
+	; ustaw tymczasowy szczyt stosu dla jądra systemu
+	mov	esp,	zero	; na początek przestrzeni kodu programu rozruchowego Zero
 
 	; wykonaj kod
 	jmp	rax

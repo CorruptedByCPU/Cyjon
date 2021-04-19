@@ -13,12 +13,11 @@ nasm -f bin software/soler.asm		-o build/soler
 nasm -f bin software/taris.asm		-o build/taris
 nasm -f bin software/mural.asm		-o build/mural
 
-
-nasm -f bin kernel/init/boot.asm	-o build/boot
 nasm -f bin kernel/library.asm		-o build/library
 nasm -f bin kernel.asm			-o build/kernel
 KERNEL_SIZE=`wc -c < build/kernel`
 
+nasm -f bin zero/ap.asm			-o build/ap
 nasm -f bin zero.asm			-o build/zero		-dKERNEL_FILE_SIZE_bytes=${KERNEL_SIZE} -dSELECTED_VIDEO_WIDTH_pixel=${WIDTH} -dSELECTED_VIDEO_HEIGHT_pixel=${HEIGHT}
 ZERO_SIZE=`wc -c < build/zero`
 

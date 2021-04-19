@@ -182,10 +182,6 @@ kernel_init_vfs_file_hostname_end:
 kernel_init_vfs_file_welcome			incbin	"fs/var/welcome.txt"
 kernel_init_vfs_file_welcome_end:
 
-kernel_init_boot_file:
-						incbin	"build/boot"
-kernel_init_boot_file_end:
-
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING
 kernel_init_library_file			incbin	"build/library"
 align	STATIC_QWORD_SIZE_byte,			db	STATIC_NOTHING

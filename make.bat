@@ -20,12 +20,11 @@ set PASS=0
 ..\nasm -f bin software/taris.asm	-o build/taris		&& echo. || set PASS=1
 ..\nasm -f bin software/mural.asm	-o build/mural		&& echo. || set PASS=1
 
-
-..\nasm -f bin kernel/init/boot.asm	-o build/boot		&& echo. || set PASS=1
 ..\nasm -f bin kernel/library.asm	-o build/library	&& echo. || set PASS=1
 ..\nasm -f bin kernel.asm		-o build/kernel		&& echo. || set PASS=1
 FOR /F "usebackq" %%A IN ('build/kernel') DO set KERNEL_SIZE=%%~zA
 
+..\nasm -f bin zero/ap.asm		-o build/ap
 ..\nasm -f bin zero.asm			-o build/zero		-dKERNEL_FILE_SIZE_bytes=%KERNEL_SIZE% -dSELECTED_VIDEO_WIDTH_pixel=%WIDTH% -dSELECTED_VIDEO_HEIGHT_pixel=%HEIGHT%	&& echo. || set PASS=1
 FOR /F "usebackq" %%A IN ('build/zero') DO set ZERO_SIZE=%%~zA
 

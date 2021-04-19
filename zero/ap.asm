@@ -1,9 +1,5 @@
 ;===============================================================================
 ; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-; GPL-3.0 License
-;
-; Main developer:
-;	Andrzej Adamczyk
 ;===============================================================================
 
 ;===============================================================================
@@ -12,7 +8,7 @@
 [BITS 16]
 
 ; pozycja kodu w przestrzeni segmentu CS
-[ORG 0x7000]
+[ORG 0x1000]
 
 boot:
 	;-----------------------------------------------------------------------
@@ -121,8 +117,33 @@ boot_header_gdt_64bit:
 
 ;===============================================================================
 boot_long_mode:
-	; skocz do kodu jądra systemu
-	jmp	0x0000000000100000
+	; odszukaj nagłówek "Z E R O " w całym pliku jądra systemu
+	mov	rax,	"Z E R O "
+	mov	esi,	0x00100000
+
+.search:
+	; przesuń wskaźnik na następną pozycję
+	add	rsi,	0x08
+
+	; powównaj pierwsze 8 komórek pamięci
+	cmp	qword [rsi - 0x08],	rax
+
+	; znaleziono nagłówek?
+	jne	.search	; nie
+
+	; ustaw tymczasowy szczyt stosu dla jądra systemu
+	mov	esp,	boot	; na początek przestrzeni kodu programu rozruchowego
+
+	; pobierz wskaźnik głównej funkcji jądra systemu
+	push	qword [rsi]
+
+	; wyczyść rejestry nie biorące udziału z procesie
+	xor	eax,	eax
+	xor	ecx,	ecx
+	xor	esi,	esi
+
+	; wykonaj główną procedurę jądra systemu
+	ret
 
 ; koniec kodu programu rozruchowego dla procesorów logicznych
 boot_end:

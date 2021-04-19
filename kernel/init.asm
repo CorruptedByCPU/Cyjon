@@ -10,9 +10,9 @@
 	cmp	byte [kernel_init_smp_semaphore],	STATIC_FALSE
 	je	kernel_init	; nie
 
-	; ;-----------------------------------------------------------------------
-	; ; AP - inicjalizacja procesora logicznego
-	; ;-----------------------------------------------------------------------
+	;-----------------------------------------------------------------------
+	; AP - inicjalizacja procesora logicznego
+	;-----------------------------------------------------------------------
 	%include	"kernel/init/ap.asm"
 
 	;-----------------------------------------------------------------------
@@ -113,19 +113,6 @@ kernel_init:
 	%include	"kernel/init/services.asm"
 
 	;-----------------------------------------------------------------------
-	; konfiguruj wew. przerwanie lokalnego kontrolera APIC (przełączanie zadań w kolejce)
-	;-----------------------------------------------------------------------
-	call	kernel_init_apic
-
-	; ustaw domyślny czas pomiędzy wywołaniami przerwania (jednostki)
-	mov	dword [rsi + KERNEL_APIC_TICR_register],	KERNEL_APIC_TICR_value
-
-	; poinformuj APIC o obsłużeniu aktualnego przerwania sprzętowego lokalnego
-	mov	dword [rsi + KERNEL_APIC_EOI_register],	STATIC_EMPTY
-
-	; za chwilę wywołana zostanie procedura kolejki zadań!
-
-	;-----------------------------------------------------------------------
 	; SMP - uruchom pozostałe procesory logiczne
 	;-----------------------------------------------------------------------
 	%include	"kernel/init/smp.asm"
@@ -138,6 +125,19 @@ kernel_init:
 	; wszystkie procesory logiczne zostały zainicjowane?
 	cmp	al,	byte [kernel_apic_count]
 	jne	.wait	; nie, czekaj
+
+	;-----------------------------------------------------------------------
+	; konfiguruj wew. przerwanie lokalnego kontrolera APIC (przełączanie zadań w kolejce)
+	;-----------------------------------------------------------------------
+	call	kernel_init_apic
+
+	; ustaw domyślny czas pomiędzy wywołaniami przerwania (jednostki)
+	mov	dword [rsi + KERNEL_APIC_TICR_register],	KERNEL_APIC_TICR_value
+
+	; poinformuj APIC o obsłużeniu aktualnego przerwania sprzętowego lokalnego
+	mov	dword [rsi + KERNEL_APIC_EOI_register],	STATIC_EMPTY
+
+	; za chwilę wywołana zostanie procedura kolejki zadań!
 
 	;-----------------------------------------------------------------------
 	; INICJALIZACJA ZAKOŃCZONA

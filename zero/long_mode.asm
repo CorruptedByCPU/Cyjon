@@ -6,6 +6,8 @@
 ;	Andrzej Adamczyk
 ;===============================================================================
 
+ZERO_LONG_MODE_PML4_address		equ	0x0000A000
+
 ZERO_LONG_MODE_PAGE_SIZE_bytes		equ	0x1000 * 0x06	; tablica PML4, PML3 i cztery razy PML2 (1 GiB opisanej przestrzeni na każdą tablicę PML2)
 
 ZERO_LONG_MODE_PAGE_FLAG_available	equ	00000001b
@@ -19,21 +21,14 @@ zero_long_mode:
 	; utwórz podstawową tablicę stronicowania dla trybu 64 bitowego
 	;-----------------------------------------------------------------------
 
-	; określ pozycję tablicy PML4
-	mov	edi,	dword [zero_graphics_mode_info_block_address]
-	add	edi,	ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.SIZE
-	call	zero_page_align_up
-
-	; zachowaj wskaźnik początku przestrzeni
-	mov	dword [zero_page_table_address],	edi
-
-	; wyczyść wszystkie wpisy w tabelach
+	; wyczyść wszystkie wpisy w tablicach PML
 	xor	eax,	eax
 	mov	ecx,	ZERO_LONG_MODE_PAGE_SIZE_bytes / 0x04
+	mov	edi,	ZERO_LONG_MODE_PML4_address
 	rep	stosd
 
 	; przywróć wskaźnik do tabliy PML4
-	mov	edi,	dword [zero_page_table_address]
+	mov	edi,	ZERO_LONG_MODE_PML4_address
 
 	; uzupełnij pierwszy wiersz tablicy PML4 wskazujący adres tablicy PML3 (flagi domyślne)
 	mov	dword [edi],	edi
@@ -79,7 +74,7 @@ zero_long_mode:
 					; OSFXSR (bit 9) - obsługa rejestrów XMM0-15
 
 	; załaduj do CR3 adres fizyczny tablicy PML4 programu rozruchowego
-	mov	eax,	dword [zero_page_table_address]
+	mov	eax,	ZERO_LONG_MODE_PML4_address
 	mov	cr3,	eax
 
 	; włącz w rejestrze EFER MSR tryb LME (bit 9)

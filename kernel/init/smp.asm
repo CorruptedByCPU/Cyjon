@@ -12,22 +12,15 @@ kernel_init_smp:
 	cmp	word [kernel_apic_count],	STATIC_TRUE
 	jbe	.finish	; tak, pomiń inicjalizacje pozostałych
 
-	; mapuj przestrzeń pamięci kodu inicjalizującego procesory logiczne
-	mov	eax,	0x7000	; 0x0000:0x7000
-	mov	bx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
-	mov	ecx,	kernel_init_boot_file_end - kernel_init_boot_file
-	mov	r11,	qword [kernel_page_pml4_address]
-	call	library_page_from_size
-	call	kernel_page_map_physical
-
-	; załaduj kod rozruchowy dla procesorów logicznych
-	mov	ecx,	kernel_init_boot_file_end - kernel_init_boot_file
-	mov	rsi,	kernel_init_boot_file
-	mov	rdi,	0x7000	; 0x0000:0x7000
-	rep	movsb
-
 	; otwórz docelową ścieżkę dla procesorów logicznych w procedurach inicjalizacyjnych
 	mov	byte [kernel_init_smp_semaphore],	STATIC_TRUE
+
+	; przygotuj tymczasowy stos dla procesorów logicznych
+	mov	eax,	KERNEL_STACK_TEMPORARY_address	; 0x0000:0x1000
+	mov	bx,	KERNEL_PAGE_FLAG_available | KERNEL_PAGE_FLAG_write
+	mov	ecx,	STATIC_PAGE_SIZE_page
+	mov	r11,	qword [kernel_page_pml4_address]
+	call	kernel_page_map_physical
 
 	; pobierz identyfikator procesora BSP
 	mov	rdi,	qword [kernel_apic_base_address]
@@ -99,10 +92,10 @@ kernel_init_smp:
  	cmp	al,	dl
  	je	.start	; tak, pomiń
 
- 	; wyślij polecenie START do procesora logicznego (wektor 0x07 > 0x7000)
+ 	; wyślij polecenie START do procesora logicznego (wektor 0x01 > 0x1000)
  	shl	eax,	24	; przesuń bity z 0..7 do 24..31
  	mov	dword [rdi + KERNEL_APIC_ICH_register],	eax
- 	mov	eax,	0x00004607
+ 	mov	eax,	0x00004601
  	mov	dword [rdi + KERNEL_APIC_ICL_register],	eax
 
  .start_wait:
