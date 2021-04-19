@@ -1,3 +1,7 @@
+# Info
+
+I'm in the process of transferring the entire operating system code to the C language, so the development speed of Cyjon will slow down a bit :)
+
 # Cyjon (workname)
 
 A simple, clean, multi-tasking operating system written in pure assembly language for 64-bit processors from the AMD64 family. Only ~64 KiB of size :)
