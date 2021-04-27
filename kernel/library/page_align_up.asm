@@ -12,22 +12,10 @@
 ; wyjście:
 ;	rdi - adres wyrównany do pełnej strony w górę
 library_page_align_up:
-	; utwórz zmienną lokalną
-	push	rdi
-
 	; usuń młodszą część adresu
-	and	di,	STATIC_PAGE_mask
-
-	; sprawdź czy adres jest identyczny z zmienną lokalną
-	cmp	rdi,	qword [rsp]
-	je	.end	; jeśli tak, koniec
-
-	; przesuń adres o jedną ramkę do przodu
-	add	rdi,	STATIC_PAGE_SIZE_byte
-
-.end:
-	; usuń zmienną lokalną
-	add	rsp,	STATIC_QWORD_SIZE_byte
+	add	rdi,	STATIC_PAGE_SIZE_byte - 0x01
+	shr	rdi,	STATIC_DIVIDE_BY_PAGE_shift
+	shl	rdi,	STATIC_MULTIPLE_BY_PAGE_shift
 
 	; powrót z procedury
 	ret
