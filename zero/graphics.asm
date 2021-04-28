@@ -7,6 +7,7 @@
 ;===============================================================================
 
 ZERO_GRAPHICS_DEPTH_bit			equ	32
+ZERO_GRAPHICS_DEPTH_shift		equ	2
 ZERO_GRAPHICS_MODE_clean		equ	0x8000
 ZERO_GRAPHICS_MODE_linear		equ	0x4000
 
@@ -120,6 +121,12 @@ zero_graphics:
 
 	; oczekiwana głębia kolorów?
 	cmp	byte [di + ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.bits_per_pixel],	ZERO_GRAPHICS_DEPTH_bit
+	jne	.next	; nie
+
+	; rozmiar scanline odpowiada szerokości w pikselach?
+	mov	ax,	word [di + ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.x_resolution]
+	shl	ax,	ZERO_GRAPHICS_DEPTH_shift
+	cmp	ax,	word [di + ZERO_STRUCTURE_GRAPHICS_MODE_INFO_BLOCK.bytes_per_scanline]
 	jne	.next	; nie
 
 	; ustaw wskaźnik na wolny rekord
