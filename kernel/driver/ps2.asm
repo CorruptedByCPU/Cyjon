@@ -763,7 +763,7 @@ driver_ps2_check_dummy_answer_or_dump:
 .again:
 	; pobierz status kontrolera
 	in	al,	DRIVER_PS2_PORT_COMMAND_OR_STATUS
-	bt	ax,	1	; sprawdź czy pierwszy bit jest równy zero
+	bt	ax,	0	; sprawdź czy pierwszy bit jest równy zero
 	jnc	.nothing
 
 	; pobierz z bufora kontrolera niewiadomą odpowiedź
