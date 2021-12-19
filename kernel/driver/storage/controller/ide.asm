@@ -411,7 +411,7 @@ driver_ide_reset:
 	in	al,	dx
 
 	; następny kanał
-	rol	eax,	STATIC_REPLACE_AX_WITH_HIGH_shift
+	rol	edx,	STATIC_REPLACE_AX_WITH_HIGH_shift
 
 	; zainicjalizowano obydwa?
 	cmp	dx,	DRIVER_IDE_CHANNEL_PRIMARY + DRIVER_IDE_REGISTER_control_OR_altstatus
