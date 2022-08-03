@@ -327,8 +327,8 @@ driver_nic_i82540em_transfer:
 	mov	qword [rsi + DRIVER_NIC_I82540EM_TDESC_BASE_ADDRESS],	rdi
 
 	; ustaw rozmiar pakietu do wysłania wraz z flagami
-	and	eax,	STATIC_WORD_mask
-	add	rax,	DRIVER_NIC_I82540EM_TDESC_CMD_RS
+	and	rax,	STATIC_WORD_mask
+	or	rax,	DRIVER_NIC_I82540EM_TDESC_CMD_RS
 	or	rax,	DRIVER_NIC_I82540EM_TDESC_CMD_IFCS
 	or	rax,	DRIVER_NIC_I82540EM_TDESC_CMD_EOP
 	mov	qword [rsi + DRIVER_NIC_I82540EM_TDESC_LENGTH_AND_FLAGS],	rax
