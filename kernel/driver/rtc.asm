@@ -60,6 +60,8 @@ driver_rtc:
 	inc	qword [driver_rtc_microtime]
 
 	; pobierz zawartość rejestru C
+	mov	al,	DRIVER_RTC_PORT_STATUS_REGISTER_C
+	out	DRIVER_RTC_PORT_command,	al
 	in	al,	DRIVER_RTC_PORT_data
 
 	; poinformuj LAPIC o obsłużeniu przerwania sprzętowego
