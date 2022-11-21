@@ -6,8 +6,6 @@ I'm in the process of transferring the entire operating system code to the C lan
 
 A simple, clean, multi-tasking operating system written in pure assembly language for 64-bit processors from the AMD64 family. Only ~64 KiB of size :)
 
-![screenshot](https://raw.githubusercontent.com/blackend/cyjon/master/preview.png)
-
 If possible, please run Qemu on GNU/Linux - performance against MS/Windows is overwhelming ;)
 
 Right-clicking on the desktop will open the Menu.
@@ -17,7 +15,6 @@ To move the window around the screen, hold down the left ALT key.
 
   - Qemu 5.0.0 or Bochs 2.6.11 (no SMP support on MS/Windows)
   - Nasm 2.15.1
-  - Atom (with package https://atom.io/packages/language-assembly) or your own IDE ;)
 
 ### Requirements:
 
@@ -33,8 +30,3 @@ To move the window around the screen, hold down the left ALT key.
 	user@hostname:~/Cyjon$ chmod +x make.sh qemu.sh
 	user@hostname:~/Cyjon$ ./make.sh
 	user@hostname:~/Cyjon$ ./qemu.sh
-
-### Compilation/Exec (MS/Windows):
-
-	C:\Cyjon> make.bat
-	C:\Cyjon> qemu.bat

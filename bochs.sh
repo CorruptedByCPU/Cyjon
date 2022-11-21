@@ -1,4 +1,12 @@
-rm build/cyjon.img.lock
-rm build/fat32.img.lock
-rm build/ext2.img.lock
-bochs -f bochsrc-linux.bxrc -q
+#===============================================================================
+#Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+#===============================================================================
+
+# clear debug log file
+echo "" > serial.log
+
+# run with specific configration
+/opt/bochs/bin/bochs -f linux.bxrc -q
+
+# show debug log
+cat serial.log

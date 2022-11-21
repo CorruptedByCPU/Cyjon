@@ -1,26 +1,25 @@
-# select a resolution supported by the BIOS
-WIDTH=1920
-HEIGHT=1080
+#!/bin/bash
+#===============================================================================
+#Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+#===============================================================================
 
-nasm -f bin software/tm.asm		-o build/tm
-nasm -f bin software/hello.asm		-o build/hello
-nasm -f bin software/console.asm	-o build/console
-nasm -f bin software/shell.asm		-o build/shell
-nasm -f bin software/ls.asm		-o build/ls
-nasm -f bin software/cat.asm		-o build/cat
-nasm -f bin software/moko.asm		-o build/moko
-nasm -f bin software/soler.asm		-o build/soler
-nasm -f bin software/taris.asm		-o build/taris
-nasm -f bin software/mural.asm		-o build/mural
+clear
 
-nasm -f bin kernel/library.asm		-o build/library
-nasm -f bin kernel.asm			-o build/kernel
-KERNEL_SIZE=`wc -c < build/kernel`
+rm -rf build && mkdir build > /dev/null 2>&1
+rm -rf iso && mkdir iso > /dev/null 2>&1
 
-nasm -f bin zero/ap.asm			-o build/ap
-nasm -f bin zero.asm			-o build/zero		-dKERNEL_FILE_SIZE_bytes=${KERNEL_SIZE} -dSELECTED_VIDEO_WIDTH_pixel=${WIDTH} -dSELECTED_VIDEO_HEIGHT_pixel=${HEIGHT}
-ZERO_SIZE=`wc -c < build/zero`
+LDFLAGS="-nostdlib -zmax-page-size=0x1000 -static -no-dynamic-linker"
 
-nasm -f bin bootsector.asm		-o build/bootsector	-dZERO_FILE_SIZE_bytes=${ZERO_SIZE}
+nasm -f elf64 kernel/init.asm -o build/kernel.o
+ld build/kernel.o -o build/kernel -T linker.kernel
+gzip -fk build/kernel
 
-nasm -f bin disk.asm			-o build/cyjon.img
+cp limine.cfg limine/limine.sys limine/limine-cd.bin limine/limine-cd-efi.bin iso/
+cp build/kernel.gz iso/kernel
+
+xorriso -as mkisofs -b limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot limine-cd-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label iso -o build/cyjon.iso > /dev/null 2>&1
+
+limine/limine-deploy build/cyjon.iso > /dev/null 2>&1
+
+echo -e "\nbuild:"
+ls -lah build/ | tail -n +4 | awk '//{printf "%16s %8s\n",$(NF),$5 }'

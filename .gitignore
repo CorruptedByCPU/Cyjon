@@ -5,3 +5,10 @@
 *.lock
 *.pdf
 *.log
+*.o
+*.iso
+build
+iso
+system
+test
+limine

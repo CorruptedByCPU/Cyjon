@@ -2,18 +2,7 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
-; 64 bit code
-[bits 64]
-
-; we are using Position Independed Code
-default	rel
-
-; main initialization procedure of kernel environment
-global	init
-
-; code of kernel
-section .text
-
-init:
-	; hold the door
-	jmp	$
+%define	KERNEL_name		"cyjon"
+%define	KERNEL_version		"0"
+%define	KERNEL_revision		"1441"
+%define	KERNEL_architecture	"x86_64"
