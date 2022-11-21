@@ -6,7 +6,7 @@ I'll try to rewrite Cyjon to keep it up with Fern-Night.
 
 # Cyjon (workname)
 
-A simple, clean, multi-tasking operating system written in pure assembly language for 64-bit processors from the AMD64 family. Only ~64 KiB of size :)
+A simple, clean, multi-tasking operating system written in pure assembly language for 64-bit processors from the AMD64 family.
 
 ### Software:
 
