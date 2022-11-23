@@ -6,7 +6,7 @@ I'm in the process of transferring the entire operating system code to the C lan
 
 A simple, clean, multi-tasking operating system written in pure assembly language for 64-bit processors from the AMD64 family. Only ~64 KiB of size :)
 
-![screenshot](https://raw.githubusercontent.com/blackend/cyjon/master/preview.png)
+![screenshot](https://github.com/CorruptedByCPU/Cyjon/blob/old/preview.png)
 
 If possible, please run Qemu on GNU/Linux - performance against MS/Windows is overwhelming ;)
 
