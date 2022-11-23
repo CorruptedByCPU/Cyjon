@@ -4,6 +4,19 @@
 
 ;-------------------------------------------------------------------------------
 ; in:
+;	rdi - pointer
+; out:
+;	rdi - pointer aligned to page (up)
+kernel_page_align_up:
+	; align page to next address
+	add	rdi,	~STATIC_PAGE_mask
+	and	rdi,	STATIC_PAGE_mask
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
 ;	rdi - physical/logical address of page
 kernel_page_clean:
 	; preserve original register

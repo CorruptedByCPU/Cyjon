@@ -11,6 +11,7 @@
 %define	STATIC_ASCII_DIGIT_0		0x30
 %define	STATIC_ASCII_LETTER_u		0x75
 
+%define	STATIC_PAGE_mask		0xFFFFFFFFFFFFF000
 %define	STATIC_PAGE_SIZE_page		1
 %define	STATIC_PAGE_SIZE_shift		12
 %define	STATIC_PAGE_SIZE_byte		4096
