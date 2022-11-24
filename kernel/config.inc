@@ -4,8 +4,9 @@
 
 %define	KERNEL_name			"Cyjon"
 %define	KERNEL_version			"0"
-%define	KERNEL_revision			"1446"
+%define	KERNEL_revision			"1447"
 %define	KERNEL_architecture		"x86_64"
+%define	KERNEL_language			"Assembly"
 
 %define	KERNEL_BASE_address		0xFFFFFFFF80000000
 

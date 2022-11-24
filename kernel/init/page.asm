@@ -199,6 +199,7 @@ kernel_init_page:
 
 	; and kernel environment variables/routines itself
 	or	qword [kernel_environment_base_address],	rax
+	or	r8,	rax	; with pointer
 
 	; we are ready to switch paging arrays to new one
 

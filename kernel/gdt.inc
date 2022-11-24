@@ -2,14 +2,17 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
-kernel_environment_base_address	dq	EMPTY
+struc	KERNEL_GDT_STRUCTURE
+	.null			resq	1
+	.cs_ring0		resq	1
+	.ds_ring0		resq	1
+	.empty			resq	1
+	.ds_ring3		resq	1
+	.cs_ring3		resq	1
+	.tss:
+endstruc
 
-; align table
-align	0x08,	db	0x00
-kernel_gdt_header		dw	STATIC_PAGE_SIZE_byte
-				dq	EMPTY
-
-; align table
-align	0x08,	db	0x00
-kernel_idt_header		dw	STATIC_PAGE_SIZE_byte
-				dq	EMPTY
+struc	KERNEL_GDT_STRUCTURE_HEADER
+	.size			resw	1
+	.address		resq	1
+endstruc

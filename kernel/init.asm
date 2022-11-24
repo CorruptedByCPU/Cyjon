@@ -22,6 +22,8 @@ global	init
 	%include	"kernel/driver/serial.inc"
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/config.inc"
+	%include	"kernel/gdt.inc"
+	%include	"kernel/idt.inc"
 	%include	"kernel/page.inc"
 	%include	"kernel/task.inc"
 	; kernel environment initialization routines ---------------------------
@@ -29,15 +31,16 @@ global	init
 	%include	"kernel/init/limine.inc"
 	;=======================================================================
 
-; data of kernel
+; information for linker
 section	.data
 	;-----------------------------------------------------------------------
 	; variables, constants
 	;-----------------------------------------------------------------------
 	%include	"kernel/data.asm"
+	%include	"kernel/init/data.asm"
 	;=======================================================================
 
-; code of kernel
+; information for linker
 section .text
 	;-----------------------------------------------------------------------
 	; routines
@@ -45,10 +48,14 @@ section .text
 	; drivers --------------------------------------------------------------
 	%include	"kernel/driver/serial.asm"
 	; kernel ---------------------------------------------------------------
+	%include	"kernel/idt.asm"
 	%include	"kernel/memory.asm"
 	%include	"kernel/page.asm"
+	%include	"kernel/service.asm"
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.asm"
+	%include	"kernel/init/gdt.asm"
+	%include	"kernel/init/idt.asm"
 	%include	"kernel/init/memory.asm"
 	%include	"kernel/init/page.asm"
 	;=======================================================================
@@ -91,6 +98,12 @@ init:
 
 	; set new stack pointer
 	xor	rsp,	rsp
+
+	; create Global Descriptor Table
+	call	kernel_init_gdt
+
+	; create Interrupt Descriptor Table
+	call	kernel_init_idt
 
 	; hold the door
 	jmp	$
