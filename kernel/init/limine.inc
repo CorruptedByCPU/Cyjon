@@ -5,6 +5,7 @@
 %define	LIMINE_COMMON_MAGIC		0xc7b1dd30df4c8b88, 0x0a82e883a194f07b
 %define	LIMINE_FRAMEBUFFER_MAGIC	LIMINE_COMMON_MAGIC, 0x9d5827dcd881dd75, 0xa3148604f6fab11b
 %define	LIMINE_MEMMAP_MAGIC		LIMINE_COMMON_MAGIC, 0x67cf3d9d378a806f, 0xe304acdfc50c3c62
+%define	LIMINE_RSDP_MAGIC		LIMINE_COMMON_MAGIC, 0xc5e77b6b397e7b43, 0x27637845accdcf3c
 
 %define	LIMINE_MEMMAP_USABLE			0
 %define	LIMINE_MEMMAP_RESERVED			1
@@ -48,6 +49,17 @@ struc	LIMINE_MEMMAP_RESPONSE
 	.entry			resq	1
 
 struc	LIMINE_MEMMAP_REQUEST
+	.id			resq	4
+	.revision		resq	1
+	.response		resq	1
+endstruc
+
+struc	LIMINE_RSDP_RESPONSE
+	.revision		resq	1
+	.address		resq	1
+endstruc
+
+struc	LIMINE_RSDP_REQUEST
 	.id			resq	4
 	.revision		resq	1
 	.response		resq	1

@@ -2,7 +2,7 @@
 
 I'll try to rewrite Cyjon to keep it up with Fern-Night.
 
-(old code at **old** branch)
+(old code at **[old](https://github.com/CorruptedByCPU/Cyjon/tree/old)** branch)
 
 # Cyjon (workname)
 

@@ -16,12 +16,13 @@ global	init
 	;-----------------------------------------------------------------------
 	; global ---------------------------------------------------------------
 	%include	"default.inc"
-	; limine structures/arrays ---------------------------------------------
-	%include	"kernel/init/limine.inc"
-	; kernel ---------------------------------------------------------------
-	%include	"kernel/config.inc"
 	; drivers --------------------------------------------------------------
 	%include	"kernel/driver/serial.inc"
+	; kernel ---------------------------------------------------------------
+	%include	"kernel/config.inc"
+	; kernel environment initialization routines ---------------------------
+	%include	"kernel/init/acpi.inc"
+	%include	"kernel/init/limine.inc"
 	;=======================================================================
 
 ; data of kernel
@@ -43,8 +44,11 @@ section .text
 	%include	"kernel/page.asm"
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/memory.asm"
+	%include	"kernel/init/acpi.asm"
 	;=======================================================================
 
+;-------------------------------------------------------------------------------
+; void
 init:
 	; configure failover output
 	call	driver_serial
@@ -67,6 +71,9 @@ init:
 .framebuffer:
 	; create binary memory map
 	call	kernel_init_memory
+
+	; parse ACPI tables
+	call	kernel_init_acpi
 
 	; hold the door
 	jmp	$

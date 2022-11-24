@@ -104,7 +104,6 @@ driver_serial_ready:
 driver_serial_string:
 	; preserve original register
 	push	rax
-	push	rdx
 	push	rsi
 
 .loop:
@@ -124,7 +123,6 @@ driver_serial_string:
 .end:
 	; restore original registers
 	pop	rsi
-	pop	rdx
 	pop	rax
 
 	; return from routine

@@ -3,7 +3,8 @@
 ;===============================================================================
 
 ;-------------------------------------------------------------------------------
-; void
+; out:
+;	r8 - pointer to kernel environment variables/routines
 kernel_init_memory:
 	; preserve original registers
 	push	rax
@@ -80,7 +81,7 @@ kernel_init_memory:
 	; kernel environment variables/rountines base address
 	mov	r8,	qword [kernel_environment_base_address]
 
-	; place binary memory map after kernel environment variables/rountines (aligned to full page)
+	; place binary memory map after kernel environment variables/rountines (aligned to page boundaries)
 	mov	r9,	KERNEL_STRUCTURE.SIZE
 	add	r9,	~STATIC_PAGE_mask
 	and	r9,	STATIC_PAGE_mask
