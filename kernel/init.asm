@@ -16,10 +16,14 @@ global	init
 	;-----------------------------------------------------------------------
 	; global ---------------------------------------------------------------
 	%include	"default.inc"
-	; drivers --------------------------------------------------------------
+	; library --------------------------------------------------------------
+	%include	"library/elf.inc"
+	; driver ---------------------------------------------------------------
 	%include	"kernel/driver/serial.inc"
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/config.inc"
+	%include	"kernel/page.inc"
+	%include	"kernel/task.inc"
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.inc"
 	%include	"kernel/init/limine.inc"
@@ -41,10 +45,12 @@ section .text
 	; drivers --------------------------------------------------------------
 	%include	"kernel/driver/serial.asm"
 	; kernel ---------------------------------------------------------------
+	%include	"kernel/memory.asm"
 	%include	"kernel/page.asm"
 	; kernel environment initialization routines ---------------------------
-	%include	"kernel/init/memory.asm"
 	%include	"kernel/init/acpi.asm"
+	%include	"kernel/init/memory.asm"
+	%include	"kernel/init/page.asm"
 	;=======================================================================
 
 ;-------------------------------------------------------------------------------
@@ -74,6 +80,17 @@ init:
 
 	; parse ACPI tables
 	call	kernel_init_acpi
+
+	; recreate kernel's paging structures
+	call	kernel_init_page
+
+	; switch to new kernel paging array
+	mov	rax,	~KERNEL_PAGE_mirror	; physical address
+	and	rax,	qword [r8 + KERNEL_STRUCTURE.page_base_address]
+	mov	cr3,	rax
+
+	; set new stack pointer
+	xor	rsp,	rsp
 
 	; hold the door
 	jmp	$

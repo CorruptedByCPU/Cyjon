@@ -16,14 +16,7 @@ kernel_init_memory:
 
 	; memory map available?
 	cmp	qword [kernel_limine_memmap_request + LIMINE_MEMMAP_REQUEST.response],	EMPTY
-	jne	.available	; yes
-
-	; memory map is not available
-	mov	rsi,	kernel_log_memory
-	call	driver_serial_string
-
-	; hold the door
-	jmp	$
+	je	.error	; no
 
 	;-----------------------------------------------------------------------
 	; below instructions will clean up all areas of memory marked as USABLE
@@ -31,7 +24,6 @@ kernel_init_memory:
 	; & binary memory map
 	;-----------------------------------------------------------------------
 
-.available:
 	; force consistency of available memory space for use (clean it up)
 	xor	eax,	eax	; and remember largest continous space in Bytes
 
@@ -205,3 +197,11 @@ kernel_init_memory:
 
 	; return from routine
 	ret
+
+.error:
+	; memory map is not available
+	mov	rsi,	kernel_log_memory
+	call	driver_serial_string
+
+	; hold the door
+	jmp	$

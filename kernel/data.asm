@@ -5,7 +5,9 @@
 kernel_environment_base_address	dq	EMPTY
 
 kernel_log_framebuffer	db	STATIC_ASCII_NEW_LINE, "Where are my testicles, Summer?", STATIC_ASCII_TERMINATOR
+kernel_log_kernel	db	STATIC_ASCII_NEW_LINE, "To be, or not to be, that is the question.", STATIC_ASCII_TERMINATOR
 kernel_log_memory	db	STATIC_ASCII_NEW_LINE, "Houston, we have a problem.", STATIC_ASCII_TERMINATOR
+kernel_log_page		db	STATIC_ASCII_NEW_LINE, "Stuck In The Sound - Brother.", STATIC_ASCII_TERMINATOR
 kernel_log_rsdp		db	STATIC_ASCII_NEW_LINE, "Hello Darkness, My Old Friend.", STATIC_ASCII_TERMINATOR
 kernel_log_welcome	db	KERNEL_name, " (build v", KERNEL_version, ".", KERNEL_revision, " ", KERNEL_architecture, ", compiled ", __DATE__, " ", __TIME__, ")", STATIC_ASCII_NEW_LINE, STATIC_ASCII_TERMINATOR
 
@@ -29,5 +31,17 @@ kernel_limine_memmap_request:
 align	0x08
 kernel_limine_rsdp_request:
 	dq	LIMINE_RSDP_MAGIC
+	dq	0	; revision
+	dq	EMPTY	; response
+
+align	0x08
+kernel_limine_kernel_file_request:
+	dq	LIMINE_KERNEL_FILE_MAGIC
+	dq	0	; revision
+	dq	EMPTY	; response
+
+align	0x08
+kernel_limine_kernel_file_address_request:
+	dq	LIMINE_KERNEL_ADDRESS_REQUEST
 	dq	0	; revision
 	dq	EMPTY	; response
