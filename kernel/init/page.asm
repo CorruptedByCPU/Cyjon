@@ -122,7 +122,7 @@ kernel_init_page:
 	;-----------------------------------------------------------------------
 
 	; kernel address available?
-	cmp	qword [kernel_limine_kernel_file_address_request + LIMINE_KERNEL_FILE_ADDRESS_REQUEST.response],	EMPTY
+	cmp	qword [kernel_limine_kernel_address_request + LIMINE_KERNEL_FILE_ADDRESS_REQUEST.response],	EMPTY
 	je	.error	; no
 
 	; kernel file available?
@@ -130,7 +130,7 @@ kernel_init_page:
 	je	.error	; no
 
 	; get pointer to kernel address response
-	mov	rdx,	qword [kernel_limine_kernel_file_address_request + LIMINE_KERNEL_FILE_ADDRESS_REQUEST.response]
+	mov	rdx,	qword [kernel_limine_kernel_address_request + LIMINE_KERNEL_FILE_ADDRESS_REQUEST.response]
 
 	; get pointer to kernel file location response
 	mov	rdi,	qword [kernel_limine_kernel_file_request + LIMINE_KERNEL_FILE_REQUEST.response]

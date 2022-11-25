@@ -9,7 +9,7 @@ echo "" > serial.log
 # run with specific configration
 qemu-system-x86_64			\
 	--enable-kvm			\
-	-cpu host			\
+	-cpu max			\
 	-smp 2				\
 	-m 128				\
 	-cdrom build/cyjon.iso		\

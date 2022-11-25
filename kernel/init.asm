@@ -24,6 +24,7 @@ global	init
 	%include	"kernel/config.inc"
 	%include	"kernel/gdt.inc"
 	%include	"kernel/idt.inc"
+	%include	"kernel/lapic.inc"
 	%include	"kernel/page.inc"
 	%include	"kernel/task.inc"
 	; kernel environment initialization routines ---------------------------
@@ -49,15 +50,18 @@ section .text
 	%include	"kernel/driver/serial.asm"
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/idt.asm"
+	%include	"kernel/lapic.asm"
 	%include	"kernel/memory.asm"
 	%include	"kernel/page.asm"
 	%include	"kernel/service.asm"
+	%include	"kernel/task.asm"
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.asm"
 	%include	"kernel/init/gdt.asm"
 	%include	"kernel/init/idt.asm"
 	%include	"kernel/init/memory.asm"
 	%include	"kernel/init/page.asm"
+	%include	"kernel/init/task.asm"
 	;=======================================================================
 
 ;-------------------------------------------------------------------------------
@@ -104,6 +108,11 @@ init:
 
 	; create Interrupt Descriptor Table
 	call	kernel_init_idt
+
+	; create Task queue
+	call	kernel_init_task
+
+	; initialize other CPUs
 
 	; hold the door
 	jmp	$

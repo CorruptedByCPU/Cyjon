@@ -120,12 +120,14 @@ kernel_init_idt:
 ;	rax - pointer to interrupt handler
 ;	bx - interrupt type
 ;	rcx - entry number
-;	rdi - pointer to IDT structure
 kernel_idt_update:
 	; preserve original registers
 	push	rax
 	push	rcx
 	push	rdi
+
+	; retirve pointer to IDT structure
+	mov	rdi,	qword [kernel_idt_header + KERNEL_IDT_STRUCTURE_HEADER.address]
 
 	; move pointer to entry
 	shl	cx,	STATIC_MULTIPLE_BY_16_shift

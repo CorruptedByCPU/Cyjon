@@ -31,8 +31,8 @@ kernel_limine_kernel_file_request:
 
 ; align table
 align	0x08,	db	0x00
-kernel_limine_kernel_file_address_request:
-	dq	LIMINE_KERNEL_ADDRESS_REQUEST
+kernel_limine_kernel_address_request:
+	dq	LIMINE_KERNEL_ADDRESS_MAGIC
 	dq	0	; revision
 	dq	EMPTY	; response
 
@@ -49,3 +49,11 @@ kernel_limine_rsdp_request:
 	dq	LIMINE_RSDP_MAGIC
 	dq	0	; revision
 	dq	EMPTY	; response
+
+; align table
+align	0x08,	db	0x00
+kernel_limine_smp_request:
+	dq	LIMINE_SMP_MAGIC
+	dq	0	; revision
+	dq	EMPTY	; response
+	dq	EMPTY	; flags: do not emable X2APIC

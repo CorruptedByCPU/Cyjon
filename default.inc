@@ -37,11 +37,11 @@
 
 %define	STATIC_DWORD_SIZE_byte			4
 %define	STATIC_QWORD_SIZE_byte			8
+%define	STATIC_PTR_SIZE_byte			STATIC_QWORD_SIZE_byte
 
 %define	STATIC_DWORD_SIZE_shift			2
 %define	STATIC_QWORD_SIZE_shift			3
-
-%define	STATIC_PTR_SIZE_byte			STATIC_QWORD_SIZE_byte
+%define	STATIC_PTR_SIZE_shift			STATIC_QWORD_SIZE_shift
 
 %define	STATIC_NUMBER_SYSTEM_hexadecimal	0x10
 

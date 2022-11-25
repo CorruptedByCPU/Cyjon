@@ -7,7 +7,8 @@
 %define	LIMINE_MEMMAP_MAGIC			LIMINE_COMMON_MAGIC, 0x67cf3d9d378a806f, 0xe304acdfc50c3c62
 %define	LIMINE_RSDP_MAGIC			LIMINE_COMMON_MAGIC, 0xc5e77b6b397e7b43, 0x27637845accdcf3c
 %define	LIMINE_KERNEL_FILE_MAGIC		LIMINE_COMMON_MAGIC, 0xad97e90e83f1ed67, 0x31eb5d1c5ff23b69
-%define	LIMINE_KERNEL_ADDRESS_REQUEST		LIMINE_COMMON_MAGIC, 0x71ba76863cc55f63, 0xb2644a48c516a487
+%define	LIMINE_KERNEL_ADDRESS_MAGIC		LIMINE_COMMON_MAGIC, 0x71ba76863cc55f63, 0xb2644a48c516a487
+%define	LIMINE_SMP_MAGIC			LIMINE_COMMON_MAGIC, 0x95a67b819a1b857e, 0xa0b61b723b6a73e0
 
 %define	LIMINE_MEMMAP_USABLE			0
 %define	LIMINE_MEMMAP_RESERVED			1
@@ -97,4 +98,19 @@ struc	LIMINE_KERNEL_FILE_ADDRESS_REQUEST
 	.id			resq	4
 	.revision		resq	1
 	.response		resq	1
+endstruc
+
+struc	LIMINE_SMP_RESPONSE
+	.revision		resq	1
+	.flags			resd	1
+	.bsp_lapic_id		resd	1
+	.cpu_count		resq	1
+	.cpu_info		resq	1
+endstruc
+
+struc	LIMINE_SMP_REQUEST
+	.id			resq	4
+	.revision		resq	1
+	.response		resq	1
+	.flags			resq	1
 endstruc

@@ -4,7 +4,7 @@
 
 %define	KERNEL_name			"Cyjon"
 %define	KERNEL_version			"0"
-%define	KERNEL_revision			"1447"
+%define	KERNEL_revision			"1448"
 %define	KERNEL_architecture		"x86_64"
 %define	KERNEL_language			"Assembly"
 
@@ -26,6 +26,10 @@ struc	KERNEL_STRUCTURE
 	.page_total		resq	1
 	.page_available		resq	1
 	.page_limit		resq	1
+
+	; variables of Task management functions
+	.task_queue_address	resq	1
+	.task_cpu_address	resq	1
 
 	; length of this structure in Bytes
 	.SIZE:

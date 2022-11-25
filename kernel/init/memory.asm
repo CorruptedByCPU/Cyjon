@@ -13,6 +13,7 @@ kernel_init_memory:
 	push	rdx
 	push	rsi
 	push	rdi
+	push	r9
 
 	; memory map available?
 	cmp	qword [kernel_limine_memmap_request + LIMINE_MEMMAP_REQUEST.response],	EMPTY
@@ -83,8 +84,11 @@ kernel_init_memory:
 	mov	qword [r8 + KERNEL_STRUCTURE.memory_base_address],	r9
 
 	;-----------------------------------------------------------------------
-	; next we will register every area marked as USABLE or BOOTLOADER_RECLAIMABLE
+	; next we will register every area marked as LIMINE_MEMMAP_USABLE
 	; inside our binary memory map
+	;
+	; about LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE,
+	; we will register that memory areas, after kernel environment initializations
 	;-----------------------------------------------------------------------
 
 	; memory map response structure
@@ -100,13 +104,8 @@ kernel_init_memory:
 
 	; type of LIMINE_MEMMAP_USABLE?
 	cmp	qword [rdi + LIMINE_MEMMAP_ENTRY.type],	LIMINE_MEMMAP_USABLE
-	je	.yes	; yes
-
-	; or type of LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE?
-	cmp	qword [rdi + LIMINE_MEMMAP_ENTRY.type],	LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE
 	jne	.leave	; no
 
-.yes:
 	; length of binary memory map in pages (and available too)
 	mov	rcx,	qword [rdi + LIMINE_MEMMAP_ENTRY.length]
 	shr	rcx,	STATIC_PAGE_SIZE_shift
@@ -188,6 +187,7 @@ kernel_init_memory:
 	jnz	.mark	; no
 
 	; restore original registers
+	pop	r9
 	pop	rdi
 	pop	rsi
 	pop	rdx
