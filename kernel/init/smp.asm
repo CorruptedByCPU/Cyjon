@@ -40,6 +40,9 @@ kernel_init_smp:
 	; set jump point of this AP
 	mov	qword [rdi + LIMINE_SMP_INFO.goto_address],	kernel_init_ap
 
+	; AP is running
+	inc	qword [kernel_ap_count]
+
 	; next AP from list
 	jmp	.next
 

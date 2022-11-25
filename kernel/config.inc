@@ -4,13 +4,16 @@
 
 %define	KERNEL_name			"Cyjon"
 %define	KERNEL_version			"0"
-%define	KERNEL_revision			"1449"
+%define	KERNEL_revision			"1450"
 %define	KERNEL_architecture		"x86_64"
 %define	KERNEL_language			"Assembly"
 
 %define	KERNEL_BASE_address		0xFFFFFFFF80000000
 
 struc	KERNEL_STRUCTURE
+	; variables of SMP Management functions
+	.cpu_count		resq	1
+
 	; variables of I/O APIC management functions
 	.io_apic_base_address	resq	1
 
@@ -20,6 +23,9 @@ struc	KERNEL_STRUCTURE
 	; variables of Memory management functions
 	.memory_base_address	resq	1
 	.memory_semaphore	resb	1
+
+	; align next address
+	alignb	0x08
 
 	; variables of Page management functions
 	.page_base_address	resq	1

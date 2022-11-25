@@ -9,6 +9,7 @@ struc	KERNEL_GDT_STRUCTURE
 	.empty			resq	1
 	.ds_ring3		resq	1
 	.cs_ring3		resq	1
+	.reserved		resq	1
 	.tss:
 endstruc
 

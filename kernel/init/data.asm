@@ -8,6 +8,8 @@ kernel_acpi_extended		db	"XSDT (eXtended System Descriptor Table) found.", STATI
 kernel_acpi_lapic		db	STATIC_ASCII_NEW_LINE, " LAPIC base address 0x", STATIC_ASCII_TERMINATOR
 kernel_acpi_io_apic		db	STATIC_ASCII_NEW_LINE, " I/O APIC base address 0x", STATIC_ASCII_TERMINATOR
 
+kernel_ap_count			dq	1	; BSP itself
+
 kernel_log_framebuffer		db	STATIC_ASCII_NEW_LINE, "Where are my testicles, Summer?", STATIC_ASCII_TERMINATOR
 kernel_log_kernel		db	STATIC_ASCII_NEW_LINE, "To be, or not to be, that is the question.", STATIC_ASCII_TERMINATOR
 kernel_log_memory		db	STATIC_ASCII_NEW_LINE, "Houston, we have a problem.", STATIC_ASCII_TERMINATOR

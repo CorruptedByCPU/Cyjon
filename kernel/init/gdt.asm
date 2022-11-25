@@ -34,6 +34,18 @@ kernel_init_gdt:
 	; reload Global Descriptor Table
 	lgdt	[kernel_gdt_header]
 
+	; restore original registers
+	pop	rdi
+	pop	rcx
+	pop	rax
+
+	; return from routine
+	ret
+
+kernel_init_gdt_reload:
+	; preserve original register
+	push	rax
+
 	; reload code descriptor
 	push	KERNEL_GDT_STRUCTURE.cs_ring0
 	push	.cs_reload
@@ -41,6 +53,7 @@ kernel_init_gdt:
 
 .cs_reload:
 	; reset unused selectors
+	xor	ax,	ax
 	mov	fs,	ax
 	mov	gs,	ax
 
@@ -50,9 +63,7 @@ kernel_init_gdt:
 	mov	es,	ax	; extra
 	mov	ss,	ax	; stack
 
-	; restore original registers
-	pop	rdi
-	pop	rcx
+	; restore original register
 	pop	rax
 
 	; return from routine

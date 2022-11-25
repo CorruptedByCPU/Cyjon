@@ -29,6 +29,7 @@ global	init
 	%include	"kernel/task.inc"
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.inc"
+	%include	"kernel/init/ap.inc"
 	%include	"kernel/init/limine.inc"
 	;=======================================================================
 
@@ -57,6 +58,7 @@ section .text
 	%include	"kernel/task.asm"
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.asm"
+	%include	"kernel/init/ap.asm"
 	%include	"kernel/init/gdt.asm"
 	%include	"kernel/init/idt.asm"
 	%include	"kernel/init/memory.asm"
@@ -116,8 +118,5 @@ init:
 	; initialize other CPUs
 	call	kernel_init_smp
 
-kernel_init_ap:
-	xchg	bx,bx
-
-	; hold the door
-	jmp	$
+	; reload BSP processor
+	jmp	kernel_init_ap

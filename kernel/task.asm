@@ -5,6 +5,7 @@
 ; align routine to full address
 align	0x08,	db	0x00
 kernel_task:
+	xchg	bx,bx
 	; turn off Interrupts Flag
 	cli
 
@@ -33,6 +34,12 @@ kernel_task:
 	FXSAVE64	[rbp]
 
 	; [...]
+
+	; reload CPU cycle counter in APIC controller
+	call	kernel_lapic_reload
+
+	; accept current interrupt call
+	call	kernel_lapic_accept
 
 	; restore "floating point" registers
 	mov	rbp,	0xFFFFFFFFFFFFF000
