@@ -4,6 +4,8 @@ I'm rewriting Cyjon to be fully compatible with Fern-Night (written in C)...
 
 The ability to run the same compilations of programs on both systems, ignited a new flame in me :D
 
+![image](https://user-images.githubusercontent.com/53617677/204043138-e9d87f6b-5a63-464b-9e8f-2c4bc5db60f6.png)
+
 Previous version of Cyjon is still available at **[old](https://github.com/CorruptedByCPU/Cyjon/tree/old)** branch.
 
 # Cyjon (workname)
@@ -18,11 +20,10 @@ The code I write is to be simple in construction and readable by everyone, regar
 
 So the code is not optimized for speed but for readability.
 
-### Development:
+### Software:
 
   - Qemu 5.0.0 or Bochs 2.6.11 (no SMP support on MS/Windows)
   - Nasm 2.15.1
-  - tools (clang/gcc, ld, xorriso, gzip)
 
 ### Requirements:
 
@@ -30,5 +31,6 @@ So the code is not optimized for speed but for readability.
 
 ### Compilation/Exec (GNU/Linux):
 
+	user@hostname:~/Cyjon$ chmod +x make.sh qemu.sh
 	user@hostname:~/Cyjon$ ./make.sh
 	user@hostname:~/Cyjon$ ./qemu.sh
