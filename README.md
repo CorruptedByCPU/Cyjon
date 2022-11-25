@@ -18,10 +18,11 @@ The code I write is to be simple in construction and readable by everyone, regar
 
 So the code is not optimized for speed but for readability.
 
-### Software:
+### Development:
 
   - Qemu 5.0.0 or Bochs 2.6.11 (no SMP support on MS/Windows)
   - Nasm 2.15.1
+  - tools (clang/gcc, ld, xorriso, gzip)
 
 ### Requirements:
 
@@ -29,6 +30,5 @@ So the code is not optimized for speed but for readability.
 
 ### Compilation/Exec (GNU/Linux):
 
-	user@hostname:~/Cyjon$ chmod +x make.sh qemu.sh
 	user@hostname:~/Cyjon$ ./make.sh
 	user@hostname:~/Cyjon$ ./qemu.sh

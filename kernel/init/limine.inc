@@ -114,3 +114,11 @@ struc	LIMINE_SMP_REQUEST
 	.response		resq	1
 	.flags			resq	1
 endstruc
+
+struc	LIMINE_SMP_INFO
+	.processor_id		resd	1
+	.lapic_id		resd	1
+	.reserved		resq	1
+	.goto_address		resq	1
+	.extra_argument		resq	1
+endstruc

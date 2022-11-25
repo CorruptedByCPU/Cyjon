@@ -3,8 +3,7 @@
 ;===============================================================================
 
 ;-------------------------------------------------------------------------------
-; in:
-;	r8 - kernel environment variables/rountines base address
+; void
 kernel_init_gdt:
 	; preserve original registers
 	push	rax

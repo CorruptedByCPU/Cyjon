@@ -61,6 +61,7 @@ section .text
 	%include	"kernel/init/idt.asm"
 	%include	"kernel/init/memory.asm"
 	%include	"kernel/init/page.asm"
+	%include	"kernel/init/smp.asm"
 	%include	"kernel/init/task.asm"
 	;=======================================================================
 
@@ -113,6 +114,10 @@ init:
 	call	kernel_init_task
 
 	; initialize other CPUs
+	call	kernel_init_smp
+
+kernel_init_ap:
+	xchg	bx,bx
 
 	; hold the door
 	jmp	$
