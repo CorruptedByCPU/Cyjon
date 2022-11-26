@@ -13,7 +13,6 @@ kernel_init_memory:
 	push	rdx
 	push	rsi
 	push	rdi
-	push	r9
 
 	; memory map available?
 	cmp	qword [kernel_limine_memmap_request + LIMINE_MEMMAP_REQUEST.response],	EMPTY
@@ -187,7 +186,6 @@ kernel_init_memory:
 	jnz	.mark	; no
 
 	; restore original registers
-	pop	r9
 	pop	rdi
 	pop	rsi
 	pop	rdx

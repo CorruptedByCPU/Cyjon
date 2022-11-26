@@ -59,6 +59,7 @@ section .text
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.asm"
 	%include	"kernel/init/ap.asm"
+	%include	"kernel/init/free.asm"
 	%include	"kernel/init/gdt.asm"
 	%include	"kernel/init/idt.asm"
 	%include	"kernel/init/memory.asm"
@@ -117,6 +118,9 @@ init:
 
 	; initialize other CPUs
 	call	kernel_init_smp
+
+	; free up reclaimable memory
+	call	kernel_init_free
 
 	; reload BSP processor
 	jmp	kernel_init_ap

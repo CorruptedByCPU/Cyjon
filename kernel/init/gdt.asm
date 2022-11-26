@@ -34,6 +34,9 @@ kernel_init_gdt:
 	; reload Global Descriptor Table
 	lgdt	[kernel_gdt_header]
 
+	; set proper descriptors
+	call	kernel_init_gdt_reload
+
 	; restore original registers
 	pop	rdi
 	pop	rcx

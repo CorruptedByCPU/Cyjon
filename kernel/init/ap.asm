@@ -22,6 +22,9 @@ kernel_init_ap:
 	and	rax,	qword [r8 + KERNEL_STRUCTURE.page_base_address]
 	mov	cr3,	rax
 
+	; do not allow AP to use its initial stack pointer
+	mov	rsp,	KERNEL_INIT_AP_STACK_pointer
+
 	;-----
 	; GDT
 	;-----

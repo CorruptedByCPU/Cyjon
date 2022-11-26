@@ -3,10 +3,12 @@
 ;===============================================================================
 
 ;-------------------------------------------------------------------------------
-; void
+; in:
+;	r8 - pointer to kernel environment variables/routines
 kernel_init_smp:
 	; preserve original registers
 	push	rax
+	push	rbx
 	push	rcx
 	push	rsi
 	push	rdi
@@ -41,7 +43,13 @@ kernel_init_smp:
 	mov	qword [rdi + LIMINE_SMP_INFO.goto_address],	kernel_init_ap
 
 	; AP is running
-	inc	qword [kernel_ap_count]
+	inc	qword [kernel_smp_count]
+
+.wait:
+	; wait for AP initialization
+	mov	rbx,	qword [r8 + KERNEL_STRUCTURE.cpu_count]
+	cmp	rbx,	qword [kernel_smp_count]
+	jne	.wait
 
 	; next AP from list
 	jmp	.next
@@ -51,6 +59,7 @@ kernel_init_smp:
 	pop	rdi
 	pop	rsi
 	pop	rcx
+	pop	rbx
 	pop	rax
 
 	; return from routine
