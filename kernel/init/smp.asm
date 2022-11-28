@@ -6,13 +6,6 @@
 ; in:
 ;	r8 - pointer to kernel environment variables/routines
 kernel_init_smp:
-	; preserve original registers
-	push	rax
-	push	rbx
-	push	rcx
-	push	rsi
-	push	rdi
-
 	; SMP specification available?
 	cmp	qword [kernel_limine_smp_request + LIMINE_SMP_REQUEST.response],	EMPTY
 	je	.alone	; no
@@ -55,12 +48,5 @@ kernel_init_smp:
 	jmp	.next
 
 .alone:
-	; restore original registers
-	pop	rdi
-	pop	rsi
-	pop	rcx
-	pop	rbx
-	pop	rax
-
-	; return from routine
-	ret
+	; free up reclaimable memory
+	jmp	kernel_init_free

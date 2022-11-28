@@ -116,11 +116,7 @@ init:
 	; create Task queue
 	call	kernel_init_task
 
+	; below, initialization functions does not guarantee original registers preservation
+
 	; initialize other CPUs
-	call	kernel_init_smp
-
-	; free up reclaimable memory
-	call	kernel_init_free
-
-	; reload BSP processor
-	jmp	kernel_init_ap
+	jmp	kernel_init_smp

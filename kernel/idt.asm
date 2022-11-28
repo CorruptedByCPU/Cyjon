@@ -2,12 +2,6 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
-;-------------------------------------------------------------------------------
-; void
-kernel_idt_exception:
-	; hold the door
-	jmp	$
-
 ; align routine
 align	0x08,	db	EMPTY
 kernel_idt_exception_divide_by_zero:
@@ -17,7 +11,7 @@ kernel_idt_exception_divide_by_zero:
 	push	0
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -28,7 +22,7 @@ kernel_idt_exception_debug:
 	push	1
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -39,7 +33,7 @@ kernel_idt_exception_breakpoint:
 	push	3
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -50,7 +44,7 @@ kernel_idt_exception_overflow:
 	push	4
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -61,7 +55,7 @@ kernel_idt_exception_boud_range_exceeded:
 	push	5
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -72,7 +66,7 @@ kernel_idt_exception_invalid_opcode:
 	push	6
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -83,7 +77,7 @@ kernel_idt_exception_device_not_available:
 	push	7
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -92,7 +86,7 @@ kernel_idt_exception_double_fault:
 	push	8
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -103,7 +97,7 @@ kernel_idt_exception_coprocessor_segment_overrun:
 	push	9
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -112,7 +106,7 @@ kernel_idt_exception_invalid_tss:
 	push	10
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -121,7 +115,7 @@ kernel_idt_exception_segment_not_present:
 	push	11
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -130,7 +124,7 @@ kernel_idt_exception_stack_segment_fault:
 	push	12
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -139,7 +133,7 @@ kernel_idt_exception_general_protection_fault:
 	push	13
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -148,7 +142,7 @@ kernel_idt_exception_page_fault:
 	push	14
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -159,7 +153,7 @@ kernel_idt_exception_x87_floating_point:
 	push	16
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -168,7 +162,7 @@ kernel_idt_exception_alignment_check:
 	push	17
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -179,7 +173,7 @@ kernel_idt_exception_machine_check:
 	push	18
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -190,7 +184,7 @@ kernel_idt_exception_simd_floating_point:
 	push	19
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -201,7 +195,7 @@ kernel_idt_exception_virtualization:
 	push	20
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -210,7 +204,7 @@ kernel_idt_exception_control_protection:
 	push	21
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -221,7 +215,7 @@ kernel_idt_exception_hypervisor_injection:
 	push	28
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -230,7 +224,7 @@ kernel_idt_exception_vmm_communication:
 	push	29
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -239,11 +233,11 @@ kernel_idt_exception_security:
 	push	30
 
 	; continue
-	jmp	kernel_idt_exception_entry
+	jmp	kernel_idt_exception
 
 ;-------------------------------------------------------------------------------
 ; void
-kernel_idt_exception_entry:
+kernel_idt_exception:
 	; keep original registers
 	push	rax
 	push	rbx
@@ -268,9 +262,20 @@ kernel_idt_exception_entry:
 	; turn off Direction Flag
 	cld
 
-	; execute exception handler
-	mov	rdi,	rsp
-	call	kernel_idt_exception
+	; show on debug console, exception name
+	mov	rsi,	qword [rsp + KERNEL_IDT_STRUCTURE_EXCEPTION.id]
+	shl	rsi,	STATIC_MULTIPLE_BY_PTR_shift	; offset of entry at exception string table
+	add	rsi,	kernel_idt_exception_string	; pointer to exception string table entry
+	mov	rsi,	qword [rsi]	; pointer to exception description
+	call	driver_serial_string
+
+	; and exception address
+	mov	rax,	qword [rsp + KERNEL_IDT_STRUCTURE_EXCEPTION.rip]
+	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
+	call	driver_serial_value
+
+	; hold the door
+	jmp	$
 
 	; release value of CR2 register from stack
 	add	rsp,	0x08

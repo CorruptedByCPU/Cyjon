@@ -9,6 +9,8 @@ kernel_acpi_lapic		db	STATIC_ASCII_NEW_LINE, " LAPIC base address 0x", STATIC_AS
 kernel_acpi_io_apic		db	STATIC_ASCII_NEW_LINE, " I/O APIC base address 0x", STATIC_ASCII_TERMINATOR
 
 kernel_log_framebuffer		db	STATIC_ASCII_NEW_LINE, "Where are my testicles, Summer?", STATIC_ASCII_TERMINATOR
+kernel_log_free_prefix		db	STATIC_ASCII_NEW_LINE, "+", STATIC_ASCII_TERMINATOR
+kernel_log_free			db	" KiB released.", STATIC_ASCII_TERMINATOR
 kernel_log_kernel		db	STATIC_ASCII_NEW_LINE, "To be, or not to be, that is the question.", STATIC_ASCII_TERMINATOR
 kernel_log_memory		db	STATIC_ASCII_NEW_LINE, "Houston, we have a problem.", STATIC_ASCII_TERMINATOR
 kernel_log_page			db	STATIC_ASCII_NEW_LINE, "Stuck In The Sound - Brother.", STATIC_ASCII_TERMINATOR

@@ -22,9 +22,6 @@ kernel_init_ap:
 	and	rax,	qword [r8 + KERNEL_STRUCTURE.page_base_address]
 	mov	cr3,	rax
 
-	; do not allow AP to use its initial stack pointer
-	mov	rsp,	KERNEL_INIT_AP_STACK_pointer
-
 	;-----
 	; GDT
 	;-----
@@ -122,10 +119,10 @@ kernel_init_ap:
 	shr	rdx,	STATIC_MOVE_HIGH_TO_EAX_shift
 	wrmsr
 
-	; set EFLAGS mask of entry routine
+	; ; set EFLAGS mask of entry routine
 	mov	eax,	KERNEL_TASK_EFLAGS_df	; disable Direction Flag only
 	mov	ecx,	KERNEL_INIT_AP_MSR_EFLAGS
-	xor	ecx,	edx
+	xor	edx,	edx
 	wrmsr
 
 	;------

@@ -7,15 +7,6 @@
 ;	r8 - pointer to kernel environment variables/routines
 ;	r9 - pointer to binary memory map
 kernel_init_free:
-	; preserve original registers
-	push	rax
-	push	rbx
-	push	rcx
-	push	rdx
-	push	rsi
-	push	rdi
-	push	rbp
-
 	;-----------------------------------------------------------------------
 	; after last AP initialization, we can include bootloader memory
 	; to binary memory map and use it freely
@@ -56,6 +47,9 @@ kernel_init_free:
 	; thats why we created array of RECLAIMABLE areas on stack...
 	;-----------------------------------------------------------------------
 
+	; amount of freed up pages
+	xor	eax,	eax
+
 .area:
 	; end of array?
 	cmp	rsp,	rbp
@@ -74,27 +68,30 @@ kernel_init_free:
 
 .lock:
 	; request an exclusive access
-	mov	al,	LOCK
-	lock xchg	byte [r8 + KERNEL_STRUCTURE.memory_semaphore],	al
+	mov	dl,	LOCK
+	lock xchg	byte [r8 + KERNEL_STRUCTURE.memory_semaphore],	dl
 
 	; assigned?
-	test	al,	al
+	test	dl,	dl
 	jnz	.lock	; no
 
 	; extend binary memory map of those area pages
 	add	qword [r8 + KERNEL_STRUCTURE.page_total],	rcx
 	add	qword [r8 + KERNEL_STRUCTURE.page_available],	rcx
 
+	; amount of freed up pages
+	add	rax,	rcx
+
 	; first page number of area
-	pop	rax
-	shr	rax,	STATIC_PAGE_SIZE_shift
+	pop	rdx
+	shr	rdx,	STATIC_PAGE_SIZE_shift
 
 .register:
 	; register inside binary memory map
-	bts	qword [r9],	rax
+	bts	qword [r9],	rdx
 
 	; next page
-	inc	rax
+	inc	rdx
 
 	; entire space is registered?
 	dec	rcx
@@ -107,14 +104,15 @@ kernel_init_free:
 	jmp	.area
 
 .end:
-	; restore original registers
-	pop	rbp
-	pop	rdi
-	pop	rsi
-	pop	rdx
-	pop	rcx
-	pop	rbx
-	pop	rax
+	; show amount of released memory
+	mov	rsi,	kernel_log_free_prefix
+	call	driver_serial_string
+	; convert pages to KiB
+	shl	rax,	STATIC_MULTIPLE_BY_4_shift
+	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
+	call	driver_serial_value
+	mov	rsi,	kernel_log_free
+	call	driver_serial_string
 
-	; return from routine
-	ret
+	; reload BSP processor
+	jmp	kernel_init_ap

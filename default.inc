@@ -31,7 +31,9 @@
 %define	STATIC_MOVE_HIGH_TO_EAX_shift		32
 
 %define	STATIC_MULTIPLE_BY_2_shift		1
+%define	STATIC_MULTIPLE_BY_4_shift		2
 %define	STATIC_MULTIPLE_BY_8_shift		3
+%define	STATIC_MULTIPLE_BY_PTR_shift		STATIC_MULTIPLE_BY_8_shift
 %define	STATIC_MULTIPLE_BY_16_shift		4
 %define	STATIC_MULTIPLE_BY_512_shift		9
 
@@ -43,6 +45,7 @@
 %define	STATIC_QWORD_SIZE_shift			3
 %define	STATIC_PTR_SIZE_shift			STATIC_QWORD_SIZE_shift
 
-%define	STATIC_NUMBER_SYSTEM_hexadecimal	0x10
+%define	STATIC_NUMBER_SYSTEM_decimal		10
+%define	STATIC_NUMBER_SYSTEM_hexadecimal	16
 
 %define	STATIC_MAX_unsigned			-1
