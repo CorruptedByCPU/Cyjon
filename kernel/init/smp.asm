@@ -48,5 +48,21 @@ kernel_init_smp:
 	jmp	.next
 
 .alone:
+	; if additional APs were initialized
+	cmp	qword [kernel_smp_count],	EMPTY
+	je	.free	; no
+
+	; prefix
+	mov	rsi,	kernel_log_prefix
+	call	driver_serial_string
+
+	; number of APs initialized
+	mov	rax,	qword [kernel_smp_count]
+	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
+	mov	rsi,	kernel_log_smp
+	call	driver_serial_value
+	call	driver_serial_string
+
+.free:
 	; free up reclaimable memory
 	jmp	kernel_init_free

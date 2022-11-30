@@ -15,6 +15,14 @@ nasm -f elf64 kernel/init.asm -o build/kernel.o
 ld build/kernel.o -o build/kernel -T linker.kernel
 gzip -fk build/kernel
 
+for software in `(cd software && ls *.asm)`; do
+	name=`echo $software | cut -d '.' -f 1`
+	nasm -f elf64 software/${name}.asm -o build/${name}.o  || exit 1
+	ld build/${name}.o -o system/${name} -T linker.software ${LDFLAGS}
+done
+
+rm -f build/*.o
+
 clang pkg.c -o pkg && ./pkg && gzip -fk build/system.pkg && mv build/system.pkg.gz build/system.gz
 
 cp limine.cfg limine/limine.sys limine/limine-cd.bin limine/limine-cd-efi.bin iso/

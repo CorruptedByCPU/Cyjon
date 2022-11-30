@@ -13,9 +13,11 @@ kernel_init_task:
 	push	rdi
 
 	;-----------------------------------------------------------------------
-	; assign space for Task queue and store it
+	; assign space for task queue and store it
 	mov	ecx,	((KERNEL_TASK_limit * KERNEL_TASK_STRUCTURE_ENTRY.SIZE) + ~STATIC_PAGE_mask) >> STATIC_PAGE_SIZE_shift
 	call	kernel_memory_alloc
+
+	; save pointer to task queue
 	mov	qword [r8 + KERNEL_STRUCTURE.task_queue_address],	rdi
 
 	; properties of first job on queue which is the kernel of the system
@@ -53,7 +55,7 @@ kernel_init_task:
 	and	rcx,	STATIC_PAGE_mask
 	shr	rcx,	STATIC_PAGE_SIZE_shift
 
-	; assign space for Task list and store it
+	; assign space for task list and store it
 	call	kernel_memory_alloc
 	mov	qword [r8 + KERNEL_STRUCTURE.task_cpu_address],	rdi
 

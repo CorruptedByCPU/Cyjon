@@ -5,6 +5,7 @@
 ;-------------------------------------------------------------------------------
 ; out:
 ;	rdi - pointer to allocated page (physical address)
+;		or EMPTY if not available
 kernel_memory_alloc_page:
 	; preserve original registers
 	push	rcx
@@ -28,7 +29,7 @@ kernel_memory_alloc_page:
 ;	rcx - length of area in pages
 ; out:
 ;	rdi - pointer to allocated area (logical address)
-;	or EMPTY, if not available
+;		or EMPTY, if not available
 kernel_memory_alloc:
 	; preserve original registers
 	push	rax

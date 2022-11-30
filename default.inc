@@ -24,6 +24,7 @@
 
 %define	STATIC_DIVIDE_BY_8_shift		3
 %define	STATIC_DIVIDE_BY_QWORD_shift		STATIC_DIVIDE_BY_8_shift
+%define	STATIC_DIVIDE_BY_4096_shift		12
 
 %define	STATIC_MOVE_AX_TO_HIGH_shift		16
 %define	STATIC_MOVE_EAX_TO_HIGH_shift		32

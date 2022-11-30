@@ -18,6 +18,7 @@ global	init
 	%include	"default.inc"
 	; library --------------------------------------------------------------
 	%include	"library/elf.inc"
+	%include	"library/pkg.inc"
 	; driver ---------------------------------------------------------------
 	%include	"kernel/driver/serial.inc"
 	; kernel ---------------------------------------------------------------
@@ -26,6 +27,7 @@ global	init
 	%include	"kernel/idt.inc"
 	%include	"kernel/lapic.inc"
 	%include	"kernel/page.inc"
+	%include	"kernel/storage.inc"
 	%include	"kernel/task.inc"
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.inc"
@@ -55,6 +57,7 @@ section .text
 	%include	"kernel/memory.asm"
 	%include	"kernel/page.asm"
 	%include	"kernel/service.asm"
+	%include	"kernel/storage.asm"
 	%include	"kernel/task.asm"
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.asm"
@@ -65,6 +68,7 @@ section .text
 	%include	"kernel/init/memory.asm"
 	%include	"kernel/init/page.asm"
 	%include	"kernel/init/smp.asm"
+	%include	"kernel/init/storage.asm"
 	%include	"kernel/init/task.asm"
 	;=======================================================================
 
@@ -115,6 +119,9 @@ init:
 
 	; create Task queue
 	call	kernel_init_task
+
+	; register all available data carriers
+	call	kernel_init_storage
 
 	; below, initialization functions does not guarantee original registers preservation
 

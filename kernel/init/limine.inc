@@ -9,6 +9,7 @@
 %define	LIMINE_KERNEL_FILE_MAGIC		LIMINE_COMMON_MAGIC, 0xad97e90e83f1ed67, 0x31eb5d1c5ff23b69
 %define	LIMINE_KERNEL_ADDRESS_MAGIC		LIMINE_COMMON_MAGIC, 0x71ba76863cc55f63, 0xb2644a48c516a487
 %define	LIMINE_SMP_MAGIC			LIMINE_COMMON_MAGIC, 0x95a67b819a1b857e, 0xa0b61b723b6a73e0
+%define	LIMINE_MODULE_MAGIC			LIMINE_COMMON_MAGIC, 0x3e7e279702be32af, 0xca1c4f3bd1280cee
 
 %define	LIMINE_MEMMAP_USABLE			0
 %define	LIMINE_MEMMAP_RESERVED			1
@@ -121,4 +122,16 @@ struc	LIMINE_SMP_INFO
 	.reserved		resq	1
 	.goto_address		resq	1
 	.extra_argument		resq	1
+endstruc
+
+struc	LIMINE_MODULE_RESPONSE
+	.revision		resq	1
+	.module_count		resq	1
+	.modules		resq	1
+endstruc
+
+struc	LIMINE_MODULE_REQUEST
+	.id			resq	4
+	.revision		resq	1
+	.response		resq	1
 endstruc

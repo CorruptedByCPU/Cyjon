@@ -104,14 +104,17 @@ kernel_init_free:
 	jmp	.area
 
 .end:
-	; show amount of released memory
-	mov	rsi,	kernel_log_free_prefix
+	; prefix
+	mov	rsi,	kernel_log_prefix
 	call	driver_serial_string
+
 	; convert pages to KiB
 	shl	rax,	STATIC_MULTIPLE_BY_4_shift
+
+	; show amount of released memory
 	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
-	call	driver_serial_value
 	mov	rsi,	kernel_log_free
+	call	driver_serial_value
 	call	driver_serial_string
 
 	; reload BSP processor

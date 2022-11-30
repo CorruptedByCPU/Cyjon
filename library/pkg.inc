@@ -2,6 +2,8 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
+%define	LIB_PKG_length		4
+%define	LIB_PKG_magic		"#PKG"
 %define	LIB_PKG_base		64
 %define	LIB_PKG_align		16
 %define	LIB_PKG_name_limit	40

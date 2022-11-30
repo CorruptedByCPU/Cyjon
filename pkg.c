@@ -12,6 +12,7 @@ Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 	#include	<string.h>
 	#include	<sys/stat.h>
 	// library -------------------------------------------------------------
+	#define	LIB_PKG_length		4
 	#define	LIB_PKG_magic		"#PKG"
 	#define	LIB_PKG_base		64
 	#define	LIB_PKG_align		16
@@ -116,7 +117,7 @@ int main() {
 
 	// append magic value to end of pkg file
 	uint8_t magic[] = LIB_PKG_magic;
-	fwrite( magic, sizeof( magic ) - 1, 1, fpkg );
+	fwrite( magic, LIB_PKG_length, 1, fpkg );
 
 	// close package
 	fclose( fpkg );

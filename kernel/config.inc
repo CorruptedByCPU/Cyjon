@@ -4,7 +4,7 @@
 
 %define	KERNEL_name			"Cyjon"
 %define	KERNEL_version			"0"
-%define	KERNEL_revision			"1454"
+%define	KERNEL_revision			"1455"
 %define	KERNEL_architecture		"x86_64"
 %define	KERNEL_language			"Assembly"
 
@@ -24,7 +24,7 @@ struc	KERNEL_STRUCTURE
 	.memory_base_address	resq	1
 	.memory_semaphore	resb	1
 
-	; align next address
+	; align next label
 	alignb	0x08
 
 	; variables of Page management functions
@@ -32,6 +32,10 @@ struc	KERNEL_STRUCTURE
 	.page_total		resq	1
 	.page_available		resq	1
 	.page_limit		resq	1
+
+	; variables of Storage management functions
+	.storage_base_address	resq	1
+	.storage_root_id	resb	1
 
 	; variables of Task management functions
 	.task_queue_address	resq	1
