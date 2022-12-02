@@ -50,6 +50,7 @@ kernel_init_storage:
 	jne	.no_pkg	; no
 
 	; register module as memory storage
+	mov	al,	KERNEL_STORAGE_TYPE_memory
 	call	kernel_storage_register
 
 	; all device slots are used?
@@ -57,7 +58,6 @@ kernel_init_storage:
 	jz	.no_pkg	; ignore device
 
 	; set device properties
-	mov	byte [rdi + KERNEL_STORAGE_STRUCTURE.device_type],	KERNEL_STORAGE_TYPE_memory
 	mov	qword [rdi + KERNEL_STORAGE_STRUCTURE.device_blocks],	rcx
 	mov	qword [rdi + KERNEL_STORAGE_STRUCTURE.device_first_block],	rsi
 	mov	qword [rdi + KERNEL_STORAGE_STRUCTURE.storage_file],	kernel_storage_file
@@ -72,7 +72,7 @@ kernel_init_storage:
 	;-----------------------------------------------------------------------
 	; which storage device contains system files?
 	;-----------------------------------------------------------------------
-xchg	bx,bx
+
 	; limit of devices
 	mov	rcx,	KERNEL_STORAGE_limit
 
@@ -85,7 +85,7 @@ xchg	bx,bx
 	js	.error	; Geralt: Hmmm...
 
 	; search for system files?
-	cmp	byte [rax + KERNEL_STORAGE_STRUCTURE.flags],	EMPTY
+	cmp	byte [rax + KERNEL_STORAGE_STRUCTURE.device_type],	EMPTY
 	jne	.files	; yes
 
 	; next slot
@@ -105,7 +105,7 @@ xchg	bx,bx
 
 	; change storage pointer to ID
 	sub	rax,	qword [r8 + KERNEL_STRUCTURE.storage_base_address]
-	shr	rax,	KERNEL_STORAGE_SIZE_shift
+	shr	rax,	KERNEL_STORAGE_STRUCTURE_SIZE_shift
 
 	; search for "init" file on storage device
 	mov	ecx,	2

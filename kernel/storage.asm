@@ -11,11 +11,39 @@
 kernel_storage_file:
 	; preserve original registers
 	push	rax
+	push	rdi
+	push	r8
+	push	r10
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
 
 	; by default file does not exist
 	mov	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
 
+	; stograge base address
+	mov	r10,	qword [r8 + KERNEL_STRUCTURE.storage_base_address]
+
+	; device ID overflow?
+	cmp	rax,	KERNEL_STORAGE_limit
+	jae	.end	; yes, ignore
+
+	; change device ID to offset
+	shl	rax,	KERNEL_STORAGE_STRUCTURE_SIZE_shift
+
+	; device type of KERNEL_STORAGE_TYPE_memory?
+	cmp	byte [r10 + rax + KERNEL_STORAGE_STRUCTURE.device_type],	KERNEL_STORAGE_TYPE_memory
+	jne	.end	; no
+
+	; search for requested file
+	mov	rax,	qword [r10 + rax + KERNEL_STORAGE_STRUCTURE.device_first_block]
+	call	lib_pkg_file
+
+.end:
 	; restore original registers
+	pop	r10
+	pop	r8
+	pop	rdi
 	pop	rax
 
 	; return from routine
@@ -53,7 +81,7 @@ kernel_storage_register:
 
 .next:
 	; free device slot?
-	cmp	byte [rdi + KERNEL_STORAGE_STRUCTURE.flags],	EMPTY
+	cmp	byte [rdi + KERNEL_STORAGE_STRUCTURE.device_type],	EMPTY
 	je	.register	; yes
 
 	; next slot
@@ -71,8 +99,7 @@ kernel_storage_register:
 
 .register:
 	; mark slot as used
-	mov	al,	KERNEL_STORAGE_FLAG_used
-	lock xchg	byte [rdi + KERNEL_STORAGE_STRUCTURE.flags],	al
+	lock xchg	byte [rdi + KERNEL_STORAGE_STRUCTURE.device_type],	al
 	jnz	.next	; could not mark a slot
 
 .end:
