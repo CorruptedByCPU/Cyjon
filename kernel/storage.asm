@@ -36,7 +36,7 @@ kernel_storage_file:
 	jne	.end	; no
 
 	; search for requested file
-	mov	rax,	qword [r10 + rax + KERNEL_STORAGE_STRUCTURE.device_first_block]
+	mov	rdi,	qword [r10 + rax + KERNEL_STORAGE_STRUCTURE.device_first_block]
 	call	lib_pkg_file
 
 .end:

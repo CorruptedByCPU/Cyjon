@@ -4,13 +4,12 @@
 
 ;-------------------------------------------------------------------------------
 ; in:
-;	rax - pointer to begining of file data
 ;	rcx - length of path
 ;	rsi - path to file
+;	rdi - pointer to begining of file data
 ;	rbp - pointer of file descriptor
 lib_pkg_file:
 	; preserve original registers
-	push	rax
 	push	rcx
 	push	rsi
 	push	rdi
@@ -20,24 +19,24 @@ lib_pkg_file:
 
 .file:
 	; file name length
-	cmp	qword [rax + LIB_PKG_STRUCTURE.length],	rcx
+	cmp	qword [rdi + LIB_PKG_STRUCTURE.length],	rcx
 	jne	.next	; incorrect
 
 	; check file name
-	add	rax,	LIB_PKG_STRUCTURE.name
+	add	rdi,	LIB_PKG_STRUCTURE.name
 	call	lib_string_compare
-	sub	rax,	LIB_PKG_STRUCTURE.name
+	sub	rdi,	LIB_PKG_STRUCTURE.name
 
 	; names are similar?
 	jnc	.found	; yes
 
 .next:
 	; no more files in PKG?
-	cmp	qword [rax + LIB_PKG_STRUCTURE.offset],	EMPTY
+	cmp	qword [rdi + LIB_PKG_STRUCTURE.offset],	EMPTY
 	je	.end
 
 	; move pointer to next file
-	add	rax,	LIB_PKG_base
+	add	rdi,	LIB_PKG_base
 
 	; continue search
 	jmp	.file
@@ -50,14 +49,13 @@ lib_pkg_file:
 	mov	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte],	rcx
 
 	; and ID
-	mov	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	rax
+	mov	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	rdi
 
 .end:
 	; restore original registers
 	pop	rdi
 	pop	rsi
 	pop	rcx
-	pop	rax
 
 	; return from routine
 	ret

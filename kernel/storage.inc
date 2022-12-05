@@ -23,7 +23,7 @@ struc	KERNEL_STORAGE_STRUCTURE
 	.storage_read		resq	1
 
 	; align next label
-	alignb	0x18
+	.reserved		resb	24
 
 	.SIZE:
 endstruc

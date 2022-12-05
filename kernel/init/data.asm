@@ -14,14 +14,14 @@ kernel_log_kernel		db	STATIC_ASCII_NEW_LINE, "To be, or not to be, that is the q
 kernel_log_memory		db	STATIC_ASCII_NEW_LINE, "Houston, we have a problem.", STATIC_ASCII_TERMINATOR
 kernel_log_page			db	STATIC_ASCII_NEW_LINE, "Stuck In The Sound - Brother.", STATIC_ASCII_TERMINATOR
 kernel_log_rsdp			db	STATIC_ASCII_NEW_LINE, "Hello Darkness, My Old Friend.", STATIC_ASCII_TERMINATOR
-kernel_log_smp			db	" CPU(s) initialized.", STATIC_ASCII_TERMINATOR
+kernel_log_smp			db	" AP(s) initialized.", STATIC_ASCII_TERMINATOR
 kernel_log_storage		db	STATIC_ASCII_NEW_LINE, "Operation failed successfully.", STATIC_ASCII_TERMINATOR
 kernel_log_system		db	STATIC_ASCII_NEW_LINE, "System disk [KiB]: ", STATIC_ASCII_TERMINATOR
 kernel_log_welcome		db	KERNEL_name, " (build v", KERNEL_version, ".", KERNEL_revision, " ", KERNEL_architecture, " ", KERNEL_language, ", compiled ", __DATE__, " ", __TIME__, ")", STATIC_ASCII_NEW_LINE, STATIC_ASCII_TERMINATOR
 
 kernel_smp_count		dq	EMPTY
 
-kernel_storage_init		db	"wm"
+kernel_exec_file_init		db	"wm"
 
 ; align table
 align	0x08,	db	0x00

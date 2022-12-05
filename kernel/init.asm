@@ -32,6 +32,7 @@ global	init
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.inc"
 	%include	"kernel/init/ap.inc"
+	%include	"kernel/init/exec.inc"
 	%include	"kernel/init/limine.inc"
 	;=======================================================================
 
@@ -55,6 +56,7 @@ section .text
 	; drivers --------------------------------------------------------------
 	%include	"kernel/driver/serial.asm"
 	; kernel ---------------------------------------------------------------
+	%include	"kernel/exec.asm"
 	%include	"kernel/idt.asm"
 	%include	"kernel/lapic.asm"
 	%include	"kernel/memory.asm"
@@ -65,6 +67,7 @@ section .text
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.asm"
 	%include	"kernel/init/ap.asm"
+	%include	"kernel/init/exec.asm"
 	%include	"kernel/init/free.asm"
 	%include	"kernel/init/gdt.asm"
 	%include	"kernel/init/idt.asm"
@@ -125,6 +128,9 @@ init:
 
 	; register all available data carriers
 	call	kernel_init_storage
+
+	; execute init process
+	call	kernel_init_exec
 
 	; below, initialization functions does not guarantee original registers preservation
 
