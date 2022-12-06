@@ -59,3 +59,30 @@ lib_pkg_file:
 
 	; return from routine
 	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rsi - file identificator
+;	rdi - file data destination
+lib_pkg_read:
+	; preserve original registers
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; file size in Bytes
+	mov	rcx,	qword [rsi + LIB_PKG_STRUCTURE.size]
+
+	; file data position
+	add	rsi,	qword [rsi + LIB_PKG_STRUCTURE.offset]
+
+	; copy file content
+	rep	movsb
+
+	; restore original registers
+	pop	rdi
+	pop	rsi
+	pop	rcx
+
+	; return from routine
+	ret

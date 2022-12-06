@@ -6,6 +6,8 @@
 ; in:
 ;	rcx - length of string in characters
 ;	rsi - pointer to string
+; out:
+;	rax - process ID
 kernel_exec:
 	; preserve original registers
 	push	rcx
@@ -30,11 +32,19 @@ kernel_exec:
 
 	; file found?
 	cmp	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
-	je	.error	; no
+	je	.error_file	; no
 
-	nop
+	; prepare space for file content
+	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
+	add	rcx,	~STATIC_PAGE_mask
+	shr	rcx,	STATIC_PAGE_SIZE_shift
+	call	kernel_memory_alloc
 
-.error:
+	; load file content into prepared space
+	mov	rsi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id]
+	call	kernel_storage_read
+
+.error_file:
 	; remote file descriptor from stack
 	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
 

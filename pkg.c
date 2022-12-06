@@ -80,7 +80,7 @@ int main() {
 		pkg[ i ].offset = offset;
 
 		// next file (align file position)
-		offset += pkg[ i ].size + (LIB_PKG_align - (pkg[ i ].size % LIB_PKG_align));
+		offset += (pkg[ i ].size + (LIB_PKG_align - (pkg[ i ].size % LIB_PKG_align))) - sizeof( struct LIB_PKG_STRUCTURE );
 	}
 
 	// show amount of included files
