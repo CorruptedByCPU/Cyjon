@@ -22,6 +22,7 @@
 %define	STATIC_PAGE_SIZE_shift			12
 %define	STATIC_PAGE_SIZE_byte			4096
 
+%define	STATIC_DIVIDE_BY_2_shift		1
 %define	STATIC_DIVIDE_BY_8_shift		3
 %define	STATIC_DIVIDE_BY_QWORD_shift		STATIC_DIVIDE_BY_8_shift
 %define	STATIC_DIVIDE_BY_4096_shift		12

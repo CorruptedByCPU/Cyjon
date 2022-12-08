@@ -60,8 +60,8 @@ kernel_init_free:
 	shr	rcx,	STATIC_PAGE_SIZE_shift
 
 	; area position
-	mov	rdi,	KERNEL_PAGE_mirror
-	or	rdi,	qword [rsp]
+	mov	rdi,	qword [rsp]
+	or	rdi,	qword [kernel_page_mirror]
 
 	; clean up
 	call	kernel_page_clean_few

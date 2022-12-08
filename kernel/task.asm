@@ -42,9 +42,9 @@ kernel_task:
 	; retrieve CPU id
 	call	kernel_lapic_id
 
-	; set pointer to current task of CPU
-	mov	r10,	qword [r8 + KERNEL_STRUCTURE.task_cpu_address]
-	mov	r10,	qword [r10 + rax * STATIC_PTR_SIZE_byte]
+	; get pointer to current task of AP
+	mov	r9,	qword [r8 + KERNEL_STRUCTURE.task_ap_address]
+	mov	r10,	qword [r9 + rax * STATIC_PTR_SIZE_byte]
 
 	; save tasks current stack pointer
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsp
@@ -56,6 +56,9 @@ kernel_task:
 	call	kernel_task_select	; choose new task for execution
 
 	; [RESTORE]
+
+	; set pointer to current task for AP
+	mov	qword [r9 + rax * STATIC_PTR_SIZE_byte],	r10
 
 	; restore tasks stack pointer
 	mov	rsp,	qword [r10 + KERNEL_TASK_STRUCTURE.rsp]
@@ -76,11 +79,25 @@ kernel_task:
 	test	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_init
 	jz	.initialized	; no
 
-	; Bochs debuger
-	xchg	bx,	bx
-
 	; remove flag of initialization
 	and	word [r10 + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_init
+
+	; kernel guarantees clean registers
+	xor	r15,	r15
+	xor	r14,	r14
+	xor	r13,	r13
+	xor	r12,	r12
+	xor	r11,	r11
+	xor	r10,	r10
+	xor	r9,	r9
+	xor	r8,	r8
+	xor	ebp,	ebp
+	xor	edi,	edi
+	xor	esi,	esi
+	xor	edx,	edx
+	xor	ecx,	ecx
+	xor	ebx,	ebx
+	xor	eax,	eax
 
 	; run the task in exception mode
 	iretq
@@ -240,7 +257,7 @@ kernel_task_id_parent:
 	call	kernel_lapic_id
 
 	; set pointer to current task of CPU
-	mov	r8,	qword [r8 + KERNEL_STRUCTURE.task_cpu_address]
+	mov	r8,	qword [r8 + KERNEL_STRUCTURE.task_ap_address]
 	mov	rax,	qword [r8 + rax * STATIC_PTR_SIZE_byte]
 
 	; return parent ID

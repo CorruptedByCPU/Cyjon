@@ -57,7 +57,7 @@ kernel_init_task:
 
 	; assign space for task list and store it
 	call	kernel_memory_alloc
-	mov	qword [r8 + KERNEL_STRUCTURE.task_cpu_address],	rdi
+	mov	qword [r8 + KERNEL_STRUCTURE.task_ap_address],	rdi
 
 	; mark in processor task list, BSP processor with its kernel task
 	call	kernel_lapic_id

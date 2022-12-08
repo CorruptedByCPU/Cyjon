@@ -4,6 +4,9 @@
 
 kernel_environment_base_address	dq	EMPTY
 
+; often necessary
+kernel_page_mirror		dq	KERNEL_PAGE_mirror
+
 ; align table
 align	0x08,	db	0x00
 kernel_gdt_header		dw	STATIC_PAGE_SIZE_byte

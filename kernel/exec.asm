@@ -10,11 +10,13 @@
 kernel_exec:
 	; preserve original registers
 	push	rax
-	push	rcx
-	push	rsi
 	push	rbp
 	push	r8
 	push	r13
+	push	r14
+	push	r15
+	push	rsi
+	push	rcx
 
 	; kernel environment variables/rountines base address
 	mov	r8,	qword [kernel_environment_base_address]
@@ -62,8 +64,8 @@ kernel_exec:
 	;-----------------------------------------------------------------------
 
 	; register new task on queue
-	mov	rcx,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + 0x20]
-	mov	rsi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + 0x18]
+	mov	rcx,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE]
+	mov	rsi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + STATIC_PTR_SIZE_byte]
 	call	kernel_task_add
 	jc	.error_memory	; cannot register new task
 
@@ -122,27 +124,128 @@ kernel_exec:
 
 	; describe the space under context stack of process
 	mov	rax,	KERNEL_EXEC_STACK_address
-	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_process
+	or	bx,	KERNEL_PAGE_FLAG_user
 	mov	ecx,	STATIC_PAGE_SIZE_page
 	call	kernel_page_alloc
 	jc	.error_page	; no enough memory, release paging array and remove task from queue
+
+	;-----------------------------------------------------------------------
+	; load program segments in place
+	;-----------------------------------------------------------------------
+
+	; number of program headers
+	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.header_entry_count]
+
+	; beginning of header section
+	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.header_table_position]
+	add	rdx,	r13
+
+.elf_header:
+	; ignore empty headers
+	cmp	dword [rdx + LIB_ELF_STRUCTURE_HEADER.type],	EMPTY
+	je	.elf_header_next	; empty one
+	cmp	qword [rdx + LIB_ELF_STRUCTURE_HEADER.memory_size],	EMPTY
+	je	.elf_header_next	; this one too
+
+	; calculate segment address
+	mov	r14,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.virtual_address]
+	and	r14,	STATIC_PAGE_mask	; align down to page boundary
+
+	; calculate segment size in pages
+	mov	rax,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.virtual_address]
+	and	rax,	STATIC_PAGE_mask	; preserve only page number
+	mov	r15,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.virtual_address]
+	add	r15,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.segment_size]
+	sub	r15,	rax
+	; align up to next page boundary
+	add	r15,	STATIC_PAGE_SIZE_byte - 1
+	shr	r15,	STATIC_PAGE_SIZE_shift
+
+	; preserve original register
+	push	rcx
+
+	; assign memory space for segment
+	mov	rcx,	r15
+	call	kernel_memory_alloc
+
+	; restore original register
+	pop	rcx
+
+	; if no enough memory
+	jc	.error_page
+
+	; source
+	mov	rsi,	r13
+	add	rsi,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.segment_offset]
+
+	; preserve segment pointer and original register
+	push	rcx
+	push	rdi
+
+	; target
+	and	qword [rdx + LIB_ELF_STRUCTURE_HEADER.virtual_address],	~STATIC_PAGE_mask
+	add	rdi,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.virtual_address]
+
+	; copy file segment in place
+	mov	rcx,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.segment_size]
+	rep	movsb
+
+	; restore segment pointer
+	pop	rsi
+
+	; map segment to process paging array
+	mov	rax,	r14
+	mov	rcx,	r15
+	shl	rsi,	17
+	shr	rsi,	17
+	call	kernel_page_map
+
+	; restore original register
+	pop	rcx
+
+.elf_header_next:
+	; move pointer to next entry
+	add	rdx,	LIB_ELF_STRUCTURE_HEADER.SIZE
+
+	; end of hedaer table?
+	dec	rcx
+	jnz	.elf_header	; no
+
+	;-----------------------------------------------------------------------
+	; kernel environment
+	;-----------------------------------------------------------------------
+
+	; map kernel space to process
+	call	kernel_page_merge
+
+	; mark task as ready
+	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_init
+
+	; return PID and pointer to task on queue
+	push	qword [r10 + KERNEL_TASK_STRUCTURE.pid]
+	pop	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_STRUCTURE.pid]
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_STRUCTURE.task_and_status],	r10
 
 .end:
 	; remove file descriptor from stack
 	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
 
 	; restore original registers
+	pop	rcx
+	pop	rsi
+	pop	r15
+	pop	r14
 	pop	r13
 	pop	r8
 	pop	rbp
-	pop	rsi
-	pop	rcx
 	pop	rax
 
 	; return from routine
 	ret
 
 .error_page:
+	; release paging structure and space
+	; call	kernel_page_deconstruction
 
 .error_task:
 	; release task entry
