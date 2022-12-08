@@ -14,7 +14,7 @@ kernel_init_task:
 
 	;-----------------------------------------------------------------------
 	; assign space for task queue and store it
-	mov	ecx,	((KERNEL_TASK_limit * KERNEL_TASK_STRUCTURE_ENTRY.SIZE) + ~STATIC_PAGE_mask) >> STATIC_PAGE_SIZE_shift
+	mov	ecx,	((KERNEL_TASK_limit * KERNEL_TASK_STRUCTURE.SIZE) + ~STATIC_PAGE_mask) >> STATIC_PAGE_SIZE_shift
 	call	kernel_memory_alloc
 
 	; save pointer to task queue
@@ -23,15 +23,15 @@ kernel_init_task:
 	; properties of first job on queue which is the kernel of the system
 
 	; entry seized and processed (by BSP processor)
-	mov	word [rdi + KERNEL_TASK_STRUCTURE_ENTRY.flags], KERNEL_TASK_FLAG_secured
+	mov	word [rdi + KERNEL_TASK_STRUCTURE.flags], KERNEL_TASK_FLAG_secured
 
 	; entry paging array
 	mov	rax,	qword [r8 + KERNEL_STRUCTURE.page_base_address]
-	mov	qword [rdi + KERNEL_TASK_STRUCTURE_ENTRY.cr3],	rax
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.cr3],	rax
 
 	; kernel memory map
 	mov	rax,	qword [r8 + KERNEL_STRUCTURE.memory_base_address]
-	mov	qword [rdi + KERNEL_TASK_STRUCTURE_ENTRY.memory_map],	rax
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.memory_map],	rax
 
 	; remember pointer to first task in queue
 	push	rdi

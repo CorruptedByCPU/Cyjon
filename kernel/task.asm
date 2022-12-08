@@ -47,10 +47,10 @@ kernel_task:
 	mov	r10,	qword [r10 + rax * STATIC_PTR_SIZE_byte]
 
 	; save tasks current stack pointer
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE_ENTRY.rsp],	rsp
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsp
 
 	; set flag of current task as free for execution by next CPU
-	and	word [r10 + KERNEL_TASK_STRUCTURE_ENTRY.flags],	~KERNEL_TASK_FLAG_exec
+	and	word [r10 + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_exec
 
 	; [SELECT]
 	call	kernel_task_select	; choose new task for execution
@@ -58,10 +58,10 @@ kernel_task:
 	; [RESTORE]
 
 	; restore tasks stack pointer
-	mov	rsp,	qword [r10 + KERNEL_TASK_STRUCTURE_ENTRY.rsp]
+	mov	rsp,	qword [r10 + KERNEL_TASK_STRUCTURE.rsp]
 
 	; restore tasks page arrays
-	mov	rax,	qword [r10 + KERNEL_TASK_STRUCTURE_ENTRY.cr3]
+	mov	rax,	qword [r10 + KERNEL_TASK_STRUCTURE.cr3]
 	mov	cr3,	rax
 
 	; reload CPU cycle counter in APIC controller
@@ -73,11 +73,14 @@ kernel_task:
 	; [INIT]
 
 	; first run of task?
-	test	word [r10 + KERNEL_TASK_STRUCTURE_ENTRY.flags],	KERNEL_TASK_FLAG_init
+	test	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_init
 	jz	.initialized	; no
 
+	; Bochs debuger
+	xchg	bx,	bx
+
 	; remove flag of initialization
-	and	word [r10 + KERNEL_TASK_STRUCTURE_ENTRY.flags],	~KERNEL_TASK_FLAG_init
+	and	word [r10 + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_init
 
 	; run the task in exception mode
 	iretq
@@ -140,11 +143,11 @@ kernel_task_add:
 
 .loop:
 	; free queue entry?
-	cmp	word [r10 + KERNEL_TASK_STRUCTURE_ENTRY.flags],	EMPTY
+	cmp	word [r10 + KERNEL_TASK_STRUCTURE.flags],	EMPTY
 	je	.found	; yes
 
 	; move pointer to next task in queue
-	add	r10,	KERNEL_TASK_STRUCTURE_ENTRY.SIZE
+	add	r10,	KERNEL_TASK_STRUCTURE.SIZE
 
 	; end of task queue?
 	dec	rax
@@ -158,15 +161,15 @@ kernel_task_add:
 
 .found:
 	; mark entry as "in use"
-	or	word [r10 + KERNEL_TASK_STRUCTURE_ENTRY.flags],	KERNEL_TASK_FLAG_secured
+	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_secured
 
 	; set process ID
 	call	kernel_task_id_new
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE_ENTRY.pid],	rax
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.pid],	rax
 
 	; retieve parent ID
 	call	kernel_task_id_parent
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE_ENTRY.pid_parent],	rax
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.pid_parent],	rax
 
 	; process name too long?
 	cmp	rcx,	KERNEL_TASK_NAME_limit
@@ -177,11 +180,11 @@ kernel_task_add:
 
 .proper_length:
 	; length of process name
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE_ENTRY.length],	rcx
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.length],	rcx
 
 	; copy name to task entry
 	mov	rdi,	r10
-	add	rdi,	KERNEL_TASK_STRUCTURE_ENTRY.name
+	add	rdi,	KERNEL_TASK_STRUCTURE.name
 	rep	movsb
 
 	; number of tasks inside queue
@@ -241,7 +244,7 @@ kernel_task_id_parent:
 	mov	rax,	qword [r8 + rax * STATIC_PTR_SIZE_byte]
 
 	; return parent ID
-	mov	rax,	qword [rax + KERNEL_TASK_STRUCTURE_ENTRY.pid]
+	mov	rax,	qword [rax + KERNEL_TASK_STRUCTURE.pid]
 
 	; restore original registers
 	pop	r8
@@ -271,7 +274,7 @@ kernel_task_select:
 	jnz	.lock	; no
 
 	; calculate task queue size
-	mov	rax,	KERNEL_TASK_STRUCTURE_ENTRY.SIZE
+	mov	rax,	KERNEL_TASK_STRUCTURE.SIZE
 	mov	ecx,	KERNEL_TASK_limit
 	mul	rcx
 
@@ -280,7 +283,7 @@ kernel_task_select:
 
 .next:
 	; move pointer to next task in queue
-	add	r10,	KERNEL_TASK_STRUCTURE_ENTRY.SIZE
+	add	r10,	KERNEL_TASK_STRUCTURE.SIZE
 
 	; end of task queue?
 	cmp	r10,	rax
@@ -291,15 +294,15 @@ kernel_task_select:
 
 .check:
 	; task is active? (sleep, close etc.)
-	test	word [r10 + KERNEL_TASK_STRUCTURE_ENTRY.flags],	KERNEL_TASK_FLAG_active
+	test	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active
 	jz	.next	; no
 
 	; task can be executed?
-	test	word [r10 + KERNEL_TASK_STRUCTURE_ENTRY.flags],	KERNEL_TASK_FLAG_exec
+	test	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_exec
 	jnz	.next	; no
 
 	; mark task as selected by current CPU
-	or	word [r10 + KERNEL_TASK_STRUCTURE_ENTRY.flags],	KERNEL_TASK_FLAG_exec
+	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_exec
 
 	; release access
 	mov	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	UNLOCK

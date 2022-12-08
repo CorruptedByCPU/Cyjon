@@ -4,8 +4,8 @@
 
 ;-------------------------------------------------------------------------------
 ; out:
+;	CF - set if not available
 ;	rdi - pointer to allocated page (physical address)
-;		or EMPTY if not available
 kernel_memory_alloc_page:
 	; preserve original registers
 	push	rcx
@@ -13,11 +13,13 @@ kernel_memory_alloc_page:
 	; alloc only 1 page
 	mov	ecx,	STATIC_PAGE_SIZE_page
 	call	kernel_memory_alloc
+	jc	.error	; no enough memory, really? ok
 
 	; convert page address to physical area
 	mov	rcx,	~KERNEL_PAGE_mirror
 	and	rdi,	rcx
 
+.error:
 	; restore original registers
 	pop	rcx
 
@@ -28,8 +30,8 @@ kernel_memory_alloc_page:
 ; in:
 ;	rcx - length of area in pages
 ; out:
+;	CF - set if not available
 ;	rdi - pointer to allocated area (logical address)
-;		or EMPTY, if not available
 kernel_memory_alloc:
 	; preserve original registers
 	push	rax
@@ -44,10 +46,6 @@ kernel_memory_alloc:
 	; by default there is no available space
 	xor	edi,	edi
 
-	; required area might be available?
-	cmp	rcx,	qword [r8 + KERNEL_STRUCTURE.page_available]
-	ja	.end	; no
-
 .lock:
 	; request an exclusive access
 	mov	al,	LOCK
@@ -56,6 +54,10 @@ kernel_memory_alloc:
 	; assigned?
 	test	al,	al
 	jnz	.lock	; no
+
+	; required area might be available?
+	cmp	rcx,	qword [r8 + KERNEL_STRUCTURE.page_available]
+	ja	.error	; no
 
 	; start searching from first page of binary memory map
 	xor	eax,	eax
@@ -110,11 +112,18 @@ kernel_memory_alloc:
 	mov	rdi,	KERNEL_PAGE_mirror
 	add	rdi,	rbx
 
+	; allocated successful
+	clc
+	jmp	.end
+
 .error:
-	; release access
-	mov	byte [r8 + KERNEL_STRUCTURE.memory_semaphore],	UNLOCK
+	; operation failed
+	stc
 
 .end:
+	; release access
+	mov	byte [r8 + KERNEL_STRUCTURE.memory_semaphore],	UNLOCK
+	
 	; restore original registers
 	pop	rcx
 	pop	r8
