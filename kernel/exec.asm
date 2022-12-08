@@ -6,10 +6,10 @@
 ; in:
 ;	rcx - length of string in characters
 ;	rsi - pointer to string
-; out:
-;	rax - process ID
+;	rbp - pointer to exec descriptor
 kernel_exec:
 	; preserve original registers
+	push	rax
 	push	rcx
 	push	rsi
 	push	rbp
@@ -40,12 +40,39 @@ kernel_exec:
 	shr	rcx,	STATIC_PAGE_SIZE_shift
 	call	kernel_memory_alloc
 
+	; no enough memory?
+	test	rdi,	rdi
+	jz	.error_memory
+
 	; load file content into prepared space
 	mov	rsi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id]
 	call	kernel_storage_read
 
-.error_file:
-	; remote file descriptor from stack
+	; check if file have proper ELF header
+	call	lib_elf_check
+	jc	.error_elf	; it's not an ELF file
+
+	; file has executable format?
+	cmp	byte [rdi + LIB_ELF_STRUCTURE.type],	LIB_ELF_TYPE_executable
+	jne	.error_elf	; no executable
+
+	;-----------------------------------------------------------------------
+	; prepare task for execution
+	;-----------------------------------------------------------------------
+
+	; register new task on queue
+	mov	rcx,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + 0x18]
+	mov	rsi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + 0x10]
+	call	kernel_task_add
+
+	; cannot register new task?
+	test	r10,	r10
+	jz	.error_memory	; yes
+
+	nop
+
+.end:
+	; remove file descriptor from stack
 	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
 
 	; restore original registers
@@ -53,6 +80,28 @@ kernel_exec:
 	pop	rbp
 	pop	rsi
 	pop	rcx
+	pop	rax
 
 	; return from routine
 	ret
+
+.error_elf:
+	; return error code
+	or	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_STRUCTURE.task_and_status],	SYS_ERROR_exec_not_executable
+
+	; end of function
+	jmp	.end
+
+.error_memory:
+	; return error code
+	or	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_STRUCTURE.task_and_status],	SYS_ERROR_memory_no_enough
+
+	; end of function
+	jmp	.end
+
+.error_file:
+	; return error code
+	or	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_STRUCTURE.task_and_status],	SYS_ERROR_file_not_found
+
+	; end of function
+	jmp	.end

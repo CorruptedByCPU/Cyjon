@@ -19,10 +19,12 @@ global	init
 	; library --------------------------------------------------------------
 	%include	"library/elf.inc"
 	%include	"library/pkg.inc"
+	%include	"library/sys.inc"
 	; driver ---------------------------------------------------------------
 	%include	"kernel/driver/serial.inc"
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/config.inc"
+	%include	"kernel/exec.inc"
 	%include	"kernel/gdt.inc"
 	%include	"kernel/idt.inc"
 	%include	"kernel/lapic.inc"
@@ -52,6 +54,7 @@ section .text
 	;-----------------------------------------------------------------------
 	; library --------------------------------------------------------------
 	%include	"library/pkg.asm"
+	%include	"library/elf.asm"
 	%include	"library/string/compare.asm"
 	; drivers --------------------------------------------------------------
 	%include	"kernel/driver/serial.asm"

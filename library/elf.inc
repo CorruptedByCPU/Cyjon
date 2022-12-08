@@ -2,13 +2,16 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
-%define	LIB_ELF_FLAG_execute	0b00000001
-%define	LIB_ELF_FLAG_write	0b00000010
-%define	LIB_ELF_FLAG_read	0b00000100
+%define	LIB_ELF_FLAG_execute			0b00000001
+%define	LIB_ELF_FLAG_write			0b00000010
+%define	LIB_ELF_FLAG_read			0b00000100
+
+%define	LIB_ELF_TYPE_executable			2
+%define	LIB_ELF_TYPE_shared_object		3
 
 struc LIB_ELF_STRUCTURE
 	.magic_number		resd	1
-	.architecture		resb	1
+	.class			resb	1
 	.memory_layout		resb	1
 	.header_version		resb	1
 	.abi			resb	1
