@@ -2,15 +2,6 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
-; 64 bit code
-[bits 64]
-
-; we are using Position Independed Code
-default	rel
-
-; main initialization procedure of kernel environment
-global	init
-
 	;-----------------------------------------------------------------------
 	; structures, definitions
 	;-----------------------------------------------------------------------
@@ -37,6 +28,15 @@ global	init
 	%include	"kernel/init/exec.inc"
 	%include	"kernel/init/limine.inc"
 	;=======================================================================
+
+; 64 bit code
+[bits 64]
+
+; we are using Position Independed Code
+default	rel
+
+; main initialization procedure of kernel environment
+global	init
 
 ; information for linker
 section	.data
@@ -66,11 +66,13 @@ section .text
 	%include	"kernel/page.asm"
 	%include	"kernel/service.asm"
 	%include	"kernel/storage.asm"
+	%include	"kernel/syscall.asm"
 	%include	"kernel/task.asm"
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.asm"
 	%include	"kernel/init/ap.asm"
 	%include	"kernel/init/exec.asm"
+	%include	"kernel/init/framebuffer.asm"
 	%include	"kernel/init/free.asm"
 	%include	"kernel/init/gdt.asm"
 	%include	"kernel/init/idt.asm"
@@ -91,20 +93,11 @@ init:
 	mov	rsi,	kernel_log_welcome
 	call	driver_serial_string
 
-	; framebuffer available?
-	cmp	qword [kernel_limine_framebuffer_request + LIMINE_FRAMEBUFFER_REQUEST.response],	EMPTY
-	jne	.framebuffer	; yes
-
-	; framebuffer is not available
-	mov	rsi,	kernel_log_framebuffer
-	call	driver_serial_string
-
-	; hold the door
-	jmp	$
-
-.framebuffer:
 	; create binary memory map
 	call	kernel_init_memory
+
+	; store information about framebuffer properties
+	call	kernel_init_framebuffer
 
 	; parse ACPI tables
 	call	kernel_init_acpi

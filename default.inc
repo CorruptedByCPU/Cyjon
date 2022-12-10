@@ -10,6 +10,8 @@
 
 %define	EMPTY					0
 
+%define STATIC_COLOR_DEPTH_shift		2
+
 %define	STATIC_ASCII_TERMINATOR			0x00
 %define	STATIC_ASCII_NEW_LINE			0x0A
 
@@ -36,6 +38,7 @@
 %define	STATIC_MULTIPLE_BY_4_shift		2
 %define	STATIC_MULTIPLE_BY_8_shift		3
 %define	STATIC_MULTIPLE_BY_PTR_shift		STATIC_MULTIPLE_BY_8_shift
+%define	STATIC_MULTIPLE_BY_QWORD_shift		STATIC_MULTIPLE_BY_8_shift
 %define	STATIC_MULTIPLE_BY_16_shift		4
 %define	STATIC_MULTIPLE_BY_512_shift		9
 

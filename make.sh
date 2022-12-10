@@ -23,7 +23,11 @@ done
 
 rm -f build/*.o
 
+cp gfx/* system
+
 clang pkg.c -o pkg && ./pkg && gzip -fk build/system.pkg && mv build/system.pkg.gz build/system.gz
+
+git submodule update --init
 
 cp limine.cfg limine/limine.sys limine/limine-cd.bin limine/limine-cd-efi.bin iso/
 cp build/{kernel.gz,system.gz} iso
@@ -35,3 +39,5 @@ limine/limine-deploy build/cyjon.iso > /dev/null 2>&1
 
 echo -e "\nbuild:"
 ls -lah build/ | tail -n +4 | awk '//{printf "%16s %8s\n",$(NF),$5 }'
+echo -e "\nsystem:"
+ls -lah system/ | tail -n +4 | awk '//{printf "%16s %8s\n",$(NF),$5 }'

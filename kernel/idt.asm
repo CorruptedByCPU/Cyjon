@@ -3,6 +3,52 @@
 ;===============================================================================
 
 ; align routine
+align	0x08,	db	0x00
+kernel_irq:
+	; feature available?
+	cmp	rax,	(kernel_service_list_end - kernel_service_list) / STATIC_QWORD_SIZE_byte
+	jnb	.return	; no
+
+	; preserve original registers
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+	push	rdi
+	push	rbp
+	push	r8
+	push	r9
+	push	r10
+	push	r11
+	push	r12
+	push	r13
+	push	r14
+	push	r15
+
+	; execute kernel function according to parameter in RAX
+	call	qword [kernel_service_list + rax * STATIC_QWORD_SIZE_byte]
+
+	; restore original registers
+	pop	r15
+	pop	r14
+	pop	r13
+	pop	r12
+	pop	r11
+	pop	r10
+	pop	r9
+	pop	r8
+	pop	rbp
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+
+.return:
+	; return to process code
+	iretq
+
+; align routine
 align	0x08,	db	EMPTY
 kernel_idt_exception_divide_by_zero:
 	; no Error Code

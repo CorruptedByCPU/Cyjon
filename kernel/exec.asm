@@ -10,8 +10,14 @@
 kernel_exec:
 	; preserve original registers
 	push	rax
+	push	rbx
+	push	rdx
+	push	rdi
 	push	rbp
 	push	r8
+	push	r10
+	push	r11
+	push	r12
 	push	r13
 	push	r14
 	push	r15
@@ -20,6 +26,9 @@ kernel_exec:
 
 	; kernel environment variables/rountines base address
 	mov	r8,	qword [kernel_environment_base_address]
+
+	; by default there is no PID for new process
+	mov	qword [rbp + KERNEL_EXEC_STRUCTURE.pid],	EMPTY
 
 	;-----------------------------------------------------------------------
 	; locate and load file into memory
@@ -33,31 +42,41 @@ kernel_exec:
 	movzx	eax,	byte [r8 + KERNEL_STRUCTURE.storage_root_id]
 	call	kernel_storage_file
 
+	; prepare error code
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	SYS_ERROR_file_not_found
+
 	; file found?
 	cmp	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
-	je	.error_file	; no
+	je	.end	; no
+
+	; prepare error code
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	SYS_ERROR_memory_no_enough
 
 	; prepare space for file content
 	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
 	add	rcx,	~STATIC_PAGE_mask
 	shr	rcx,	STATIC_PAGE_SIZE_shift
 	call	kernel_memory_alloc
-	jc	.error_memory	; no enough memory
+	jc	.end	; no enough memory
 
 	; load file content into prepared space
 	mov	rsi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id]
 	call	kernel_storage_read
 
+	; preserve file size in pages and location
+	mov	r12,	rcx
+	mov	r13,	rdi
+
+	; prepare error code
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	SYS_ERROR_exec_not_executable
+
 	; check if file have proper ELF header
 	call	lib_elf_check
-	jc	.error_elf	; it's not an ELF file
+	jc	.error_level_file	; it's not an ELF file
 
 	; file has executable format?
 	cmp	byte [rdi + LIB_ELF_STRUCTURE.type],	LIB_ELF_TYPE_executable
-	jne	.error_elf	; no executable
-
-	; preserve file location
-	mov	r13,	rdi
+	jne	.error_level_file	; no executable
 
 	;-----------------------------------------------------------------------
 	; prepare task for execution
@@ -67,15 +86,18 @@ kernel_exec:
 	mov	rcx,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE]
 	mov	rsi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + STATIC_PTR_SIZE_byte]
 	call	kernel_task_add
-	jc	.error_memory	; cannot register new task
+	jc	.error_level_file	; cannot register new task
 
 	;-----------------------------------------------------------------------
 	; paging array of new process
 	;-----------------------------------------------------------------------
 
+	; prepare error code
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	SYS_ERROR_exec_not_executable
+
 	; make space for the process paging table
 	call	kernel_memory_alloc_page
-	jc	.error_task	; no enough memory, remove task from queue
+	jc	.error_level_task	; no enough memory
 
 	; update task entry about paging array
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.cr3],	rdi
@@ -90,7 +112,7 @@ kernel_exec:
 	mov	ecx,	KERNEL_TASK_STACK_SIZE_page
 	mov	r11,	rdi
 	call	kernel_page_alloc
-	jc	.error_page	; no enough memory, release paging array and remove task from queue
+	jc	.error_level_page	; no enough memory
 
 	; set process context stack pointer
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	KERNEL_TASK_STACK_pointer - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
@@ -127,7 +149,7 @@ kernel_exec:
 	or	bx,	KERNEL_PAGE_FLAG_user
 	mov	ecx,	STATIC_PAGE_SIZE_page
 	call	kernel_page_alloc
-	jc	.error_page	; no enough memory, release paging array and remove task from queue
+	jc	.error_level_page	; no enough memory
 
 	;-----------------------------------------------------------------------
 	; load program segments in place
@@ -146,6 +168,10 @@ kernel_exec:
 	je	.elf_header_next	; empty one
 	cmp	qword [rdx + LIB_ELF_STRUCTURE_HEADER.memory_size],	EMPTY
 	je	.elf_header_next	; this one too
+
+	; load segment?
+	cmp	dword [rdx + LIB_ELF_STRUCTURE_HEADER.type],	LIB_ELF_HEADER_TYPE_load
+	jne	.elf_header_next	; no
 
 	; calculate segment address
 	mov	r14,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.virtual_address]
@@ -172,7 +198,7 @@ kernel_exec:
 	pop	rcx
 
 	; if no enough memory
-	jc	.error_page
+	jc	.error_level_page	; no enough memory
 
 	; source
 	mov	rsi,	r13
@@ -196,12 +222,14 @@ kernel_exec:
 	; map segment to process paging array
 	mov	rax,	r14
 	mov	rcx,	r15
-	shl	rsi,	17
-	shr	rsi,	17
+	sub	rsi,	qword [kernel_page_mirror]
 	call	kernel_page_map
 
 	; restore original register
 	pop	rcx
+
+	; if no enough memory
+	jc	.error_level_page
 
 .elf_header_next:
 	; move pointer to next entry
@@ -212,19 +240,77 @@ kernel_exec:
 	jnz	.elf_header	; no
 
 	;-----------------------------------------------------------------------
+	; virtual memory map
+	;-----------------------------------------------------------------------
+
+	; assign memory space for for binary memory map with same size as kernel
+	mov	rcx,	qword [r8 + KERNEL_STRUCTURE.page_limit]
+	shr	rcx,	STATIC_DIVIDE_BY_8_shift	; 8 pages by Byte
+	add	rcx,	~STATIC_PAGE_mask	; align up to page boundaries
+	shr	rcx,	STATIC_PAGE_SIZE_shift	; convert to pages
+	call	kernel_memory_alloc
+
+	; preserve binary memory size and location
+	push	rdi
+	push	rcx
+
+	; fill memory map with available pages
+	mov	rax,	STATIC_MAX_unsigned
+	shl	rcx,	STATIC_MULTIPLE_BY_512_shift
+	rep	stosq
+
+	; restore binary memory size
+	pop	rcx
+
+	; everything before binary memory map (and in itself) is not available for process
+	; mark that space as unavailable
+
+	; first available page number
+	mov	rax,	r14	; last segment position
+	shr	rax,	STATIC_PAGE_SIZE_shift
+	add	rax,	rcx	; last segment size in pages
+
+	; restore memory map location
+	pop	rsi
+
+.reserved:
+	; mark page as reserved
+	btr	qword [rsi],	rax
+
+	; mark other pages?
+	dec	rax
+	jns	.reserved	; yes
+
+	; map binary memory map to process paging array
+	mov	rax,	r15
+	shl	rax,	STATIC_PAGE_SIZE_shift
+	add	rax,	r14
+	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_process
+	shl	rsi,	17	; convert source address to physical
+	shr	rsi,	17
+	call	kernel_page_map
+
+	; store binary memory map address inside task properties
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.memory_map],	rax
+
+	;-----------------------------------------------------------------------
 	; kernel environment
 	;-----------------------------------------------------------------------
 
 	; map kernel space to process
 	call	kernel_page_merge
 
+	;-----------------------------------------------------------------------
+	; new process initialized
+	;-----------------------------------------------------------------------
+
 	; mark task as ready
 	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_init
 
 	; return PID and pointer to task on queue
 	push	qword [r10 + KERNEL_TASK_STRUCTURE.pid]
-	pop	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_STRUCTURE.pid]
-	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_STRUCTURE.task_and_status],	r10
+	pop	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.pid]
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	r10
 
 .end:
 	; remove file descriptor from stack
@@ -236,38 +322,32 @@ kernel_exec:
 	pop	r15
 	pop	r14
 	pop	r13
+	pop	r12
+	pop	r11
+	pop	r10
 	pop	r8
 	pop	rbp
+	pop	rdi
+	pop	rdx
+	pop	rbx
 	pop	rax
 
 	; return from routine
 	ret
 
-.error_page:
+.error_level_page:
 	; release paging structure and space
-	; call	kernel_page_deconstruction
+	call	kernel_page_deconstruction
 
-.error_task:
+.error_level_task:
 	; release task entry
 	mov	word [r10 + KERNEL_TASK_STRUCTURE.flags],	EMPTY
 
-.error_memory:
-	; return error code
-	or	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_STRUCTURE.task_and_status],	SYS_ERROR_memory_no_enough
-
-	; end of function
-	jmp	.end
-
-.error_elf:
-	; return error code
-	or	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_STRUCTURE.task_and_status],	SYS_ERROR_exec_not_executable
-
-	; end of function
-	jmp	.end
-
-.error_file:
-	; return error code
-	or	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_STRUCTURE.task_and_status],	SYS_ERROR_file_not_found
+.error_level_file:
+	; release space of loaded file
+	mov	rcx,	r12
+	mov	rdi,	r13
+	call	kernel_memory_release
 
 	; end of function
 	jmp	.end

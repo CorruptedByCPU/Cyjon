@@ -7,7 +7,7 @@ align	0x08,	db	0x00
 ;-------------------------------------------------------------------------------
 ; void
 kernel_task:
-	; turn off Interrupts Flag
+	; turn off Interrupt Flag
 	cli
 
 	; turn off Direction Flag
@@ -46,6 +46,20 @@ kernel_task:
 	mov	r9,	qword [r8 + KERNEL_STRUCTURE.task_ap_address]
 	mov	r10,	qword [r9 + rax * STATIC_PTR_SIZE_byte]
 
+	;=======================================================================
+	; todo, find why task_ap_address[ cpu_id ] doesn't contain task pointer
+	; it might be race condition at AP initialization -_-
+	; this bypass is safe
+
+	; bug, AP doesn't have information about currently executed task?
+	test	r10,	r10
+	jnz	.ok
+
+	; set initial task as closed
+	mov	r10,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
+	;=======================================================================
+
+.ok:
 	; save tasks current stack pointer
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsp
 
@@ -249,9 +263,15 @@ kernel_task_id_new:
 kernel_task_id_parent:
 	; preserve original registers
 	push	r8
+	pushf
 
 	; kernel environment variables/rountines base address
 	mov	r8,	qword [kernel_environment_base_address]
+
+	; turn off interrupts
+	; we cannot allow task switch
+	; when looking for current task pointe
+	cli
 
 	; retrieve CPU id
 	call	kernel_lapic_id
@@ -264,6 +284,7 @@ kernel_task_id_parent:
 	mov	rax,	qword [rax + KERNEL_TASK_STRUCTURE.pid]
 
 	; restore original registers
+	popf
 	pop	r8
 
 	; return from routine

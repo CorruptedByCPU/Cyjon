@@ -8,112 +8,100 @@ section	.rodata
 ; align routine
 align	0x08,	db	0x00
 kernel_service_list:
+	dq	kernel_service_framebuffer
 kernel_service_list_end:
 
 ; information for linker
 section	.text
 
-; align routine
-align	0x08,	db	0x00
-kernel_syscall:
-	; keep RIP and EFLAGS registers of process
-	xchg	qword [rsp + 0x08],	rcx
-	xchg	qword [rsp],	r11
-
-	; feature available?
-	cmp	rax,	(kernel_service_list_end - kernel_service_list) / 0x08
-	ja	.return	; no
-
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - pointer to framebuffer descriptor
+kernel_service_framebuffer:
 	; preserve original registers
-	push	rbx
+	push	rax
 	push	rcx
 	push	rdx
 	push	rsi
-	push	rdi
-	push	rbp
 	push	r8
 	push	r9
-	push	r10
-	push	r11
-	push	r12
-	push	r13
-	push	r14
-	push	r15
 
-.wait:
-	; if function is not available yet
-	cmp	qword [kernel_service_list + rax * STATIC_QWORD_SIZE_byte], EMPTY
-	je	.wait	; wait for it
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
 
-	; execute kernel function according to parameter in RAX
-	call	qword [kernel_service_list + rax * STATIC_QWORD_SIZE_byte]
+	; return properties of framebuffer
+
+	; width in pixels
+	mov	ax,	word [r8 + KERNEL_STRUCTURE.framebuffer_width_pixel]
+	mov	word [rdi + SYS_STRUCTURE_FRAMEBUFFER.width_pixel],	ax
+
+	; height in pixels
+	mov	ax,	word [r8 + KERNEL_STRUCTURE.framebuffer_height_pixel]
+	mov	word [rdi + SYS_STRUCTURE_FRAMEBUFFER.height_pixel],	ax
+
+	; scanline in Bytes
+	mov	eax,	dword [r8 + KERNEL_STRUCTURE.framebuffer_scanline_byte]
+	mov	dword [rdi + SYS_STRUCTURE_FRAMEBUFFER.scanline_byte],	eax
+
+	; framebuffer manager
+	mov	rax,	qword [r8 + KERNEL_STRUCTURE.framebuffer_pid]
+
+	; framebuffer manager exist?
+	test	rax,	rax
+	jnz	.return	; yes
+
+	; preserve original flags
+	pushf
+
+	; turn off interrupts
+	; we cannot allow task switch
+	; when looking for current task pointe
+	cli
+
+	; retrieve CPU id
+	call	kernel_lapic_id
+
+	; set pointer to current task of CPU
+	mov	r9,	qword [r8 + KERNEL_STRUCTURE.task_ap_address]
+	mov	r9,	qword [r9 + rax * STATIC_PTR_SIZE_byte]
+
+	; restore original flags
+	popf
+
+	; calculate size of framebuffer space
+	mov	eax,	dword [rdi + SYS_STRUCTURE_FRAMEBUFFER.scanline_byte]
+	movzx	ecx,	word [rdi + SYS_STRUCTURE_FRAMEBUFFER.height_pixel]
+	mul	rcx
+
+	; convert to pages
+	add	rax,	~STATIC_PAGE_mask
+	shr	rax,	STATIC_PAGE_SIZE_shift
+
+	; share framebuffer memory space with process
+	xor	ecx,	ecx	; no framebuffer manager, if error on below function
+	xchg	rcx,	rax	; length of shared space in pages
+	mov	rsi,	qword [r8 + KERNEL_STRUCTURE.framebuffer_base_address]
+	mov	r11,	qword [r9 + KERNEL_TASK_STRUCTURE.cr3]
+	call	kernel_memory_share
+	jc	.return	; no enough memory?
+
+	; return pointer to shared memory of framebuffer
+	mov	qword [rdi + SYS_STRUCTURE_FRAMEBUFFER.base_address],	rax
+
+	; new framebuffer manager
+	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
+
+.return:
+	; framebuffer manager
+	mov	qword [rdi + SYS_STRUCTURE_FRAMEBUFFER.pid],	rax
 
 	; restore original registers
-	pop	r15
-	pop	r14
-	pop	r13
-	pop	r12
-	pop	r11
-	pop	r10
 	pop	r9
 	pop	r8
-	pop	rbp
-	pop	rdi
 	pop	rsi
 	pop	rdx
 	pop	rcx
-	pop	rbx
+	pop	rax
 
-.return:
-	; restore the RIP and EFLAGS registers of the process
-	xchg	qword [rsp],	r11
-	xchg	qword [rsp + STATIC_QWORD_SIZE_byte],	rcx
-
-	; return to process code
-	o64	sysret
-
-; align routine
-align	0x08,	db	0x00
-kernel_irq:
-	; feature available?
-	cmp	rax,	(kernel_service_list_end - kernel_service_list) / STATIC_QWORD_SIZE_byte
-	ja	.return	; no
-
-	; preserve original registers
-	push	rbx
-	push	rcx
-	push	rdx
-	push	rsi
-	push	rdi
-	push	rbp
-	push	r8
-	push	r9
-	push	r10
-	push	r11
-	push	r12
-	push	r13
-	push	r14
-	push	r15
-
-	; execute kernel function according to parameter in RAX
-	call	qword [kernel_service_list + rax * STATIC_QWORD_SIZE_byte]
-
-	; restore original registers
-	pop	r15
-	pop	r14
-	pop	r13
-	pop	r12
-	pop	r11
-	pop	r10
-	pop	r9
-	pop	r8
-	pop	rbp
-	pop	rdi
-	pop	rsi
-	pop	rdx
-	pop	rcx
-	pop	rbx
-
-.return:
-	; return to process code
-	iretq
+	; return from routine
+	ret

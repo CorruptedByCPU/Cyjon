@@ -9,6 +9,8 @@
 %define	LIB_ELF_TYPE_executable			2
 %define	LIB_ELF_TYPE_shared_object		3
 
+%define	LIB_ELF_HEADER_TYPE_load		1
+
 struc LIB_ELF_STRUCTURE
 	.magic_number		resd	1
 	.class			resb	1
