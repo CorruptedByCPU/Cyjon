@@ -43,14 +43,14 @@ kernel_exec:
 	call	kernel_storage_file
 
 	; prepare error code
-	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	SYS_ERROR_file_not_found
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	LIB_SYS_ERROR_file_not_found
 
 	; file found?
 	cmp	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
 	je	.end	; no
 
 	; prepare error code
-	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	SYS_ERROR_memory_no_enough
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	LIB_SYS_ERROR_memory_no_enough
 
 	; prepare space for file content
 	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
@@ -68,7 +68,7 @@ kernel_exec:
 	mov	r13,	rdi
 
 	; prepare error code
-	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	SYS_ERROR_exec_not_executable
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	LIB_SYS_ERROR_exec_not_executable
 
 	; check if file have proper ELF header
 	call	lib_elf_check
@@ -93,7 +93,7 @@ kernel_exec:
 	;-----------------------------------------------------------------------
 
 	; prepare error code
-	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	SYS_ERROR_exec_not_executable
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	LIB_SYS_ERROR_exec_not_executable
 
 	; make space for the process paging table
 	call	kernel_memory_alloc_page

@@ -2,6 +2,8 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
+%define	LIB_ELF
+
 %define	LIB_ELF_FLAG_execute			0b00000001
 %define	LIB_ELF_FLAG_write			0b00000010
 %define	LIB_ELF_FLAG_read			0b00000100

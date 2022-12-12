@@ -81,7 +81,11 @@ kernel_memory_alloc_page:
 kernel_memory_aquire:
 	; preserve original registers
 	push	rax
+	push	r8
 	push	rcx
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
 
 	; start from first page of binary memory map
 	xor	eax,	eax
@@ -141,6 +145,7 @@ kernel_memory_aquire:
 .end:
 	; restore original registers
 	pop	rcx
+	pop	r8
 	pop	rax
 
 	; return from routine
@@ -228,25 +233,12 @@ kernel_memory_share:
 	push	rdi
 	push	r8
 	push	r9
-	pushf	; preserve original flags
 
 	; kernel environment variables/rountines base address
 	mov	r8,	qword [kernel_environment_base_address]
 
-	; turn off interrupts
-	; we cannot allow task switch
-	; when looking for current task pointe
-	cli
-
-	; retrieve CPU id
-	call	kernel_lapic_id
-
-	; set pointer to current task of CPU
-	mov	r9,	qword [r8 + KERNEL_STRUCTURE.task_ap_address]
-	mov	r9,	qword [r9 + rax * STATIC_PTR_SIZE_byte]
-
-	; restore original flags
-	popf
+	; retrieve pointer to current task descriptor
+	call	kernel_task_current
 
 	; reserve space in binary memory map of process
 	mov	r9,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]

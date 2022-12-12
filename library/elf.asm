@@ -2,6 +2,23 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
+	;-----------------------------------------------------------------------
+	; structures, definitions
+	;-----------------------------------------------------------------------
+	; global ---------------------------------------------------------------
+	%include	"default.inc"	; not required, but nice to have
+	; library --------------------------------------------------------------
+	%ifndef	ELF
+		%include	"library/elf.inc"
+	%endif
+	;=======================================================================
+
+; 64 bit code
+[bits 64]
+
+; we are using Position Independed Code
+default	rel
+
 ;-------------------------------------------------------------------------------
 ; in:
 ;	rdi - pointer to beginning of file

@@ -237,6 +237,34 @@ kernel_task_add:
 
 ;-------------------------------------------------------------------------------
 ; out:
+;	r9 - pointer to current task descriptor
+kernel_task_current:
+	; preserve original flags
+	push	rax
+	pushf
+
+	; turn off interrupts
+	; we cannot allow task switch
+	; when looking for current task pointe
+	cli
+
+	; retrieve CPU id
+	call	kernel_lapic_id
+
+	; set pointer to current task of CPU
+	mov	r9,	qword [kernel_environment_base_address]
+	mov	r9,	qword [r9 + KERNEL_STRUCTURE.task_ap_address]
+	mov	r9,	qword [r9 + rax * STATIC_PTR_SIZE_byte]
+
+	; restore original flags
+	popf
+	pop	rax
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; out:
 ;	rax - new ID for use
 kernel_task_id_new:
 	; preserve original registers
@@ -262,30 +290,16 @@ kernel_task_id_new:
 ;	rax - ID of parent
 kernel_task_id_parent:
 	; preserve original registers
-	push	r8
-	pushf
+	push	r9
 
-	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
-
-	; turn off interrupts
-	; we cannot allow task switch
-	; when looking for current task pointe
-	cli
-
-	; retrieve CPU id
-	call	kernel_lapic_id
-
-	; set pointer to current task of CPU
-	mov	r8,	qword [r8 + KERNEL_STRUCTURE.task_ap_address]
-	mov	rax,	qword [r8 + rax * STATIC_PTR_SIZE_byte]
+	; retrieve pointer to current task descriptor
+	call	kernel_task_current
 
 	; return parent ID
-	mov	rax,	qword [rax + KERNEL_TASK_STRUCTURE.pid]
+	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
 
 	; restore original registers
-	popf
-	pop	r8
+	pop	r9
 
 	; return from routine
 	ret
