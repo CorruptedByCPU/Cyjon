@@ -21,7 +21,7 @@ kernel_log_welcome		db	KERNEL_name, " (build v", KERNEL_version, ".", KERNEL_rev
 
 kernel_smp_count		dq	EMPTY
 
-kernel_exec_file_init		db	"debug"
+kernel_exec_file_init		db	"wm"
 
 ; align table
 align	0x08,	db	0x00

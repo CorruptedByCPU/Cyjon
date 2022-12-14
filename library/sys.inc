@@ -14,10 +14,6 @@
 
 struc	LIB_SYS_STRUCTURE_FRAMEBUFFER
 	.width_pixel	resw	1
-
-	; align next label
-	alignb	0x08
-
 	.height_pixel	resw	1
 
 	; align next label

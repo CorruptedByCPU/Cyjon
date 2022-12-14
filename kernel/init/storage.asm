@@ -137,7 +137,7 @@ kernel_init_storage:
 
 	; convert Bytes to KiB
 	mov	rax,	qword [rax + KERNEL_STORAGE_STRUCTURE.device_blocks]
-	shr	rax,	STATIC_DIVIDE_BY_4096_shift
+	shr	rax,	STATIC_DIVIDE_BY_1024_shift
 
 	; show size of system storage
 	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
