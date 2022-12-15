@@ -2,10 +2,12 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
-%define	KERNEL_EXEC_DESCRIPTOR_offset	0x78
+%define	KERNEL_EXEC_DESCRIPTOR_offset		0x78
 
-%define	KERNEL_EXEC_STACK_pointer	0x0000000000100000
-%define	KERNEL_EXEC_STACK_address	KERNEL_EXEC_STACK_pointer - STATIC_PAGE_SIZE_byte
+%define	KERNEL_EXEC_STACK_pointer		0x0000000000100000
+%define	KERNEL_EXEC_STACK_address		KERNEL_EXEC_STACK_pointer - STATIC_PAGE_SIZE_byte
+
+%define	KERNEL_EXEC_STACK_OFFSET_registers	0x78
 
 struc	KERNEL_EXEC_STRUCTURE
 	.pid			resq	1

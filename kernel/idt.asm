@@ -24,11 +24,13 @@ kernel_irq:
 	push	r13
 	push	r14
 	push	r15
+	pushf
 
 	; execute kernel function according to parameter in RAX
 	call	qword [kernel_service_list + rax * STATIC_QWORD_SIZE_byte]
 
 	; restore original registers
+	popf
 	pop	r15
 	pop	r14
 	pop	r13
@@ -277,9 +279,6 @@ align	0x08,	db	EMPTY
 kernel_idt_exception_security:
 	; exception id
 	push	30
-
-	; continue
-	jmp	kernel_idt_exception
 
 ;-------------------------------------------------------------------------------
 ; void

@@ -27,7 +27,6 @@
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.inc"
 	%include	"kernel/init/ap.inc"
-	%include	"kernel/init/exec.inc"
 	%include	"kernel/init/limine.inc"
 	;=======================================================================
 
@@ -115,7 +114,7 @@ init:
 	mov	cr3,	rax
 
 	; set new stack pointer
-	xor	rsp,	rsp
+	mov	rsp,	KERNEL_TASK_STACK_pointer
 
 	; create Global Descriptor Table
 	call	kernel_init_gdt

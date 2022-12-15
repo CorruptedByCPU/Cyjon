@@ -10,7 +10,7 @@ echo "" > serial.log
 qemu-system-x86_64			\
 	--enable-kvm			\
 	-cpu max			\
-	-smp 1				\
+	-smp 2				\
 	-m 128				\
 	-cdrom build/cyjon.iso		\
 	-netdev user,id=ethx		\

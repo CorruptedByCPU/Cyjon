@@ -30,7 +30,6 @@ kernel_service_framebuffer:
 	push	r8
 	push	r9
 	push	r11
-	pushf
 
 	; kernel environment variables/rountines base address
 	mov	r8,	qword [kernel_environment_base_address]
@@ -87,7 +86,6 @@ kernel_service_framebuffer:
 	mov	qword [rdi + LIB_SYS_STRUCTURE_FRAMEBUFFER.pid],	rax
 
 	; restore original registers
-	popf
 	pop	r11
 	pop	r9
 	pop	r8
@@ -109,12 +107,11 @@ kernel_service_memory_alloc:
 	; preserve original registers
 	push	rbx
 	push	rcx
-	push	rdi
 	push	rsi
+	push	rdi
 	push	r8
 	push	r9
 	push	r11
-	pushf
 
 	; convert size to pages (align up to page boundaries)
 	add	rdi,	~STATIC_PAGE_mask
@@ -151,7 +148,6 @@ kernel_service_memory_alloc:
 
 .end:
 	; restore original registers
-	popf
 	pop	r11
 	pop	r9
 	pop	r8
@@ -175,7 +171,6 @@ kernel_service_memory_release:
 	push	rdi
 	push	r9
 	push	r11
-	pushf
 
 	; retrieve pointer to current task descriptor
 	call	kernel_task_current
@@ -191,7 +186,6 @@ kernel_service_memory_release:
 	call	kernel_page_release
 
 	; restore original registers
-	popf
 	pop	r11
 	pop	r9
 	pop	rdi
@@ -208,7 +202,6 @@ kernel_service_memory_release:
 kernel_service_task_pid:
 	; preserve original registers
 	push	r9
-	pushf
 
 	; retrieve pointer to current task descriptor
 	call	kernel_task_current
@@ -217,7 +210,6 @@ kernel_service_task_pid:
 	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
 
 	; restore original registers
-	popf
 	pop	r9
 
 	; return from routine
