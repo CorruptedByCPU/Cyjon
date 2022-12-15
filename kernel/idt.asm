@@ -45,7 +45,7 @@ kernel_irq:
 	pop	rbx
 
 .return:
-	; return to process code
+	; return from interrupt
 	iretq
 
 ; align routine
@@ -346,11 +346,11 @@ kernel_idt_exception:
 	; release value of exception ID and Error Code from stack
 	add	rsp,	0x10
 
-	; return from routine
+	; return from interrupt
 	iretq
 
 ; align routine
 align	0x08,	db	EMPTY
 kernel_idt_spurious_interrupt:
-	; return from routine
+	; return from interrupt
 	iretq

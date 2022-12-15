@@ -12,12 +12,14 @@
 	%include	"library/pkg.inc"
 	%include	"library/sys.inc"
 	; driver ---------------------------------------------------------------
+	%include	"kernel/driver/ps2.inc"
 	%include	"kernel/driver/serial.inc"
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/config.inc"
 	%include	"kernel/exec.inc"
 	%include	"kernel/gdt.inc"
 	%include	"kernel/idt.inc"
+	%include	"kernel/io_apic.inc"
 	%include	"kernel/lapic.inc"
 	%include	"kernel/page.inc"
 	%include	"kernel/storage.inc"
@@ -57,10 +59,12 @@ section .text
 	%include	"library/elf.asm"
 	%include	"library/string/compare.asm"
 	; drivers --------------------------------------------------------------
+	%include	"kernel/driver/ps2.asm"
 	%include	"kernel/driver/serial.asm"
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/exec.asm"
 	%include	"kernel/idt.asm"
+	%include	"kernel/io_apic.asm"
 	%include	"kernel/lapic.asm"
 	%include	"kernel/memory.asm"
 	%include	"kernel/page.asm"
@@ -121,6 +125,9 @@ init:
 
 	; create Task queue
 	call	kernel_init_task
+
+	; initialize PS2 keyboard/mouse driver
+	call	driver_ps2
 
 	; register all available data carriers
 	call	kernel_init_storage

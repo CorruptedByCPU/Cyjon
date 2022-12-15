@@ -11,6 +11,8 @@ kernel_service_list:
 	dq	kernel_service_framebuffer
 	dq	kernel_service_memory_alloc
 	dq	kernel_service_memory_release
+	dq	kernel_service_task_pid
+	dq	kernel_service_driver_mouse
 kernel_service_list_end:
 
 ; information for linker
@@ -195,6 +197,53 @@ kernel_service_memory_release:
 	pop	rdi
 	pop	rsi
 	pop	rcx
+	pop	rax
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; out:
+;	rax - PID of current task
+kernel_service_task_pid:
+	; preserve original registers
+	push	r9
+	pushf
+
+	; retrieve pointer to current task descriptor
+	call	kernel_task_current
+
+	; set pointer of process paging array
+	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
+
+	; restore original registers
+	popf
+	pop	r9
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - pointer to mouse descriptor
+kernel_service_driver_mouse:
+	; preserve original registers
+	push	rax
+	push	r8
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; share information about mouse location and status
+	mov	ax,	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x]
+	mov	word [rdi + LIB_SYS_STRUCTURE_MOUSE.x],	ax
+	mov	ax,	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y]
+	mov	word [rdi + LIB_SYS_STRUCTURE_MOUSE.y],	ax
+	mov	al,	byte [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x]
+	mov	byte [rdi + LIB_SYS_STRUCTURE_MOUSE.x],	al
+
+	; restore original registers
+	pop	r8
 	pop	rax
 
 	; return from routine

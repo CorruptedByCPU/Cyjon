@@ -4,7 +4,7 @@
 
 %define	KERNEL_name			"Cyjon"
 %define	KERNEL_version			"0"
-%define	KERNEL_revision			"1464"
+%define	KERNEL_revision			"1465"
 %define	KERNEL_architecture		"x86_64"
 %define	KERNEL_language			"Assembly"
 
@@ -13,6 +13,14 @@
 struc	KERNEL_STRUCTURE
 	; variables of SMP Management functions
 	.cpu_count			resq	1
+
+	; variables of PS2 controller management functions
+	.driver_ps2_mouse_x		resw	1
+	.driver_ps2_mouse_y		resw	1
+	.driver_ps2_mouse_status	resb	1
+
+	; align next label
+	alignb	0x04
 
 	; variables of Framebuffer management functions
 	.framebuffer_base_address	resq	1
