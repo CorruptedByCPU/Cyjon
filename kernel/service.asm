@@ -11,10 +11,39 @@ kernel_service_list:
 	dq	kernel_service_framebuffer
 	dq	kernel_service_memory_alloc
 	dq	kernel_service_memory_release
+	dq	kernel_service_task_pid
+	dq	kernel_service_driver_mouse
+	dq	kernel_service_storage_read
 kernel_service_list_end:
 
 ; information for linker
 section	.text
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - pointer to mouse descriptor
+kernel_service_driver_mouse:
+	; preserve original registers
+	push	rax
+	push	r8
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; share information about mouse location and status
+	mov	ax,	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x]
+	mov	word [rdi + LIB_SYS_STRUCTURE_MOUSE.x],	ax
+	mov	ax,	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y]
+	mov	word [rdi + LIB_SYS_STRUCTURE_MOUSE.y],	ax
+	mov	al,	byte [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x]
+	mov	byte [rdi + LIB_SYS_STRUCTURE_MOUSE.x],	al
+
+	; restore original registers
+	pop	r8
+	pop	rax
+
+	; return from routine
+	ret
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -28,7 +57,6 @@ kernel_service_framebuffer:
 	push	r8
 	push	r9
 	push	r11
-	pushf
 
 	; kernel environment variables/rountines base address
 	mov	r8,	qword [kernel_environment_base_address]
@@ -85,7 +113,6 @@ kernel_service_framebuffer:
 	mov	qword [rdi + LIB_SYS_STRUCTURE_FRAMEBUFFER.pid],	rax
 
 	; restore original registers
-	popf
 	pop	r11
 	pop	r9
 	pop	r8
@@ -107,12 +134,11 @@ kernel_service_memory_alloc:
 	; preserve original registers
 	push	rbx
 	push	rcx
-	push	rdi
 	push	rsi
+	push	rdi
 	push	r8
 	push	r9
 	push	r11
-	pushf
 
 	; convert size to pages (align up to page boundaries)
 	add	rdi,	~STATIC_PAGE_mask
@@ -149,7 +175,6 @@ kernel_service_memory_alloc:
 
 .end:
 	; restore original registers
-	popf
 	pop	r11
 	pop	r9
 	pop	r8
@@ -173,7 +198,6 @@ kernel_service_memory_release:
 	push	rdi
 	push	r9
 	push	r11
-	pushf
 
 	; retrieve pointer to current task descriptor
 	call	kernel_task_current
@@ -189,12 +213,128 @@ kernel_service_memory_release:
 	call	kernel_page_release
 
 	; restore original registers
-	popf
 	pop	r11
 	pop	r9
 	pop	rdi
 	pop	rsi
 	pop	rcx
+	pop	rax
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; out:
+;	rax - PID of current task
+kernel_service_task_pid:
+	; preserve original registers
+	push	r9
+
+	; retrieve pointer to current task descriptor
+	call	kernel_task_current
+
+	; set pointer of process paging array
+	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
+
+	; restore original registers
+	pop	r9
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - pointer to file descriptor
+kernel_service_storage_read:
+	; preserve original registers
+	push	rax
+	push	rbx
+	push	rcx
+	push	rsi
+	push	rbp
+	push	r8
+	push	r9
+	push	r11
+	push	rdi
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; prepare space for file descriptor
+	sub	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
+	mov	rbp,	rsp	; pointer of file descriptor
+
+	; get file properties
+	movzx	eax,	byte [r8 + KERNEL_STRUCTURE.storage_root_id]
+	movzx	ecx,	byte [rdi + LIB_SYS_STRUCTURE_STORAGE.length]
+	lea	rsi,	[rdi + LIB_SYS_STRUCTURE_STORAGE.name]
+	call	kernel_storage_file
+
+	; file found?
+	cmp	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
+	je	.end	; no
+
+	; prepare space for file content
+	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
+	add	rcx,	~STATIC_PAGE_mask
+	shr	rcx,	STATIC_PAGE_SIZE_shift
+	call	kernel_memory_alloc
+	jc	.end	; no enough memory
+
+	; load file content into prepared space
+	mov	rsi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id]
+	call	kernel_storage_read
+
+	; retrieve current task pointer
+	call	kernel_task_current
+
+	; preserve file content address
+	sub	rdi,	qword [kernel_page_mirror]	; convert address to physical
+	mov	rsi,	rdi
+
+	; aquire memory inside process space for file
+	mov	r9,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]
+	call	kernel_memory_aquire
+	jc	.error	; no enough memory
+
+	; map file content to process space
+	mov	rax,	rdi	; first page number of memory space inside process
+	shl	rax,	STATIC_PAGE_SIZE_shift	; convert page number to logical address
+	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_process
+	mov	r11,	cr3	; task paging array
+	call	kernel_page_map
+	jc	.error	; no enough memory
+
+	; restore file descriptor
+	mov	rdi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE]
+
+	; inform process about file location and size
+	push	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
+	pop	qword [rdi + LIB_SYS_STRUCTURE_STORAGE.size_byte]
+	mov	qword [rdi + LIB_SYS_STRUCTURE_STORAGE.address],	rax
+
+	; file loaded to process memory
+	jmp	.end
+
+.error:
+	; release memory assigned for file
+	mov	rdi,	rsi
+	or	rdi,	qword [kernel_page_mirror]
+	call	kernel_memory_release
+
+.end:
+	; remove file descriptor from stack
+	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
+
+	; restore original registers
+	pop	rdi
+	pop	r11
+	pop	r9
+	pop	r8
+	pop	rbp
+	pop	rsi
+	pop	rcx
+	pop	rbx
 	pop	rax
 
 	; return from routine

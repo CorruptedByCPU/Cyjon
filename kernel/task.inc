@@ -48,7 +48,7 @@ struc	KERNEL_TASK_STRUCTURE
 	.name		resb	KERNEL_TASK_NAME_limit + 1
 
 	; align next label
-	alignb	0x08
+	alignb	0x10
 
 	.SIZE:
 endstruc

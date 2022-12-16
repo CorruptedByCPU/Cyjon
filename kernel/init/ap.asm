@@ -120,7 +120,7 @@ kernel_init_ap:
 	wrmsr
 
 	; ; set EFLAGS mask of entry routine
-	mov	eax,	KERNEL_TASK_EFLAGS_df	; disable Direction Flag only
+	mov	eax,	KERNEL_TASK_EFLAGS_if | KERNEL_TASK_EFLAGS_df	; disable Interrupt and Direction flags
 	mov	ecx,	KERNEL_INIT_AP_MSR_EFLAGS
 	xor	edx,	edx
 	wrmsr

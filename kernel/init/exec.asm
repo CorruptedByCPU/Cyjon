@@ -14,7 +14,7 @@ kernel_init_exec:
 	mov	rbp,	rsp	; pointer of file descriptor
 
 	; execute init file
-	mov	ecx,	KERNEL_EXEC_FILE_INIT_length
+	mov	ecx,	kernel_exec_file_init_end - kernel_exec_file_init
 	mov	rsi,	kernel_exec_file_init
 	call	kernel_exec
 

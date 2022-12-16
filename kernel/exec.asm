@@ -115,7 +115,7 @@ kernel_exec:
 	jc	.error_level_page	; no enough memory
 
 	; set process context stack pointer
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	KERNEL_TASK_STACK_pointer - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	KERNEL_TASK_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
 
 	; prepare exception exit mode on context stack of process
 	mov	rax,	KERNEL_TASK_STACK_pointer - STATIC_PAGE_SIZE_byte
@@ -305,7 +305,7 @@ kernel_exec:
 	;-----------------------------------------------------------------------
 
 	; mark task as ready
-	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_init
+	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active
 
 	; return PID and pointer to task on queue
 	push	qword [r10 + KERNEL_TASK_STRUCTURE.pid]
