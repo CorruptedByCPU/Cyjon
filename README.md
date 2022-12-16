@@ -1,8 +1,12 @@
 # Info
 
-I'm rewriting Cyjon to be fully compatible with Fern-Night (written in C)...
+~~I'm rewriting Cyjon to be fully compatible with Fern-Night (written in C)...~~
 
-The ability to run the same compilations of programs on both systems, ignited a new flame in me :D
+~~The ability to run the same compilations of programs on both systems, ignited a new flame in me :D~~
+
+Cyjon is now fully compatible with ![Fern-Night](https://github.com/CorruptedByCPU/Fern-Night/). Any modification to either repository will be reflected in the other.
+
+Every comment, label is now in English.
 
 ![image](https://user-images.githubusercontent.com/53617677/204043138-e9d87f6b-5a63-464b-9e8f-2c4bc5db60f6.png)
 
@@ -11,6 +15,8 @@ Previous version of Cyjon is still available at **[old](https://github.com/Corru
 # Cyjon (workname)
 
 A simple, clean, multi-tasking operating system written in pure assembly language for 64-bit processors from the AMD64 family.
+
+![Cyjon (current)](https://blackdev.org/shot/os.png)
 
 ## Hey!
 
@@ -24,10 +30,7 @@ So the code is not optimized for speed but for readability.
 
   - Qemu 5.0.0 or Bochs 2.6.11 (no SMP support on MS/Windows)
   - Nasm 2.15.1
-
-### Requirements:
-
-  - 64 MiB of RAM
+  - Clang 14.0.6 (only for package manager)
 
 ### Compilation/Exec (GNU/Linux):
 

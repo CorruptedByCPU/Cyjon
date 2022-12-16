@@ -13,6 +13,7 @@
 %define	LIB_SYS_REQUEST_MEMORY_RELEASE		0x02
 %define	LIB_SYS_REQUEST_TASK_PID		0x03
 %define	LIB_SYS_REQUEST_DRIVER_MOUSE		0x04
+%define	LIB_SYS_REQUEST_STORAGE_READ		0x05
 
 struc	LIB_SYS_STRUCTURE_FRAMEBUFFER
 	.width_pixel	resw	1
@@ -28,7 +29,14 @@ struc	LIB_SYS_STRUCTURE_FRAMEBUFFER
 endstruc
 
 struc	LIB_SYS_STRUCTURE_MOUSE
-	.x	resw	1
-	.y	resw	1
-	.status	resb	1
+	.x		resw	1
+	.y		resw	1
+	.status		resb	1
+endstruc
+
+struc	LIB_SYS_STRUCTURE_STORAGE
+	.address	resq	1
+	.size_byte	resq	1
+	.length		resb	1
+	.name		resb	255
 endstruc

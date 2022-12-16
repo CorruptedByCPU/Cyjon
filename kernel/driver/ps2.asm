@@ -213,6 +213,7 @@ driver_ps2:
 	push	rax
 	push	rbx
 	push	rcx
+	push	r8
 
 	; drain PS2 controller buffer
 	call	driver_ps2_drain
@@ -318,7 +319,20 @@ driver_ps2:
 	mov	ebx,	DRIVER_PS2_KEYBOARD_IO_APIC_register
 	call	kernel_io_apic_connect
 
+	; even if there is no mouse, set its default position for Window Manager
+
+	; X axis
+	mov	ax,	word [r8 + KERNEL_STRUCTURE.framebuffer_width_pixel]
+	shr	ax,	STATIC_DIVIDE_BY_2_shift
+	mov	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x],	ax
+
+	; Y axis
+	mov	ax,	word [r8 + KERNEL_STRUCTURE.framebuffer_height_pixel]
+	shr	ax,	STATIC_DIVIDE_BY_2_shift
+	mov	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y],	ax
+
 	; restore original registers
+	pop	r8
 	pop	rcx
 	pop	rbx
 	pop	rax
