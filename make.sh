@@ -17,11 +17,13 @@ nasm -f elf64 kernel/init.asm -o build/kernel.o
 ld build/kernel.o -o build/kernel -T linker.kernel
 gzip -fk build/kernel
 
-for software in `(cd software && ls *.asm)`; do
-	name=`echo $software | cut -d '.' -f 1`
-	nasm -f elf64 software/${name}.asm -o build/${name}.o  || exit 1
-	ld build/${name}.o -o system/${name} -T linker.software ${LDFLAGS}
-done
+if [ `ls software | wc -l` -ne 0 ]; then
+	for software in `(cd software && ls *.asm)`; do
+		name=`echo $software | cut -d '.' -f 1`
+		nasm -f elf64 software/${name}.asm -o build/${name}.o  || exit 1
+		ld build/${name}.o -o system/${name} -T linker.software ${LDFLAGS}
+	done
+fi
 
 rm -f build/*.o
 

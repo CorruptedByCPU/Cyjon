@@ -14,10 +14,51 @@ kernel_service_list:
 	dq	kernel_service_task_pid
 	dq	kernel_service_driver_mouse
 	dq	kernel_service_storage_read
+	dq	kernel_service_exec
 kernel_service_list_end:
 
 ; information for linker
 section	.text
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdx - stream flags
+;	rsi - length of file name/path in characters
+;	rdi - pointer file name/path
+; out:
+;	rax - process ID
+kernel_service_exec:
+	; preserve original registers
+	push	rcx
+	push	rsi
+	push	rdi
+	push	r8
+
+	xchg	bx,bx
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; prepare exec descriptor
+	sub	rsp,	KERNEL_EXEC_STRUCTURE.SIZE
+	mov	rbp,	rsp	; pointer of file descriptor
+
+	; execute file from path
+	mov	rcx,	rsi
+	mov	rsi,	rdi
+	; call	kernel_exec
+
+	; remove exec descriptor
+	add	rsp,	KERNEL_EXEC_STRUCTURE.SIZE
+
+	; restore original registers
+	pop	r8
+	pop	rdi
+	pop	rsi
+	pop	rcx
+
+	; return from routine
+	ret
 
 ;-------------------------------------------------------------------------------
 ; in:

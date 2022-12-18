@@ -42,10 +42,12 @@ lib_pkg_file:
 	; check file name
 	add	rdi,	LIB_PKG_STRUCTURE.name
 	call	lib_string_compare
-	sub	rdi,	LIB_PKG_STRUCTURE.name
 
 	; names are similar?
 	jnc	.found	; yes
+
+	; move pointer back to entry
+	sub	rdi,	LIB_PKG_STRUCTURE.name
 
 .next:
 	; no more files in PKG?
@@ -60,6 +62,9 @@ lib_pkg_file:
 
 .found:
 	; return file specification
+
+	; move pointer back to entry
+	sub	rdi,	LIB_PKG_STRUCTURE.name
 
 	; size in Bytes
 	mov	rcx,	qword [rdi + LIB_PKG_STRUCTURE.size]

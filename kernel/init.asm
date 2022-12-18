@@ -21,6 +21,7 @@
 	%include	"kernel/idt.inc"
 	%include	"kernel/io_apic.inc"
 	%include	"kernel/lapic.inc"
+	%include	"kernel/library.inc"
 	%include	"kernel/page.inc"
 	%include	"kernel/storage.inc"
 	%include	"kernel/task.inc"
@@ -79,6 +80,7 @@ section .text
 	%include	"kernel/init/free.asm"
 	%include	"kernel/init/gdt.asm"
 	%include	"kernel/init/idt.asm"
+	%include	"kernel/init/library.asm"
 	%include	"kernel/init/memory.asm"
 	%include	"kernel/init/page.asm"
 	%include	"kernel/init/smp.asm"
@@ -130,6 +132,9 @@ init:
 
 	; register all available data carriers
 	call	kernel_init_storage
+
+	; prepare library subsystem
+	call	kernel_init_library
 
 	; execute init process
 	call	kernel_init_exec
