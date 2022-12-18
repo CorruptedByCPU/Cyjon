@@ -88,7 +88,7 @@ int main() {
 
 	// show content of package with properties of file
 	printf( "Offset [byte]\tSize [byte]\tLength\tName\n" );	// header of table
-	for( uint8_t i = 0; i < files_included; i++ ) printf( "%lu\t\t%lu\t\t%u\t%s\n", pkg[ i ].offset, pkg[ i ].size, (unsigned int) pkg[ i ].length, pkg[ i ].name );
+	for( uint8_t i = 0; i < files_included; i++ ) printf( "%lu\t\t%lu\t\t%u\t%s\n", (uint64_t) pkg[ i ].offset, pkg[ i ].size, (unsigned int) pkg[ i ].length, pkg[ i ].name );
 
 	/*--------------------------------------------------------------------*/
 

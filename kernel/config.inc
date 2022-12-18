@@ -4,7 +4,7 @@
 
 %define	KERNEL_name			"Cyjon"
 %define	KERNEL_version			"0"
-%define	KERNEL_revision			"1468"
+%define	KERNEL_revision			"1469"
 %define	KERNEL_architecture		"x86_64"
 %define	KERNEL_language			"Assembly"
 
@@ -46,6 +46,9 @@ struc	KERNEL_STRUCTURE
 
 	; variables of LAPIC management functions
 	.lapic_base_address		resq	1
+
+	; variables of Library management functions
+	.library_base_address		resq	1
 
 	; variables of Memory management functions
 	.memory_base_address		resq	1

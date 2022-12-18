@@ -3,7 +3,7 @@
 ;===============================================================================
 
 ;-------------------------------------------------------------------------------
-; out:
+; in:
 ;	r8 - pointer to kernel environment variables/routines
 kernel_init_storage:
 	; preserve original registers
