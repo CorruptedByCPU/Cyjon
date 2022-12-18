@@ -164,12 +164,12 @@ kernel_init_page:
 	movzx	rcx,	cx	; limits kernel size to 256 MiB, not enough?
 
 	; segment offset
-	mov	rsi,	~KERNEL_BASE_address
+	mov	rsi,	~KERNEL_BASE_location
 	and	rsi,	qword [rdi + LIB_ELF_STRUCTURE_HEADER.virtual_address]
 	and	si,	STATIC_PAGE_mask
 
 	; kernel segment target
-	mov	rax,	KERNEL_BASE_address
+	mov	rax,	KERNEL_BASE_location
 	add	rax,	rsi
 
 	; kernel segment source
