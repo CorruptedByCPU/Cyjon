@@ -167,7 +167,7 @@ kernel_exec:
 	cmp	dword [rdx + LIB_ELF_STRUCTURE_HEADER.type],	EMPTY
 	je	.elf_header_next	; empty one
 	cmp	qword [rdx + LIB_ELF_STRUCTURE_HEADER.memory_size],	EMPTY
-	je	.elf_header_next	; this one too
+	je	.elf_header_next	; this too
 
 	; load segment?
 	cmp	dword [rdx + LIB_ELF_STRUCTURE_HEADER.type],	LIB_ELF_HEADER_TYPE_load

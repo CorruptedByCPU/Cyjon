@@ -11,7 +11,7 @@ kernel_init_library:
 	push	rdi
 
 	; assign space for library list
-	mov	ecx,	((KERNEL_LIBRARY_limit * KERNEL_LIBRARY_STRUCTURE.SIZE) + ~STATIC_PAGE_mask) >> STATIC_PAGE_SIZE_shift
+	mov	rcx,	((KERNEL_LIBRARY_limit * KERNEL_LIBRARY_STRUCTURE.SIZE) + ~STATIC_PAGE_mask) >> STATIC_PAGE_SIZE_shift
 	call	kernel_memory_alloc
 
 	; save pointer to library list

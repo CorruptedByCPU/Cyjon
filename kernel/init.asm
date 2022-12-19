@@ -66,6 +66,7 @@ section .text
 	%include	"kernel/idt.asm"
 	%include	"kernel/io_apic.asm"
 	%include	"kernel/lapic.asm"
+	%include	"kernel/library.asm"
 	%include	"kernel/memory.asm"
 	%include	"kernel/page.asm"
 	%include	"kernel/service.asm"
