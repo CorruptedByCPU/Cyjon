@@ -34,8 +34,6 @@ kernel_service_exec:
 	push	rdi
 	push	r8
 
-	xchg	bx,bx
-
 	; kernel environment variables/rountines base address
 	mov	r8,	qword [kernel_environment_base_address]
 
@@ -194,7 +192,7 @@ kernel_service_memory_alloc:
 	; aquire memory space from process memory map
 	mov	r9,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]
 	mov	rcx,	rdi	; number of pages
-	call	kernel_memory_aquire
+	call	kernel_memory_acquire
 	jc	.error	; no enough memory
 
 	; convert first page number to logical address
@@ -335,7 +333,7 @@ kernel_service_storage_read:
 
 	; aquire memory inside process space for file
 	mov	r9,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]
-	call	kernel_memory_aquire
+	call	kernel_memory_acquire
 	jc	.error	; no enough memory
 
 	; map file content to process space

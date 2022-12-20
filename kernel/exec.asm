@@ -135,7 +135,8 @@ kernel_exec:
 	mov	qword [rdx + KERNEL_EXEC_STRUCTURE_RETURN.eflags],	KERNEL_TASK_EFLAGS_default
 
 	; default stack pointer
-	mov	qword [rdx + KERNEL_EXEC_STRUCTURE_RETURN.rsp],	KERNEL_EXEC_STACK_pointer
+	mov	rax,	KERNEL_EXEC_STACK_pointer
+	mov	qword [rdx + KERNEL_EXEC_STRUCTURE_RETURN.rsp],	rax
 
 	; stack descriptor
 	mov	qword [rdx + KERNEL_EXEC_STRUCTURE_RETURN.ss],	KERNEL_GDT_STRUCTURE.ds_ring3 | 0x03

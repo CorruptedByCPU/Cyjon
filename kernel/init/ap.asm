@@ -134,7 +134,7 @@ kernel_init_ap:
 	push	qword [r8 + KERNEL_STRUCTURE.task_queue_address]	; by default: kernel
 
 	; insert into task cpu list at AP position
-	shl	rax,	STATIC_PTR_SIZE_shift
+	shl	rax,	STATIC_MULTIPLE_BY_8_shift
 	add	rax,	qword [r8 + KERNEL_STRUCTURE.task_ap_address]
 	pop	qword [rax]
 

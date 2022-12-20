@@ -67,8 +67,11 @@ kernel_library_load:
 	push	rdi
 	push	rbp
 	push	r8
+	push	r9
+	push	r11
 	push	r12
 	push	r13
+	push	r15
 	push	rsi
 	push	rcx
 	push	r14
@@ -182,9 +185,23 @@ kernel_library_load:
 	; prepare error code
 	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_memory_no_enough
 
-	; assign memory space for all segments at once
-	call	kernel_memory_alloc
+	; aquire memory space inside library environment
+	mov	r9,	qword [r8 + KERNEL_STRUCTURE.library_memory_map_address]
+	call	kernel_memory_acquire
 	jc	.error_level_file	; no enough memory
+
+	; convert page number to logical address
+	shl	rdi,	STATIC_PAGE_SIZE_shift
+
+	; prepare space for file content
+	mov	rax,	rdi
+	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write
+	mov	r11,	qword [r8 + KERNEL_STRUCTURE.page_base_address]
+	call	kernel_page_alloc
+	jc	.error_level_aquire	; no enough memory
+
+	; preserve library space size
+	mov	r15,	rcx
 
 	;-----------------------------------------------------------------------
 	; load library segments in place
@@ -240,14 +257,20 @@ kernel_library_load:
 	; remove file descriptor from stack
 	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
 
+	; preserve library content pointer and size in pages
+	mov	qword [r14 + KERNEL_LIBRARY_STRUCTURE.address],	rdi
+	mov	word [r14 + KERNEL_LIBRARY_STRUCTURE.size_page],	r15w
+
+	; share access to library content space for processes (read-only)
+	mov	rax,	rdi
+	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_library
+	mov	rcx,	r15
+	call	kernel_page_flags
+
 	; release space of loaded file
 	mov	rcx,	r12
 	mov	rdi,	r13
 	call	kernel_memory_release
-
-	; preserve library content pointer and size in pages
-	mov	qword [r14 + KERNEL_LIBRARY_STRUCTURE.address],	r13
-	mov	word [r14 + KERNEL_LIBRARY_STRUCTURE.size_page],	r12w
 
 	; register library name and length
 
@@ -268,8 +291,11 @@ kernel_library_load:
 	pop	r14
 	pop	rcx
 	pop	rsi
+	pop	r15
 	pop	r13
 	pop	r12
+	pop	r11
+	pop	r9
 	pop	r8
 	pop	rbp
 	pop	rdi
@@ -279,6 +305,19 @@ kernel_library_load:
 
 	; return from routine
 	ret
+
+.error_level_aquire:
+	; first page of acquired space
+	shr	rax,	STATIC_PAGE_SIZE_shift
+
+.error_level_aquire_release:
+	; release first page of space
+	bts	qword [r9],	rax
+
+	; next page?
+	inc	rax
+	dec	rcx
+	jnz	.error_level_aquire_release	; yes
 
 .error_level_file:
 	; release space of loaded file

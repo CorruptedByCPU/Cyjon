@@ -46,7 +46,7 @@ kernel_init_acpi:
 	; entries inside table
 	mov	ecx,	dword [edi + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.length]
 	sub	ecx,	KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.SIZE
-	shr	ecx,	STATIC_DWORD_SIZE_shift
+	shr	ecx,	STATIC_DIVIDE_BY_4_shift
 
 	; move pointer to first entry of RSDT table
 	add	edi,	KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.SIZE
@@ -83,7 +83,7 @@ kernel_init_acpi:
 	; entries inside table
 	mov	ecx,	dword [edi + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.length]
 	sub	ecx,	KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.SIZE
-	shr	ecx,	STATIC_QWORD_SIZE_shift
+	shr	ecx,	STATIC_DIVIDE_BY_8_shift
 
 	; move pointer to first entry of RSDT table
 	add	rdi,	KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.SIZE

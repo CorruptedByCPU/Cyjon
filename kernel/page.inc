@@ -20,4 +20,4 @@
 %define	KERNEL_PAGE_FLAG_length		1 << 7
 %define	KERNEL_PAGE_FLAG_process	1 << 9
 %define	KERNEL_PAGE_FLAG_shared		1 << 10
-%define	KERNEL_PAGE_FLAG_journal	1 << 11
+%define	KERNEL_PAGE_FLAG_library	1 << 11

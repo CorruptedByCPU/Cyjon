@@ -50,7 +50,7 @@ kernel_init_task:
 
 .one_to_rule_all:
 	; calculate CPU list size in Pages
-	shl	rcx,	STATIC_PTR_SIZE_shift
+	shl	rcx,	STATIC_MULTIPLE_BY_8_shift
 	add	rcx,	~STATIC_PAGE_mask
 	and	rcx,	STATIC_PAGE_mask
 	shr	rcx,	STATIC_PAGE_SIZE_shift

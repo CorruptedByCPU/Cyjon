@@ -25,6 +25,7 @@
 %define	STATIC_PAGE_SIZE_byte			4096
 
 %define	STATIC_DIVIDE_BY_2_shift		1
+%define	STATIC_DIVIDE_BY_4_shift		2
 %define	STATIC_DIVIDE_BY_8_shift		3
 %define	STATIC_DIVIDE_BY_QWORD_shift		STATIC_DIVIDE_BY_8_shift
 %define	STATIC_DIVIDE_BY_1024_shift		10
@@ -46,10 +47,6 @@
 %define	STATIC_DWORD_SIZE_byte			4
 %define	STATIC_QWORD_SIZE_byte			8
 %define	STATIC_PTR_SIZE_byte			STATIC_QWORD_SIZE_byte
-
-%define	STATIC_DWORD_SIZE_shift			2
-%define	STATIC_QWORD_SIZE_shift			3
-%define	STATIC_PTR_SIZE_shift			STATIC_QWORD_SIZE_shift
 
 %define	STATIC_NUMBER_SYSTEM_decimal		10
 %define	STATIC_NUMBER_SYSTEM_hexadecimal	16
