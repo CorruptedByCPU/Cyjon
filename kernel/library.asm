@@ -54,7 +54,162 @@ kernel_library_add:
 
 ;-------------------------------------------------------------------------------
 ; in:
-;	rcx - length of name
+;	cl - length of name
+;	rsi - pointer to string
+; out:
+;	r14 - library descriptor pointer
+;	CF - set if doesn't exist
+kernel_library_find:
+	; preserve original registers
+	push	rbx
+	push	rdi
+	push	r14
+
+	; search from first entry
+	xor	ebx,	ebx
+
+	; set pointer to begining of library entries
+	mov	r14,	qword [kernel_environment_base_address]
+	mov	r14,	qword [r14 + KERNEL_STRUCTURE.library_base_address]
+
+.find:
+	; entry is empty?
+	cmp	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	EMPTY
+	je	.next	; yes
+
+	; length of entry name is the same?
+	cmp	byte [r14 + KERNEL_LIBRARY_STRUCTURE.length],	cl
+	jne	.next	; no
+
+	; we found library?
+	lea	rdi,	[r14 + KERNEL_LIBRARY_STRUCTURE.name]
+	call	lib_string_compare
+	jnc	.found	; yes
+
+.next:
+	; move pointer to next entry
+	add	r14,	KERNEL_LIBRARY_STRUCTURE.SIZE
+
+	; end of library structure?
+	inc	ebx
+	cmp	ebx,	KERNEL_LIBRARY_limit
+	jb	.find	; no
+
+	; free entry not found
+	stc
+
+	; end of routine
+	jmp	.end
+
+.found:
+	; return entry pointer
+	mov	qword [rsp],	r14
+
+.end:
+	; restore original registers
+	pop	r14
+	pop	rdi
+	pop	rbx
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	r13 - pointer file content
+; out:
+;	CF - set if cannot load library
+kernel_library_import:
+	; preserve original registers
+	push	rcx
+	push	rsi
+	push	r14
+	push	r13
+
+	; number of entries in section header
+	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
+
+	; set pointer to begining of section header
+	add	r13,	qword [r13 + LIB_ELF_STRUCTURE.section_table_position]
+
+.section:
+	; string table?
+	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_string_table
+	jne	.next	; no
+
+	; preserve pointer to string table
+	mov	rsi,	qword [rsp]
+	add	rsi,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
+
+.next:
+	; dynamic section?
+	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_dynamic
+	je	.parse	; yes
+
+	; move pointer to next entry
+	add	r13,	LIB_ELF_STRUCTURE_SECTION.SIZE
+
+	; end of library structure?
+	loop	.section
+
+	; end of routine
+	jmp	.end
+
+.parse:
+	; set pointer to dynamic section
+	mov	r13,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	r13,	qword [rsp]
+
+.library:
+	; end of entries?
+	cmp	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.type],	EMPTY
+	je	.end	; yes
+
+	; library needed?
+	cmp	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.type],	LIB_ELF_SECTION_DYNAMIC_TYPE_needed
+	jne	.omit
+
+	; preserve original registers
+	push	rcx
+	push	rsi
+
+	; set pointer to library name
+	add	rsi,	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.offset]
+
+	; calculate string length
+	call	lib_string_length
+
+	; load library
+	call	kernel_library_load
+
+	; restore original registers
+	pop	rsi
+	pop	rcx
+
+
+	; error while loading library?
+	jc	.end	; yes
+
+.omit:
+	; next entry from list
+	add	r13,	LIB_ELF_STRUCTURE_SECTION_DYNAMIC.SIZE
+
+	; continue
+	jmp	.library
+
+.end:
+	; restore original registers
+	pop	r13
+	pop	r14
+	pop	rsi
+	pop	rcx
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	cl - length of name
 ;	rsi - pointer to string
 ; out:
 ;	r14 - library descriptor pointer or error
@@ -75,6 +230,10 @@ kernel_library_load:
 	push	rsi
 	push	rcx
 	push	r14
+
+	; library already loaded?
+	call	kernel_library_find
+	jnc	.exist	; yes
 
 	; prepare error code
 	mov	qword [rsp],	LIB_SYS_ERROR_memory_no_enough
@@ -133,6 +292,13 @@ kernel_library_load:
 	; check if it is a shared library
 	cmp	byte [rdi + LIB_ELF_STRUCTURE.type],	LIB_ELF_TYPE_shared_object
 	jne	.error_level_file	; no library
+
+	; prepare error code
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_undefinied
+
+	; import all depended libraries
+	call	kernel_library_import
+	jc	.error_level_file	; no enough memory or library not found
 
 	;-----------------------------------------------------------------------
 	; calculate library size in Pages
@@ -283,6 +449,7 @@ kernel_library_load:
 	lea	rdi,	[r14 + KERNEL_LIBRARY_STRUCTURE.name]
 	rep	movsb
 
+.exist:
 	; return pointer to library entry
 	mov	qword [rsp],	r14
 

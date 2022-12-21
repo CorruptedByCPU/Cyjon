@@ -78,6 +78,13 @@ kernel_exec:
 	cmp	byte [rdi + LIB_ELF_STRUCTURE.type],	LIB_ELF_TYPE_executable
 	jne	.error_level_file	; no executable
 
+	; prepare error code
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	LIB_SYS_ERROR_undefinied
+
+	; load depended libraries
+	call	kernel_library_import
+	jc	.error_level_file	; no enough memory or library not found
+
 	;-----------------------------------------------------------------------
 	; prepare task for execution
 	;-----------------------------------------------------------------------

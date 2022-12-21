@@ -58,6 +58,7 @@ section .text
 	%include	"library/pkg.asm"
 	%include	"library/elf.asm"
 	%include	"library/string/compare.asm"
+	%include	"library/string/length.asm"
 	; drivers --------------------------------------------------------------
 	%include	"kernel/driver/ps2.asm"
 	%include	"kernel/driver/serial.asm"
@@ -137,11 +138,6 @@ init:
 	; prepare library subsystem
 	call	kernel_init_library
 
-	; debug
-	mov	ecx,	test1_end - test1
-	mov	rsi,	test1
-	call	kernel_library_load
-
 	; execute init process
 	call	kernel_init_exec
 
@@ -149,6 +145,3 @@ init:
 
 	; initialize other CPUs
 	jmp	kernel_init_smp
-
-test1 db	"libcolor.so"
-test1_end:
