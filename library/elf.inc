@@ -13,9 +13,10 @@
 
 %define	LIB_ELF_HEADER_TYPE_load		1
 
-%define	LIB_ELF_SECTION_TYPE_null		0
-%define	LIB_ELF_SECTION_TYPE_string_table	3
-%define	LIB_ELF_SECTION_TYPE_dynamic		6
+%define	LIB_ELF_SECTION_TYPE_null		0x00
+%define	LIB_ELF_SECTION_TYPE_string_table	0x03
+%define	LIB_ELF_SECTION_TYPE_dynamic		0x06
+%define	LIB_ELF_SECTION_TYPE_symbol_table	0x0B
 
 %define	LIB_ELF_SECTION_DYNAMIC_TYPE_needed	1
 
@@ -71,5 +72,13 @@ endstruc
 struc	LIB_ELF_STRUCTURE_SECTION_DYNAMIC
 	.type			resq	1
 	.offset			resq	1
+	.SIZE:
+endstruc
+
+struc	LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL
+	.name_offset		resd	1
+	.flags			resd	1
+	.address		resq	1
+	.size_byte		resq	1
 	.SIZE:
 endstruc

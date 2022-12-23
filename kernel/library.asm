@@ -209,6 +209,99 @@ kernel_library_import:
 
 ;-------------------------------------------------------------------------------
 ; in:
+;	rcx - length of string in Bytes
+;	rsi - pointer to function name string
+; out:
+;	rax - pointer to library function entry
+;	CF - set if function doesn't found
+kernel_library_function:
+	; preserve original registers
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+	push	rdi
+	push	r13
+	push	r14
+
+	; search from first entry
+	xor	ebx,	ebx
+
+	; set pointer to begining of library entries
+	mov	r14,	qword [kernel_environment_base_address]
+	mov	r14,	qword [r14 + KERNEL_STRUCTURE.library_base_address]
+
+.library:
+	; entry configured?
+	cmp	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
+	je	.library_parse	; yes
+
+.library_next:
+	; move pointer to next entry
+	add	r14,	KERNEL_LIBRARY_STRUCTURE.SIZE
+
+	; end of library structure?
+	inc	ebx
+	cmp	ebx,	KERNEL_LIBRARY_limit
+	jb	.library	; no
+
+	; free entry not found
+	stc
+
+	; end of routine
+	jmp	.end
+
+.library_parse:
+	; number of entries in symbol table
+	mov	dx,	word [r14 + KERNEL_LIBRARY_STRUCTURE.symbol_limit]
+
+	; retrieve pointer to symbol table
+	mov	r13,	qword [r14 + KERNEL_LIBRARY_STRUCTURE.symbol]
+
+.symbol:
+	; set pointer to function name
+	mov	edi,	dword [r13 + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.name_offset]
+	add	rdi,	qword [r14 + KERNEL_LIBRARY_STRUCTURE.string]
+
+	; strings name are exact length?
+	cmp	byte [rdi + rcx],	STATIC_ASCII_TERMINATOR
+	je	.symbol_name	; yes
+
+.symbol_next:
+	; move pointer to next entry
+	add	r13,	LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.SIZE
+
+	; end of dynamic symbols?
+	sub	dx,	LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.SIZE
+	jnz	.symbol	; no
+
+	; check next library
+	jmp	.library_next
+
+.symbol_name:
+	; strings are equal in name?
+	call	lib_string_compare
+	jc	.symbol_next	; no
+
+	; return function address
+	mov	rax,	qword [r13 + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address]
+	add	rax,	qword [r14 + KERNEL_LIBRARY_STRUCTURE.address]
+
+.end:
+	; restore original registers
+	pop	r14
+	pop	r13
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
 ;	cl - length of name
 ;	rsi - pointer to string
 ; out:
@@ -419,6 +512,53 @@ kernel_library_load:
 	;-----------------------------------------------------------------------
 	; library available, update entry
 	;-----------------------------------------------------------------------
+
+	; retrieve information about:
+	; - symbol table
+	; - string table
+
+	; number of entries in section header
+	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
+
+	; set pointer to begining of section header
+	mov	rsi,	qword [r13 + LIB_ELF_STRUCTURE.section_table_position]
+	add	rsi,	r13
+
+.section:
+	; function string table?
+	cmp	dword [rsi + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_string_table
+	jne	.no_string_table
+
+	; first string table is for functions
+	cmp	qword [r14 + KERNEL_LIBRARY_STRUCTURE.string],	EMPTY
+	jnz	.no_string_table	; not a function string table
+
+	; preserve pointer to string table
+	mov	rbx,	qword [rsi + LIB_ELF_STRUCTURE_SECTION.virtual_address]
+	add	rbx,	rdi
+	mov	qword [r14 + KERNEL_LIBRARY_STRUCTURE.string],	rbx
+
+.no_string_table:
+	; symbol table?
+	cmp	dword [rsi + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_symbol_table
+	jne	.no_symbol_table
+
+	; preserve pointer to symbol table
+	mov	rbx,	qword [rsi + LIB_ELF_STRUCTURE_SECTION.virtual_address]
+	add	rbx,	rdi
+	mov	qword [r14 + KERNEL_LIBRARY_STRUCTURE.symbol],	rbx
+
+	; and entries limit
+	push	qword [rsi + LIB_ELF_STRUCTURE_SECTION.size_byte]
+	pop	qword [r14 + KERNEL_LIBRARY_STRUCTURE.symbol_limit]
+
+.no_symbol_table:
+	; move pointer to next section entry
+	add	rsi,	LIB_ELF_STRUCTURE_SECTION.SIZE
+
+	; end of library structure?
+	dec	ecx
+	jnz	.section	; no
 
 	; remove file descriptor from stack
 	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
