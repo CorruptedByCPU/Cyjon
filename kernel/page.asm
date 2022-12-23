@@ -116,7 +116,7 @@ kernel_page_alloc:
 	jb	.entry	; no
 
 	; extend paging array
-	call	kernel_page_extend
+	call	kernel_page_resolve
 	jc	.end	; no enough memory
 
 .entry:
@@ -378,138 +378,63 @@ kernel_page_deconstruction:
 
 ;-------------------------------------------------------------------------------
 ; in:
-;	bx - flags assigned to every page entry of that address
-;	r9 - old pointer to PML2 entry
-;	r10 - old pointer to PML3 entry
-;	r11 - old pointer to PML4 entry
-;	r13 - old number of PML2 entry
-;	r14 - old number of PML3 entry
-;	r15 - old number of PML4 entry
-; out:
-;	CF - if there is no enough available pages
-;
-;	r8 - new pointer to PML1 entry
-;	r9 - new pointer to PML2 entry
-;	r10 - new pointer to PML3 entry
-;	r11 - new pointer to PML4 entry
-;	r12 - new number of PML1 entry
-;	r13 - new number of PML2 entry
-;	r14 - new number of PML3 entry
-;	r15 - new number of PML4 entry
-kernel_page_extend:
+;	rax - logical target address
+;	bx - new flags to set
+;	rcx - length of space in Pages
+;	r11 - address of target paging array
+kernel_page_flags:
 	; preserve original register
-	push	rdi
+	push	rcx
+	push	r8
+	push	r9
+	push	r10
+	push	r11
+	push	r12
+	push	r13
+	push	r14
+	push	r15
 
-	; next entry number
-	inc	r13
-
-	; end of PML2 array?
-	cmp	r13,	KERNEL_PAGE_ENTRY_count
-	je	.pml3	; yes
-
-	; PML2 entry exist?
-	cmp	qword [r9 + r13 * STATIC_QWORD_SIZE_byte],	EMPTY
-	jne	.pml2_entry	; yes
-
-	; assign page for PML2 entry
-	call	kernel_memory_alloc_page
+	; resolve default paging structure
+	call	kernel_page_prepare
 	jc	.end	; no enough memory
 
-	; store PML1 array address inside PML2 entry
-	or	di,	bx	; apply flags
-	mov	qword [r9 + r13 * STATIC_QWORD_SIZE_byte],	rdi
+	; assign flags to source address
+	or	si,	bx
 
-.pml2_entry:
-	; retrieve PML1 array address from PML2 entry
-	mov	r8,	qword [r9 + r13 * STATIC_QWORD_SIZE_byte]
-	or	r8,	qword [kernel_page_mirror]	; convert page address to logical
-	and	r8,	STATIC_PAGE_mask	; drop flags
+.next:
+	; end of PML1 array?
+	cmp	r12,	KERNEL_PAGE_ENTRY_count
+	jb	.entry	; no
 
-	; first entry number of PML1 array
-	xor	r12,	r12
+	; retrieve next PML1 array
+	call	kernel_page_resolve
 
-	; finished
-	jmp	.end
+.entry:
+	; store physical source address with corresponding flags
+	and	word [r8 + r12 * STATIC_QWORD_SIZE_byte],	STATIC_PAGE_mask
+	or	word [r8 + r12 * STATIC_QWORD_SIZE_byte],	bx
 
-.pml3:
-	; next entry number
-	inc	r14
+	; next entry from PML1 array
+	inc	r12
 
-	; end of PML3 array?
-	cmp	r14,	KERNEL_PAGE_ENTRY_count
-	je	.pml4	; yes
-
-	; PML3 entry exist?
-	cmp	qword [r10 + r14 * STATIC_QWORD_SIZE_byte],	EMPTY
-	jne	.pml3_entry	; yes
-
-	; assign page for PML3 entry
-	call	kernel_memory_alloc_page
-	jc	.end	; no enough memory
-
-	; store PML2 array address inside PML3 entry
-	or	di,	bx	; apply flags
-	mov	qword [r10 + r14 * STATIC_QWORD_SIZE_byte],	rdi
-
-.pml3_entry:
-	; retrieve PML2 array address from PML3 entry
-	mov	r9,	qword [r10 + r14 * STATIC_QWORD_SIZE_byte]
-	or	r9,	qword [kernel_page_mirror]	; convert page address to logical
-	and	r9,	STATIC_PAGE_mask	; drop flags
-
-	; first entry number of PML1 array
-	xor	r13,	r13
-
-	; new PML2 assigned
-	jmp	.pml2_entry
-
-.pml4:
-	; next entry number
-	inc	r15
-
-	; end of PML4 array?
-	cmp	r15,	KERNEL_PAGE_ENTRY_count
-	je	.error	; yes
-
-	; PML4 entry exist?
-	cmp	qword [r11 + r15 * STATIC_QWORD_SIZE_byte],	EMPTY
-	jne	.pml4_entry	; yes
-
-	; assign page for PML4 entry
-	call	kernel_memory_alloc_page
-	jc	.end	; no enough memory
-
-	; store PML3 array address inside PML4 entry
-	or	di,	bx	; apply flags
-	mov	qword [r11 + r15 * STATIC_QWORD_SIZE_byte],	rdi
-
-.pml4_entry:
-	; retrieve PML3 array address from PML4 entry
-	mov	r10,	qword [r11 + r15 * STATIC_QWORD_SIZE_byte]
-	or	r10,	qword [kernel_page_mirror]	; convert page address to logical
-	and	r10,	STATIC_PAGE_mask	; drop flags
-
-	; first entry number of PML1 array
-	xor	r14,	r14
-
-	; new PML3 assigned
-	jmp	.pml3_entry
+	; every page connected?
+	dec	rcx
+	jnz	.next	; no
 
 .end:
-	; restore original register
-	pop	rdi
+	; restore original registers
+	pop	r15
+	pop	r14
+	pop	r13
+	pop	r12
+	pop	r11
+	pop	r10
+	pop	r9
+	pop	r8
+	pop	rcx
 
 	; return from routine
 	ret
-
-.error:
-	; this is critical behavior, it should never occur
-	; you are a bad programmer...
-	mov	rsi,	kernel_log_page
-	call	driver_serial_string
-
-	; hold the door
-	jmp	$
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -546,7 +471,7 @@ kernel_page_map:
 	jb	.entry	; no
 
 	; extend paging array
-	call	kernel_page_extend
+	call	kernel_page_resolve
 	jc	.end	; no enough memory
 
 .entry:
@@ -598,7 +523,7 @@ kernel_page_merge:
 	or	r11,	qword [kernel_page_mirror]
 
 	; first kernel entry in PML4 array
-	mov	ecx,	KERNEL_PAGE_ENTRY_count >> STATIC_DIVIDE_BY_2_shift
+	xor	rcx,	rcx
 
 	; kernel PML4 array
 	mov	r15,	qword [kernel_environment_base_address]
@@ -1136,3 +1061,138 @@ kernel_page_release:
 
 	; return from routine
 	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	bx - flags assigned to every page entry of that address
+;	r9 - old pointer to PML2 entry
+;	r10 - old pointer to PML3 entry
+;	r11 - old pointer to PML4 entry
+;	r13 - old number of PML2 entry
+;	r14 - old number of PML3 entry
+;	r15 - old number of PML4 entry
+; out:
+;	CF - if there is no enough available pages
+;
+;	r8 - new pointer to PML1 entry
+;	r9 - new pointer to PML2 entry
+;	r10 - new pointer to PML3 entry
+;	r11 - new pointer to PML4 entry
+;	r12 - new number of PML1 entry
+;	r13 - new number of PML2 entry
+;	r14 - new number of PML3 entry
+;	r15 - new number of PML4 entry
+kernel_page_resolve:
+	; preserve original register
+	push	rdi
+
+	; next entry number
+	inc	r13
+
+	; end of PML2 array?
+	cmp	r13,	KERNEL_PAGE_ENTRY_count
+	je	.pml3	; yes
+
+	; PML2 entry exist?
+	cmp	qword [r9 + r13 * STATIC_QWORD_SIZE_byte],	EMPTY
+	jne	.pml2_entry	; yes
+
+	; assign page for PML2 entry
+	call	kernel_memory_alloc_page
+	jc	.end	; no enough memory
+
+	; store PML1 array address inside PML2 entry
+	or	di,	bx	; apply flags
+	mov	qword [r9 + r13 * STATIC_QWORD_SIZE_byte],	rdi
+
+.pml2_entry:
+	; retrieve PML1 array address from PML2 entry
+	mov	r8,	qword [r9 + r13 * STATIC_QWORD_SIZE_byte]
+	or	r8,	qword [kernel_page_mirror]	; convert page address to logical
+	and	r8,	STATIC_PAGE_mask	; drop flags
+
+	; first entry number of PML1 array
+	xor	r12,	r12
+
+	; finished
+	jmp	.end
+
+.pml3:
+	; next entry number
+	inc	r14
+
+	; end of PML3 array?
+	cmp	r14,	KERNEL_PAGE_ENTRY_count
+	je	.pml4	; yes
+
+	; PML3 entry exist?
+	cmp	qword [r10 + r14 * STATIC_QWORD_SIZE_byte],	EMPTY
+	jne	.pml3_entry	; yes
+
+	; assign page for PML3 entry
+	call	kernel_memory_alloc_page
+	jc	.end	; no enough memory
+
+	; store PML2 array address inside PML3 entry
+	or	di,	bx	; apply flags
+	mov	qword [r10 + r14 * STATIC_QWORD_SIZE_byte],	rdi
+
+.pml3_entry:
+	; retrieve PML2 array address from PML3 entry
+	mov	r9,	qword [r10 + r14 * STATIC_QWORD_SIZE_byte]
+	or	r9,	qword [kernel_page_mirror]	; convert page address to logical
+	and	r9,	STATIC_PAGE_mask	; drop flags
+
+	; first entry number of PML1 array
+	xor	r13,	r13
+
+	; new PML2 assigned
+	jmp	.pml2_entry
+
+.pml4:
+	; next entry number
+	inc	r15
+
+	; end of PML4 array?
+	cmp	r15,	KERNEL_PAGE_ENTRY_count
+	je	.error	; yes
+
+	; PML4 entry exist?
+	cmp	qword [r11 + r15 * STATIC_QWORD_SIZE_byte],	EMPTY
+	jne	.pml4_entry	; yes
+
+	; assign page for PML4 entry
+	call	kernel_memory_alloc_page
+	jc	.end	; no enough memory
+
+	; store PML3 array address inside PML4 entry
+	or	di,	bx	; apply flags
+	mov	qword [r11 + r15 * STATIC_QWORD_SIZE_byte],	rdi
+
+.pml4_entry:
+	; retrieve PML3 array address from PML4 entry
+	mov	r10,	qword [r11 + r15 * STATIC_QWORD_SIZE_byte]
+	or	r10,	qword [kernel_page_mirror]	; convert page address to logical
+	and	r10,	STATIC_PAGE_mask	; drop flags
+
+	; first entry number of PML1 array
+	xor	r14,	r14
+
+	; new PML3 assigned
+	jmp	.pml3_entry
+
+.end:
+	; restore original register
+	pop	rdi
+
+	; return from routine
+	ret
+
+.error:
+	; this is critical behavior, it should never occur
+	; you are a bad programmer...
+	mov	rsi,	kernel_log_page
+	call	driver_serial_string
+
+	; hold the door
+	jmp	$

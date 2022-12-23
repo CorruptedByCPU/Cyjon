@@ -28,7 +28,7 @@ kernel_memory_alloc:
 
 	; start searching from first page of binary memory map
 	mov	r9,	qword [r8 + KERNEL_STRUCTURE.memory_base_address]
-	call	kernel_memory_aquire
+	call	kernel_memory_acquire
 	jc	.end	; no enough memory
 
 	; convert page number to its logical address
@@ -77,8 +77,8 @@ kernel_memory_alloc_page:
 ;	r9 - pointer to binary memory map of process
 ; out:
 ;	CF - set if not available
-;	rdi - page number of aquired space
-kernel_memory_aquire:
+;	rdi - first page number of aquired space
+kernel_memory_acquire:
 	; preserve original registers
 	push	rax
 	push	r8
@@ -242,7 +242,7 @@ kernel_memory_share:
 
 	; reserve space in binary memory map of process
 	mov	r9,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]
-	call	kernel_memory_aquire
+	call	kernel_memory_acquire
 	jc	.end	; no enough memory
 
 	; convert page number to logical address

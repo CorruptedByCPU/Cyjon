@@ -58,6 +58,7 @@ section .text
 	%include	"library/pkg.asm"
 	%include	"library/elf.asm"
 	%include	"library/string/compare.asm"
+	%include	"library/string/length.asm"
 	; drivers --------------------------------------------------------------
 	%include	"kernel/driver/ps2.asm"
 	%include	"kernel/driver/serial.asm"
@@ -66,6 +67,7 @@ section .text
 	%include	"kernel/idt.asm"
 	%include	"kernel/io_apic.asm"
 	%include	"kernel/lapic.asm"
+	%include	"kernel/library.asm"
 	%include	"kernel/memory.asm"
 	%include	"kernel/page.asm"
 	%include	"kernel/service.asm"

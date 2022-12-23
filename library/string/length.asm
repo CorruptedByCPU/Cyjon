@@ -11,47 +11,30 @@
 
 ;-------------------------------------------------------------------------------
 ; in:
-;	rcx - length to compare
-;	rsi - pointer to first string
-;	rdi - pointer to second string
+;	rsi - pointer to string
 ; out:
-;	CF - if doesn't match
-lib_string_compare:
-	; preserve original registers
-	push	rax
-	push	rcx
+;	rcx - length of string in bytes
+lib_string_length:
+	; preserve original register
 	push	rsi
-	push	rdi
 
-.loop:
-	; load first character from string
-	lodsb
+	; empty string as default
+	mov	rcx,	STATIC_MAX_unsigned
 
-	; characters equal?
-	cmp	al,	byte [rdi]
-	jne	.error	; no
+.next:
+	; length of current string
+	inc	rcx
 
-	; move pointer to next character
-	inc	rdi
+	; consider next byte
+	inc	rsi
 
-	; strings match?
-	dec	rcx
-	jnz	.loop	; not, yet
-
-	; they match
-	clc
-	jmp	.end
-
-.error:
-	; doesn't match
-	stc
+	; not end of string?
+	cmp	byte [rsi - 1],	STATIC_ASCII_TERMINATOR
+	jne	.next	; yes
 
 .end:
-	; restore original registers
-	pop	rdi
+	; restore original register
 	pop	rsi
-	pop	rcx
-	pop	rax
 
 	; return from routine
 	ret

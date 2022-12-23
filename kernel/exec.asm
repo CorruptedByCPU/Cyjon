@@ -78,6 +78,16 @@ kernel_exec:
 	cmp	byte [rdi + LIB_ELF_STRUCTURE.type],	LIB_ELF_TYPE_executable
 	jne	.error_level_file	; no executable
 
+	; prepare error code
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	LIB_SYS_ERROR_undefinied
+
+	; load depended libraries
+	call	kernel_library_import
+	jc	.error_level_file	; no enough memory or library not found
+
+	; connect libraries to file executable
+	call	kernel_library_link
+
 	;-----------------------------------------------------------------------
 	; prepare task for execution
 	;-----------------------------------------------------------------------
@@ -135,7 +145,8 @@ kernel_exec:
 	mov	qword [rdx + KERNEL_EXEC_STRUCTURE_RETURN.eflags],	KERNEL_TASK_EFLAGS_default
 
 	; default stack pointer
-	mov	qword [rdx + KERNEL_EXEC_STRUCTURE_RETURN.rsp],	KERNEL_EXEC_STACK_pointer
+	mov	rax,	KERNEL_EXEC_STACK_pointer
+	mov	qword [rdx + KERNEL_EXEC_STRUCTURE_RETURN.rsp],	rax
 
 	; stack descriptor
 	mov	qword [rdx + KERNEL_EXEC_STRUCTURE_RETURN.ss],	KERNEL_GDT_STRUCTURE.ds_ring3 | 0x03
@@ -167,7 +178,7 @@ kernel_exec:
 	cmp	dword [rdx + LIB_ELF_STRUCTURE_HEADER.type],	EMPTY
 	je	.elf_header_next	; empty one
 	cmp	qword [rdx + LIB_ELF_STRUCTURE_HEADER.memory_size],	EMPTY
-	je	.elf_header_next	; this one too
+	je	.elf_header_next	; this too
 
 	; load segment?
 	cmp	dword [rdx + LIB_ELF_STRUCTURE_HEADER.type],	LIB_ELF_HEADER_TYPE_load
