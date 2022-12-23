@@ -85,6 +85,9 @@ kernel_exec:
 	call	kernel_library_import
 	jc	.error_level_file	; no enough memory or library not found
 
+	; connect libraries to file executable
+	call	kernel_library_link
+
 	;-----------------------------------------------------------------------
 	; prepare task for execution
 	;-----------------------------------------------------------------------

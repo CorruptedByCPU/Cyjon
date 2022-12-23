@@ -134,7 +134,7 @@ kernel_library_import:
 
 .section:
 	; string table?
-	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_string_table
+	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_strtab
 	jne	.next	; no
 
 	; preserve pointer to string table
@@ -302,6 +302,150 @@ kernel_library_function:
 
 ;-------------------------------------------------------------------------------
 ; in:
+;	r13 - pointer to file content
+kernel_library_link:
+	; preserve original registers
+	push	rax
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+	push	r8
+	push	r9
+	push	r10
+	push	r11
+	push	r13
+
+	; we need to find 4 section headers locations to be able to resolve bindings to functions
+
+	; number of entries in section header
+	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
+
+	; set pointer to begining of section header
+	add	r13,	qword [r13 + LIB_ELF_STRUCTURE.section_table_position]
+
+	; reset section locations
+	xor	r8,	r8
+	xor	r9,	r9
+	xor	r10,	r10
+	xor	r11,	r11
+
+.section:
+	; program data?
+	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_progbits
+	jne	.no_program_data	; no
+
+	; set pointer to program data
+	mov	r11,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	r11,	qword [rsp]
+
+.no_program_data:
+	; string table?
+	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_strtab
+	jne	.no_string_table	;no
+
+	; first only
+	test	r10,	r10
+	jnz	.no_string_table
+
+	; set pointer to string table
+	mov	r10,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	r10,	qword [rsp]
+
+.no_string_table:
+	; dynamic relocation?
+	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_rela
+	jne	.no_dynamic_relocation	; no
+
+	; set pointer to dynamic relocation
+	mov	r8,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	r8,	qword [rsp]
+
+	; and size on Bytes
+	mov	rbx,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.size_byte]
+
+.no_dynamic_relocation:
+	; dynamic symbols?
+	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_dynsym
+	jne	.no_dynamic_symbols	; no
+
+	; set pointer to dynamic symbols
+	mov	r9,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	r9,	qword [rsp]
+
+.no_dynamic_symbols:
+	; move pointer to next entry
+	add	r13,	LIB_ELF_STRUCTURE_SECTION.SIZE
+
+	; end of section header?
+	loop	.section	; no
+
+	;---
+
+	; if dynamic relocations doesn't exist
+	test	r8,	r8
+	jz	.end	; executable doesn't need external functions
+
+	; move pointer to first function address entry
+	add	r11,	0x10
+
+.function:
+	; or symbolic value exist
+	cmp	qword [r8 + LIB_ELF_STRUCTURE_DYNAMIC_RELOCATION.symbol_value],	EMPTY
+	jne	.function_next
+
+	; get function index
+	mov	eax,	dword [r8 + LIB_ELF_STRUCTURE_DYNAMIC_RELOCATION.index]
+
+	; calculate offset to function name
+	mov	rcx,	0x18
+	mul	rcx
+
+	; it's a local function?
+	cmp	qword [r9 + rax + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address],	EMPTY
+	jne	.function_next	; yes
+
+	; set pointer to function name
+	mov	esi,	dword [r9 + rax]
+	add	rsi,	r10
+
+	; calculate function name length
+	call	lib_string_length
+
+	; retrieve function address
+	call	kernel_library_function
+
+	; insert function address to GOT at RCX offset
+	mov	ecx,	dword [r8 + LIB_ELF_STRUCTURE_DYNAMIC_RELOCATION.index]
+	shl	rcx,	STATIC_MULTIPLE_BY_8_shift
+	mov	qword [r11 + rcx],	rax
+
+.function_next:
+	; move pointer to next entry
+	add	r8,	LIB_ELF_STRUCTURE_DYNAMIC_RELOCATION.SIZE
+
+	; no more entries?
+	sub	rbx,	LIB_ELF_STRUCTURE_DYNAMIC_RELOCATION.SIZE
+	jnz	.function	; no
+
+.end:
+	; restore original registers
+	pop	r13
+	pop	r11
+	pop	r10
+	pop	r9
+	pop	r8
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+	pop	rax
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
 ;	cl - length of name
 ;	rsi - pointer to string
 ; out:
@@ -392,6 +536,9 @@ kernel_library_load:
 	; import all depended libraries
 	call	kernel_library_import
 	jc	.error_level_file	; no enough memory or library not found
+
+	; connect libraries to file executable
+	call	kernel_library_link
 
 	;-----------------------------------------------------------------------
 	; calculate library size in Pages
@@ -526,7 +673,7 @@ kernel_library_load:
 
 .section:
 	; function string table?
-	cmp	dword [rsi + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_string_table
+	cmp	dword [rsi + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_strtab
 	jne	.no_string_table
 
 	; first string table is for functions
@@ -540,7 +687,7 @@ kernel_library_load:
 
 .no_string_table:
 	; symbol table?
-	cmp	dword [rsi + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_symbol_table
+	cmp	dword [rsi + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_dynsym
 	jne	.no_symbol_table
 
 	; preserve pointer to symbol table
