@@ -161,9 +161,13 @@ kernel_library_import:
 	add	r13,	qword [rsp]
 
 .library:
-	; end of needed entries?
+	; end of entries?
+	cmp	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.type],	EMPTY
+	je	.end	; yes
+
+	; library needed?
 	cmp	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.type],	LIB_ELF_SECTION_DYNAMIC_TYPE_needed
-	jne	.end	; yes
+	jne	.omit
 
 	; preserve original registers
 	push	rcx
@@ -182,9 +186,11 @@ kernel_library_import:
 	pop	rsi
 	pop	rcx
 
+
 	; error while loading library?
 	jc	.end	; yes
 
+.omit:
 	; next entry from list
 	add	r13,	LIB_ELF_STRUCTURE_SECTION_DYNAMIC.SIZE
 
@@ -252,30 +258,30 @@ kernel_library_function:
 	; retrieve pointer to symbol table
 	mov	r13,	qword [r14 + KERNEL_LIBRARY_STRUCTURE.dynsym]
 
-.symbol:
+.dynsym:
 	; set pointer to function name
 	mov	edi,	dword [r13 + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.name_offset]
 	add	rdi,	qword [r14 + KERNEL_LIBRARY_STRUCTURE.strtab]
 
 	; strings name are exact length?
 	cmp	byte [rdi + rcx],	STATIC_ASCII_TERMINATOR
-	je	.symbol_name	; yes
+	je	.dynsym_name	; yes
 
-.symbol_next:
+.dynsym_next:
 	; move pointer to next entry
 	add	r13,	LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.SIZE
 
 	; end of dynamic symbols?
 	sub	dx,	LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.SIZE
-	jnz	.symbol	; no
+	jnz	.dynsym	; no
 
 	; check next library
 	jmp	.library_next
 
-.symbol_name:
+.dynsym_name:
 	; strings are equal in name?
 	call	lib_string_compare
-	jc	.symbol_next	; no
+	jc	.dynsym_next	; no
 
 	; return function address
 	mov	rax,	qword [r13 + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address]
@@ -329,7 +335,7 @@ kernel_library_link:
 	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_progbits
 	jne	.no_program_data	; no
 
-	; set pointer to last program data
+	; set pointer to program data
 	mov	r11,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
 	add	r11,	qword [rsp]
 
@@ -384,6 +390,10 @@ kernel_library_link:
 	add	r11,	0x10
 
 .function:
+	; or symbolic value exist
+	cmp	qword [r8 + LIB_ELF_STRUCTURE_DYNAMIC_RELOCATION.symbol_value],	EMPTY
+	jne	.function_next
+
 	; get function index
 	mov	eax,	dword [r8 + LIB_ELF_STRUCTURE_DYNAMIC_RELOCATION.index]
 
