@@ -161,13 +161,9 @@ kernel_library_import:
 	add	r13,	qword [rsp]
 
 .library:
-	; end of entries?
-	cmp	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.type],	EMPTY
-	je	.end	; yes
-
-	; library needed?
+	; end of needed entries?
 	cmp	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.type],	LIB_ELF_SECTION_DYNAMIC_TYPE_needed
-	jne	.omit
+	jne	.end	; yes
 
 	; preserve original registers
 	push	rcx
@@ -186,11 +182,9 @@ kernel_library_import:
 	pop	rsi
 	pop	rcx
 
-
 	; error while loading library?
 	jc	.end	; yes
 
-.omit:
 	; next entry from list
 	add	r13,	LIB_ELF_STRUCTURE_SECTION_DYNAMIC.SIZE
 
@@ -253,15 +247,15 @@ kernel_library_function:
 
 .library_parse:
 	; number of entries in symbol table
-	mov	dx,	word [r14 + KERNEL_LIBRARY_STRUCTURE.symbol_limit]
+	mov	dx,	word [r14 + KERNEL_LIBRARY_STRUCTURE.dynsym_limit]
 
 	; retrieve pointer to symbol table
-	mov	r13,	qword [r14 + KERNEL_LIBRARY_STRUCTURE.symbol]
+	mov	r13,	qword [r14 + KERNEL_LIBRARY_STRUCTURE.dynsym]
 
 .symbol:
 	; set pointer to function name
 	mov	edi,	dword [r13 + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.name_offset]
-	add	rdi,	qword [r14 + KERNEL_LIBRARY_STRUCTURE.string]
+	add	rdi,	qword [r14 + KERNEL_LIBRARY_STRUCTURE.strtab]
 
 	; strings name are exact length?
 	cmp	byte [rdi + rcx],	STATIC_ASCII_TERMINATOR
@@ -335,7 +329,7 @@ kernel_library_link:
 	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_progbits
 	jne	.no_program_data	; no
 
-	; set pointer to program data
+	; set pointer to last program data
 	mov	r11,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
 	add	r11,	qword [rsp]
 
@@ -390,15 +384,11 @@ kernel_library_link:
 	add	r11,	0x10
 
 .function:
-	; or symbolic value exist
-	cmp	qword [r8 + LIB_ELF_STRUCTURE_DYNAMIC_RELOCATION.symbol_value],	EMPTY
-	jne	.function_next
-
 	; get function index
 	mov	eax,	dword [r8 + LIB_ELF_STRUCTURE_DYNAMIC_RELOCATION.index]
 
 	; calculate offset to function name
-	mov	rcx,	0x18
+	mov	rcx,	LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.SIZE
 	mul	rcx
 
 	; it's a local function?
@@ -677,13 +667,13 @@ kernel_library_load:
 	jne	.no_string_table
 
 	; first string table is for functions
-	cmp	qword [r14 + KERNEL_LIBRARY_STRUCTURE.string],	EMPTY
+	cmp	qword [r14 + KERNEL_LIBRARY_STRUCTURE.strtab],	EMPTY
 	jnz	.no_string_table	; not a function string table
 
 	; preserve pointer to string table
 	mov	rbx,	qword [rsi + LIB_ELF_STRUCTURE_SECTION.virtual_address]
 	add	rbx,	rdi
-	mov	qword [r14 + KERNEL_LIBRARY_STRUCTURE.string],	rbx
+	mov	qword [r14 + KERNEL_LIBRARY_STRUCTURE.strtab],	rbx
 
 .no_string_table:
 	; symbol table?
@@ -693,11 +683,11 @@ kernel_library_load:
 	; preserve pointer to symbol table
 	mov	rbx,	qword [rsi + LIB_ELF_STRUCTURE_SECTION.virtual_address]
 	add	rbx,	rdi
-	mov	qword [r14 + KERNEL_LIBRARY_STRUCTURE.symbol],	rbx
+	mov	qword [r14 + KERNEL_LIBRARY_STRUCTURE.dynsym],	rbx
 
 	; and entries limit
 	push	qword [rsi + LIB_ELF_STRUCTURE_SECTION.size_byte]
-	pop	qword [r14 + KERNEL_LIBRARY_STRUCTURE.symbol_limit]
+	pop	qword [r14 + KERNEL_LIBRARY_STRUCTURE.dynsym_limit]
 
 .no_symbol_table:
 	; move pointer to next section entry
