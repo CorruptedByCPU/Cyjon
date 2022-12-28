@@ -56,10 +56,10 @@ kernel_init_ap:
 	shr	rax,	16
 	stosb	; save (bits 23..16)
 
-	; uzupełnij deskryptor Task State Segment o flagi
+	; fill Task State Segment with flags
 	mov	al,	10001001b	; P, DPL, 0, Type
 	stosb	; zapisz
-	xor	al,	al		; G, 0, 0, AVL, Limit (starsza część rozmiaru tablicy Task State Segment)
+	xor	al,	al		; G, 0, 0, AVL, Limit (older part of TSS table size)
 	stosb	; zapisz
 
 	; TSS header address
