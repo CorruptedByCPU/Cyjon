@@ -94,7 +94,7 @@ kernel_init_ap:
 	; enable X87, SSE, AVX support
 	xor	ecx,	ecx
 	xgetbv
-	or	eax,	111b
+	or	eax,	1b
 	xsetbv
 
 	;----------------
@@ -119,7 +119,7 @@ kernel_init_ap:
 	shr	rdx,	STATIC_MOVE_HIGH_TO_EAX_shift
 	wrmsr
 
-	; ; set EFLAGS mask of entry routine
+	; set EFLAGS mask of entry routine
 	mov	eax,	KERNEL_TASK_EFLAGS_if | KERNEL_TASK_EFLAGS_df	; disable Interrupt and Direction flags
 	mov	ecx,	KERNEL_INIT_AP_MSR_EFLAGS
 	xor	edx,	edx
