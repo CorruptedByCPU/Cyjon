@@ -239,6 +239,47 @@ kernel_task_add:
 	ret
 
 ;-------------------------------------------------------------------------------
+; in:
+;	rdx - ID of requested task
+; out:
+;	rax - pointer to task of this ID
+;	or EMPTY if not found
+kernel_task_by_id:
+	; preserve original registers
+	push	rcx
+	push	r8
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; search for free entry from beginning
+	mov	rcx,	KERNEL_TASK_limit
+	mov	rax,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
+
+.loop:
+	; our task we are looking for?
+	cmp	qword [rax + KERNEL_TASK_STRUCTURE.pid],	rdx
+	je	.end	; yes
+
+	; move pointer to next task in queue
+	add	rax,	KERNEL_TASK_STRUCTURE.SIZE
+
+	; end of task queue?
+	dec	rcx
+	jnz	.loop	; no
+
+	; task not found
+	xor	eax,	eax
+
+.end:
+	; restore original registers
+	pop	r8
+	pop	rcx
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
 ; out:
 ;	r9 - pointer to current task descriptor
 kernel_task_current:

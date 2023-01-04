@@ -248,12 +248,72 @@ kernel_service_ipc_send:
 
 ;-------------------------------------------------------------------------------
 ; in:
-;	rdi - pointer to message structure
+;	rdi - pointer to message descriptor
 ; out:
 ;	TRUE if message retrieved
 kernel_service_ipc_receive:
-	; to be done
-	jmp	$
+	; preserve original registers
+	push	rcx
+	push	rsi
+	push	rdi
+	push	r8
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; retrieve ID of current process
+	call	kernel_task_pid
+
+	; amount of entries
+	mov	rcx,	KERNEL_IPC_limit
+
+	; set pointer to first message
+	mov	rsi,	qword [r8 + KERNEL_STRUCTURE.ipc_base_address]
+
+.loop:
+	; message alive?
+	; mov	rax,	qword [r8 + KERNEL_STRUCTURE.driver_rtc_microtime]
+	; cmp	qword [rsi + LIB_SYS_STRUCTURE_IPC.ttl],	rax
+	; jbe	.found	; yes
+
+	; message for us?
+	cmp	qword [rsi + LIB_SYS_STRUCTURE_IPC.target],	rax
+	je	.found	; yes
+
+	; next entry from list?
+	add	rsi,	LIB_SYS_STRUCTURE_IPC.SIZE
+	dec	rcx
+	jnz	.loop	; yes
+
+	; no message for us
+	xor	al,	al
+
+	; no
+	jmp	.end
+
+.found:
+	; preserve original register
+	push	rsi
+
+	; load message to process descriptor
+	mov	ecx,	KERNEL_IPC_limit
+	rep	movsb
+
+	; restore original register
+	pop	rsi
+
+	; release entry
+	mov	qword [rsi + LIB_SYS_STRUCTURE_IPC.ttl],	EMPTY
+
+	; message transferred
+	mov	al,	TRUE
+
+.end:
+	; restore original registers
+	pop	r8
+	pop	rdi
+	pop	rsi
+	pop	rcx
 
 	; return from routine
 	ret
@@ -357,7 +417,34 @@ kernel_service_memory_release:
 	; return from routine
 	ret
 
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - pointer to source memory space
+;	rsi - length of space in Bytes
+;	rdx - target process ID
+; out:
+;	rax - pointer to shared memory between processes
 kernel_service_memory_share:
+	; preserve original registers
+	push	rcx
+
+	xchg	bx,bx
+
+	; convert Bytes to pages
+	add	rsi,	~STATIC_PAGE_mask
+	shr	rsi,	STATIC_PAGE_SIZE_shift
+
+	; retrieve task paging structure pointer
+	call	kernel_task_by_id
+	mov	r11,	qword [rax + KERNEL_TASK_STRUCTURE.cr3]
+
+	; acquire memory space from target process
+	mov	rcx,	rsi
+	mov	r9,	qword [rax + KERNEL_TASK_STRUCTURE.memory_map]
+
+	; restore original registers
+	pop	rcx
+
 	; return from routine
 	ret
 
