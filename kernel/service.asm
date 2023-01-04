@@ -15,10 +15,39 @@ kernel_service_list:
 	dq	kernel_service_driver_mouse
 	dq	kernel_service_storage_read
 	dq	kernel_service_exec
+	dq	kernel_service_ipc_send
+	dq	kernel_service_ipc_receive
+	dq	kernel_service_memory_share
 kernel_service_list_end:
 
 ; information for linker
 section	.text
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - pointer to mouse descriptor
+kernel_service_driver_mouse:
+	; preserve original registers
+	push	rax
+	push	r8
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; share information about mouse location and status
+	mov	ax,	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x]
+	mov	word [rdi + LIB_SYS_STRUCTURE_MOUSE.x],	ax
+	mov	ax,	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y]
+	mov	word [rdi + LIB_SYS_STRUCTURE_MOUSE.y],	ax
+	mov	al,	byte [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x]
+	mov	byte [rdi + LIB_SYS_STRUCTURE_MOUSE.x],	al
+
+	; restore original registers
+	pop	r8
+	pop	rax
+
+	; return from routine
+	ret
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -44,7 +73,7 @@ kernel_service_exec:
 	; execute file from path
 	mov	rcx,	rsi
 	mov	rsi,	rdi
-	; call	kernel_exec
+	call	kernel_exec
 
 	; remove exec descriptor
 	add	rsp,	KERNEL_EXEC_STRUCTURE.SIZE
@@ -54,32 +83,6 @@ kernel_service_exec:
 	pop	rdi
 	pop	rsi
 	pop	rcx
-
-	; return from routine
-	ret
-
-;-------------------------------------------------------------------------------
-; in:
-;	rdi - pointer to mouse descriptor
-kernel_service_driver_mouse:
-	; preserve original registers
-	push	rax
-	push	r8
-
-	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
-
-	; share information about mouse location and status
-	mov	ax,	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x]
-	mov	word [rdi + LIB_SYS_STRUCTURE_MOUSE.x],	ax
-	mov	ax,	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y]
-	mov	word [rdi + LIB_SYS_STRUCTURE_MOUSE.y],	ax
-	mov	al,	byte [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x]
-	mov	byte [rdi + LIB_SYS_STRUCTURE_MOUSE.x],	al
-
-	; restore original registers
-	pop	r8
-	pop	rax
 
 	; return from routine
 	ret
@@ -146,9 +149,10 @@ kernel_service_framebuffer:
 
 	; new framebuffer manager
 	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
+	mov	qword [r8 + KERNEL_STRUCTURE.framebuffer_pid],	rax
 
 .return:
-	; framebuffer manager
+	; inform about framebuffer manager
 	mov	qword [rdi + LIB_SYS_STRUCTURE_FRAMEBUFFER.pid],	rax
 
 	; restore original registers
@@ -159,6 +163,97 @@ kernel_service_framebuffer:
 	pop	rdx
 	pop	rcx
 	pop	rax
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - ID of target process
+;	rsi - pointer to message data
+kernel_service_ipc_send:
+	; preserve original registers
+	push	rax
+	push	rcx
+	push	rsi
+	push	rdi
+	push	r8
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+.lock:
+	; request an exclusive access
+	mov	cl,	LOCK
+	lock xchg	byte [r8 + KERNEL_STRUCTURE.ipc_semaphore],	cl
+
+	; assigned?
+	test	cl,	cl
+	jnz	.lock	; no
+
+.restart:
+	; amount of entries
+	mov	rcx,	KERNEL_IPC_limit
+
+	; set pointer to first message
+	mov	rdx,	qword [r8 + KERNEL_STRUCTURE.ipc_base_address]
+
+.loop:
+	; free entry?
+	mov	rax,	qword [r8 + KERNEL_STRUCTURE.driver_rtc_microtime]
+	cmp	qword [rdx + LIB_SYS_STRUCTURE_IPC.ttl],	rax
+	jbe	.found	; yes
+
+	; next entry from list
+	add	rdx,	LIB_SYS_STRUCTURE_IPC.SIZE
+
+	; end of message list?
+	dec	rcx
+	jz	.restart	; yes
+
+	; no
+	jmp	.loop
+
+.found:
+	; set message time out
+	add	rax,	DRIVER_RTC_Hz
+	mov	qword [rdx + LIB_SYS_STRUCTURE_IPC.ttl],	rax
+
+	; set message source
+	call	kernel_task_pid
+	mov	qword [rdx + LIB_SYS_STRUCTURE_IPC.source],	rax
+
+	; set message target
+	mov	qword [rdx + LIB_SYS_STRUCTURE_IPC.target],	rdi
+
+	; load data into message
+	mov	ecx,	KERNEL_IPC_limit
+	mov	rdi,	rdx
+	add	rdi,	LIB_SYS_STRUCTURE_IPC.data
+	rep	movsb
+
+.end:
+	; release access
+	mov	byte [r8 + KERNEL_STRUCTURE.ipc_semaphore],	UNLOCK
+
+	; restore original registers
+	pop	r8
+	pop	rdi
+	pop	rsi
+	pop	rcx
+	pop	rax
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - pointer to message structure
+; out:
+;	TRUE if message retrieved
+kernel_service_ipc_receive:
+	; to be done
+	jmp	$
 
 	; return from routine
 	ret
@@ -259,6 +354,10 @@ kernel_service_memory_release:
 	pop	rcx
 	pop	rax
 
+	; return from routine
+	ret
+
+kernel_service_memory_share:
 	; return from routine
 	ret
 

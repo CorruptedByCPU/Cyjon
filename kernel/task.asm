@@ -177,23 +177,14 @@ kernel_task_add:
 	; kernel environment variables/rountines base address
 	mov	r8,	qword [kernel_environment_base_address]
 
-.lock:
-	; request an exclusive access
-	mov	al,	LOCK
-	lock xchg	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	al
-
-	; assigned?
-	test	al,	al
-	jnz	.lock	; no
-
 	; search for free entry from beginning
 	mov	rax,	KERNEL_TASK_limit
 	mov	r10,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
 
 .loop:
 	; free queue entry?
-	cmp	word [r10 + KERNEL_TASK_STRUCTURE.flags],	EMPTY
-	je	.found	; yes
+	lock bts	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_secured_bit
+	jnc	.found	; yes
 
 	; move pointer to next task in queue
 	add	r10,	KERNEL_TASK_STRUCTURE.SIZE
@@ -209,9 +200,6 @@ kernel_task_add:
 	jmp	.end
 
 .found:
-	; mark entry as "in use"
-	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_secured
-
 	; set process ID
 	call	kernel_task_id_new
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.pid],	rax
@@ -240,9 +228,6 @@ kernel_task_add:
 	inc	qword [r8 + KERNEL_STRUCTURE.task_count]
 
 .end:
-	; release access
-	mov	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	UNLOCK
-
 	; restore original registers
 	pop	r8
 	pop	rdi
@@ -318,6 +303,35 @@ kernel_task_id_parent:
 
 	; restore original registers
 	pop	r9
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; out:
+;	rax - ID of currrent task
+kernel_task_pid:
+	; preserve original flags
+	push	r8
+	pushf
+
+	; turn off interrupts
+	; we cannot allow task switch
+	; when looking for current task pointe
+	cli
+
+	; retrieve CPU id
+	call	kernel_lapic_id
+
+	; set pointer to current task of CPU
+	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [r8 + KERNEL_STRUCTURE.task_ap_address]
+	mov	r8,	qword [r8 + rax * STATIC_PTR_SIZE_byte]
+	mov	rax,	qword [r8 + KERNEL_TASK_STRUCTURE.pid]
+
+	; restore original flags
+	popf
+	pop	r8
 
 	; return from routine
 	ret

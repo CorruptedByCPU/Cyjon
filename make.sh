@@ -17,11 +17,14 @@ nasm -f elf64 kernel/init.asm -o build/kernel.o
 ld build/kernel.o -o build/kernel -T linker.kernel
 gzip -fk build/kernel
 
-if [ `ls software | wc -l` -ne 0 ]; then
+lib=""
+for shared in `(cd system && ls lib*)`; do lib="${lib} -l${shared:3:$(expr ${#shared} - 6)}"; done
+
+if [ `ls software | grep asm$ | wc -l` -ne 0 ]; then
 	for software in `(cd software && ls *.asm)`; do
 		name=`echo $software | cut -d '.' -f 1`
-		nasm -f elf64 software/${name}.asm -o build/${name}.o  || exit 1
-		ld build/${name}.o -o system/${name} -T linker.software ${LDFLAGS}
+		nasm -f elf64 software/${name}.asm -o build/${name}.o || exit 1
+		ld --as-needed -L./system build/${name}.o -o system/${name} ${lib} -T linker.software ${LDFLAGS}
 	done
 fi
 

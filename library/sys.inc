@@ -16,7 +16,9 @@
 %define	LIB_SYS_REQUEST_DRIVER_MOUSE		0x04
 %define	LIB_SYS_REQUEST_STORAGE_READ		0x05
 %define	LIB_SYS_REQUEST_EXEC			0x06
-%define	LIB_SYS_REQURST_MEMORY_SHARE		0x07
+%define	LIB_SYS_REQUEST_IPC_SEND		0x07
+%define	LIB_SYS_REQUEST_IPC_RECEIVE		0x08
+%define	LIB_SYS_REQUEST_MEMORY_SHARE		0x09
 
 struc	LIB_SYS_STRUCTURE_FRAMEBUFFER
 	.width_pixel	resw	1
@@ -30,6 +32,29 @@ struc	LIB_SYS_STRUCTURE_FRAMEBUFFER
 	.pid		resq	1
 	.SIZE:
 endstruc
+
+%define	LIB_SYS_IPC_DATA_size_byte		40
+
+%define	LIB_SYS_IPC_TYPE_EMPTY			0x00
+%define	LIB_SYS_IPC_TYPE_MOUSE			0x01
+%define	LIB_SYS_IPC_TYPE_KEYBOARD		0x02
+%define	LIB_SYS_IPC_TYPE_MESSAGE		0x03
+%define LIB_SYS_IPC_TYPE_INTERFACE		0x04
+
+struc	LIB_SYS_STRUCTURE_IPC
+	.ttl		resq	1
+	.source		resq	1
+	.target		resq	1
+	.data		resb	LIB_SYS_IPC_DATA_size_byte
+	.SIZE:
+endstruc
+
+struc	LIB_SYS_STRUCTURE_IPC_KEYBOARD
+	.key		resw	1
+endstruc
+
+%define	LIB_SYS_DRIVER_MOUSE_STATUS_left_mouse_button	00000001b
+%define	LIB_SYS_DRIVER_MOUSE_STATUS_right_mouse_button	00000010b
 
 struc	LIB_SYS_STRUCTURE_MOUSE
 	.x		resw	1

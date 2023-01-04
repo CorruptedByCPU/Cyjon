@@ -13,6 +13,7 @@
 	%include	"library/sys.inc"
 	; driver ---------------------------------------------------------------
 	%include	"kernel/driver/ps2.inc"
+	%include	"kernel/driver/rtc.inc"
 	%include	"kernel/driver/serial.inc"
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/config.inc"
@@ -20,6 +21,7 @@
 	%include	"kernel/gdt.inc"
 	%include	"kernel/idt.inc"
 	%include	"kernel/io_apic.inc"
+	%include	"kernel/ipc.inc"
 	%include	"kernel/lapic.inc"
 	%include	"kernel/library.inc"
 	%include	"kernel/page.inc"
@@ -61,6 +63,7 @@ section .text
 	%include	"library/string/length.asm"
 	; drivers --------------------------------------------------------------
 	%include	"kernel/driver/ps2.asm"
+	%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/serial.asm"
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/exec.asm"
@@ -82,6 +85,7 @@ section .text
 	%include	"kernel/init/free.asm"
 	%include	"kernel/init/gdt.asm"
 	%include	"kernel/init/idt.asm"
+	%include	"kernel/init/ipc.asm"
 	%include	"kernel/init/library.asm"
 	%include	"kernel/init/memory.asm"
 	%include	"kernel/init/page.asm"
@@ -129,8 +133,14 @@ init:
 	; create Task queue
 	call	kernel_init_task
 
+	; configure Real Time Clock
+	; call	driver_rtc
+
 	; initialize PS2 keyboard/mouse driver
 	call	driver_ps2
+
+	; create interprocess communication system
+	call	kernel_init_ipc
 
 	; register all available data carriers
 	call	kernel_init_storage

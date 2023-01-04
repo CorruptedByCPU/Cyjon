@@ -19,24 +19,14 @@ SECTIONS
 
     .text : {
         *(.text .text.*)
-    } :text
-
-    . += CONSTANT(MAXPAGESIZE);
-
-    .rodata : {
         *(.rodata .rodata.*)
-    } :rodata
+    } :text
 
     . += CONSTANT(MAXPAGESIZE);
 
     .data : {
         *(.data .data.*)
-    } :data
-
-    . += CONSTANT(MAXPAGESIZE);
-
-    .bss : {
         *(COMMON)
         *(.bss .bss.*)
-    } :bss
+    } :data
 }

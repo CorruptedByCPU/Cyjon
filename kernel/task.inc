@@ -19,6 +19,8 @@
 %define	KERNEL_TASK_FLAG_sleep		0000000100000000b
 %define	KERNEL_TASK_FLAG_init		0000010000000000b
 
+%define	KERNEL_TASK_FLAG_secured_bit	4
+
 %define	KERNEL_TASK_irq			0x20
 
 %define	KERNEL_TASK_limit		32
