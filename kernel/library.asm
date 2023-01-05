@@ -314,6 +314,7 @@ kernel_library_link:
 	push	r9
 	push	r10
 	push	r11
+	push	r12
 	push	r13
 
 	; we need to find 4 section headers locations to be able to resolve bindings to functions
@@ -387,7 +388,10 @@ kernel_library_link:
 	jz	.end	; executable doesn't need external functions
 
 	; move pointer to first function address entry
-	add	r11,	0x10
+	add	r11,	0x18
+
+	; function index inside Global Offset Table
+	xor	r12,	r12
 
 .function:
 	; or symbolic value exist
@@ -416,13 +420,14 @@ kernel_library_link:
 	call	kernel_library_function
 
 	; insert function address to GOT at RCX offset
-	mov	ecx,	dword [r8 + LIB_ELF_STRUCTURE_DYNAMIC_RELOCATION.index]
-	shl	rcx,	STATIC_MULTIPLE_BY_8_shift
-	mov	qword [r11 + rcx],	rax
+	mov	qword [r11 + r12 * 0x08],	rax
 
 .function_next:
 	; move pointer to next entry
 	add	r8,	LIB_ELF_STRUCTURE_DYNAMIC_RELOCATION.SIZE
+
+	; next function index
+	inc	r12
 
 	; no more entries?
 	sub	rbx,	LIB_ELF_STRUCTURE_DYNAMIC_RELOCATION.SIZE
@@ -431,6 +436,7 @@ kernel_library_link:
 .end:
 	; restore original registers
 	pop	r13
+	pop	r12
 	pop	r11
 	pop	r10
 	pop	r9
