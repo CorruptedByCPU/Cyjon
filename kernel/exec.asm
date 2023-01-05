@@ -128,28 +128,28 @@ kernel_exec:
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	KERNEL_TASK_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
 
 	; prepare exception exit mode on context stack of process
-	mov	rax,	KERNEL_TASK_STACK_pointer - STATIC_PAGE_SIZE_byte
+	mov	rsi,	KERNEL_TASK_STACK_pointer - STATIC_PAGE_SIZE_byte
 	call	kernel_page_address
 
 	; move pointer to return descriptor
-	add	rdx,	STATIC_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
+	add	rax,	STATIC_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
 
 	; set first instruction executed by process
-	mov	rax,	qword [r13 + LIB_ELF_STRUCTURE.program_entry_position]
-	mov	qword [rdx + KERNEL_EXEC_STRUCTURE_RETURN.rip],	rax
+	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.program_entry_position]
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.rip],	rdx
 
 	; code descriptor
-	mov	qword [rdx + KERNEL_EXEC_STRUCTURE_RETURN.cs],	KERNEL_GDT_STRUCTURE.cs_ring3 | 0x03
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.cs],	KERNEL_GDT_STRUCTURE.cs_ring3 | 0x03
 
 	; default processor state flags
-	mov	qword [rdx + KERNEL_EXEC_STRUCTURE_RETURN.eflags],	KERNEL_TASK_EFLAGS_default
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.eflags],	KERNEL_TASK_EFLAGS_default
 
 	; default stack pointer
-	mov	rax,	KERNEL_EXEC_STACK_pointer
-	mov	qword [rdx + KERNEL_EXEC_STRUCTURE_RETURN.rsp],	rax
+	mov	rdx,	KERNEL_EXEC_STACK_pointer
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.rsp],	rdx
 
 	; stack descriptor
-	mov	qword [rdx + KERNEL_EXEC_STRUCTURE_RETURN.ss],	KERNEL_GDT_STRUCTURE.ds_ring3 | 0x03
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.ss],	KERNEL_GDT_STRUCTURE.ds_ring3 | 0x03
 
 	;-----------------------------------------------------------------------
 	; stack
@@ -254,12 +254,15 @@ kernel_exec:
 	; virtual memory map
 	;-----------------------------------------------------------------------
 
-	; assign memory space for for binary memory map with same size as kernel
+	; assign memory space for binary memory map with same size as kernel
 	mov	rcx,	qword [r8 + KERNEL_STRUCTURE.page_limit]
 	shr	rcx,	STATIC_DIVIDE_BY_8_shift	; 8 pages by Byte
 	add	rcx,	~STATIC_PAGE_mask	; align up to page boundaries
 	shr	rcx,	STATIC_PAGE_SIZE_shift	; convert to pages
 	call	kernel_memory_alloc
+
+	; store binary memory map address inside task properties
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.memory_map],	rdi
 
 	; preserve binary memory size and location
 	push	rdi
@@ -291,18 +294,6 @@ kernel_exec:
 	; mark other pages?
 	dec	rax
 	jns	.reserved	; yes
-
-	; map binary memory map to process paging array
-	mov	rax,	r15
-	shl	rax,	STATIC_PAGE_SIZE_shift
-	add	rax,	r14
-	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_process
-	shl	rsi,	17	; convert source address to physical
-	shr	rsi,	17
-	call	kernel_page_map
-
-	; store binary memory map address inside task properties
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.memory_map],	rax
 
 	;-----------------------------------------------------------------------
 	; kernel environment

@@ -4,7 +4,7 @@
 
 %define	KERNEL_name			"Cyjon"
 %define	KERNEL_version			"0"
-%define	KERNEL_revision			"1476"
+%define	KERNEL_revision			"1478"
 %define	KERNEL_architecture		"x86_64"
 %define	KERNEL_language			"Assembly"
 
@@ -21,6 +21,9 @@ struc	KERNEL_STRUCTURE
 
 	; align next label
 	alignb	0x04
+
+	; variables of RTC controller management functions
+	.driver_rtc_microtime		resq	1
 
 	; variables of Framebuffer management functions
 	.framebuffer_base_address	resq	1
@@ -50,6 +53,13 @@ struc	KERNEL_STRUCTURE
 	; variables of Library management functions
 	.library_base_address		resq	1
 	.library_memory_map_address	resq	1
+
+	; variables of IPC management functions
+	.ipc_base_address		resq	1
+	.ipc_semaphore			resb	1
+
+	; align next label
+	alignb	0x08
 
 	; variables of Memory management functions
 	.memory_base_address		resq	1

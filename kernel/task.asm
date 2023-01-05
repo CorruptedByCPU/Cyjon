@@ -239,6 +239,47 @@ kernel_task_add:
 	ret
 
 ;-------------------------------------------------------------------------------
+; in:
+;	rdx - ID of requested task
+; out:
+;	rax - pointer to task of this ID
+;	or EMPTY if not found
+kernel_task_by_id:
+	; preserve original registers
+	push	rcx
+	push	r8
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; search for free entry from beginning
+	mov	rcx,	KERNEL_TASK_limit
+	mov	rax,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
+
+.loop:
+	; our task we are looking for?
+	cmp	qword [rax + KERNEL_TASK_STRUCTURE.pid],	rdx
+	je	.end	; yes
+
+	; move pointer to next task in queue
+	add	rax,	KERNEL_TASK_STRUCTURE.SIZE
+
+	; end of task queue?
+	dec	rcx
+	jnz	.loop	; no
+
+	; task not found
+	xor	eax,	eax
+
+.end:
+	; restore original registers
+	pop	r8
+	pop	rcx
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
 ; out:
 ;	r9 - pointer to current task descriptor
 kernel_task_current:
@@ -303,6 +344,35 @@ kernel_task_id_parent:
 
 	; restore original registers
 	pop	r9
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; out:
+;	rax - ID of currrent task
+kernel_task_pid:
+	; preserve original flags
+	push	r8
+	pushf
+
+	; turn off interrupts
+	; we cannot allow task switch
+	; when looking for current task pointe
+	cli
+
+	; retrieve CPU id
+	call	kernel_lapic_id
+
+	; set pointer to current task of CPU
+	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [r8 + KERNEL_STRUCTURE.task_ap_address]
+	mov	r8,	qword [r8 + rax * STATIC_PTR_SIZE_byte]
+	mov	rax,	qword [r8 + KERNEL_TASK_STRUCTURE.pid]
+
+	; restore original flags
+	popf
+	pop	r8
 
 	; return from routine
 	ret

@@ -4,17 +4,18 @@
 
 ;-------------------------------------------------------------------------------
 ; in:
-;	rax - logical address to convert
+;	rsi - logical address to convert
 ;	r11 - pointer to paging array
 ; out:
 ;	rax - logical address of used page
 kernel_page_address:
 	; preserve original registers
-	push	rax
 	push	rcx
+	push	rdx
 	push	r11
 
 	; we do not support PML5, yet
+	mov	rax,	rsi
 	mov	rdx,	~KERNEL_PAGE_mask
 	and	rax,	rdx
 
@@ -64,23 +65,13 @@ kernel_page_address:
 	; convert to logical address
 	or	rdx,	qword [kernel_page_mirror]
 
+	; return physical address of page
+	mov	rax,	rdx
+
 	; restore original registers
 	pop	r11
+	pop	rdx
 	pop	rcx
-	pop	rax
-
-	; return from routine
-	ret
-
-;-------------------------------------------------------------------------------
-; in:
-;	rdi - pointer
-; out:
-;	rdi - pointer aligned to page (up)
-kernel_page_align_up:
-	; align page to next address
-	add	rdi,	~STATIC_PAGE_mask
-	and	rdi,	STATIC_PAGE_mask
 
 	; return from routine
 	ret
@@ -149,6 +140,91 @@ kernel_page_alloc:
 	pop	r8
 	pop	rdi
 	pop	rcx
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rax - logical target address
+;	bx - flags assigned to target space
+;	rcx - length of space in Pages
+;	rsi - logical source address
+;	r11 - address of target paging array
+; out:
+;	CF - if there is no enough available pages
+kernel_page_clang:
+	; preserve original register
+	push	rax
+	push	rcx
+	push	rdx
+	push	rsi
+	push	r8
+	push	r9
+	push	r10
+	push	r11
+	push	r12
+	push	r13
+	push	r14
+	push	r15
+
+	; retrieve parents paging array pointer
+	call	kernel_task_current
+	mov	rdx,	qword [r9 + KERNEL_TASK_STRUCTURE.cr3]
+
+	; prepare default paging structure
+	call	kernel_page_prepare
+	jc	.end	; no enough memory
+
+.next:
+	; end of PML1 array?
+	cmp	r12,	KERNEL_PAGE_ENTRY_count
+	jb	.entry	; no
+
+	; extend paging array
+	call	kernel_page_resolve
+	jc	.end	; no enough memory
+
+.entry:
+	; preserve original register
+	push	r11
+
+	; resolve physical address from parent paging array
+	mov	r11,	rdx
+	call	kernel_page_address
+
+	; restore original register
+	pop	r11
+
+	; store physical source address with corresponding flags
+	sub	rax,	qword [kernel_page_mirror]	; convert to physical address
+	or	ax,	bx	; apply flags
+	mov	qword [r8 + r12 * STATIC_QWORD_SIZE_byte],	rax
+
+	; next part of space
+	add	rsi,	STATIC_PAGE_SIZE_byte
+
+	; next entry from PML1 array
+	inc	r12
+
+	; every page connected?
+	dec	rcx
+	jnz	.next	; no
+
+.end:
+	; restore original registers
+	pop	r15
+	pop	r14
+	pop	r13
+	pop	r12
+	pop	r11
+	pop	r10
+	pop	r9
+	pop	r8
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rax
 
 	; return from routine
 	ret
