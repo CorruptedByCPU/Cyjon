@@ -134,7 +134,7 @@ init:
 	call	kernel_init_task
 
 	; configure Real Time Clock
-	; call	driver_rtc
+	call	driver_rtc
 
 	; initialize PS2 keyboard/mouse driver
 	call	driver_ps2

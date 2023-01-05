@@ -82,9 +82,9 @@ driver_rtc:
 	in	al,	DRIVER_RTC_PORT_data
 
 	; connect RTC controller interrupt handler
-	mov	eax,	KERNEL_IDT_IRQ_offset + DRIVER_RTC_IRQ_number
+	mov	rax,	driver_rtc_irq
 	mov	bx,	KERNEL_IDT_TYPE_irq
-	mov	rdi,	driver_rtc_irq
+	mov	ecx,	KERNEL_IDT_IRQ_offset + DRIVER_RTC_IRQ_number
 	call	kernel_idt_update
 
 	; connect interrupt vector from IDT table in I/O APIC controller

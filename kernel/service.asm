@@ -39,8 +39,8 @@ kernel_service_driver_mouse:
 	mov	word [rdi + LIB_SYS_STRUCTURE_MOUSE.x],	ax
 	mov	ax,	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y]
 	mov	word [rdi + LIB_SYS_STRUCTURE_MOUSE.y],	ax
-	mov	al,	byte [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x]
-	mov	byte [rdi + LIB_SYS_STRUCTURE_MOUSE.x],	al
+	mov	al,	byte [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_status]
+	mov	byte [rdi + LIB_SYS_STRUCTURE_MOUSE.status],	al
 
 	; restore original registers
 	pop	r8
@@ -253,6 +253,7 @@ kernel_service_ipc_send:
 ;	TRUE if message retrieved
 kernel_service_ipc_receive:
 	; preserve original registers
+	push	rbx
 	push	rcx
 	push	rsi
 	push	rdi
@@ -272,14 +273,15 @@ kernel_service_ipc_receive:
 
 .loop:
 	; message alive?
-	; mov	rax,	qword [r8 + KERNEL_STRUCTURE.driver_rtc_microtime]
-	; cmp	qword [rsi + LIB_SYS_STRUCTURE_IPC.ttl],	rax
-	; jbe	.found	; yes
+	mov	rbx,	qword [r8 + KERNEL_STRUCTURE.driver_rtc_microtime]
+	cmp	qword [rsi + LIB_SYS_STRUCTURE_IPC.ttl],	rbx
+	jb	.next	; no
 
 	; message for us?
 	cmp	qword [rsi + LIB_SYS_STRUCTURE_IPC.target],	rax
 	je	.found	; yes
 
+.next:
 	; next entry from list?
 	add	rsi,	LIB_SYS_STRUCTURE_IPC.SIZE
 	dec	rcx
@@ -314,6 +316,7 @@ kernel_service_ipc_receive:
 	pop	rdi
 	pop	rsi
 	pop	rcx
+	pop	rbx
 
 	; return from routine
 	ret
@@ -426,24 +429,42 @@ kernel_service_memory_release:
 ;	rax - pointer to shared memory between processes
 kernel_service_memory_share:
 	; preserve original registers
+	push	rbx
 	push	rcx
-
-	xchg	bx,bx
+	push	rsi
+	push	rdi
+	push	r9
+	push	r11
 
 	; convert Bytes to pages
-	add	rsi,	~STATIC_PAGE_mask
-	shr	rsi,	STATIC_PAGE_SIZE_shift
+	mov	rcx,	rsi
+	add	rcx,	~STATIC_PAGE_mask
+	shr	rcx,	STATIC_PAGE_SIZE_shift
 
 	; retrieve task paging structure pointer
 	call	kernel_task_by_id
 	mov	r11,	qword [rax + KERNEL_TASK_STRUCTURE.cr3]
 
+	; set source pointer in place
+	mov	rsi,	rdi
+
 	; acquire memory space from target process
-	mov	rcx,	rsi
 	mov	r9,	qword [rax + KERNEL_TASK_STRUCTURE.memory_map]
+	call	kernel_memory_acquire
+
+	; connect memory space of parent process with child
+	mov	rax,	rdi
+	shl	rax,	STATIC_PAGE_SIZE_shift
+	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_shared
+	call	kernel_page_clang
 
 	; restore original registers
+	pop	r11
+	pop	r9
+	pop	rdi
+	pop	rsi
 	pop	rcx
+	pop	rbx
 
 	; return from routine
 	ret
