@@ -20,8 +20,8 @@ kernel_library_add:
 
 .next:
 	; entry is free?
-	test	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
-	jz	.found	; yes
+	cmp	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	EMPTY
+	je	.found	; yes
 
 	; move pointer to next entry
 	add	r14,	KERNEL_LIBRARY_STRUCTURE.SIZE
@@ -39,7 +39,7 @@ kernel_library_add:
 
 .found:
 	; mark entry as active
-	mov	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
+	mov	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_reserved
 
 	; return entry pointer
 	mov	qword [rsp],	r14
@@ -73,9 +73,9 @@ kernel_library_find:
 	mov	r14,	qword [r14 + KERNEL_STRUCTURE.library_base_address]
 
 .find:
-	; entry is empty?
-	cmp	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	EMPTY
-	je	.next	; yes
+	; entry is active?
+	test	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
+	jz	.next	; no
 
 	; length of entry name is the same?
 	cmp	byte [r14 + KERNEL_LIBRARY_STRUCTURE.length],	cl
@@ -233,8 +233,8 @@ kernel_library_function:
 
 .library:
 	; entry configured?
-	cmp	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
-	je	.library_parse	; yes
+	test	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
+	jnz	.library_parse	; yes
 
 .library_next:
 	; move pointer to next entry
@@ -302,6 +302,7 @@ kernel_library_function:
 
 ;-------------------------------------------------------------------------------
 ; in:
+;	rdi - pointer to logical executable space
 ;	r13 - pointer to file content
 kernel_library_link:
 	; preserve original registers
@@ -315,14 +316,15 @@ kernel_library_link:
 	push	r10
 	push	r11
 	push	r12
+	push	r14
 	push	r13
 
-	; we need to find 4 section headers locations to be able to resolve bindings to functions
+	; we need to find 4 header locations to be able to resolve bindings to functions
 
-	; number of entries in section header
+	; number of entries in header table
 	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
 
-	; set pointer to begining of section header
+	; set pointer to begining of header table
 	add	r13,	qword [r13 + LIB_ELF_STRUCTURE.section_table_position]
 
 	; reset section locations
@@ -337,8 +339,8 @@ kernel_library_link:
 	jne	.no_program_data	; no
 
 	; set pointer to program data
-	mov	r11,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
-	add	r11,	qword [rsp]
+	mov	r11,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.virtual_address]
+	add	r11,	rdi
 
 .no_program_data:
 	; string table?
@@ -371,8 +373,8 @@ kernel_library_link:
 	jne	.no_dynamic_symbols	; no
 
 	; set pointer to dynamic symbols
-	mov	r9,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
-	add	r9,	qword [rsp]
+	mov	r9,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.virtual_address]
+	add	r9,	rdi
 
 .no_dynamic_symbols:
 	; move pointer to next entry
@@ -407,8 +409,18 @@ kernel_library_link:
 
 	; it's a local function?
 	cmp	qword [r9 + rax + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address],	EMPTY
-	jne	.function_next	; yes
+	je	.function_global	; no
 
+	mov	rsi,	qword [r9 + rax + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address]
+	add	rsi,	rdi
+	; mov	qword [r9 + rax + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address],	rsi
+
+	; insert function address to GOT at RCX offset
+	mov	qword [r11 + r12 * 0x08],	rsi
+
+	jmp	.function_next
+
+.function_global:
 	; set pointer to function name
 	mov	esi,	dword [r9 + rax]
 	add	rsi,	r10
@@ -436,6 +448,7 @@ kernel_library_link:
 .end:
 	; restore original registers
 	pop	r13
+	pop	r14
 	pop	r12
 	pop	r11
 	pop	r10
@@ -480,10 +493,6 @@ kernel_library_load:
 
 	; prepare error code
 	mov	qword [rsp],	LIB_SYS_ERROR_memory_no_enough
-
-	; prepare new entry for library
-	call	kernel_library_add
-	jc	.end	; no enough memory
 
 	;-----------------------------------------------------------------------
 	; locate and load file into memory
@@ -543,8 +552,9 @@ kernel_library_load:
 	call	kernel_library_import
 	jc	.error_level_file	; no enough memory or library not found
 
-	; connect libraries to file executable
-	call	kernel_library_link
+	; prepare new entry for library
+	call	kernel_library_add
+	jc	.error_level_file	; no enough memory
 
 	;-----------------------------------------------------------------------
 	; calculate library size in Pages
@@ -604,10 +614,11 @@ kernel_library_load:
 
 	; convert page number to logical address
 	shl	rdi,	STATIC_PAGE_SIZE_shift
+	add	rdi,	qword [kernel_library_base_address]
 
 	; prepare space for file content
 	mov	rax,	rdi
-	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write
+	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_library
 	mov	r11,	qword [r8 + KERNEL_STRUCTURE.page_base_address]
 	call	kernel_page_alloc
 	jc	.error_level_aquire	; no enough memory
@@ -661,6 +672,11 @@ kernel_library_load:
 	; end of header table?
 	dec	ebx
 	jnz	.segment	; no
+
+	;-----------------------------------------------------------------------
+	; connect libraries (if needed)
+	;-----------------------------------------------------------------------
+	call	kernel_library_link
 
 	;-----------------------------------------------------------------------
 	; library available, update entry
@@ -724,6 +740,7 @@ kernel_library_load:
 	mov	rax,	rdi
 	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_library
 	mov	rcx,	r15
+	mov	r11,	qword [r8 + KERNEL_STRUCTURE.page_base_address]
 	call	kernel_page_flags
 
 	; release space of loaded file
@@ -741,6 +758,9 @@ kernel_library_load:
 	mov	rsi,	qword [rsp + (STATIC_QWORD_SIZE_byte << STATIC_MULTIPLE_BY_2_shift)]
 	lea	rdi,	[r14 + KERNEL_LIBRARY_STRUCTURE.name]
 	rep	movsb
+
+	; library parsed
+	or	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
 
 .exist:
 	; return pointer to library entry

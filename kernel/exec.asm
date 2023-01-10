@@ -4,110 +4,41 @@
 
 ;-------------------------------------------------------------------------------
 ; in:
-;	rcx - length of string in characters
-;	rsi - pointer to string
-;	rbp - pointer to exec descriptor
-kernel_exec:
+;	rcx - length of path
+;	rsi - pointer to path
+;	r13 - pointer to file content
+; out:
+;	rdi - pointer to executable space
+;	r10 - pointer to task entry
+kernel_exec_configure:
 	; preserve original registers
 	push	rax
 	push	rbx
+	push	rcx
 	push	rdx
-	push	rdi
+	push	rsi
 	push	rbp
 	push	r8
-	push	r10
+	push	r9
 	push	r11
 	push	r12
 	push	r13
 	push	r14
 	push	r15
-	push	rsi
-	push	rcx
-
-	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
-
-	; by default there is no PID for new process
-	mov	qword [rbp + KERNEL_EXEC_STRUCTURE.pid],	EMPTY
-
-	;-----------------------------------------------------------------------
-	; locate and load file into memory
-	;-----------------------------------------------------------------------
-
-	; file descriptor
-	sub	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
-	mov	rbp,	rsp	; pointer of file descriptor
-
-	; get file properties
-	movzx	eax,	byte [r8 + KERNEL_STRUCTURE.storage_root_id]
-	call	kernel_storage_file
-
-	; prepare error code
-	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	LIB_SYS_ERROR_file_not_found
-
-	; file found?
-	cmp	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
-	je	.end	; no
-
-	; prepare error code
-	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	LIB_SYS_ERROR_memory_no_enough
-
-	; prepare space for file content
-	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
-	add	rcx,	~STATIC_PAGE_mask
-	shr	rcx,	STATIC_PAGE_SIZE_shift
-	call	kernel_memory_alloc
-	jc	.end	; no enough memory
-
-	; load file content into prepared space
-	mov	rsi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id]
-	call	kernel_storage_read
-
-	; preserve file size in pages and location
-	mov	r12,	rcx
-	mov	r13,	rdi
-
-	; prepare error code
-	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	LIB_SYS_ERROR_exec_not_executable
-
-	; check if file have proper ELF header
-	call	lib_elf_check
-	jc	.error_level_file	; it's not an ELF file
-
-	; file has executable format?
-	cmp	byte [rdi + LIB_ELF_STRUCTURE.type],	LIB_ELF_TYPE_executable
-	jne	.error_level_file	; no executable
-
-	; prepare error code
-	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	LIB_SYS_ERROR_undefinied
-
-	; load depended libraries
-	call	kernel_library_import
-	jc	.error_level_file	; no enough memory or library not found
-
-	; connect libraries to file executable
-	call	kernel_library_link
 
 	;-----------------------------------------------------------------------
 	; prepare task for execution
 	;-----------------------------------------------------------------------
 
 	; register new task on queue
-	mov	rcx,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE]
-	mov	rsi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + STATIC_PTR_SIZE_byte]
 	call	kernel_task_add
-	jc	.error_level_file	; cannot register new task
 
 	;-----------------------------------------------------------------------
 	; paging array of new process
 	;-----------------------------------------------------------------------
 
-	; prepare error code
-	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	LIB_SYS_ERROR_exec_not_executable
-
 	; make space for the process paging table
 	call	kernel_memory_alloc_page
-	jc	.error_level_task	; no enough memory
 
 	; update task entry about paging array
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.cr3],	rdi
@@ -122,7 +53,6 @@ kernel_exec:
 	mov	ecx,	KERNEL_TASK_STACK_SIZE_page
 	mov	r11,	rdi
 	call	kernel_page_alloc
-	jc	.error_level_page	; no enough memory
 
 	; set process context stack pointer
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	KERNEL_TASK_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
@@ -160,7 +90,28 @@ kernel_exec:
 	or	bx,	KERNEL_PAGE_FLAG_user
 	mov	ecx,	STATIC_PAGE_SIZE_page
 	call	kernel_page_alloc
-	jc	.error_level_page	; no enough memory
+
+	;-----------------------------------------------------------------------
+	; allocate space for executable segments
+	;-----------------------------------------------------------------------
+
+	; size of unpacked executable
+	call	kernel_exec_size
+
+	; assign memory space for executable
+	add	rcx,	~STATIC_PAGE_mask
+	shr	rcx,	STATIC_PAGE_SIZE_shift
+	call	kernel_memory_alloc
+
+	; preserve executable location and size in Pages
+	push	rdi
+	push	rcx
+
+	; map executable space to process paging array
+	mov	eax,	KERNEL_EXEC_BASE_address
+	mov	rsi,	rdi
+	sub	rsi,	qword [kernel_page_mirror]
+	call	kernel_page_map
 
 	;-----------------------------------------------------------------------
 	; load program segments in place
@@ -184,63 +135,25 @@ kernel_exec:
 	cmp	dword [rdx + LIB_ELF_STRUCTURE_HEADER.type],	LIB_ELF_HEADER_TYPE_load
 	jne	.elf_header_next	; no
 
-	; calculate segment address
-	mov	r14,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.virtual_address]
-	and	r14,	STATIC_PAGE_mask	; align down to page boundary
-
-	; calculate segment size in pages
-	mov	rax,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.virtual_address]
-	and	rax,	STATIC_PAGE_mask	; preserve only page number
-	mov	r15,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.virtual_address]
-	add	r15,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.segment_size]
-	sub	r15,	rax
-	; align up to next page boundary
-	add	r15,	STATIC_PAGE_SIZE_byte - 1
-	shr	r15,	STATIC_PAGE_SIZE_shift
-
-	; preserve original register
-	push	rcx
-
-	; assign memory space for segment
-	mov	rcx,	r15
-	call	kernel_memory_alloc
-
-	; restore original register
-	pop	rcx
-
-	; if no enough memory
-	jc	.error_level_page	; no enough memory
-
-	; source
-	mov	rsi,	r13
-	add	rsi,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.segment_offset]
-
-	; preserve segment pointer and original register
+	; preserve original registers
 	push	rcx
 	push	rdi
 
-	; target
-	and	qword [rdx + LIB_ELF_STRUCTURE_HEADER.virtual_address],	~STATIC_PAGE_mask
+	; segment destination
 	add	rdi,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.virtual_address]
+	sub	rdi,	KERNEL_EXEC_BASE_address
 
-	; copy file segment in place
+	; segment source
+	mov	rsi,	r13
+	add	rsi,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.segment_offset]
+
+	; copy segment in place
 	mov	rcx,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.segment_size]
 	rep	movsb
 
-	; restore segment pointer
-	pop	rsi
-
-	; map segment to process paging array
-	mov	rax,	r14
-	mov	rcx,	r15
-	sub	rsi,	qword [kernel_page_mirror]
-	call	kernel_page_map
-
-	; restore original register
+	; restore original registers
+	pop	rdi
 	pop	rcx
-
-	; if no enough memory
-	jc	.error_level_page
 
 .elf_header_next:
 	; move pointer to next entry
@@ -254,45 +167,37 @@ kernel_exec:
 	; virtual memory map
 	;-----------------------------------------------------------------------
 
-	; assign memory space for binary memory map with same size as kernel
+	; assign memory space for binary memory map with same size as kernels
 	mov	rcx,	qword [r8 + KERNEL_STRUCTURE.page_limit]
-	shr	rcx,	STATIC_DIVIDE_BY_8_shift	; 8 pages by Byte
+	shr	rcx,	STATIC_DIVIDE_BY_8_shift	; 8 pages per Byte
 	add	rcx,	~STATIC_PAGE_mask	; align up to page boundaries
 	shr	rcx,	STATIC_PAGE_SIZE_shift	; convert to pages
 	call	kernel_memory_alloc
 
-	; store binary memory map address inside task properties
+	; store binary memory map address of process inside task properties
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.memory_map],	rdi
 
-	; preserve binary memory size and location
+	; preserve binary memory map location
 	push	rdi
-	push	rcx
 
 	; fill memory map with available pages
 	mov	rax,	STATIC_MAX_unsigned
 	shl	rcx,	STATIC_MULTIPLE_BY_512_shift
 	rep	stosq
 
-	; restore binary memory size
+	; restore memory map location and executable space size in Pages
+	pop	rsi
 	pop	rcx
 
-	; everything before binary memory map (and in itself) is not available for process
-	; mark that space as unavailable
-
-	; first available page number
-	mov	rax,	r14	; last segment position
-	shr	rax,	STATIC_PAGE_SIZE_shift
-	add	rax,	rcx	; last segment size in pages
-
-	; restore memory map location
-	pop	rsi
+	; mark first N bytes of executable space as reserved
+	dec	rcx
 
 .reserved:
 	; mark page as reserved
-	btr	qword [rsi],	rax
+	btr	qword [rsi],	rcx
 
 	; mark other pages?
-	dec	rax
+	dec	rcx
 	jns	.reserved	; yes
 
 	;-----------------------------------------------------------------------
@@ -302,6 +207,334 @@ kernel_exec:
 	; map kernel space to process
 	call	kernel_page_merge
 
+	; restore executable space address
+	pop	rdi
+
+	; restore original registers
+	pop	r15
+	pop	r14
+	pop	r13
+	pop	r12
+	pop	r11
+	pop	r9
+	pop	r8
+	pop	rbp
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+	pop	rax
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rcx - length of path
+;	rsi - pointer to path
+;	rbp - pointer to file descriptor
+kernel_exec_load:
+	; preserve original registers
+	push	rax
+	push	rcx
+	push	rsi
+	push	r8
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; get file properties
+	movzx	eax,	byte [r8 + KERNEL_STRUCTURE.storage_root_id]
+	call	kernel_storage_file
+
+	; prepare space for file content
+	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
+	add	rcx,	~STATIC_PAGE_mask
+	shr	rcx,	STATIC_PAGE_SIZE_shift
+	call	kernel_memory_alloc
+
+	; load file content into prepared space
+	mov	rsi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id]
+	call	kernel_storage_read
+
+	; return file content address
+	mov	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.address],	rdi
+
+.end:
+	; restore original registers
+	pop	r8
+	pop	rsi
+	pop	rcx
+	pop	rax
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - pointer to physical(logical) executable space
+;	r13 - pointer to file content
+;	r14 - logical executable space
+kernel_exec_link:
+	; preserve original registers
+	push	rax
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+	push	r8
+	push	r9
+	push	r10
+	push	r11
+	push	r12
+	push	r13
+
+	; we need to find 4 header locations to be able to resolve bindings to functions
+
+	; number of entries in header table
+	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
+
+	; set pointer to begining of header table
+	add	r13,	qword [r13 + LIB_ELF_STRUCTURE.section_table_position]
+
+	; reset section locations
+	xor	r8,	r8
+	xor	r9,	r9
+	xor	r10,	r10
+	xor	r11,	r11
+
+.section:
+	; program data?
+	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_progbits
+	jne	.no_program_data	; no
+
+	; set pointer to program data
+	mov	r11,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.virtual_address]
+	sub	r11,	r14
+	add	r11,	rdi
+
+.no_program_data:
+	; string table?
+	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_strtab
+	jne	.no_string_table	;no
+
+	; first only
+	test	r10,	r10
+	jnz	.no_string_table
+
+	; set pointer to string table
+	mov	r10,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	r10,	qword [rsp]
+
+.no_string_table:
+	; dynamic relocation?
+	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_rela
+	jne	.no_dynamic_relocation	; no
+
+	; set pointer to dynamic relocation
+	mov	r8,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	r8,	qword [rsp]
+
+	; and size on Bytes
+	mov	rbx,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.size_byte]
+
+.no_dynamic_relocation:
+	; dynamic symbols?
+	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_dynsym
+	jne	.no_dynamic_symbols	; no
+
+	; set pointer to dynamic symbols
+	mov	r9,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	r9,	qword [rsp]
+
+.no_dynamic_symbols:
+	; move pointer to next entry
+	add	r13,	LIB_ELF_STRUCTURE_SECTION.SIZE
+
+	; end of section header?
+	loop	.section	; no
+
+	;---
+
+	; if dynamic relocations doesn't exist
+	test	r8,	r8
+	jz	.end	; executable doesn't need external functions
+
+	; move pointer to first function address entry
+	add	r11,	0x18
+
+	; function index inside Global Offset Table
+	xor	r12,	r12
+
+.function:
+	; or symbolic value exist
+	cmp	qword [r8 + LIB_ELF_STRUCTURE_DYNAMIC_RELOCATION.symbol_value],	EMPTY
+	jne	.function_next
+
+	; get function index
+	mov	eax,	dword [r8 + LIB_ELF_STRUCTURE_DYNAMIC_RELOCATION.index]
+
+	; calculate offset to function name
+	mov	rcx,	LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.SIZE
+	mul	rcx
+
+	; it's a local function?
+	cmp	qword [r9 + rax + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address],	EMPTY
+	je	.function_global	; no
+
+	mov	rsi,	qword [r9 + rax + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address]
+	add	rsi,	KERNEL_EXEC_BASE_address
+	mov	qword [r9 + rax + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address],	rsi
+
+	; insert function address to GOT at RCX offset
+	mov	qword [r11 + r12 * 0x08],	rsi
+
+	jmp	.function_next
+
+.function_global:
+	; set pointer to function name
+	mov	esi,	dword [r9 + rax]
+	add	rsi,	r10
+
+	; calculate function name length
+	call	lib_string_length
+
+	; retrieve function address
+	call	kernel_library_function
+
+	; insert function address to GOT at RCX offset
+	mov	qword [r11 + r12 * 0x08],	rax
+
+.function_next:
+	; move pointer to next entry
+	add	r8,	LIB_ELF_STRUCTURE_DYNAMIC_RELOCATION.SIZE
+
+	; next function index
+	inc	r12
+
+	; no more entries?
+	sub	rbx,	LIB_ELF_STRUCTURE_DYNAMIC_RELOCATION.SIZE
+	jnz	.function	; no
+
+.end:
+	; restore original registers
+	pop	r13
+	pop	r12
+	pop	r11
+	pop	r10
+	pop	r9
+	pop	r8
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+	pop	rax
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	r13 - pointer to file content
+; out:
+;	rcx - executable size in Bytes
+kernel_exec_size:
+	; preserve original registers
+	push	rbx
+	push	rdx
+
+	; number of header entries
+	movzx	ebx,	word [r13 + LIB_ELF_STRUCTURE.header_entry_count]
+
+	; length of memory space in Bytes
+	xor	ecx,	ecx
+
+	; beginning of header table
+	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.header_table_position]
+	add	rdx,	r13
+
+.calculate:
+	; ignore empty entries
+	cmp	dword [rdx + LIB_ELF_STRUCTURE_HEADER.type],	EMPTY
+	je	.leave	; empty one
+	cmp	qword [rdx + LIB_ELF_STRUCTURE_HEADER.memory_size],	EMPTY
+	je	.leave	; this too
+
+	; segment required in memory?
+	cmp	dword [rdx + LIB_ELF_STRUCTURE_HEADER.type],	LIB_ELF_HEADER_TYPE_load
+	jne	.leave	; no
+
+	; this segment is after previous one?
+	cmp	rcx,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.virtual_address]
+	ja	.leave	; no
+
+	; remember end of segment address
+	mov	rcx,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.virtual_address]
+	add	rcx,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.segment_size]
+
+.leave:
+	; move pointer to next entry
+	add	rdx,	LIB_ELF_STRUCTURE_HEADER.SIZE
+
+	; end of table?
+	dec	ebx
+	jnz	.calculate	; no
+
+	; convert address to offset
+	sub	rcx,	KERNEL_EXEC_BASE_address
+
+	; restore original registers
+	pop	rdx
+	pop	rbx
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rcx - length of string in characters
+;	rsi - pointer to string
+;	rbp - pointer to exec descriptor
+kernel_exec:
+	; preserve original registers
+	push	rdi
+	push	rbp
+	push	r8
+	push	r10
+	push	r11
+	push	r13
+	push	r14
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; by default there is no PID for new process
+	mov	qword [rbp + KERNEL_EXEC_STRUCTURE.pid],	EMPTY
+
+	;-----------------------------------------------------------------------
+	; locate and load file into memory
+	;-----------------------------------------------------------------------
+
+	; file descriptor
+	sub	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
+	mov	rbp,	rsp	; pointer of file descriptor
+	call	kernel_exec_load
+
+	; load depended libraries
+	mov	r13,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.address]
+	call	kernel_library_import
+
+	;-----------------------------------------------------------------------
+	; configure executable
+	;-----------------------------------------------------------------------
+	call	kernel_exec_configure
+
+	;-----------------------------------------------------------------------
+	; connect libraries to file executable (if needed)
+	;-----------------------------------------------------------------------
+	mov	r14,	KERNEL_EXEC_BASE_address
+	call	kernel_exec_link
+
 	;-----------------------------------------------------------------------
 	; new process initialized
 	;-----------------------------------------------------------------------
@@ -309,47 +542,18 @@ kernel_exec:
 	; mark task as ready
 	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active
 
-	; return PID and pointer to task on queue
-	push	qword [r10 + KERNEL_TASK_STRUCTURE.pid]
-	pop	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.pid]
-	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + KERNEL_EXEC_DESCRIPTOR_offset + KERNEL_EXEC_STRUCTURE.task_or_status],	r10
-
 .end:
 	; remove file descriptor from stack
 	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
 
 	; restore original registers
-	pop	rcx
-	pop	rsi
-	pop	r15
 	pop	r14
 	pop	r13
-	pop	r12
 	pop	r11
 	pop	r10
 	pop	r8
 	pop	rbp
 	pop	rdi
-	pop	rdx
-	pop	rbx
-	pop	rax
 
 	; return from routine
 	ret
-
-.error_level_page:
-	; release paging structure and space
-	call	kernel_page_deconstruction
-
-.error_level_task:
-	; release task entry
-	mov	word [r10 + KERNEL_TASK_STRUCTURE.flags],	EMPTY
-
-.error_level_file:
-	; release space of loaded file
-	mov	rcx,	r12
-	mov	rdi,	r13
-	call	kernel_memory_release
-
-	; end of function
-	jmp	.end

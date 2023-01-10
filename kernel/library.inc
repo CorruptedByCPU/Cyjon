@@ -5,7 +5,10 @@
 %ifndef	KERNEL_LIBRARY
 	%define	KERNEL_LIBRARY_limit		16
 
-	%define	KERNEL_LIBRARY_FLAG_active	1 << 0
+	%define	KERNEL_LIBRARY_base_address	0x0000700000000000
+
+	%define	KERNEL_LIBRARY_FLAG_reserved	1 << 0
+	%define	KERNEL_LIBRARY_FLAG_active	1 << 1
 
 	struc	KERNEL_LIBRARY_STRUCTURE
 		.address	resq	1
