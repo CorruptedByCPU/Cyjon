@@ -38,7 +38,7 @@ kernel_library_add:
 	jmp	.end
 
 .found:
-	; mark entry as active
+	; mark entry as reserved
 	mov	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_reserved
 
 	; return entry pointer
@@ -73,9 +73,11 @@ kernel_library_find:
 	mov	r14,	qword [r14 + KERNEL_STRUCTURE.library_base_address]
 
 .find:
-	; entry is active?
-	test	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
-	jz	.next	; no
+	; this check below is not necessary
+
+	; ; entry is active?
+	; test	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
+	; jz	.next	; no
 
 	; length of entry name is the same?
 	cmp	byte [r14 + KERNEL_LIBRARY_STRUCTURE.length],	cl
@@ -110,99 +112,6 @@ kernel_library_find:
 	pop	r14
 	pop	rdi
 	pop	rbx
-
-	; return from routine
-	ret
-
-;-------------------------------------------------------------------------------
-; in:
-;	r13 - pointer file content
-; out:
-;	CF - set if cannot load library
-kernel_library_import:
-	; preserve original registers
-	push	rcx
-	push	rsi
-	push	r14
-	push	r13
-
-	; number of entries in section header
-	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
-
-	; set pointer to begining of section header
-	add	r13,	qword [r13 + LIB_ELF_STRUCTURE.section_table_position]
-
-.section:
-	; string table?
-	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_strtab
-	jne	.next	; no
-
-	; preserve pointer to string table
-	mov	rsi,	qword [rsp]
-	add	rsi,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
-
-.next:
-	; dynamic section?
-	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_dynamic
-	je	.parse	; yes
-
-	; move pointer to next entry
-	add	r13,	LIB_ELF_STRUCTURE_SECTION.SIZE
-
-	; end of library structure?
-	loop	.section
-
-	; end of routine
-	jmp	.end
-
-.parse:
-	; set pointer to dynamic section
-	mov	r13,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
-	add	r13,	qword [rsp]
-
-.library:
-	; end of entries?
-	cmp	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.type],	EMPTY
-	je	.end	; yes
-
-	; library needed?
-	cmp	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.type],	LIB_ELF_SECTION_DYNAMIC_TYPE_needed
-	jne	.omit
-
-	; preserve original registers
-	push	rcx
-	push	rsi
-
-	; set pointer to library name
-	add	rsi,	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.offset]
-
-	; calculate string length
-	call	lib_string_length
-
-	; load library
-	call	kernel_library_load
-
-	; restore original registers
-	pop	rsi
-	pop	rcx
-
-
-	; error while loading library?
-	jc	.end	; yes
-
-.omit:
-	; next entry from list
-	add	r13,	LIB_ELF_STRUCTURE_SECTION_DYNAMIC.SIZE
-
-	; continue
-	jmp	.library
-
-.end:
-	; restore original registers
-	pop	r13
-	pop	r14
-	pop	rsi
-	pop	rcx
 
 	; return from routine
 	ret
@@ -296,6 +205,93 @@ kernel_library_function:
 	pop	rdx
 	pop	rcx
 	pop	rbx
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	r13 - pointer file content
+; out:
+;	CF - set if cannot load library
+kernel_library_import:
+	; preserve original registers
+	push	rcx
+	push	rsi
+	push	r14
+	push	r13
+
+	; number of entries in section header
+	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
+
+	; set pointer to begining of section header
+	add	r13,	qword [r13 + LIB_ELF_STRUCTURE.section_table_position]
+
+.section:
+	; string table?
+	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_strtab
+	jne	.next	; no
+
+	; preserve pointer to string table
+	mov	rsi,	qword [rsp]
+	add	rsi,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
+
+.next:
+	; dynamic section?
+	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_dynamic
+	je	.parse	; yes
+
+	; move pointer to next entry
+	add	r13,	LIB_ELF_STRUCTURE_SECTION.SIZE
+
+	; end of library structure?
+	loop	.section
+
+	; end of routine
+	jmp	.end
+
+.parse:
+	; set pointer to dynamic section
+	mov	r13,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	r13,	qword [rsp]
+
+.library:
+	; library needed?
+	cmp	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.type],	LIB_ELF_SECTION_DYNAMIC_TYPE_needed
+	jne	.end	; at the same time, no more needed libaries
+
+	; preserve original registers
+	push	rcx
+	push	rsi
+
+	; set pointer to library name
+	add	rsi,	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.offset]
+
+	; calculate string length
+	call	lib_string_length
+
+	; load library
+	call	kernel_library_load
+
+	; restore original registers
+	pop	rsi
+	pop	rcx
+
+	; error while loading library?
+	jc	.end	; yes
+
+	; next entry from list
+	add	r13,	LIB_ELF_STRUCTURE_SECTION_DYNAMIC.SIZE
+
+	; continue
+	jmp	.library
+
+.end:
+	; restore original registers
+	pop	r13
+	pop	r14
+	pop	rsi
+	pop	rcx
 
 	; return from routine
 	ret
@@ -411,13 +407,14 @@ kernel_library_link:
 	cmp	qword [r9 + rax + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address],	EMPTY
 	je	.function_global	; no
 
+	; retrieve local function correct address
 	mov	rsi,	qword [r9 + rax + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address]
 	add	rsi,	rdi
-	; mov	qword [r9 + rax + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address],	rsi
 
 	; insert function address to GOT at RCX offset
 	mov	qword [r11 + r12 * 0x08],	rsi
 
+	; next relocation
 	jmp	.function_next
 
 .function_global:
@@ -552,7 +549,7 @@ kernel_library_load:
 	call	kernel_library_import
 	jc	.error_level_file	; no enough memory or library not found
 
-	; prepare new entry for library
+	; prepare new entry for current library
 	call	kernel_library_add
 	jc	.error_level_file	; no enough memory
 
