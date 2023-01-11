@@ -319,6 +319,9 @@ kernel_idt_exception:
 	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
 	call	driver_serial_value
 
+	; bochs, breakpoint
+	xchg	bx,	bx
+
 	; hold the door
 	jmp	$
 

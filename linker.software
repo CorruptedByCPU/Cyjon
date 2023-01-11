@@ -22,8 +22,6 @@ SECTIONS
         *(.rodata .rodata.*)
     } :text
 
-    . += CONSTANT(MAXPAGESIZE);
-
     .data : {
         *(.data .data.*)
         *(COMMON)

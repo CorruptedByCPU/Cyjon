@@ -4,6 +4,8 @@
 
 kernel_environment_base_address	dq	EMPTY
 
+kernel_library_base_address	dq	KERNEL_LIBRARY_base_address
+
 ; often necessary
 kernel_page_mirror		dq	KERNEL_PAGE_mirror
 

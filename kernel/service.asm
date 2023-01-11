@@ -355,6 +355,7 @@ kernel_service_memory_alloc:
 
 	; convert first page number to logical address
 	shl	rdi,	STATIC_PAGE_SIZE_shift
+	add	rdi,	KERNEL_EXEC_BASE_address
 
 	; assign pages to allocated memory in process space
 	mov	rax,	rdi
@@ -543,9 +544,12 @@ kernel_service_storage_read:
 	call	kernel_memory_acquire
 	jc	.error	; no enough memory
 
+	; convert first page number to logical address
+	shl	rdi,	STATIC_PAGE_SIZE_shift
+	add	rdi,	KERNEL_EXEC_BASE_address
+
 	; map file content to process space
 	mov	rax,	rdi	; first page number of memory space inside process
-	shl	rax,	STATIC_PAGE_SIZE_shift	; convert page number to logical address
 	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_process
 	mov	r11,	cr3	; task paging array
 	call	kernel_page_map

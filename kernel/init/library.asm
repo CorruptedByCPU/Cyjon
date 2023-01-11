@@ -17,19 +17,20 @@ kernel_init_library:
 	; save pointer to library list
 	mov	qword [r8 + KERNEL_STRUCTURE.library_base_address],	rdi
 
-	; assign space for memory map of library space
-	call	kernel_memory_alloc_page
-	or	rdi,	qword [kernel_page_mirror]
+	; assign memory space for binary memory map with same size as kernels
+	mov	rcx,	qword [r8 + KERNEL_STRUCTURE.page_limit]
+	shr	rcx,	STATIC_DIVIDE_BY_8_shift	; 8 pages per Byte
+	add	rcx,	~STATIC_PAGE_mask	; align up to page boundaries
+	shr	rcx,	STATIC_PAGE_SIZE_shift	; convert to pages
+	call	kernel_memory_alloc
 
 	; save pointer to library memory map
 	mov	qword [r8 + KERNEL_STRUCTURE.library_memory_map_address],	rdi
 
 	; fill memory map with available pages
-	mov	al,	STATIC_MAX_unsigned
-	mov	rcx,	KERNEL_EXEC_BASE_address
-	shr	rcx,	STATIC_PAGE_SIZE_shift	; convert space to pages
-	shr	rcx,	STATIC_DIVIDE_BY_8_shift	; convert pages to Bytes
-	rep	stosb
+	mov	rax,	STATIC_MAX_unsigned
+	shl	rcx,	STATIC_MULTIPLE_BY_512_shift
+	rep	stosq
 
 	; restore original registers
 	pop	rdi

@@ -32,5 +32,6 @@ endstruc
 struc	KERNEL_STORAGE_STRUCTURE_FILE
 	.id			resq	1
 	.size_byte		resq	1
+	.address		resq	1
 	.SIZE:
 endstruc

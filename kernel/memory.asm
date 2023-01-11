@@ -247,6 +247,7 @@ kernel_memory_share:
 
 	; convert page number to logical address
 	shl	rdi,	STATIC_PAGE_SIZE_shift
+	add	rdi,	KERNEL_EXEC_BASE_address
 
 	; map source space to process paging array
 	mov	rax,	rdi
