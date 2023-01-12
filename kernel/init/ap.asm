@@ -86,15 +86,24 @@ kernel_init_ap:
 	; CPU Flags
 	;-----------
 
-	; enable OSXSAVE, OSFXSR support
+	; enable Monitor co-processor (bit 1) and disable x87 FPU Emulation (bit 2)
+	mov	rax,	cr0
+	and	al,	0xFB
+	or	al,	0x02
+	mov	cr0,	rax
+
+	; enable FXSAVE/FXRSTOR (bit 9), OSXMMEXCPT (bit 10) and OSXSAVE (bit 18)
 	mov	rax,	cr4
-	or	rax,	1000000001000000000b	
+	or	rax,	1000000011000000000b
 	mov	cr4,	rax
+
+	; reset FPU state
+	fninit
 
 	; enable X87, SSE, AVX support
 	xor	ecx,	ecx
 	xgetbv
-	or	eax,	1b
+	or	eax,	111b
 	xsetbv
 
 	;----------------

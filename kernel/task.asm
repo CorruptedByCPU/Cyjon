@@ -128,6 +128,21 @@ kernel_task:
 	mov	rax,	qword [r10 + KERNEL_TASK_STRUCTURE.cr3]
 	mov	cr3,	rax
 
+	; first run?
+	test	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_init
+	jz	.no_init
+
+	; disable init flag
+	and	word [r10 + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_init
+
+	; reset FPU state
+	fninit
+
+	; save FPU state/registers
+	mov	rbp,	KERNEL_TASK_STACK_pointer
+	FXSAVE64	[rbp]
+
+.no_init:
 	; reload CPU cycle counter in APIC controller
 	mov	rax,	qword [r8 + KERNEL_STRUCTURE.lapic_base_address]
 	mov	dword [rax + KERNEL_LAPIC_STRUCTURE.tic],	KERNEL_LAPIC_Hz
