@@ -72,6 +72,7 @@ kernel_idt_exception_string:
 	dq	kernel_idt_exception_string_unknown
 	dq	kernel_idt_exception_string_x87_floating_point
 	dq	kernel_idt_exception_string_alignment_check
+	dq	kernel_idt_exception_string_machine_check
 	dq	kernel_idt_exception_string_simd_floating_point
 	dq	kernel_idt_exception_string_virtualization
 	dq	kernel_idt_exception_string_control_protection

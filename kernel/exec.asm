@@ -544,7 +544,7 @@ kernel_exec:
 	;-----------------------------------------------------------------------
 
 	; mark task as ready
-	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active
+	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_init
 
 .end:
 	; remove file descriptor from stack
