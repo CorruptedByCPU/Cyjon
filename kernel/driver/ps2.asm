@@ -9,9 +9,12 @@ driver_ps2_mouse_semaphore				db	FALSE
 driver_ps2_mouse_type					db	EMPTY
 driver_ps2_mouse_packet_id				db	EMPTY
 
+driver_ps2_scancode					dw	EMPTY
+
 ; align list
 align	0x08,	db	0x00
-driver_ps2_keyboard_storage		times	16	dw	EMPTY
+driver_ps2_keyboard_storage:
+		times	DRIVER_PS2_KEYBOARD_CACHE_limit	dw	EMPTY
 
 ; align array
 align	0x08,	db	0x00
@@ -340,8 +343,214 @@ driver_ps2:
 	; return from routine
 	ret
 
+;-------------------------------------------------------------------------------
+; void
+driver_ps2_drain:
+	; preserve original registers
+	push	rax
+
+.loop:
+	; check controller status
+	in	al,	DRIVER_PS2_PORT_COMMAND_OR_STATUS
+	test	al,	DRIVER_PS2_STATUS_output
+	jz	.end	; there is nothig, good
+
+	; release data from controller data port
+	in	al,	DRIVER_PS2_PORT_DATA
+
+	; try again
+	jmp	.loop
+
+.end:
+	; restore original registers
+	pop	rax
+
+	; return from routine
+	ret
+
 ; align routine
 align	0x08,	db	EMPTY
+;-------------------------------------------------------------------------------
+; void
+driver_ps2_keyboard:
+	; preserve original registers
+	push	rax
+	push	rsi
+	push	r8
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; current keyboard matrix
+	mov	rsi,	qword [driver_ps2_keyboard_matrix]
+
+	; receive key scancode
+	xor	eax,	eax	; 64 bit index
+	in	al,	DRIVER_PS2_PORT_DATA
+
+	; no key?
+	test	ax,	ax
+	jz	.end	; yep
+
+	; perform the operation depending on the opcode
+
+	; controller started a sequence?
+	cmp	ax,	DRIVER_PS2_KEYBOARD_sequence
+	je	.sequence	; yes
+
+	; controller starterd alternative version of sequence?
+	cmp	ax,	DRIVER_PS2_KEYBOARD_sequence_alternative
+	jne	.no_sequence	; nope
+
+.sequence:
+	; save sequence type
+	shl	ax,	STATIC_MOVE_AL_TO_HIGH_shift
+	mov	word [driver_ps2_scancode],	ax
+
+	; end of routine
+	jmp	.end
+
+.no_sequence:
+	; complete started sequence?
+	test	word [driver_ps2_scancode],	EMPTY
+	jz	.no_complete	; no
+
+	; compose scancode
+	or	ax,	word [driver_ps2_scancode]
+
+	; sequence processed
+	mov	word [driver_ps2_scancode],	EMPTY
+
+	; continue
+	jmp	.key
+
+.no_complete:
+	; scancode outside of keyboard matrix?
+	cmp	ax,	DRIVER_PS2_KEYBOARD_key_release
+	jb	.inside_matrix	; no
+
+	; retrieve correct key from keyboard matrix
+	sub	ax,	DRIVER_PS2_KEYBOARD_key_release
+	mov	ax,	word [rsi + rax * STATIC_WORD_SIZE_byte]
+
+	; update key with scancode
+	add	ax,	DRIVER_PS2_KEYBOARD_key_release
+
+	; continue
+	jmp	.key
+
+.inside_matrix:
+	; retrieve correct key from keyboard matrix
+	mov	ax,	word [rsi + rax * STATIC_WORD_SIZE_byte]
+
+.key:
+	; save key code to keyboard cache
+	call	driver_ps2_keyboard_key_save
+
+.end:
+	; accept this interrupt
+	call	kernel_lapic_accept
+
+	; restore original registers
+	pop	r8
+	pop	rsi
+	pop	rax
+
+	; return from interrupt
+	iretq
+
+;-------------------------------------------------------------------------------
+; out:
+;	ax - key code
+driver_ps2_keyboard_key_read:
+	; preserve original registers
+	push	rsi
+	push	r9
+
+	; kernel environment variables/rountines base address
+	mov	rsi,	qword [kernel_environment_base_address]
+
+	; by default there is no key in cache
+	xor	eax,	eax
+
+	; current task properties
+	call	kernel_task_current
+
+	; only framebuffer is allowed
+	mov	r9,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
+	cmp	r9,	qword [rsi + KERNEL_STRUCTURE.framebuffer_pid]
+	jne	.end	; no
+
+	; retrieve first key from cache
+	mov	ax,	word [driver_ps2_keyboard_storage]
+
+	; keyboard cache pointer
+	mov	rsi,	driver_ps2_keyboard_storage
+
+.move:
+	; move key
+	mov	r9w,	word [rsi + STATIC_WORD_SIZE_byte]
+	mov	word [rsi],	r9w
+
+	; next cache entry
+	add	rsi,	STATIC_WORD_SIZE_byte
+
+	; move other keys inside cache?
+	cmp	word [rsi],	EMPTY
+	jne	.move	; yes
+
+.end:
+	; restore original registers
+	pop	r9
+	pop	rsi
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	ax - key code
+driver_ps2_keyboard_key_save:
+	; preserve original registers
+	push	rcx
+	push	rdi
+
+	; keyboard cache address and length
+	xor	ecx,	ecx
+	mov	rdi,	driver_ps2_keyboard_storage
+
+.cache:
+	; available entry?
+	cmp	word [rdi + rcx * STATIC_WORD_SIZE_byte],	EMPTY
+	je	.insert
+
+	; next cache entry
+	add	rdi,	STATIC_WORD_SIZE_byte
+
+	; cache is full?
+	inc	cl
+	cmp	cl,	DRIVER_PS2_KEYBOARD_CACHE_limit
+	jb	.cache	; no
+	
+	; ignore key
+	jmp	.end
+
+.insert:
+	; save key to keyboard cache
+	stosw
+
+.end:
+	; restore original registers
+	pop	rdi
+	pop	rcx
+
+	; return from routine
+	ret
+
+; align routine
+align	0x08,	db	EMPTY
+;-------------------------------------------------------------------------------
+; void
 driver_ps2_mouse:
 	; preserve original registers
 	push	rax
@@ -471,58 +680,6 @@ driver_ps2_mouse:
 .reset:
 	; reset status byte
 	mov	byte [driver_ps2_mouse_packet_id],	EMPTY
-
-.end:
-	; accept this interrupt
-	call	kernel_lapic_accept
-
-	; restore original registers
-	pop	r8
-	pop	rcx
-	pop	rax
-
-	; return from interrupt
-	iretq
-
-;-------------------------------------------------------------------------------
-; void
-driver_ps2_drain:
-	; preserve original registers
-	push	rax
-
-.loop:
-	; check controller status
-	in	al,	DRIVER_PS2_PORT_COMMAND_OR_STATUS
-	test	al,	DRIVER_PS2_STATUS_output
-	jz	.end	; there is nothig, good
-
-	; release data from controller data port
-	in	al,	DRIVER_PS2_PORT_DATA
-
-	; try again
-	jmp	.loop
-
-.end:
-	; restore original registers
-	pop	rax
-
-	; return from routine
-	ret
-
-; align routine
-align	0x08,	db	EMPTY
-driver_ps2_keyboard:
-	; preserve original registers
-	push	rax
-	push	rcx
-	push	r8
-
-	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
-
-	; receive key scancode
-	xor	ax,	ax	; 16 bit value
-	in	al,	DRIVER_PS2_PORT_DATA
 
 .end:
 	; accept this interrupt

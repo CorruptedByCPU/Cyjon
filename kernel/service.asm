@@ -18,6 +18,10 @@ kernel_service_list:
 	dq	kernel_service_ipc_send
 	dq	kernel_service_ipc_receive
 	dq	kernel_service_memory_share
+	dq	driver_ps2_keyboard_key_read
+	dq	kernel_service_task_status
+	dq	kernel_stream_out
+	dq	kernel_stream_in
 kernel_service_list_end:
 
 ; information for linker
@@ -51,9 +55,8 @@ kernel_service_driver_mouse:
 
 ;-------------------------------------------------------------------------------
 ; in:
-;	rdx - stream flags
-;	rsi - length of file name/path in characters
-;	rdi - pointer file name/path
+;	rsi - pointer to file name/path ended with STATIC_ASCII_TERMINATOR
+;	rdi - stream flags
 ; out:
 ;	rax - process ID
 kernel_service_exec:
@@ -61,6 +64,7 @@ kernel_service_exec:
 	push	rcx
 	push	rsi
 	push	rdi
+	push	rbp
 	push	r8
 
 	; kernel environment variables/rountines base address
@@ -70,9 +74,11 @@ kernel_service_exec:
 	sub	rsp,	KERNEL_EXEC_STRUCTURE.SIZE
 	mov	rbp,	rsp	; pointer of file descriptor
 
+	; recognize file name/path length
+	xchg	rsi,	rdi
+	call	lib_string_length
+
 	; execute file from path
-	mov	rcx,	rsi
-	mov	rsi,	rdi
 	call	kernel_exec
 
 	; remove exec descriptor
@@ -80,6 +86,7 @@ kernel_service_exec:
 
 	; restore original registers
 	pop	r8
+	pop	rbp
 	pop	rdi
 	pop	rsi
 	pop	rcx
@@ -444,13 +451,13 @@ kernel_service_memory_share:
 
 	; retrieve task paging structure pointer
 	call	kernel_task_by_id
-	mov	r11,	qword [rax + KERNEL_TASK_STRUCTURE.cr3]
+	mov	r11,	qword [rbx + KERNEL_TASK_STRUCTURE.cr3]
 
 	; set source pointer in place
 	mov	rsi,	rdi
 
 	; acquire memory space from target process
-	mov	r9,	qword [rax + KERNEL_TASK_STRUCTURE.memory_map]
+	mov	r9,	qword [rbx + KERNEL_TASK_STRUCTURE.memory_map]
 	call	kernel_memory_acquire
 
 	; connect memory space of parent process with child
@@ -485,6 +492,30 @@ kernel_service_task_pid:
 
 	; restore original registers
 	pop	r9
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - process ID
+; out:
+;	ax - task status
+kernel_service_task_status:
+	; preserve original registers
+	push	rbx
+	push	rdx
+
+	; retrieve pointer to current task descriptor
+	mov	rdx,	rdi
+	call	kernel_task_by_id
+
+	; set pointer of process paging array
+	mov	ax,	word [rbx + KERNEL_TASK_STRUCTURE.flags]
+
+	; restore original registers
+	pop	rdx
+	pop	rbx
 
 	; return from routine
 	ret

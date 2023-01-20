@@ -4,7 +4,7 @@
 
 %define	KERNEL_name			"Cyjon"
 %define	KERNEL_version			"0"
-%define	KERNEL_revision			"1482"
+%define	KERNEL_revision			"1491"
 %define	KERNEL_architecture		"x86_64"
 %define	KERNEL_language			"Assembly"
 
@@ -77,6 +77,13 @@ struc	KERNEL_STRUCTURE
 	; variables of Storage management functions
 	.storage_base_address		resq	1
 	.storage_root_id		resb	1
+
+	; align next label
+	alignb	0x08
+
+	; variables of Stream management functions
+	.stream_base_address		resq	1
+	.stream_semaphore		resb	1
 
 	; align next label
 	alignb	0x08

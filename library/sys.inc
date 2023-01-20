@@ -19,6 +19,10 @@
 %define	LIB_SYS_REQUEST_IPC_SEND		0x07
 %define	LIB_SYS_REQUEST_IPC_RECEIVE		0x08
 %define	LIB_SYS_REQUEST_MEMORY_SHARE		0x09
+%define	LIB_SYS_REQUEST_KEYBOARD		0x0A
+%define	LIB_SYS_REQUEST_TASK_STATUS		0x0B
+%define	LIB_SYS_REQUEST_STREAM_OUT		0x0C
+%define	LIB_SYS_REQUEST_STREAM_IN		0x0D
 
 struc	LIB_SYS_STRUCTURE_FRAMEBUFFER
 	.width_pixel	resw	1
@@ -32,6 +36,14 @@ struc	LIB_SYS_STRUCTURE_FRAMEBUFFER
 	.pid		resq	1
 	.SIZE:
 endstruc
+
+%define	LIB_SYS_STREAM_SIZE_byte		4096
+
+%define	LIB_SYS_STREAM_out_to_parent_out	00000001b
+%define	LIB_SYS_STREAM_out_to_parent_in		00000010b
+%define	LIB_SYS_STREAM_out_to_in		00000100b
+
+%define LIB_SYS_STREAM_META_LENGTH_byte		0x08
 
 %define	LIB_SYS_IPC_DATA_size_byte		40
 

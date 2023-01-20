@@ -2,6 +2,8 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
+%define	DRIVER_PS2_KEYBOARD_CACHE_limit			15
+
 %define	DRIVER_PS2_KEYBOARD_IRQ_number			0x01
 %define	DRIVER_PS2_KEYBOARD_IO_APIC_register		KERNEL_IO_APIC_iowin + (DRIVER_PS2_KEYBOARD_IRQ_number * 0x02)
 

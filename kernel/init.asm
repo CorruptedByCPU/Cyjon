@@ -26,6 +26,7 @@
 	%include	"kernel/library.inc"
 	%include	"kernel/page.inc"
 	%include	"kernel/storage.inc"
+	%include	"kernel/stream.inc"
 	%include	"kernel/task.inc"
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.inc"
@@ -75,6 +76,7 @@ section .text
 	%include	"kernel/page.asm"
 	%include	"kernel/service.asm"
 	%include	"kernel/storage.asm"
+	%include	"kernel/stream.asm"
 	%include	"kernel/syscall.asm"
 	%include	"kernel/task.asm"
 	; kernel environment initialization routines ---------------------------
@@ -91,6 +93,7 @@ section .text
 	%include	"kernel/init/page.asm"
 	%include	"kernel/init/smp.asm"
 	%include	"kernel/init/storage.asm"
+	%include	"kernel/init/stream.asm"
 	%include	"kernel/init/task.asm"
 	;=======================================================================
 
@@ -129,6 +132,9 @@ init:
 
 	; create Interrupt Descriptor Table
 	call	kernel_init_idt
+
+	; prepare stream cache
+	call	kernel_init_stream
 
 	; create Task queue
 	call	kernel_init_task

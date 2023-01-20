@@ -4,6 +4,124 @@
 
 ;-------------------------------------------------------------------------------
 ; in:
+;	rcx - length of string in characters
+;	rsi - pointer to string
+;	rdi - stream flags
+;	rbp - pointer to exec descriptor
+kernel_exec:
+	; preserve original registers
+	push	rbx
+	push	rdx
+	push	rsi
+	push	rdi
+	push	rbp
+	push	r8
+	push	r10
+	push	r11
+	push	r13
+	push	r14
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; by default there is no PID for new process
+	mov	qword [rbp + KERNEL_EXEC_STRUCTURE.pid],	EMPTY
+
+	;-----------------------------------------------------------------------
+	; locate and load file into memory
+	;-----------------------------------------------------------------------
+
+	; file descriptor
+	sub	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
+	mov	rbp,	rsp	; pointer of file descriptor
+	call	kernel_exec_load
+
+	; load depended libraries
+	mov	r13,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.address]
+	call	kernel_library_import
+
+	;-----------------------------------------------------------------------
+	; configure executable
+	;-----------------------------------------------------------------------
+	call	kernel_exec_configure
+
+	;-----------------------------------------------------------------------
+	; connect libraries to file executable (if needed)
+	;-----------------------------------------------------------------------
+	call	kernel_exec_link
+
+	;-----------------------------------------------------------------------
+	; stdio
+	;-----------------------------------------------------------------------
+
+	; retrieve stream configuration
+	mov	rax,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + 0x30]
+
+	; prepare default input stream
+	call	kernel_stream
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_in],	rsi
+
+	; connect output with input?
+	test	rax,	LIB_SYS_STREAM_out_to_in
+	jnz	.stream_set	; yes
+
+.no_loop:
+	; properties of parent task
+	call	kernel_task_id_parent
+	call	kernel_task_by_id
+
+	; connect output to parents input?
+	test	rax,	LIB_SYS_STREAM_out_to_parent_in
+	jz	.no_input	; no
+
+	; redirect output to parents input
+	mov	rsi,	qword [rbx + KERNEL_TASK_STRUCTURE.stream_in]
+
+	; stream configured
+	jmp	.stream_set
+
+.no_input:
+	; default configuration
+	mov	rsi,	qword [rbx + KERNEL_TASK_STRUCTURE.stream_out]
+
+.stream_set:
+	; update stream output of child
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_out],	rsi
+
+	; increase stream usage
+	inc	qword [rsi + KERNEL_STREAM_STRUCTURE.count]
+
+	;-----------------------------------------------------------------------
+	; new process initialized
+	;-----------------------------------------------------------------------
+
+	; mark task as ready
+	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_init
+
+	; return task ID
+	mov	rax,	qword [r10 + KERNEL_TASK_STRUCTURE.pid]
+
+.end:
+	; remove file descriptor from stack
+	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
+
+	; restore original registers
+	pop	r14
+	pop	r13
+	pop	r11
+	pop	r10
+	pop	r8
+	pop	rbp
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rbx
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
 ;	rcx - length of path
 ;	rsi - pointer to path
 ;	r13 - pointer to file content
@@ -230,48 +348,6 @@ kernel_exec_configure:
 
 ;-------------------------------------------------------------------------------
 ; in:
-;	rcx - length of path
-;	rsi - pointer to path
-;	rbp - pointer to file descriptor
-kernel_exec_load:
-	; preserve original registers
-	push	rax
-	push	rcx
-	push	rsi
-	push	r8
-
-	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
-
-	; get file properties
-	movzx	eax,	byte [r8 + KERNEL_STRUCTURE.storage_root_id]
-	call	kernel_storage_file
-
-	; prepare space for file content
-	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
-	add	rcx,	~STATIC_PAGE_mask
-	shr	rcx,	STATIC_PAGE_SIZE_shift
-	call	kernel_memory_alloc
-
-	; load file content into prepared space
-	mov	rsi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id]
-	call	kernel_storage_read
-
-	; return file content address
-	mov	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.address],	rdi
-
-.end:
-	; restore original registers
-	pop	r8
-	pop	rsi
-	pop	rcx
-	pop	rax
-
-	; return from routine
-	ret
-
-;-------------------------------------------------------------------------------
-; in:
 ;	rdi - pointer to logical executable space
 ;	r13 - pointer to file content
 kernel_exec_link:
@@ -440,6 +516,48 @@ kernel_exec_link:
 
 ;-------------------------------------------------------------------------------
 ; in:
+;	rcx - length of path
+;	rsi - pointer to path
+;	rbp - pointer to file descriptor
+kernel_exec_load:
+	; preserve original registers
+	push	rax
+	push	rcx
+	push	rsi
+	push	r8
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; get file properties
+	movzx	eax,	byte [r8 + KERNEL_STRUCTURE.storage_root_id]
+	call	kernel_storage_file
+
+	; prepare space for file content
+	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
+	add	rcx,	~STATIC_PAGE_mask
+	shr	rcx,	STATIC_PAGE_SIZE_shift
+	call	kernel_memory_alloc
+
+	; load file content into prepared space
+	mov	rsi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id]
+	call	kernel_storage_read
+
+	; return file content address
+	mov	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.address],	rdi
+
+.end:
+	; restore original registers
+	pop	r8
+	pop	rsi
+	pop	rcx
+	pop	rax
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
 ;	r13 - pointer to file content
 ; out:
 ;	rcx - executable size in Bytes
@@ -491,73 +609,6 @@ kernel_exec_size:
 	; restore original registers
 	pop	rdx
 	pop	rbx
-
-	; return from routine
-	ret
-
-;-------------------------------------------------------------------------------
-; in:
-;	rcx - length of string in characters
-;	rsi - pointer to string
-;	rbp - pointer to exec descriptor
-kernel_exec:
-	; preserve original registers
-	push	rdi
-	push	rbp
-	push	r8
-	push	r10
-	push	r11
-	push	r13
-	push	r14
-
-	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
-
-	; by default there is no PID for new process
-	mov	qword [rbp + KERNEL_EXEC_STRUCTURE.pid],	EMPTY
-
-	;-----------------------------------------------------------------------
-	; locate and load file into memory
-	;-----------------------------------------------------------------------
-
-	; file descriptor
-	sub	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
-	mov	rbp,	rsp	; pointer of file descriptor
-	call	kernel_exec_load
-
-	; load depended libraries
-	mov	r13,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.address]
-	call	kernel_library_import
-
-	;-----------------------------------------------------------------------
-	; configure executable
-	;-----------------------------------------------------------------------
-	call	kernel_exec_configure
-
-	;-----------------------------------------------------------------------
-	; connect libraries to file executable (if needed)
-	;-----------------------------------------------------------------------
-	call	kernel_exec_link
-
-	;-----------------------------------------------------------------------
-	; new process initialized
-	;-----------------------------------------------------------------------
-
-	; mark task as ready
-	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_init
-
-.end:
-	; remove file descriptor from stack
-	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
-
-	; restore original registers
-	pop	r14
-	pop	r13
-	pop	r11
-	pop	r10
-	pop	r8
-	pop	rbp
-	pop	rdi
 
 	; return from routine
 	ret

@@ -185,6 +185,7 @@ kernel_task_add:
 	; preserve original registers
 	push	rax
 	push	rcx
+	push	rdx
 	push	rsi
 	push	rdi
 	push	r8
@@ -221,7 +222,7 @@ kernel_task_add:
 
 	; retieve parent ID
 	call	kernel_task_id_parent
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.pid_parent],	rax
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.pid_parent],	rdx
 
 	; process name too long?
 	cmp	rcx,	KERNEL_TASK_NAME_limit
@@ -247,6 +248,7 @@ kernel_task_add:
 	pop	r8
 	pop	rdi
 	pop	rsi
+	pop	rdx
 	pop	rcx
 	pop	rax
 
@@ -257,7 +259,7 @@ kernel_task_add:
 ; in:
 ;	rdx - ID of requested task
 ; out:
-;	rax - pointer to task of this ID
+;	rbx - pointer to task of this ID
 ;	or EMPTY if not found
 kernel_task_by_id:
 	; preserve original registers
@@ -269,22 +271,22 @@ kernel_task_by_id:
 
 	; search for free entry from beginning
 	mov	rcx,	KERNEL_TASK_limit
-	mov	rax,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
+	mov	rbx,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
 
 .loop:
 	; our task we are looking for?
-	cmp	qword [rax + KERNEL_TASK_STRUCTURE.pid],	rdx
+	cmp	qword [rbx + KERNEL_TASK_STRUCTURE.pid],	rdx
 	je	.end	; yes
 
 	; move pointer to next task in queue
-	add	rax,	KERNEL_TASK_STRUCTURE.SIZE
+	add	rbx,	KERNEL_TASK_STRUCTURE.SIZE
 
 	; end of task queue?
 	dec	rcx
 	jnz	.loop	; no
 
 	; task not found
-	xor	eax,	eax
+	xor	ebx,	ebx
 
 .end:
 	; restore original registers
@@ -346,7 +348,7 @@ kernel_task_id_new:
 
 ;-------------------------------------------------------------------------------
 ; out:
-;	rax - ID of parent
+;	rdx - ID of parent
 kernel_task_id_parent:
 	; preserve original registers
 	push	r9
@@ -355,7 +357,7 @@ kernel_task_id_parent:
 	call	kernel_task_current
 
 	; return parent ID
-	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
+	mov	rdx,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
 
 	; restore original registers
 	pop	r9

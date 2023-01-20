@@ -3,28 +3,22 @@
 ;===============================================================================
 
 ;-------------------------------------------------------------------------------
-kernel_init_exec:
+; in:
+;	r8 - pointer to kernel environment variables/routines
+kernel_init_stream:
 	; preserve original registers
 	push	rcx
-	push	rsi
-	push	rbp
+	push	rdi
 
-	; exec descriptor
-	sub	rsp,	KERNEL_EXEC_STRUCTURE.SIZE
-	mov	rbp,	rsp	; pointer of file descriptor
+	; assign space for stream cache
+	mov	ecx,	((KERNEL_STREAM_limit * KERNEL_STREAM_STRUCTURE.SIZE) + ~STATIC_PAGE_mask) >> STATIC_PAGE_SIZE_shift
+	call	kernel_memory_alloc
 
-	; execute init file
-	mov	ecx,	kernel_exec_file_init_end - kernel_exec_file_init
-	mov	rsi,	kernel_exec_file_init
-	mov	edi,	LIB_SYS_STREAM_out_to_in
-	call	kernel_exec
-
-	; remove exec descriptor
-	add	rsp,	KERNEL_EXEC_STRUCTURE.SIZE
+	; save it
+	mov	qword [r8 + KERNEL_STRUCTURE.stream_base_address],	rdi
 
 	; restore original registers
-	pop	rbp
-	pop	rsi
+	pop	rdi
 	pop	rcx
 
 	; return from routine

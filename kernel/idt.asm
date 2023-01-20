@@ -300,6 +300,9 @@ kernel_idt_exception:
 	push	r14
 	push	r15
 
+	; bochs breakpoint
+	xchg	bx,	bx
+
 	; put on the stack value of CR2 register
 	mov	rax,	cr2
 	push	rax
