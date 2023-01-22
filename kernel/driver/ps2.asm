@@ -376,10 +376,6 @@ driver_ps2_keyboard:
 	; preserve original registers
 	push	rax
 	push	rsi
-	push	r8
-
-	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
 
 	; current keyboard matrix
 	mov	rsi,	qword [driver_ps2_keyboard_matrix]
@@ -452,7 +448,6 @@ driver_ps2_keyboard:
 	call	kernel_lapic_accept
 
 	; restore original registers
-	pop	r8
 	pop	rsi
 	pop	rax
 
@@ -479,25 +474,18 @@ driver_ps2_keyboard_key_read:
 	; only framebuffer is allowed
 	mov	r9,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
 	cmp	r9,	qword [rsi + KERNEL_STRUCTURE.framebuffer_pid]
-	jne	.end	; no
+	jne	.end	; not allowed
 
 	; retrieve first key from cache
 	mov	ax,	word [driver_ps2_keyboard_storage]
 
-	; keyboard cache pointer
-	mov	rsi,	driver_ps2_keyboard_storage
-
-.move:
-	; move key
-	mov	r9w,	word [rsi + STATIC_WORD_SIZE_byte]
-	mov	word [rsi],	r9w
-
-	; next cache entry
-	add	rsi,	STATIC_WORD_SIZE_byte
-
-	; move other keys inside cache?
-	cmp	word [rsi],	EMPTY
-	jne	.move	; yes
+	test	ax,	ax
+	jz	.empty
+	call	driver_serial_char
+.empty:
+	; reload keyboard cache
+	shl	qword [driver_ps2_keyboard_storage],	STATIC_MOVE_HIGH_TO_AX_shift
+	shl	qword [driver_ps2_keyboard_storage + STATIC_QWORD_SIZE_byte],	STATIC_MOVE_HIGH_TO_AX_shift
 
 .end:
 	; restore original registers
