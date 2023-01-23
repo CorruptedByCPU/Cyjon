@@ -226,7 +226,7 @@ kernel_service_ipc_send:
 
 .found:
 	; set message time out
-	add	rax,	DRIVER_RTC_Hz * 100
+	add	rax,	DRIVER_RTC_Hz
 	mov	qword [rdx + LIB_SYS_STRUCTURE_IPC.ttl],	rax
 
 	; set message source
