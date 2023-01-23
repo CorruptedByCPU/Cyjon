@@ -59,6 +59,8 @@ kernel_init_smp:
 	; number of APs initialized
 	mov	rax,	qword [kernel_smp_count]
 	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
+	xor	ecx,	ecx	; no prefix
+	xor	dl,	dl	; value unsigned
 	mov	rsi,	kernel_log_smp
 	call	driver_serial_value
 	call	driver_serial_string

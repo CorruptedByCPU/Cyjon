@@ -100,11 +100,17 @@ driver_serial_ready:
 
 ;-------------------------------------------------------------------------------
 ; in:
+;	dl - TRUE/FALSE - reversed string?
 ;	rsi - pointer to string ended by terminator
 driver_serial_string:
 	; preserve original register
 	push	rax
+	push	rcx
 	push	rsi
+
+	; print reversed
+	test	dl,	dl
+	jnz	.reversed	; yes
 
 .loop:
 	; load character from string
@@ -120,27 +126,49 @@ driver_serial_string:
 	; show other characters from string
 	jmp	.loop
 
+.reversed:
+	; length of string
+	call	lib_string_length
+
+.char:
+	; previous character
+	dec	rcx
+	js	.end
+
+	; print it
+	mov	al,	byte [rsi + rcx]
+	call	driver_serial_char
+
+	; show previous character from string
+	jmp	.char
+
 .end:
 	; restore original registers
 	pop	rsi
+	pop	rcx
 	pop	rax
 
 	; return from routine
 	ret
 
-
 ;-------------------------------------------------------------------------------
 ; in:
-;	rax - unsigned value
+;	rax - value
 ;	rbx - number base
+;	rcx - prefix length
+;	dl  - TRUE/FALSE signed value?
 driver_serial_value:
 	; preserve original registers
 	push	rax
-	push	rdx
 	push	rbp
+	push	rdx
+	push	rcx
 
 	; stack of separated digits
 	mov	rbp,	rsp
+
+	; value length in digits
+	xor	ecx,	ecx
 
 .loop:
 	; division result
@@ -153,11 +181,34 @@ driver_serial_value:
 	add	dl,	STATIC_ASCII_DIGIT_0
 	push	rdx	; and keep on stack
 
+	; first digit
+	inc	rcx
+
 	; keep parsing?
 	test	rax,	rax
 	jnz	.loop	; yes
 
-.return:
+.prefix:
+	; prefix with correct length?
+	cmp	rcx,	qword [rbp]
+	jae	.sign	; yes
+
+	; add ZERO
+	push	STATIC_ASCII_DIGIT_0
+
+	; next digit
+	inc	rcx
+	jmp	.prefix
+
+.sign:
+	; value should be signed?
+	test	qword [rbp + 0x08],	EMPTY
+	je	.print	; no
+
+	; show sign
+	push	STATIC_ASCII_MINUS
+
+.print:
 	; show all digits
 
 	; something left?
@@ -179,12 +230,13 @@ driver_serial_value:
 	call	driver_serial_char
 
 	; next digit
-	jmp	.return
+	jmp	.print
 
 .end:
 	; restore original registers
-	pop	rbp
+	pop	rcx
 	pop	rdx
+	pop	rbp
 	pop	rax
 
 	; return from routine

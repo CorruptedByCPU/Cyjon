@@ -9,7 +9,8 @@ driver_ps2_mouse_semaphore				db	FALSE
 driver_ps2_mouse_type					db	EMPTY
 driver_ps2_mouse_packet_id				db	EMPTY
 
-driver_ps2_scancode					dw	EMPTY
+driver_ps2_keyboard_scancode				dw	EMPTY
+driver_ps2_keyboard_semaphore				db	UNLOCK
 
 ; align list
 align	0x08,	db	0x00
@@ -401,21 +402,21 @@ driver_ps2_keyboard:
 .sequence:
 	; save sequence type
 	shl	ax,	STATIC_MOVE_AL_TO_HIGH_shift
-	mov	word [driver_ps2_scancode],	ax
+	mov	word [driver_ps2_keyboard_scancode],	ax
 
 	; end of routine
 	jmp	.end
 
 .no_sequence:
 	; complete started sequence?
-	test	word [driver_ps2_scancode],	EMPTY
+	test	word [driver_ps2_keyboard_scancode],	EMPTY
 	jz	.no_complete	; no
 
 	; compose scancode
-	or	ax,	word [driver_ps2_scancode]
+	or	ax,	word [driver_ps2_keyboard_scancode]
 
 	; sequence processed
-	mov	word [driver_ps2_scancode],	EMPTY
+	mov	word [driver_ps2_keyboard_scancode],	EMPTY
 
 	; continue
 	jmp	.key
@@ -476,16 +477,24 @@ driver_ps2_keyboard_key_read:
 	cmp	r9,	qword [rsi + KERNEL_STRUCTURE.framebuffer_pid]
 	jne	.end	; not allowed
 
+.lock:
+	; request an exclusive access
+	mov	al,	LOCK
+	lock xchg	byte [driver_ps2_keyboard_semaphore],	al
+
+	; assigned?
+	test	al,	al
+	jnz	.lock	; no
+
 	; retrieve first key from cache
 	mov	ax,	word [driver_ps2_keyboard_storage]
 
-	test	ax,	ax
-	jz	.empty
-	call	driver_serial_char
-.empty:
 	; reload keyboard cache
 	shl	qword [driver_ps2_keyboard_storage],	STATIC_MOVE_HIGH_TO_AX_shift
 	shl	qword [driver_ps2_keyboard_storage + STATIC_QWORD_SIZE_byte],	STATIC_MOVE_HIGH_TO_AX_shift
+
+	; release access
+	mov	byte [driver_ps2_keyboard_semaphore],	UNLOCK
 
 .end:
 	; restore original registers
@@ -502,6 +511,15 @@ driver_ps2_keyboard_key_save:
 	; preserve original registers
 	push	rcx
 	push	rdi
+
+.lock:
+	; request an exclusive access
+	mov	cl,	LOCK
+	lock xchg	byte [driver_ps2_keyboard_semaphore],	cl
+
+	; assigned?
+	test	cl,	cl
+	jnz	.lock	; no
 
 	; keyboard cache address and length
 	xor	ecx,	ecx
@@ -528,6 +546,9 @@ driver_ps2_keyboard_key_save:
 	stosw
 
 .end:
+	; release access
+	mov	byte [driver_ps2_keyboard_semaphore],	UNLOCK
+
 	; restore original registers
 	pop	rdi
 	pop	rcx

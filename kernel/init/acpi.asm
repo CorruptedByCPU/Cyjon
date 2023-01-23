@@ -114,6 +114,8 @@ kernel_init_acpi:
 	call	driver_serial_string
 	mov	rax,	qword [r8 + KERNEL_STRUCTURE.lapic_base_address]
 	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
+	xor	ecx,	ecx	; no prefix
+	xor	dl,	dl	; value unsigned
 	call	driver_serial_value
 
 	; I/O APIC controller is available?

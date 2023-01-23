@@ -22,6 +22,9 @@ kernel_service_list:
 	dq	kernel_service_task_status
 	dq	kernel_stream_out
 	dq	kernel_stream_in
+	dq	kernel_service_serial_char
+	dq	kernel_service_serial_string
+	dq	kernel_service_serial_value
 kernel_service_list_end:
 
 ; information for linker
@@ -234,7 +237,7 @@ kernel_service_ipc_send:
 	mov	qword [rdx + LIB_SYS_STRUCTURE_IPC.target],	rdi
 
 	; load data into message
-	mov	ecx,	KERNEL_IPC_limit
+	mov	ecx,	LIB_SYS_IPC_DATA_size_byte
 	mov	rdi,	rdx
 	add	rdi,	LIB_SYS_STRUCTURE_IPC.data
 	rep	movsb
@@ -269,6 +272,15 @@ kernel_service_ipc_receive:
 	; kernel environment variables/rountines base address
 	mov	r8,	qword [kernel_environment_base_address]
 
+.lock:
+	; request an exclusive access
+	mov	cl,	LOCK
+	lock xchg	byte [r8 + KERNEL_STRUCTURE.ipc_semaphore],	cl
+
+	; assigned?
+	test	cl,	cl
+	jnz	.lock	; no
+
 	; retrieve ID of current process
 	call	kernel_task_pid
 
@@ -282,11 +294,7 @@ kernel_service_ipc_receive:
 	; message alive?
 	mov	rbx,	qword [r8 + KERNEL_STRUCTURE.driver_rtc_microtime]
 	cmp	qword [rsi + LIB_SYS_STRUCTURE_IPC.ttl],	rbx
-	jb	.next	; no
-
-	; message for us?
-	cmp	qword [rsi + LIB_SYS_STRUCTURE_IPC.target],	rax
-	je	.found	; yes
+	ja	.check	; yes
 
 .next:
 	; next entry from list?
@@ -295,17 +303,21 @@ kernel_service_ipc_receive:
 	jnz	.loop	; yes
 
 	; no message for us
-	xor	al,	al
+	xor	eax,	eax
 
 	; no
 	jmp	.end
 
-.found:
+.check:
+	; message for us?
+	cmp	qword [rsi + LIB_SYS_STRUCTURE_IPC.target],	rax
+	jne	.next	; no
+
 	; preserve original register
 	push	rsi
 
 	; load message to process descriptor
-	mov	ecx,	KERNEL_IPC_limit
+	mov	ecx,	LIB_SYS_STRUCTURE_IPC.SIZE
 	rep	movsb
 
 	; restore original register
@@ -315,9 +327,12 @@ kernel_service_ipc_receive:
 	mov	qword [rsi + LIB_SYS_STRUCTURE_IPC.ttl],	EMPTY
 
 	; message transferred
-	mov	al,	TRUE
+	mov	eax,	TRUE
 
 .end:
+	; release access
+	mov	byte [r8 + KERNEL_STRUCTURE.ipc_semaphore],	UNLOCK
+
 	; restore original registers
 	pop	r8
 	pop	rdi
@@ -516,6 +531,72 @@ kernel_service_task_status:
 	; restore original registers
 	pop	rdx
 	pop	rbx
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - ASCII character
+kernel_service_serial_char:
+	; preserve original register
+	push	rax
+
+	; send character to serial
+	mov	al,	dil
+	call	driver_serial_char
+
+	; restore original register
+	pop	rax
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - pointer to string
+;	rsi - TRUE/FALSE - print string reversed?
+kernel_service_serial_string:
+	; preserve original registers
+	push	rdx
+	push	rsi
+
+	; send string to serial
+	mov	dl,	sil
+	mov	rsi,	rdi
+	call	driver_serial_string
+
+	; restore original registers
+	pop	rsi
+	pop	rdx
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - value
+;	sil - base
+;	rdx - prefix length
+;	cl - TRUE/FALSE signed value?
+kernel_service_serial_value:
+	; preserve original registers
+	push	rax
+	push	rbx
+	push	rcx
+	push	rdx
+
+	; send value to serial
+	mov	rax,	rdi
+	movzx	ebx,	sil
+	xchg	rcx,	rdx
+	call	driver_serial_value
+
+	; restore original registers
+	pop	rdx
+	pop	rcx
+	pop	rbx
+	pop	rax
 
 	; return from routine
 	ret
