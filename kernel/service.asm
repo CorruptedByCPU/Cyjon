@@ -25,6 +25,7 @@ kernel_service_list:
 	dq	kernel_service_serial_char
 	dq	kernel_service_serial_string
 	dq	kernel_service_serial_value
+	dq	driver_rtc_time
 kernel_service_list_end:
 
 ; information for linker

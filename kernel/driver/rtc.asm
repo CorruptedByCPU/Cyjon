@@ -4,34 +4,6 @@
 
 ;-------------------------------------------------------------------------------
 ; void
-driver_rtc_irq:
-	; preserve original register
-	push	rax
-
-	; kernel environment variables/rountines base address
-	mov	rax,	qword [kernel_environment_base_address]
-
-	; increment microtime counter
-	inc	qword [rax + KERNEL_STRUCTURE.driver_rtc_microtime]
-
-	; we need content of C register
-	mov	al,	DRIVER_RTC_STATUS_REGISTER_C
-	out	DRIVER_RTC_PORT_command,	al
-
-	; retrieve it
-	in	al,	DRIVER_RTC_PORT_data
-
-	; accept this interrupt
-	call	kernel_lapic_accept
-
-	; restore original register
-	pop	rax
-
-	; return from interrupt
-	iretq
-
-;-------------------------------------------------------------------------------
-; void
 driver_rtc:
 	; preserve original register
 	push	rax
@@ -96,6 +68,100 @@ driver_rtc:
 	pop	rdi
 	pop	rbx
 	pop	rax
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; void
+driver_rtc_irq:
+	; preserve original register
+	push	rax
+
+	; kernel environment variables/rountines base address
+	mov	rax,	qword [kernel_environment_base_address]
+
+	; increment microtime counter
+	inc	qword [rax + KERNEL_STRUCTURE.driver_rtc_microtime]
+
+	; we need content of C register
+	mov	al,	DRIVER_RTC_STATUS_REGISTER_C
+	out	DRIVER_RTC_PORT_command,	al
+
+	; retrieve it
+	in	al,	DRIVER_RTC_PORT_data
+
+	; accept this interrupt
+	call	kernel_lapic_accept
+
+	; restore original register
+	pop	rax
+
+	; return from interrupt
+	iretq
+
+;-------------------------------------------------------------------------------
+; out:
+;	rax - 0x00wwyymmddHHMMSS
+;
+;	ww - Weekday (Sunday 1, Monday 2, etc.)
+;	yy - 20YY
+;	mm - Month
+;	dd - Day (1..31)
+;	HH - Hour (0..23)
+;	MM - Minute (0..59)
+;	SS - Second (0..59)
+driver_rtc_time:
+	; clear time register
+	xor	eax,	eax
+
+	; request weekday
+	mov	al,	DRIVER_RTC_REGISTER_weekday
+	out	DRIVER_RTC_PORT_command,	al
+	; retrieve and set in place
+	in	al,	DRIVER_RTC_PORT_data
+	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
+
+	; request weekday
+	mov	al,	DRIVER_RTC_REGISTER_year
+	out	DRIVER_RTC_PORT_command,	al
+	; retrieve and set in place
+	in	al,	DRIVER_RTC_PORT_data
+	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
+
+	; request weekday
+	mov	al,	DRIVER_RTC_REGISTER_month
+	out	DRIVER_RTC_PORT_command,	al
+	; retrieve and set in place
+	in	al,	DRIVER_RTC_PORT_data
+	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
+
+	; request weekday
+	mov	al,	DRIVER_RTC_REGISTER_day_of_month
+	out	DRIVER_RTC_PORT_command,	al
+	; retrieve and set in place
+	in	al,	DRIVER_RTC_PORT_data
+	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
+
+	; request weekday
+	mov	al,	DRIVER_RTC_REGISTER_hour
+	out	DRIVER_RTC_PORT_command,	al
+	; retrieve and set in place
+	in	al,	DRIVER_RTC_PORT_data
+	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
+
+	; request weekday
+	mov	al,	DRIVER_RTC_REGISTER_minutes
+	out	DRIVER_RTC_PORT_command,	al
+	; retrieve and set in place
+	in	al,	DRIVER_RTC_PORT_data
+	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
+
+	; request weekday
+	mov	al,	DRIVER_RTC_REGISTER_seconds
+	out	DRIVER_RTC_PORT_command,	al
+	; retrieve
+	in	al,	DRIVER_RTC_PORT_data
 
 	; return from routine
 	ret

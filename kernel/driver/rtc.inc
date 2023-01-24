@@ -10,13 +10,13 @@
 %define	DRIVER_RTC_PORT_command					0x0070
 %define	DRIVER_RTC_PORT_data					0x0071
 
-%define	DRIVER_RTC_second					0x00
-%define	DRIVER_RTC_minute					0x02
-%define	DRIVER_RTC_hour						0x04
-%define	DRIVER_RTC_weekday					0x06
-%define	DRIVER_RTC_day_of_month					0x07
-%define	DRIVER_RTC_month					0x08
-%define	DRIVER_RTC_year						0x09
+%define	DRIVER_RTC_REGISTER_seconds				0x00
+%define	DRIVER_RTC_REGISTER_minutes				0x02
+%define	DRIVER_RTC_REGISTER_hour				0x04
+%define	DRIVER_RTC_REGISTER_weekday				0x06
+%define	DRIVER_RTC_REGISTER_day_of_month			0x07
+%define	DRIVER_RTC_REGISTER_month				0x08
+%define	DRIVER_RTC_REGISTER_year				0x09
 
 %define	DRIVER_RTC_STATUS_REGISTER_update_in_progress		10000000b
 
