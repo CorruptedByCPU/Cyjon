@@ -478,9 +478,12 @@ kernel_service_memory_share:
 	mov	r9,	qword [rbx + KERNEL_TASK_STRUCTURE.memory_map]
 	call	kernel_memory_acquire
 
+	; convert page number to offset
+	shl	rdi,	STATIC_PAGE_SIZE_shift
+
 	; connect memory space of parent process with child
 	mov	rax,	rdi
-	shl	rax,	STATIC_PAGE_SIZE_shift
+	add	rax,	KERNEL_EXEC_BASE_address
 	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_shared
 	call	kernel_page_clang
 
