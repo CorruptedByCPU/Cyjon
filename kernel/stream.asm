@@ -283,15 +283,19 @@ kernel_stream_get:
 	; task properties
 	call	kernel_task_current
 
-	; by default stream out
-	mov	rsi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]
-
 	; stream out?
 	test	rsi,	LIB_SYS_STREAM_out
-	jnz	.lock	; yes
+	jnz	.out	; yes
 
 	; change to stream in
 	mov	rsi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_in]
+
+	; continue
+	jmp	.lock
+
+.out:
+	; set to stream out
+	mov	rsi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]
 
 .lock:
 	; request an exclusive access
