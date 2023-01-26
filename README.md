@@ -30,6 +30,10 @@ So the code is not optimized for speed but for readability.
   - Nasm 2.15.1
   - Clang 14.0.6 (only for package manager)
 
+### Download
+
+   https://blackdev.org/files/cyjon.iso
+
 ### Compilation/Exec (GNU/Linux):
 
 	user@hostname:~/Cyjon$ chmod +x make.sh qemu.sh
