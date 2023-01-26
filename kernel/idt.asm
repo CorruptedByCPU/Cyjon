@@ -311,6 +311,7 @@ kernel_idt_exception:
 	cld
 
 	; show on debug console, exception name
+	xor	dl,	dl	; string not reversed
 	mov	rsi,	qword [rsp + KERNEL_IDT_STRUCTURE_EXCEPTION.id]
 	shl	rsi,	STATIC_MULTIPLE_BY_PTR_shift	; offset of entry at exception string table
 	add	rsi,	kernel_idt_exception_string	; pointer to exception string table entry
@@ -320,6 +321,7 @@ kernel_idt_exception:
 	; and exception address
 	mov	rax,	qword [rsp + KERNEL_IDT_STRUCTURE_EXCEPTION.rip]
 	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
+	xor	ecx,	ecx	; no prefix
 	call	driver_serial_value
 
 	; bochs, breakpoint

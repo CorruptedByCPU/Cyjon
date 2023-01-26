@@ -26,6 +26,8 @@ kernel_service_list:
 	dq	kernel_service_serial_string
 	dq	kernel_service_serial_value
 	dq	driver_rtc_time
+	dq	kernel_stream_set
+	dq	kernel_stream_get
 kernel_service_list_end:
 
 ; information for linker
@@ -227,7 +229,7 @@ kernel_service_ipc_send:
 
 .found:
 	; set message time out
-	add	rax,	DRIVER_RTC_Hz
+	add	rax,	DRIVER_RTC_Hz * 100
 	mov	qword [rdx + LIB_SYS_STRUCTURE_IPC.ttl],	rax
 
 	; set message source
