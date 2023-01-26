@@ -24,6 +24,12 @@
 	%define	LIB_SYS_REQUEST_TASK_STATUS		0x0B
 	%define	LIB_SYS_REQUEST_STREAM_OUT		0x0C
 	%define	LIB_SYS_REQUEST_STREAM_IN		0x0D
+	%define	LIB_SYS_REQUEST_SERIAL_CHAR		0x0E
+	%define	LIB_SYS_REQUEST_SERIAL_STRING		0x0F
+	%define	LIB_SYS_REQUEST_SERIAL_VALUE		0x10
+	%define	LIB_SYS_REQUEST_TIME			0x11
+	%define	LIB_SYS_REQUEST_STREAM_SET		0x12
+	%define	LIB_SYS_REQUEST_STREAM_GET		0x13
 
 	struc	LIB_SYS_STRUCTURE_FRAMEBUFFER
 		.width_pixel	resw	1
@@ -40,11 +46,17 @@
 
 	%define	LIB_SYS_STREAM_SIZE_byte		4096
 
-	%define	LIB_SYS_STREAM_out_to_parent_out	00000001b
-	%define	LIB_SYS_STREAM_out_to_parent_in		00000010b
-	%define	LIB_SYS_STREAM_out_to_in		00000100b
+	%define	LIB_SYS_STREAM_FLOW_out_to_parent_out	00000001b
+	%define	LIB_SYS_STREAM_FLOW_out_to_parent_in	00000010b
+	%define	LIB_SYS_STREAM_FLOW_out_to_in		00000100b
 
 	%define LIB_SYS_STREAM_META_LENGTH_byte		0x08
+
+	%define	LIB_SYS_STREAM_FLAG_closed		00000001b
+	%define	LIB_SYS_STREAM_FLAG_undefinied		00000010b
+
+	%define	LIB_SYS_STREAM_out			00000001b
+	%define	LIB_SYS_STREAM_in			00000010b
 
 	%define	LIB_SYS_IPC_DATA_size_byte		40
 
@@ -90,13 +102,4 @@
 		.length		resb	1
 		.name		resb	255
 	endstruc
-
-	extern	lib_sys_ipc_receive
-	extern	lib_sys_serial_char
-
-	[bits 64]
-
-	default	rel
-
-	global	entry
 %endif

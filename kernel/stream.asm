@@ -246,6 +246,9 @@ kernel_stream_out:
 	; preserve new marker of end of stream
 	mov	word [rbx + KERNEL_STREAM_STRUCTURE.end],	dx
 
+	; set meta flag
+	or	byte [rbx + KERNEL_STREAM_STRUCTURE.flags],	LIB_SYS_STREAM_FLAG_undefinied;
+
 	; string inside stream
 	mov	al,	TRUE
 
@@ -260,6 +263,130 @@ kernel_stream_out:
 	pop	rdx
 	pop	rcx
 	pop	rbx
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rsi - stream type
+;	rdi - pointer to meta descriptor
+; out:
+;	al - stream status
+kernel_stream_get:
+	; preserve original registers
+	push	rcx
+	push	rsi
+	push	rdi
+	push	r9
+
+	; task properties
+	call	kernel_task_current
+
+	; stream out?
+	test	rsi,	LIB_SYS_STREAM_out
+	jnz	.out	; yes
+
+	; change to stream in
+	mov	rsi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_in]
+
+	; continue
+	jmp	.lock
+
+.out:
+	; set to stream out
+	mov	rsi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]
+
+.lock:
+	; request an exclusive access
+	mov	cl,	LOCK
+	lock xchg	byte [rsi + KERNEL_STREAM_STRUCTURE.lock],	cl
+
+	; assigned?
+	test	cl,	cl
+	jnz	.lock	; no
+
+	; preserve stream pointer
+	push	rsi
+
+	; retrieve metadata
+	mov	ecx,	LIB_SYS_STREAM_META_LENGTH_byte
+	add	rsi,	KERNEL_STREAM_STRUCTURE.meta
+	rep	movsb
+
+	; restore stream pointer
+	pop	rsi
+
+	; release stream
+	mov	byte [rsi + KERNEL_STREAM_STRUCTURE.lock],	UNLOCK
+
+	; return stream flags
+	movzx	eax,	byte [rsi + KERNEL_STREAM_STRUCTURE.flags]
+
+	; restore original registers
+	pop	r9
+	pop	rdi
+	pop	rsi
+	pop	rcx
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rsi - pointer to stream metadata
+;	rdi - stream type
+kernel_stream_set:
+	; preserve original registers
+	push	rcx
+	push	rsi
+	push	rdi
+	push	r9
+
+	; task properties
+	call	kernel_task_current
+
+	; by default stream out
+	mov	rdi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]
+
+	; stream out?
+	test	rdi,	LIB_SYS_STREAM_out
+	jnz	.lock	; yes
+
+	; change to stream in
+	mov	rdi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_in]
+
+.lock:
+	; request an exclusive access
+	mov	cl,	LOCK
+	lock xchg	byte [rdi + KERNEL_STREAM_STRUCTURE.lock],	cl
+
+	; assigned?
+	test	cl,	cl
+	jnz	.lock	; no
+
+	; preserve stream pointer
+	push	rdi
+
+	; retrieve metadata
+	mov	ecx,	LIB_SYS_STREAM_META_LENGTH_byte
+	add	rdi,	KERNEL_STREAM_STRUCTURE.meta
+	rep	movsb
+
+	; restore stream pointer
+	pop	rdi
+
+	; metadata are up to date
+	and	byte [rdi + KERNEL_STREAM_STRUCTURE.flags],	~LIB_SYS_STREAM_FLAG_undefinied
+
+	; release stream
+	mov	byte [rdi + KERNEL_STREAM_STRUCTURE.lock],	UNLOCK
+
+	; restore original registers
+	pop	r9
+	pop	rdi
+	pop	rsi
+	pop	rcx
 
 	; return from routine
 	ret

@@ -62,7 +62,7 @@ kernel_exec:
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_in],	rsi
 
 	; connect output with input?
-	test	rax,	LIB_SYS_STREAM_out_to_in
+	test	rax,	LIB_SYS_STREAM_FLOW_out_to_in
 	jnz	.stream_set	; yes
 
 .no_loop:
@@ -71,7 +71,7 @@ kernel_exec:
 	call	kernel_task_by_id
 
 	; connect output to parents input?
-	test	rax,	LIB_SYS_STREAM_out_to_parent_in
+	test	rax,	LIB_SYS_STREAM_FLOW_out_to_parent_in
 	jz	.no_input	; no
 
 	; redirect output to parents input
