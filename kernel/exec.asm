@@ -8,6 +8,8 @@
 ;	rsi - pointer to string
 ;	rdi - stream flags
 ;	rbp - pointer to exec descriptor
+; out:
+;	rax - new process ID
 kernel_exec:
 	; preserve original registers
 	push	rbx
@@ -25,7 +27,7 @@ kernel_exec:
 	mov	r8,	qword [kernel_environment_base_address]
 
 	; by default there is no PID for new process
-	mov	qword [rbp + KERNEL_EXEC_STRUCTURE.pid],	EMPTY
+	xor	eax,	eax
 
 	;-----------------------------------------------------------------------
 	; locate and load file into memory
@@ -35,6 +37,10 @@ kernel_exec:
 	sub	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
 	mov	rbp,	rsp	; pointer of file descriptor
 	call	kernel_exec_load
+
+	; file loaded?
+	cmp	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
+	je	.end	; no
 
 	; load depended libraries
 	mov	r13,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.address]
@@ -519,6 +525,8 @@ kernel_exec_link:
 ;	rcx - length of path
 ;	rsi - pointer to path
 ;	rbp - pointer to file descriptor
+; out:
+;	CF - if file not exist
 kernel_exec_load:
 	; preserve original registers
 	push	rax
@@ -532,6 +540,10 @@ kernel_exec_load:
 	; get file properties
 	movzx	eax,	byte [r8 + KERNEL_STRUCTURE.storage_root_id]
 	call	kernel_storage_file
+
+	; file exist?
+	cmp	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
+	je	.end	; no
 
 	; prepare space for file content
 	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]

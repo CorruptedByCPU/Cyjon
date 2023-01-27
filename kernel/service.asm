@@ -61,8 +61,8 @@ kernel_service_driver_mouse:
 
 ;-------------------------------------------------------------------------------
 ; in:
-;	rsi - pointer to file name/path ended with STATIC_ASCII_TERMINATOR
-;	rdi - stream flags
+;	rsi - stream flags
+;	rdi - pointer to file name/path ended with STATIC_ASCII_TERMINATOR
 ; out:
 ;	rax - process ID
 kernel_service_exec:
@@ -76,19 +76,12 @@ kernel_service_exec:
 	; kernel environment variables/rountines base address
 	mov	r8,	qword [kernel_environment_base_address]
 
-	; prepare exec descriptor
-	sub	rsp,	KERNEL_EXEC_STRUCTURE.SIZE
-	mov	rbp,	rsp	; pointer of file descriptor
-
 	; recognize file name/path length
 	xchg	rsi,	rdi
 	call	lib_string_length
 
 	; execute file from path
 	call	kernel_exec
-
-	; remove exec descriptor
-	add	rsp,	KERNEL_EXEC_STRUCTURE.SIZE
 
 	; restore original registers
 	pop	r8
