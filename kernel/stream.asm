@@ -365,6 +365,11 @@ kernel_stream_set:
 	test	cl,	cl
 	jnz	.lock	; no
 
+	; ignore metadata modification if stream is not empty
+	mov	cx,	word [rdi + KERNEL_STREAM_STRUCTURE.start]
+	cmp	cx,	word [rdi + KERNEL_STREAM_STRUCTURE.end]
+	jne	.not_empty
+
 	; preserve stream pointer
 	push	rdi
 
@@ -379,6 +384,7 @@ kernel_stream_set:
 	; metadata are up to date
 	and	byte [rdi + KERNEL_STREAM_STRUCTURE.flags],	~LIB_SYS_STREAM_FLAG_undefinied
 
+.not_empty:
 	; release stream
 	mov	byte [rdi + KERNEL_STREAM_STRUCTURE.lock],	UNLOCK
 
