@@ -31,8 +31,6 @@ gzip -fk build/kernel
 
 rm -f build/*.o
 
-cp gfx/* system
-
 wget -i https://blackdev.org/repository/list.txt -P system --reject-regex list.txt > /dev/null 2>&1
 
 clang pkg.c -o pkg && ./pkg && gzip -fk build/system.pkg && mv build/system.pkg.gz build/system.gz
