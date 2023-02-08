@@ -18,6 +18,7 @@ kernel_exec:
 	push	rdi
 	push	rbp
 	push	r8
+	push	r9
 	push	r10
 	push	r11
 	push	r13
@@ -57,11 +58,11 @@ kernel_exec:
 	call	kernel_exec_link
 
 	;-----------------------------------------------------------------------
-	; stdio
+	; standard input/output (stream)
 	;-----------------------------------------------------------------------
 
-	; retrieve stream configuration
-	mov	rax,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + 0x30]
+	; retrieve stream flow
+	mov	rax,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + 0x38]
 
 	; prepare default input stream
 	call	kernel_stream
@@ -73,22 +74,21 @@ kernel_exec:
 
 .no_loop:
 	; properties of parent task
-	call	kernel_task_id_parent
-	call	kernel_task_by_id
+	call	kernel_task_active
 
 	; connect output to parents input?
 	test	rax,	LIB_SYS_STREAM_FLOW_out_to_parent_in
 	jz	.no_input	; no
 
 	; redirect output to parents input
-	mov	rsi,	qword [rbx + KERNEL_TASK_STRUCTURE.stream_in]
+	mov	rsi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_in]
 
 	; stream configured
 	jmp	.stream_set
 
 .no_input:
 	; default configuration
-	mov	rsi,	qword [rbx + KERNEL_TASK_STRUCTURE.stream_out]
+	mov	rsi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]
 
 .stream_set:
 	; update stream output of child
@@ -116,6 +116,7 @@ kernel_exec:
 	pop	r13
 	pop	r11
 	pop	r10
+	pop	r9
 	pop	r8
 	pop	rbp
 	pop	rdi

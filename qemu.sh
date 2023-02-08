@@ -6,11 +6,17 @@
 # clear debug log file
 echo "" > serial.log
 
+if [ -z "${1}" ]; then
+	smp="2"
+else
+	smp="${1}"
+fi
+
 # run with specific configration
 qemu-system-x86_64			\
 	--enable-kvm			\
 	-cpu max			\
-	-smp 2				\
+	-smp ${smp}			\
 	-m 128				\
 	-cdrom build/cyjon.iso		\
 	-netdev user,id=ethx		\

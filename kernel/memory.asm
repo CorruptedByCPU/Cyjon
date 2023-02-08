@@ -238,7 +238,7 @@ kernel_memory_share:
 	mov	r8,	qword [kernel_environment_base_address]
 
 	; retrieve pointer to current task descriptor
-	call	kernel_task_current
+	call	kernel_task_active
 
 	; reserve space in binary memory map of process
 	mov	r9,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]

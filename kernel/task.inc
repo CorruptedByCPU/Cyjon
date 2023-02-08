@@ -36,6 +36,7 @@ struc	KERNEL_TASK_STRUCTURE
 	.rsp		resq	1
 	.pid		resq	1
 	.pid_parent	resq	1
+	.sleep		resq	1
 	.memory_map	resq	1
 	.stream_in	resq	1
 	.stream_out	resq	1

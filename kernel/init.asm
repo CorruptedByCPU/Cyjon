@@ -133,11 +133,11 @@ init:
 	; create Interrupt Descriptor Table
 	call	kernel_init_idt
 
-	; prepare stream cache
-	call	kernel_init_stream
-
 	; create Task queue
 	call	kernel_init_task
+
+	; prepare stream cache
+	call	kernel_init_stream
 
 	; configure Real Time Clock
 	call	driver_rtc

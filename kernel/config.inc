@@ -4,7 +4,7 @@
 
 %define	KERNEL_name			"Cyjon"
 %define	KERNEL_version			"0"
-%define	KERNEL_revision			"2091"
+%define	KERNEL_revision			"2094"
 %define	KERNEL_architecture		"x86_64"
 %define	KERNEL_language			"Assembly"
 
@@ -49,6 +49,11 @@ struc	KERNEL_STRUCTURE
 
 	; variables of LAPIC management functions
 	.lapic_base_address		resq	1
+	.lapic_microtime		resq	1
+	.lapic_last_id			resd	1
+
+	; align next label
+	alignb	0x08
 
 	; variables of Library management functions
 	.library_base_address		resq	1

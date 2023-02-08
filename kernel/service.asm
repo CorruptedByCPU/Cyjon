@@ -28,10 +28,56 @@ kernel_service_list:
 	dq	driver_rtc_time
 	dq	kernel_stream_set
 	dq	kernel_stream_get
+	dq	kernel_service_sleep
+	dq	kernel_service_uptime
+	dq	kernel_stream_out_value
 kernel_service_list_end:
 
 ; information for linker
 section	.text
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - sleep amount in microtime
+kernel_service_sleep:
+	; preserve original registers
+	push	rdi
+	push	r8
+	push	r9
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; retrieve pointer to current task descriptor
+	call	kernel_task_active
+
+	; current uptime
+	add	rdi,	qword [r8 + KERNEL_STRUCTURE.lapic_microtime]
+
+	; go to sleep for N ticks
+	mov	qword [r9 + KERNEL_TASK_STRUCTURE.sleep],	rdi
+
+	; release the remaining CPU time
+	int	0x20
+
+	; restore original registers
+	pop	r9
+	pop	r8
+	pop	rdi
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; out:
+;	rax - current uptime in microtime
+kernel_service_uptime:
+	; return current microtime index
+	mov	rax,	qword [kernel_environment_base_address]
+	mov	rax,	qword [rax + KERNEL_STRUCTURE.lapic_microtime]
+
+	; return from routine
+	ret
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -131,7 +177,7 @@ kernel_service_framebuffer:
 	jnz	.return	; yes
 
 	; retrieve pointer to current task descriptor
-	call	kernel_task_current
+	call	kernel_task_active
 
 	; calculate size of framebuffer space
 	mov	eax,	dword [rdi + LIB_SYS_STRUCTURE_FRAMEBUFFER.scanline_byte]
@@ -206,7 +252,7 @@ kernel_service_ipc_send:
 
 .loop:
 	; free entry?
-	mov	rax,	qword [r8 + KERNEL_STRUCTURE.driver_rtc_microtime]
+	mov	rax,	qword [r8 + KERNEL_STRUCTURE.lapic_microtime]
 	cmp	qword [rdx + LIB_SYS_STRUCTURE_IPC.ttl],	rax
 	jbe	.found	; yes
 
@@ -288,7 +334,7 @@ kernel_service_ipc_receive:
 
 .loop:
 	; message alive?
-	mov	rbx,	qword [r8 + KERNEL_STRUCTURE.driver_rtc_microtime]
+	mov	rbx,	qword [r8 + KERNEL_STRUCTURE.lapic_microtime]
 	cmp	qword [rsi + LIB_SYS_STRUCTURE_IPC.ttl],	rbx
 	ja	.check	; yes
 
@@ -360,7 +406,7 @@ kernel_service_memory_alloc:
 	shr	rdi,	STATIC_PAGE_SIZE_shift
 
 	; retrieve pointer to current task descriptor
-	call	kernel_task_current
+	call	kernel_task_active
 
 	; set pointer of process paging array
 	mov	r11,	qword [r9 + KERNEL_TASK_STRUCTURE.cr3]
@@ -416,7 +462,7 @@ kernel_service_memory_release:
 	push	r11
 
 	; retrieve pointer to current task descriptor
-	call	kernel_task_current
+	call	kernel_task_active
 
 	; convert bytes to pages
 	add	rsi,	~STATIC_PAGE_mask
@@ -499,7 +545,7 @@ kernel_service_task_pid:
 	push	r9
 
 	; retrieve pointer to current task descriptor
-	call	kernel_task_current
+	call	kernel_task_active
 
 	; set pointer of process paging array
 	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
@@ -644,7 +690,7 @@ kernel_service_storage_read:
 	call	kernel_storage_read
 
 	; retrieve current task pointer
-	call	kernel_task_current
+	call	kernel_task_active
 
 	; preserve file content address
 	sub	rdi,	qword [kernel_page_mirror]	; convert address to physical

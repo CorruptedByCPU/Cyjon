@@ -69,6 +69,14 @@ kernel_task:
 	; set flag of current task as free for execution by next CPU
 	and	word [r10 + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_exec
 
+	; increase microtime?
+	call	kernel_lapic_id
+	cmp	eax,	dword [r8 + KERNEL_STRUCTURE.lapic_last_id]
+	jne	.lock	; no
+
+	; increase ticks
+	inc	qword [r8 + KERNEL_STRUCTURE.lapic_microtime]
+
 	;-----------------------------------------------------------------------
 	; [SELECT]
 
@@ -101,9 +109,14 @@ kernel_task:
 	mov	r10,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
 
 .check:
-	; task is active? (sleep, close etc.)
+	; task is active? (close etc.)
 	test	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active
 	jz	.next	; no
+
+	; a dormant task?
+	mov	rdx,	qword [r10 + KERNEL_TASK_STRUCTURE.sleep]
+	cmp	rdx,	qword [r8 + KERNEL_STRUCTURE.lapic_microtime]
+	ja	.next	; yes
 
 	; task can be executed?
 	test	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_exec
@@ -299,14 +312,14 @@ kernel_task_by_id:
 ;-------------------------------------------------------------------------------
 ; out:
 ;	r9 - pointer to current task descriptor
-kernel_task_current:
+kernel_task_active:
 	; preserve original flags
 	push	rax
 	pushf
 
 	; turn off interrupts
 	; we cannot allow task switch
-	; when looking for current task pointe
+	; when looking for current task pointer
 	cli
 
 	; retrieve CPU id
@@ -354,7 +367,7 @@ kernel_task_id_parent:
 	push	r9
 
 	; retrieve pointer to current task descriptor
-	call	kernel_task_current
+	call	kernel_task_active
 
 	; return parent ID
 	mov	rdx,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]

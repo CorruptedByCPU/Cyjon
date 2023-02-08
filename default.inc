@@ -55,6 +55,10 @@
 %define	STATIC_QWORD_SIZE_byte			8
 %define	STATIC_PTR_SIZE_byte			STATIC_QWORD_SIZE_byte
 
+%define	STATIC_QWORD_SIZE_bit			64
+
+%define	STATIC_QWORD_SIGN_bit			63
+
 %define	STATIC_NUMBER_SYSTEM_decimal		10
 %define	STATIC_NUMBER_SYSTEM_hexadecimal	16
 

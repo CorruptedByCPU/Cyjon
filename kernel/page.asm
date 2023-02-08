@@ -169,7 +169,7 @@ kernel_page_clang:
 	push	r15
 
 	; retrieve parents paging array pointer
-	call	kernel_task_current
+	call	kernel_task_active
 	mov	rdx,	qword [r9 + KERNEL_TASK_STRUCTURE.cr3]
 
 	; prepare default paging structure

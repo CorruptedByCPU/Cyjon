@@ -16,7 +16,7 @@ kernel_init_exec:
 	; execute init file
 	mov	ecx,	kernel_exec_file_init_end - kernel_exec_file_init
 	mov	rsi,	kernel_exec_file_init
-	mov	edi,	LIB_SYS_STREAM_FLOW_out_to_in
+	mov	edi,	LIB_SYS_STREAM_FLOW_out_to_parent_out
 	call	kernel_exec
 
 	; remove exec descriptor

@@ -99,10 +99,10 @@ kernel_stream_in:
 	xor	eax,	eax
 
 	; task properties
-	call	kernel_task_current
+	call	kernel_task_active
 
 	; stream in properties
-	mov	rbx,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]
+	mov	rbx,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_in]
 
 	; there is data inside stream?
 	cmp	word [rbx + KERNEL_STREAM_STRUCTURE.free],	LIB_SYS_STREAM_SIZE_byte
@@ -175,8 +175,7 @@ kernel_stream_in:
 ;-------------------------------------------------------------------------------
 ; in:
 ;	rdi - pointer to string
-; out:
-;	al - TRUE if sended
+;	rsi - string length in bytes
 kernel_stream_out:
 	; preserve original registers
 	push	rbx
@@ -186,18 +185,22 @@ kernel_stream_out:
 	push	rdi
 	push	r9
 
-	; length of string
-	mov	rsi,	rdi
-	call	lib_string_length
+	; data volume supported?
+	cmp	rsi,	LIB_SYS_STREAM_SIZE_byte
+	jnb	.exit	; no
 
-	; by default, stream is full
-	mov	al,	FALSE
+	; length of string
+	mov	rcx,	rsi
 
 	; task properties
-	call	kernel_task_current
+	call	kernel_task_active
 
 	; stream out properties
 	mov	rbx,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]
+
+	; stream closed?
+	test	byte [rbx + KERNEL_STREAM_STRUCTURE.flags],	LIB_SYS_STREAM_FLAG_closed
+	jnz	.exit	; yes
 
 .lock:
 	; request an exclusive access
@@ -208,15 +211,18 @@ kernel_stream_out:
 	test	dl,	dl
 	jnz	.lock	; no
 
+	; there is enough space inside stream?
+	cmp	cx,	word [rbx + KERNEL_STREAM_STRUCTURE.free]
+	ja	.end	; no
+
+	; set string pointer in place
+	mov	rsi,	rdi
+
 	; get pointer of stream space
 	mov	rdi,	qword [rbx + KERNEL_STREAM_STRUCTURE.base_address]
 
 	; get current pointer of end of stream
 	movzx	edx,	word [rbx + KERNEL_STREAM_STRUCTURE.end]
-
-	; there is enough space inside stream?
-	cmp	cx,	word [rbx + KERNEL_STREAM_STRUCTURE.free]
-	ja	.end	; no
 
 	; after operation there will be less space inside stream
 	sub	word [rbx + KERNEL_STREAM_STRUCTURE.free],	cx
@@ -256,6 +262,7 @@ kernel_stream_out:
 	; release stream
 	mov	byte [rbx + KERNEL_STREAM_STRUCTURE.lock],	UNLOCK
 
+.exit:
 	; restore original registers
 	pop	r9
 	pop	rdi
@@ -263,6 +270,105 @@ kernel_stream_out:
 	pop	rdx
 	pop	rcx
 	pop	rbx
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - value
+;	sil - number base
+;	dl - required N digits, but no more than 64 (QWORD limit)
+kernel_stream_out_value:
+	; preserve original registers
+	push	rax
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+	push	rdi
+	push	rbp
+
+	; prefix overflow?
+	cmp	dl,	STATIC_QWORD_SIZE_bit
+	ja	.end	; yes
+
+	; preserve stack pointer
+	mov	rbp,	rsp
+
+	; prepare string cache (64 digits)
+	mov	rax,	0x3030303030303030
+	push	rax
+	push	rax
+	push	rax
+	push	rax
+	push	rax
+	push	rax
+	push	rax
+	push	rax
+
+	; prepare acumulator
+	mov	rax,	rdi
+
+	; preserve prefix value
+	movzx	rbx,	dl
+
+	; string index
+	xor	ecx,	ecx
+
+	; convert base and prefix to 64bit value
+	movzx	rsi,	sil
+
+.loop:
+	; division result
+	xor	edx,	edx
+
+	; modulo
+	div	rsi
+
+	; assign place for digit
+	dec	rcx
+
+	; lower prefix requirement
+	dec	rbx
+
+	; convert digit to ASCII
+	add	dl,	STATIC_ASCII_DIGIT_0
+	mov	byte [rbp + rcx],	dl	; and keep on stack
+
+	; keep parsing?
+	test	rax,	rax
+	jnz	.loop	; yes
+
+	; prefix fulfilled
+	bt	rbx,	STATIC_QWORD_SIGN_bit
+	jc	.ready	; yes
+
+	; show N digits
+	sub	rcx,	rbx
+
+.ready:
+	; number of digits
+	mov	rsi,	rcx
+	not	rsi
+	inc	rsi
+
+	; send string to stdout
+	lea	rdi,	[rbp + rcx]
+	call	kernel_stream_out
+
+	; remove string from stack
+	mov	rsp,	rbp
+
+.end:
+	; restore original registers
+	pop	rbp
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+	pop	rax
 
 	; return from routine
 	ret
@@ -281,7 +387,7 @@ kernel_stream_get:
 	push	r9
 
 	; task properties
-	call	kernel_task_current
+	call	kernel_task_active
 
 	; stream out?
 	test	rsi,	LIB_SYS_STREAM_out
@@ -344,7 +450,7 @@ kernel_stream_set:
 	push	r9
 
 	; task properties
-	call	kernel_task_current
+	call	kernel_task_active
 
 	; by default stream out
 	mov	rdi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]

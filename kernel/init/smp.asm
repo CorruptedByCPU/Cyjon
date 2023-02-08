@@ -44,6 +44,14 @@ kernel_init_smp:
 	cmp	rbx,	qword [kernel_smp_count]
 	jne	.wait
 
+	; current AP have higest ID?
+	mov	ebx,	dword [rdi + LIMINE_SMP_INFO.lapic_id]
+	cmp	ebx,	dword [r8 + KERNEL_STRUCTURE.lapic_last_id]
+	jb	.next	; no
+
+	; remember CPU ID
+	mov	dword [r8 + KERNEL_STRUCTURE.lapic_last_id],	ebx
+
 	; next AP from list
 	jmp	.next
 

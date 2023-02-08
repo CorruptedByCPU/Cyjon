@@ -470,7 +470,7 @@ driver_ps2_keyboard_key_read:
 	xor	eax,	eax
 
 	; current task properties
-	call	kernel_task_current
+	call	kernel_task_active
 
 	; only framebuffer is allowed
 	mov	r9,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
