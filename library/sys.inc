@@ -30,6 +30,10 @@
 	%define	LIB_SYS_REQUEST_TIME			0x11
 	%define	LIB_SYS_REQUEST_STREAM_SET		0x12
 	%define	LIB_SYS_REQUEST_STREAM_GET		0x13
+	%define	LIB_SYS_REQUEST_SLEEP			0x14
+	%define	LIB_SYS_REQUEST_UPTIME			0x15
+	%define	LIB_SYS_REQUEST_STREAM_OUT_VALUE	0x16
+	%define	LIB_SYS_REQUEST_TASK			0x17
 
 	struc	LIB_SYS_STRUCTURE_FRAMEBUFFER
 		.width_pixel	resw	1
@@ -102,5 +106,18 @@
 		.size_byte	resq	1
 		.length		resb	1
 		.name		resb	255
+	endstruc
+
+	%define	LIB_SYS_TASK_NAME_length	255
+
+	struc	LIB_SYS_STRUCTURE_TASK
+		.pid		resq	1
+		.pid_parent	resq	1
+		.sleep		resq	1
+		.page		resq	1
+		.flags		resw	1
+		.length		resb	1
+		.name		resb	LIB_SYS_TASK_NAME_length
+		.SIZE:
 	endstruc
 %endif

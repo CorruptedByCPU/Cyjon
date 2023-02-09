@@ -31,6 +31,7 @@ kernel_service_list:
 	dq	kernel_service_sleep
 	dq	kernel_service_uptime
 	dq	kernel_stream_out_value
+	dq	kernel_service_task
 kernel_service_list_end:
 
 ; information for linker
@@ -743,6 +744,120 @@ kernel_service_storage_read:
 	pop	rcx
 	pop	rbx
 	pop	rax
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; out:
+;	rax - pointer to list of first task descriptor
+kernel_service_task:
+	; preserve original registers
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+	push	rdi
+	push	r8
+	push	r10
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+.lock:
+	; request an exclusive access
+	mov	al,	LOCK
+	lock xchg	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	al
+
+	; assigned?
+	test	al,	al
+	jnz	.lock	; no
+
+	; length of tasks descriptors in Bytes	
+	mov	eax,	LIB_SYS_STRUCTURE_TASK.SIZE
+	mul	qword [r8 + KERNEL_STRUCTURE.task_count]
+
+	; assign place for task descriptor list
+	mov	rdi,	rax
+	add	rdi,	LIB_SYS_STRUCTURE_TASK.SIZE + (STATIC_PTR_SIZE_byte << STATIC_MULTIPLE_BY_2_shift)
+	call	kernel_service_memory_alloc
+
+	; set compability with substitute of libc > malloc
+	add	rdi,	~STATIC_PAGE_mask
+	shr	rdi,	STATIC_PAGE_SIZE_shift
+	mov	qword [rax],	rdi
+
+	; search for free entry from beginning
+	mov	rbx,	KERNEL_TASK_limit
+	mov	r10,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
+
+	; set pointer to first task descriptor
+	add	rax,	STATIC_PTR_SIZE_byte << STATIC_MULTIPLE_BY_2_shift
+
+	; preserve memory space pointer of tasks descriptors
+	push	rax
+
+.loop:
+	; register entry?
+	cmp	word [r10 + KERNEL_TASK_STRUCTURE.flags],	EMPTY
+	je	.next	; no
+
+	; share default information about task
+
+	; process ID
+	mov	rdx,	qword [r10 + KERNEL_TASK_STRUCTURE.pid]
+	mov	qword [rax + LIB_SYS_STRUCTURE_TASK.pid],	rdx
+
+	; process parents ID
+	mov	rdx,	qword [r10 + KERNEL_TASK_STRUCTURE.pid_parent]
+	mov	qword [rax + LIB_SYS_STRUCTURE_TASK.pid_parent],	rdx
+
+	; wake up process micotime
+	mov	rdx,	qword [r10 + KERNEL_TASK_STRUCTURE.sleep]
+	mov	qword [rax + LIB_SYS_STRUCTURE_TASK.sleep],	rdx
+
+	; amount of used pages by process
+	mov	rdx,	qword [r10 + KERNEL_TASK_STRUCTURE.page]
+	mov	qword [rax + LIB_SYS_STRUCTURE_TASK.page],	rdx
+
+	; current task status
+	mov	dx,	word [r10 + KERNEL_TASK_STRUCTURE.flags]
+	mov	word [rax + LIB_SYS_STRUCTURE_TASK.flags],	dx
+
+	; taks name length
+	movzx	ecx,	byte [r10 + KERNEL_TASK_STRUCTURE.length]
+	mov	byte [rax + LIB_SYS_STRUCTURE_TASK.length],	cl
+
+	; task name itself
+	lea	rsi,	[r10 + KERNEL_TASK_STRUCTURE.name]
+	lea	rdi,	[rax + LIB_SYS_STRUCTURE_TASK.name]
+	rep	movsb
+
+	; next task descriptor position
+	add	rax,	LIB_SYS_STRUCTURE_TASK.SIZE
+
+.next:
+	; move pointer to next entry of task table
+	add	r10,	KERNEL_TASK_STRUCTURE.SIZE
+
+	; end of tasks inside table?
+	dec	rbx
+	jnz	.loop	; no
+
+	; return memory pointer of tasks descriptors
+	pop	rax
+
+	; release access
+	mov	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	UNLOCK
+
+	; restore original registers
+	pop	r10
+	pop	r8
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rbx
 
 	; return from routine
 	ret
