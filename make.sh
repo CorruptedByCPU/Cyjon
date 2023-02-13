@@ -33,6 +33,8 @@ rm -f build/*.o
 
 wget -i https://blackdev.org/repository/list.txt -P system --reject-regex list.txt > /dev/null 2>&1
 
+rm system/list.txt
+
 clang pkg.c -o pkg && ./pkg && gzip -fk build/system.pkg && mv build/system.pkg.gz build/system.gz
 
 git submodule update --init
