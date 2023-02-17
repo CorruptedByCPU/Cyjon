@@ -186,7 +186,8 @@ kernel_exec_configure:
 	mov	rsi,	KERNEL_TASK_STACK_pointer - STATIC_PAGE_SIZE_byte
 	call	kernel_page_address
 
-	; move pointer to return descriptor
+	; set pointer to return descriptor
+	add	rax,	qword [kernel_page_mirror]	; convert to logical address
 	add	rax,	STATIC_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
 
 	; set first instruction executed by process
@@ -213,7 +214,7 @@ kernel_exec_configure:
 	; describe the space under context stack of process
 	mov	rax,	KERNEL_EXEC_STACK_address
 	or	bx,	KERNEL_PAGE_FLAG_user
-	mov	ecx,	STATIC_PAGE_SIZE_page
+	mov	ecx,	KERNEL_EXEC_STACK_SIZE_page
 	call	kernel_page_alloc
 
 	;-----------------------------------------------------------------------
@@ -306,24 +307,24 @@ kernel_exec_configure:
 	push	rdi
 
 	; fill memory map with available pages
-	mov	rax,	STATIC_MAX_unsigned
-	shl	rcx,	STATIC_MULTIPLE_BY_512_shift
-	rep	stosq
+	mov	eax,	STATIC_MAX_unsigned
+	mov	rcx,	qword [r8 + KERNEL_STRUCTURE.page_limit]
+	shr	rcx,	STATIC_DIVIDE_BY_32_shift	; 32 pages per chunk
+
+	; first 1 MiB is reserved for future devices mapping
+	sub	rcx,	(KERNEL_EXEC_BASE_address >> STATIC_PAGE_SIZE_shift) >> STATIC_DIVIDE_BY_32_shift
+	add	rdi,	(KERNEL_EXEC_BASE_address >> STATIC_PAGE_SIZE_shift) >> STATIC_DIVIDE_BY_8_shift
+
+	; proceed
+	rep	stosd
 
 	; restore memory map location and executable space size in Pages
 	pop	rsi
 	pop	rcx
 
 	; mark first N bytes of executable space as reserved
-	dec	rcx
-
-.reserved:
-	; mark page as reserved
-	btr	qword [rsi],	rcx
-
-	; mark other pages?
-	dec	rcx
-	jns	.reserved	; yes
+	mov	r9,	rsi
+	call	kernel_memory_acquire
 
 	;-----------------------------------------------------------------------
 	; kernel environment

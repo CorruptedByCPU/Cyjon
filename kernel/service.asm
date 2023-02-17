@@ -420,7 +420,6 @@ kernel_service_memory_alloc:
 
 	; convert first page number to logical address
 	shl	rdi,	STATIC_PAGE_SIZE_shift
-	add	rdi,	KERNEL_EXEC_BASE_address
 
 	; assign pages to allocated memory in process space
 	mov	rax,	rdi
@@ -469,11 +468,32 @@ kernel_service_memory_release:
 	add	rsi,	~STATIC_PAGE_mask
 	shr	rsi,	STATIC_PAGE_SIZE_shift
 
-	; release space from paging array of process
-	mov	rax,	rdi	; address of releasing space
+	; pointer and counter at place
 	mov	rcx,	rsi
+	mov	rsi,	rdi
+
+.loop:
+	; delete first physical page from logical address
 	mov	r11,	qword [r9 + KERNEL_TASK_STRUCTURE.cr3]
-	call	kernel_page_release
+	call	kernel_page_remove
+
+	; release page inside kernels binary memory map
+	mov	rdi,	rax
+	or	rdi,	qword [kernel_page_mirror]
+	call	kernel_memory_release_page
+
+	; release page inside process binary memory map
+	shr	rsi,	STATIC_PAGE_SIZE_shift
+	mov	rdi,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]
+	bts	qword [rdi],	rsi
+
+	; next page from space
+	inc	rsi
+	shl	rsi,	STATIC_PAGE_SIZE_shift
+
+	; another page?
+	dec	rcx
+	jnz	.loop	; yes
 
 	; restore original registers
 	pop	r11
@@ -523,7 +543,6 @@ kernel_service_memory_share:
 
 	; connect memory space of parent process with child
 	mov	rax,	rdi
-	add	rax,	KERNEL_EXEC_BASE_address
 	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_shared
 	call	kernel_page_clang
 
@@ -704,7 +723,6 @@ kernel_service_storage_read:
 
 	; convert first page number to logical address
 	shl	rdi,	STATIC_PAGE_SIZE_shift
-	add	rdi,	KERNEL_EXEC_BASE_address
 
 	; map file content to process space
 	mov	rax,	rdi	; first page number of memory space inside process
@@ -779,28 +797,23 @@ kernel_service_task:
 
 	; assign place for task descriptor list
 	mov	rdi,	rax
-	add	rdi,	LIB_SYS_STRUCTURE_TASK.SIZE + (STATIC_PTR_SIZE_byte << STATIC_MULTIPLE_BY_2_shift)
 	call	kernel_service_memory_alloc
 
-	; set compability with substitute of libc > malloc
-	add	rdi,	~STATIC_PAGE_mask
-	shr	rdi,	STATIC_PAGE_SIZE_shift
-	mov	qword [rax],	rdi
-
-	; search for free entry from beginning
+	; parse every entry
 	mov	rbx,	KERNEL_TASK_limit
 	mov	r10,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
-
-	; set pointer to first task descriptor
-	add	rax,	STATIC_PTR_SIZE_byte << STATIC_MULTIPLE_BY_2_shift
 
 	; preserve memory space pointer of tasks descriptors
 	push	rax
 
 .loop:
-	; register entry?
+	; entry exist?
 	cmp	word [r10 + KERNEL_TASK_STRUCTURE.flags],	EMPTY
 	je	.next	; no
+
+	; do not pass kernel entry
+	cmp	qword [r10 + KERNEL_TASK_STRUCTURE.pid],	EMPTY
+	je	.next
 
 	; share default information about task
 
@@ -816,7 +829,7 @@ kernel_service_task:
 	mov	rdx,	qword [r10 + KERNEL_TASK_STRUCTURE.sleep]
 	mov	qword [rax + LIB_SYS_STRUCTURE_TASK.sleep],	rdx
 
-	; amount of used pages by process
+	; amount of pages used by process
 	mov	rdx,	qword [r10 + KERNEL_TASK_STRUCTURE.page]
 	mov	qword [rax + LIB_SYS_STRUCTURE_TASK.page],	rdx
 
@@ -843,6 +856,9 @@ kernel_service_task:
 	; end of tasks inside table?
 	dec	rbx
 	jnz	.loop	; no
+
+	; last entry set as empty
+	mov	qword [rax + LIB_SYS_STRUCTURE_TASK.pid],	EMPTY
 
 	; return memory pointer of tasks descriptors
 	pop	rax

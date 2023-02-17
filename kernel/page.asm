@@ -4,15 +4,31 @@
 
 ;-------------------------------------------------------------------------------
 ; in:
-;	rsi - logical address to convert
+;	rsi - logical address of page
 ;	r11 - pointer to paging array
 ; out:
-;	rax - logical address of used page
+;	rax - physical address of page
 kernel_page_address:
 	; preserve original registers
-	push	rcx
 	push	rdx
 	push	r11
+
+	; localize and retrieve page
+	call	kernel_page_address.traverse
+
+	; return physical address of page
+	mov	rax,	rdx
+
+	; restore original registers
+	pop	r11
+	pop	rdx
+
+	; return from routine
+	ret
+
+.traverse:
+	; preserve original registers
+	push	rcx
 
 	; we do not support PML5, yet
 	mov	rax,	rsi
@@ -62,18 +78,10 @@ kernel_page_address:
 	mov	rdx,	qword [r11 + rax * STATIC_QWORD_SIZE_byte]
 	and	rdx,	STATIC_PAGE_mask	; drop flags
 
-	; convert to logical address
-	or	rdx,	qword [kernel_page_mirror]
-
-	; return physical address of page
-	mov	rax,	rdx
-
 	; restore original registers
-	pop	r11
-	pop	rdx
 	pop	rcx
 
-	; return from routine
+	; return from subroutine
 	ret
 
 ;-------------------------------------------------------------------------------
@@ -197,7 +205,6 @@ kernel_page_clang:
 	pop	r11
 
 	; store physical source address with corresponding flags
-	sub	rax,	qword [kernel_page_mirror]	; convert to physical address
 	or	ax,	bx	; apply flags
 	mov	qword [r8 + r12 * STATIC_QWORD_SIZE_byte],	rax
 
@@ -1134,6 +1141,33 @@ kernel_page_release:
 	pop	rdi
 	pop	rdx
 	pop	rax
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rsi - logical address of page
+;	r11 - pointer to paging array
+; out:
+;	rax - physical address of page
+kernel_page_remove:
+	; preserve original registers
+	push	rdx
+	push	r11
+
+	; localize and retrieve page
+	call	kernel_page_address.traverse
+
+	; remove page from pagings
+	mov	qword [r11 + rax * STATIC_QWORD_SIZE_byte],	EMPTY
+
+	; return physical address of page
+	mov	rax,	rdx
+
+	; restore original registers
+	pop	r11
+	pop	rdx
 
 	; return from routine
 	ret

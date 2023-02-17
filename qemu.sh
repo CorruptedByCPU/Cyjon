@@ -3,11 +3,8 @@
 #Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 #===============================================================================
 
-# clear debug log file
-echo "" > serial.log
-
 if [ -z "${1}" ]; then
-	smp="2"
+	smp="1"
 else
 	smp="${1}"
 fi
@@ -22,7 +19,4 @@ qemu-system-x86_64			\
 	-netdev user,id=ethx		\
 	-device e1000,netdev=ethx	\
 	-rtc base=localtime 		\
-	-serial file:serial.log
-
-# show debug log
-cat serial.log
+	-serial mon:stdio
