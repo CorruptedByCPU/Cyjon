@@ -14,7 +14,7 @@ Previous version of Cyjon is still available at **[old](https://github.com/Corru
 
 A simple, clean, multi-tasking operating system written in pure assembly language for 64-bit processors from the AMD64 family.
 
-![Cyjon (current)](https://blackdev.org/shot/2094.png?raw=true)
+![Cyjon (current)](https://blackdev.org/shot/current.png?raw=true)
 
 ## Hey!
 
