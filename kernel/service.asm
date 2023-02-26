@@ -8,6 +8,7 @@ section	.rodata
 ; align routine
 align	0x08,	db	0x00
 kernel_service_list:
+	dq	kernel_service_exit
 	dq	kernel_service_framebuffer
 	dq	kernel_service_memory_alloc
 	dq	kernel_service_memory_release
@@ -36,6 +37,12 @@ kernel_service_list_end:
 
 ; information for linker
 section	.text
+
+;-------------------------------------------------------------------------------
+; void
+kernel_service_exit:
+	; hold the door
+	jmp	$
 
 ;-------------------------------------------------------------------------------
 ; in:
