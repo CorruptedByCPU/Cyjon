@@ -82,6 +82,7 @@ section .text
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.asm"
 	%include	"kernel/init/ap.asm"
+	%include	"kernel/init/daemon.asm"
 	%include	"kernel/init/exec.asm"
 	%include	"kernel/init/framebuffer.asm"
 	%include	"kernel/init/free.asm"
@@ -153,6 +154,9 @@ init:
 
 	; prepare library subsystem
 	call	kernel_init_library
+
+	; execute daemons
+	call	kernel_init_daemon
 
 	; execute init process
 	call	kernel_init_exec

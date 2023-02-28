@@ -224,6 +224,9 @@ kernel_exec_configure:
 	; size of unpacked executable
 	call	kernel_exec_size
 
+	; convert limit address to offset
+	sub	rcx,	KERNEL_EXEC_BASE_address
+
 	; assign memory space for executable
 	add	rcx,	~STATIC_PAGE_mask
 	shr	rcx,	STATIC_PAGE_SIZE_shift
@@ -574,7 +577,7 @@ kernel_exec_load:
 ; in:
 ;	r13 - pointer to file content
 ; out:
-;	rcx - executable size in Bytes
+;	rcx - farthest segment limit in Bytes
 kernel_exec_size:
 	; preserve original registers
 	push	rbx
@@ -616,9 +619,6 @@ kernel_exec_size:
 	; end of table?
 	dec	ebx
 	jnz	.calculate	; no
-
-	; convert address to offset
-	sub	rcx,	KERNEL_EXEC_BASE_address
 
 	; restore original registers
 	pop	rdx

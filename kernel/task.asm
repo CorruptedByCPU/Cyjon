@@ -143,7 +143,7 @@ kernel_task:
 
 	; first run?
 	test	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_init
-	jz	.no_init
+	jz	.no_init	; no
 
 	; disable init flag
 	and	word [r10 + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_init
@@ -154,6 +154,13 @@ kernel_task:
 	; save FPU state/registers
 	mov	rbp,	KERNEL_TASK_STACK_pointer
 	FXSAVE64	[rbp]
+
+	; it's a daemon?
+	test	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_daemon
+	jz	.no_init	; no
+
+	; share with daemon - kernel environment variables/rountines base address
+	mov	qword [rsp + 0x38],	r8
 
 .no_init:
 	; reload CPU cycle counter in APIC controller

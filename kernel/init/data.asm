@@ -24,6 +24,9 @@ kernel_smp_count		dq	EMPTY
 kernel_exec_file_init		db	"wm"
 kernel_exec_file_init_end:
 
+kernel_daemon_file_gc		db	"gc.d"
+kernel_daemon_file_gc_end:
+
 ; align table
 align	0x08,	db	0x00
 kernel_limine_framebuffer_request:
