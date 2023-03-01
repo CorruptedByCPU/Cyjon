@@ -35,6 +35,9 @@ kernel_memory_alloc:
 	shl	rdi,	STATIC_PAGE_SIZE_shift
 	add	rdi,	qword [kernel_page_mirror]
 
+	; less memory available
+	sub	qword [r8 + KERNEL_STRUCTURE.page_available],	rcx
+
 .end:
 	; release access
 	mov	byte [r8 + KERNEL_STRUCTURE.memory_semaphore],	UNLOCK

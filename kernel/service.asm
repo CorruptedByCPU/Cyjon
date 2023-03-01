@@ -33,10 +33,39 @@ kernel_service_list:
 	dq	kernel_service_uptime
 	dq	kernel_stream_out_value
 	dq	kernel_service_task
+	dq	kernel_service_memory
 kernel_service_list_end:
 
 ; information for linker
 section	.text
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - pointer to Memory descriptor
+kernel_service_memory:
+	; preserve original registers
+	push	rax
+	push	r8
+
+	; kernel environment variables/rountines base addrrax
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; return information about
+
+	; all available pages
+	mov	rax,	qword [r8 + KERNEL_STRUCTURE.page_total]
+	mov	qword [rdi + LIB_SYS_STRUCTURE_MEMORY.total],	rax
+
+	; and currently free
+	mov	rax,	qword [r8 + KERNEL_STRUCTURE.page_available]
+	mov	qword [rdi + LIB_SYS_STRUCTURE_MEMORY.available],	rax
+
+	; restore original registers
+	pop	r8
+	pop	rax
+
+	; return from routine
+	ret
 
 ;-------------------------------------------------------------------------------
 ; void

@@ -35,6 +35,13 @@
 	%define	LIB_SYS_REQUEST_UPTIME			0x16
 	%define	LIB_SYS_REQUEST_STREAM_OUT_VALUE	0x17
 	%define	LIB_SYS_REQUEST_TASK			0x18
+	%define	LIB_SYS_REQUEST_MEMORY			0x19
+
+	struc	LIB_SYS_STRUCTURE_MEMORY
+		.total		resq	1
+		.available	resq	1
+		.SIZE:
+	endstruc
 
 	struc	LIB_SYS_STRUCTURE_FRAMEBUFFER
 		.width_pixel	resw	1
