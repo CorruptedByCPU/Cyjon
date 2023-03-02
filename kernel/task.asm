@@ -83,7 +83,7 @@ kernel_task:
 .lock:
 	; request an exclusive access
 	mov	al,	LOCK
-	lock xchg	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	al
+	lock xchg	byte [r8 + KERNEL_STRUCTURE.task_cpu_semaphore],	al
 
 	; assigned?
 	test	al,	al
@@ -126,7 +126,7 @@ kernel_task:
 	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_exec
 
 	; release access
-	mov	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	UNLOCK
+	mov	byte [r8 + KERNEL_STRUCTURE.task_cpu_semaphore],	UNLOCK
 
 	;-----------------------------------------------------------------------
 	; [RESTORE]
@@ -217,6 +217,11 @@ kernel_task_add:
 	mov	rax,	KERNEL_TASK_limit
 	mov	r10,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
 
+.lock:
+	; request an exclusive access
+	mov	al,	LOCK
+	lock xchg	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	al
+
 .loop:
 	; free queue entry?
 	lock bts	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_secured_bit
@@ -264,6 +269,9 @@ kernel_task_add:
 	inc	qword [r8 + KERNEL_STRUCTURE.task_count]
 
 .end:
+	; release access
+	mov	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	UNLOCK
+
 	; restore original registers
 	pop	r8
 	pop	rdi

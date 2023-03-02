@@ -24,15 +24,21 @@ The code I write is to be simple in construction and readable by everyone, regar
 
 So the code is not optimized for speed but for readability.
 
-### Software:
+### Repository:
+
+  - top (task manager),
+  - taris (Tetris game implementation)
+
+### Download (current release in alpha state)
+
+   https://blackdev.org/files/cyjon.iso
+
+### Software (if you want to build and run your own ISO):
 
   - Qemu 5.0.0 or Bochs 2.6.11 (no SMP support on MS/Windows)
   - Nasm 2.15.1
   - Clang 14.0.6 (only for package manager)
-
-### Download
-
-   https://blackdev.org/files/cyjon.iso
+  - other (gzip, ld, xorriso, git, wget)
 
 ### Compilation/Exec (GNU/Linux):
 
