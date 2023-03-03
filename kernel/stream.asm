@@ -502,3 +502,32 @@ kernel_stream_set:
 
 	; return from routine
 	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - pointer to stream descriptor
+kernel_stream_release:
+	; preserve original registers
+	push	rsi
+	push	rdi
+
+	; lower stream usage
+	dec	qword [rdi + KERNEL_STREAM_STRUCTURE.count]
+	jnz	.end	; someone is still using it
+
+	; release stream cache
+	mov	rsi,	LIB_SYS_STREAM_SIZE_page
+	mov	rdi,	qword [rdi + KERNEL_STREAM_STRUCTURE.base_address]
+	call	kernel_memory_release
+
+	; mark stream descriptor as free
+	mov	rdi,	qword [rsp]
+	mov	qword [rdi + KERNEL_STREAM_STRUCTURE.base_address],	EMPTY
+
+.end:
+	; restore original registers
+	pop	rdi
+	pop	rsi
+
+	; return from routine
+	ret

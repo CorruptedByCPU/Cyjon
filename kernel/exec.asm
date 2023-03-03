@@ -104,6 +104,13 @@ kernel_exec:
 	; mark task as ready
 	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_init
 
+	; release file content
+	mov	rsi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
+	add	rsi,	~STATIC_PAGE_mask
+	shr	rsi,	STATIC_PAGE_SIZE_shift
+	mov	rdi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.address]
+	call	kernel_memory_release
+
 	; return task ID
 	mov	rax,	qword [r10 + KERNEL_TASK_STRUCTURE.pid]
 

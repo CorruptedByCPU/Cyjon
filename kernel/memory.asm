@@ -156,15 +156,17 @@ kernel_memory_acquire:
 
 ;-------------------------------------------------------------------------------
 ; in:
-;	rcx - length of space in pages
+;	rsi - length of space in pages
 ;	rdi - pointer to first page of space
 kernel_memory_release:
 	; preserve original registers
 	push	rax
 	push	rcx
+	push	rsi
 	push	rdi
 
 	; we guarantee, clean pages on stack
+	mov	rcx,	rsi
 	call	kernel_page_clean_few
 
 	; convert page address to physical, and offset of memory binary map
@@ -182,11 +184,12 @@ kernel_memory_release:
 
 	; next page?
 	inc	rax
-	dec	rcx
+	dec	rsi
 	jnz	.page	; yes
 
 	; restore original registers
 	pop	rdi
+	pop	rsi
 	pop	rcx
 	pop	rax
 
@@ -200,6 +203,7 @@ kernel_memory_release_page:
 	; preserve original registers
 	push	rax
 	push	rdi
+	push	r8
 
 	; we guarantee, clean pages on stack
 	call	kernel_page_clean
@@ -214,7 +218,14 @@ kernel_memory_release_page:
 	mov	rdi,	qword [rdi + KERNEL_STRUCTURE.memory_base_address]
 	bts	qword [rdi],	rax
 
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; another brick in the wall
+	inc	qword [r8 + KERNEL_STRUCTURE.page_available]
+
 	; restore original registers
+	pop	r8
 	pop	rdi
 	pop	rax
 

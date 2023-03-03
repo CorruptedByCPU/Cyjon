@@ -202,6 +202,9 @@ kernel_init_page:
 	or	r8,	rax	; with pointer
 	or	r9,	rax
 
+	; share page functions with daemons
+	mov	qword [r8 + KERNEL_STRUCTURE.page_deconstruction],	kernel_page_deconstruction
+
 	; we are ready to switch paging arrays to new one
 
 	; restore original registers

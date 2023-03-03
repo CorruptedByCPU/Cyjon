@@ -42,6 +42,7 @@ struc	KERNEL_TASK_STRUCTURE
 	.stream_in	resq	1
 	.stream_out	resq	1
 	.flags		resw	1
+	.cpu		resb	1
 	.length		resb	1
 	.name		resb	KERNEL_TASK_NAME_limit + 1
 	.SIZE:

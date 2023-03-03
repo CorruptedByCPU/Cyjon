@@ -30,6 +30,9 @@ kernel_init_stream:
 	mov	qword [r9 + KERNEL_TASK_STRUCTURE.stream_in],	rsi
 	mov	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out],	rsi
 
+	; share stream functions with daemons
+	mov	qword [r8 + KERNEL_STRUCTURE.stream_release],	kernel_stream_release
+
 	; restore original registers
 	pop	r9
 	pop	rdi

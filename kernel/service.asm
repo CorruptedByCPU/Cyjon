@@ -70,8 +70,15 @@ kernel_service_memory:
 ;-------------------------------------------------------------------------------
 ; void
 kernel_service_exit:
-	; hold the door
-	jmp	$
+	; retrieve pointer to current task descriptor
+	call	kernel_task_active
+
+	; mark task as closed and not active
+	or	word [r9 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_closed
+	and	word [r9 + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_active
+
+	; release rest of AP time
+	int	0x20
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -782,6 +789,7 @@ kernel_service_storage_read:
 	; release memory assigned for file
 	mov	rdi,	rsi
 	or	rdi,	qword [kernel_page_mirror]
+	mov	rsi,	rcx
 	call	kernel_memory_release
 
 .end:

@@ -160,7 +160,7 @@ kernel_task:
 	jz	.no_init	; no
 
 	; share with daemon - kernel environment variables/rountines base address
-	mov	qword [rsp + 0x38],	r8
+	mov	qword [rsp + 0x48],	r8
 
 .no_init:
 	; reload CPU cycle counter in APIC controller

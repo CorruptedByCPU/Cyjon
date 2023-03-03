@@ -741,7 +741,7 @@ kernel_library_load:
 	call	kernel_page_flags
 
 	; release space of loaded file
-	mov	rcx,	r12
+	mov	rsi,	r12
 	mov	rdi,	r13
 	call	kernel_memory_release
 
@@ -798,7 +798,7 @@ kernel_library_load:
 
 .error_level_file:
 	; release space of loaded file
-	mov	rcx,	r12
+	mov	rsi,	r12
 	mov	rdi,	r13
 	call	kernel_memory_release
 

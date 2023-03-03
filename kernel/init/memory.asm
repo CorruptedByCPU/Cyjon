@@ -185,6 +185,9 @@ kernel_init_memory:
 	dec	rcx
 	jnz	.mark	; no
 
+	; share memory functions with daemons
+	mov	qword [r8 + KERNEL_STRUCTURE.memory_release],	kernel_memory_release
+
 	; restore original registers
 	pop	rdi
 	pop	rsi

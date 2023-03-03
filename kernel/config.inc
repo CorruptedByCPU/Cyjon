@@ -48,12 +48,16 @@ struc	KERNEL_STRUCTURE
 	; variables of Memory management functions
 	.memory_base_address		resq	1
 	.memory_semaphore		resb	1
+	; pointers of Memory management functions
+	.memory_release			resq	1
 
 	; variables of Page management functions
 	.page_base_address		resq	1
 	.page_total			resq	1
 	.page_available			resq	1
 	.page_limit			resq	1
+	; pointers of Page management functions
+	.page_deconstruction		resq	1
 
 	; variables of Storage management functions
 	.storage_base_address		resq	1
@@ -63,6 +67,8 @@ struc	KERNEL_STRUCTURE
 	; variables of Stream management functions
 	.stream_base_address		resq	1
 	.stream_semaphore		resb	1
+	; pointers of Stream management functions
+	.stream_release			resq	1
 
 	; variables of Task management functions
 	.task_queue_address		resq	1

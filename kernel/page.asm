@@ -292,7 +292,7 @@ kernel_page_clean_few:
 
 ;-------------------------------------------------------------------------------
 ; in:
-;	r11 - pointer to paging array
+;	rdi - pointer to paging array
 kernel_page_deconstruction:
 	; preserve original registers
 	push	rcx
@@ -303,6 +303,7 @@ kernel_page_deconstruction:
 	push	r11
 
 	; convert process paging array pointer to high half
+	mov	r11,	rdi
 	or	r11,	qword [kernel_page_mirror]
 
 	; first kernel entry in PML4 array

@@ -56,7 +56,8 @@
 		.SIZE:
 	endstruc
 
-	%define	LIB_SYS_STREAM_SIZE_byte		4096
+	%define	LIB_SYS_STREAM_SIZE_page		1
+	%define	LIB_SYS_STREAM_SIZE_byte		(LIB_SYS_STREAM_SIZE_page << STATIC_PAGE_SIZE_shift)
 
 	%define	LIB_SYS_STREAM_FLOW_out_to_parent_out	00000001b
 	%define	LIB_SYS_STREAM_FLOW_out_to_parent_in	00000010b
