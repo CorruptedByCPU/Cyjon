@@ -72,6 +72,7 @@ section .text
 	%include	"kernel/io_apic.asm"
 	%include	"kernel/lapic.asm"
 	%include	"kernel/library.asm"
+	%include	"kernel/log.asm"
 	%include	"kernel/memory.asm"
 	%include	"kernel/page.asm"
 	%include	"kernel/service.asm"
@@ -105,11 +106,15 @@ init:
 	call	driver_serial
 
 	; show kernel name, version, architecture and build time
+	mov	rcx,	kernel_log_welcome_end - kernel_log_welcome
 	mov	rsi,	kernel_log_welcome
 	call	driver_serial_string
 
 	; create binary memory map
 	call	kernel_init_memory
+
+	; share Log functions with daemons
+	mov	qword [r8 + KERNEL_STRUCTURE.log],	kernel_log
 
 	; store information about framebuffer properties
 	call	kernel_init_framebuffer

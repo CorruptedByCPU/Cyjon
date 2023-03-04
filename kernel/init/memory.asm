@@ -201,6 +201,7 @@ kernel_init_memory:
 
 .error:
 	; memory map is not available
+	mov	ecx,	kernel_log_memory_end - kernel_log_memory
 	mov	rsi,	kernel_log_memory
 	call	driver_serial_string
 

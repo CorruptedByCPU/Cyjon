@@ -132,6 +132,7 @@ kernel_init_storage:
 	pop	rax
 
 	; show information about system storage
+	mov	ecx,	kernel_log_system_end - kernel_log_system
 	mov	rsi,	kernel_log_system
 	call	driver_serial_string
 
@@ -141,6 +142,7 @@ kernel_init_storage:
 
 	; show size of system storage
 	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
+	xor	ecx,	ecx	; no prefix
 	call	driver_serial_value
 
 .end:
@@ -158,6 +160,7 @@ kernel_init_storage:
 
 .error:
 	; storage is not available
+	mov	ecx,	kernel_log_storage_end - kernel_log_storage
 	mov	rsi,	kernel_log_storage
 	call	driver_serial_string
 

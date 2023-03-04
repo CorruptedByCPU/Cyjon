@@ -218,7 +218,7 @@ kernel_exec_configure:
 	; stack
 	;-----------------------------------------------------------------------
 
-	; describe the space under context stack of process
+	; describe the space under process stack
 	mov	rax,	KERNEL_EXEC_STACK_address
 	or	bx,	KERNEL_PAGE_FLAG_user
 	mov	ecx,	KERNEL_EXEC_STACK_SIZE_page

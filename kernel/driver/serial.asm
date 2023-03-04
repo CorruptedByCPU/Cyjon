@@ -100,47 +100,28 @@ driver_serial_ready:
 
 ;-------------------------------------------------------------------------------
 ; in:
-;	dl - TRUE/FALSE - reversed string?
-;	rsi - pointer to string ended by terminator
+;	rcx - length of string in Bytes
+;	rsi - pointer to string
 driver_serial_string:
 	; preserve original register
 	push	rax
 	push	rcx
 	push	rsi
 
-	; print reversed
-	test	dl,	dl
-	jnz	.reversed	; yes
+	; empty string?
+	test	rcx,	rcx
+	jz	.end	; yes
 
 .loop:
 	; load character from string
 	lodsb
 
-	; end of string?
-	test	al,	al
-	jz	.end	; yes
-
 	; send character to output
 	call	driver_serial_char
 
 	; show other characters from string
-	jmp	.loop
-
-.reversed:
-	; length of string
-	call	lib_string_length
-
-.char:
-	; previous character
 	dec	rcx
-	js	.end
-
-	; print it
-	mov	al,	byte [rsi + rcx]
-	call	driver_serial_char
-
-	; show previous character from string
-	jmp	.char
+	jnz	.loop
 
 .end:
 	; restore original registers

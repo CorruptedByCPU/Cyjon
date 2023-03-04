@@ -31,7 +31,7 @@ gzip -fk build/kernel
 
 rm -f build/*.o
 
-wget -i https://blackdev.org/tmp/list.txt -P system --reject-regex list.txt > /dev/null 2>&1
+wget -i https://blackdev.org/repository/list.txt -P system --reject-regex list.txt > /dev/null 2>&1
 
 rm system/list.txt
 

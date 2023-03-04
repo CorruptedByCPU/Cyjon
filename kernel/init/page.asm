@@ -221,6 +221,7 @@ kernel_init_page:
 
 .error:
 	; kernel file is not available
+	mov	ecx,	kernel_log_kernel_end - kernel_log_kernel
 	mov	rsi,	kernel_log_kernel
 	call	driver_serial_string
 

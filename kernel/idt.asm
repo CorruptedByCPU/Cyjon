@@ -316,6 +316,7 @@ kernel_idt_exception:
 	shl	rsi,	STATIC_MULTIPLE_BY_PTR_shift	; offset of entry at exception string table
 	add	rsi,	kernel_idt_exception_string	; pointer to exception string table entry
 	mov	rsi,	qword [rsi]	; pointer to exception description
+	call	lib_string_length
 	call	driver_serial_string
 
 	; and exception address

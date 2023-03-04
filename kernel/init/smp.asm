@@ -61,6 +61,7 @@ kernel_init_smp:
 	je	.free	; no
 
 	; prefix
+	mov	ecx,	kernel_log_prefix_end - kernel_log_prefix
 	mov	rsi,	kernel_log_prefix
 	call	driver_serial_string
 
@@ -69,8 +70,9 @@ kernel_init_smp:
 	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
 	xor	ecx,	ecx	; no prefix
 	xor	dl,	dl	; value unsigned
-	mov	rsi,	kernel_log_smp
 	call	driver_serial_value
+	mov	ecx,	kernel_log_smp_end - kernel_log_smp
+	mov	rsi,	kernel_log_smp
 	call	driver_serial_string
 
 .free:

@@ -105,7 +105,7 @@ kernel_init_free:
 
 .end:
 	; prefix
-	xor	dl,	dl	; do not reverse strings
+	mov	ecx,	kernel_log_prefix_end - kernel_log_prefix
 	mov	rsi,	kernel_log_prefix
 	call	driver_serial_string
 
@@ -115,8 +115,9 @@ kernel_init_free:
 	; show amount of released memory
 	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
 	xor	ecx,	ecx	; no prefix
-	mov	rsi,	kernel_log_free
 	call	driver_serial_value
+	mov	ecx,	kernel_log_free_end - kernel_log_free
+	mov	rsi,	kernel_log_free
 	call	driver_serial_string
 
 	; reload BSP processor

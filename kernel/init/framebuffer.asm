@@ -21,6 +21,7 @@ kernel_init_framebuffer:
 
 .error:
 	; framebuffer is not available or undefinied
+	mov	ecx,	kernel_log_framebuffer_end - kernel_log_framebuffer
 	mov	rsi,	kernel_log_framebuffer
 	call	driver_serial_string
 

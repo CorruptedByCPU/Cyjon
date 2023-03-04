@@ -70,6 +70,9 @@ kernel_init_task:
 	mov	ecx,	KERNEL_TASK_irq
 	call	kernel_idt_update
 
+	; done, task registered
+	inc	qword [r8 + KERNEL_STRUCTURE.task_count]
+
 	; restore original registers
 	pop	rdi
 	pop	rcx

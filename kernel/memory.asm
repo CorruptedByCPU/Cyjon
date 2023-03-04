@@ -162,8 +162,8 @@ kernel_memory_release:
 	; preserve original registers
 	push	rax
 	push	rcx
-	push	rsi
 	push	rdi
+	push	rsi
 
 	; we guarantee, clean pages on stack
 	mov	rcx,	rsi
@@ -174,9 +174,11 @@ kernel_memory_release:
 	and	rax,	rdi
 	shr	rax,	STATIC_PAGE_SIZE_shift
 
+	; kernel environment variables/rountines base address
+	mov	rcx,	qword [kernel_environment_base_address]
+
 	; put page back to binary memory map
-	mov	rdi,	qword [kernel_environment_base_address]
-	mov	rdi,	qword [rdi + KERNEL_STRUCTURE.memory_base_address]
+	mov	rdi,	qword [rcx + KERNEL_STRUCTURE.memory_base_address]
 
 .page:
 	; release first page of space
@@ -187,9 +189,13 @@ kernel_memory_release:
 	dec	rsi
 	jnz	.page	; yes
 
+	; released RSI pages
+	mov	rsi,	qword [rsp]
+	add	qword [rcx + KERNEL_STRUCTURE.page_available],	rsi
+
 	; restore original registers
-	pop	rdi
 	pop	rsi
+	pop	rdi
 	pop	rcx
 	pop	rax
 
@@ -201,33 +207,14 @@ kernel_memory_release:
 ;	rdi - logical page address
 kernel_memory_release_page:
 	; preserve original registers
-	push	rax
-	push	rdi
-	push	r8
+	push	rsi
 
-	; we guarantee, clean pages on stack
-	call	kernel_page_clean
-
-	; convert page address to physical and offset inside memory binary map
-	mov	rax,	~KERNEL_PAGE_mirror
-	and	rax,	rdi
-	shr	rax,	STATIC_PAGE_SIZE_shift
-
-	; put page back to binary memory map
-	mov	rdi,	qword [kernel_environment_base_address]
-	mov	rdi,	qword [rdi + KERNEL_STRUCTURE.memory_base_address]
-	bts	qword [rdi],	rax
-
-	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
-
-	; another brick in the wall
-	inc	qword [r8 + KERNEL_STRUCTURE.page_available]
+	; release page
+	mov	rsi,	STATIC_PAGE_SIZE_page
+	call	kernel_memory_release
 
 	; restore original registers
-	pop	r8
-	pop	rdi
-	pop	rax
+	pop	rsi
 
 	; return from routine
 	ret

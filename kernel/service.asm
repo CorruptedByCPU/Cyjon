@@ -663,20 +663,20 @@ kernel_service_serial_char:
 ;-------------------------------------------------------------------------------
 ; in:
 ;	rdi - pointer to string
-;	rsi - TRUE/FALSE - print string reversed?
+;	rsi - length of string in Bytes
 kernel_service_serial_string:
 	; preserve original registers
-	push	rdx
+	push	rcx
 	push	rsi
 
 	; send string to serial
-	mov	dl,	sil
+	mov	rcx,	rsi
 	mov	rsi,	rdi
 	call	driver_serial_string
 
 	; restore original registers
 	pop	rsi
-	pop	rdx
+	pop	rcx
 
 	; return from routine
 	ret

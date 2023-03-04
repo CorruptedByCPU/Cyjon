@@ -34,6 +34,7 @@ kernel_init_acpi:
 	push	rsi
 
 	; show information about ACPI version
+	mov	ecx,	kernel_acpi_standard_end - kernel_acpi_standard
 	mov	rsi,	kernel_acpi_standard
 	call	driver_serial_string
 
@@ -71,6 +72,7 @@ kernel_init_acpi:
 	push	rsi
 
 	; show information about ACPI version
+	mov	ecx,	kernel_acpi_extended_end - kernel_acpi_extended
 	mov	rsi,	kernel_acpi_extended
 	call	driver_serial_string
 
@@ -110,6 +112,7 @@ kernel_init_acpi:
 	je	.error	; no
 
 	; show information about LAPIC
+	mov	ecx,	kernel_acpi_lapic_end - kernel_acpi_lapic
 	mov	rsi,	kernel_acpi_lapic
 	call	driver_serial_string
 	mov	rax,	qword [r8 + KERNEL_STRUCTURE.lapic_base_address]
@@ -123,10 +126,12 @@ kernel_init_acpi:
 	je	.error	; no
 
 	; show information about I/O APIC
+	mov	ecx,	kernel_acpi_io_apic_end - kernel_acpi_io_apic
 	mov	rsi,	kernel_acpi_io_apic
 	call	driver_serial_string
 	mov	rax,	qword [r8 + KERNEL_STRUCTURE.io_apic_base_address]
 	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
+	xor	ecx,	ecx	; no prefix
 	call	driver_serial_value
 
 	; restore original registers
@@ -204,6 +209,7 @@ kernel_init_acpi:
 
 .error:
 	; RSDP is not available or something worse...
+	mov	ecx,	kernel_log_rsdp_end - kernel_log_rsdp
 	mov	rsi,	kernel_log_rsdp
 	call	driver_serial_string
 
