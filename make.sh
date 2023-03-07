@@ -35,12 +35,14 @@ wget -i https://blackdev.org/repository/list.txt -P system --reject-regex list.t
 
 rm system/list.txt
 
-clang pkg.c -o pkg && ./pkg && gzip -fk build/system.pkg && mv build/system.pkg.gz build/system.gz
+clang vfs.c -o vfs
+./vfs system && gzip -fk build/system.vfs && mv build/system.vfs.gz build/system.gz
+./vfs home && gzip -fk build/home.vfs && mv build/home.vfs.gz build/home.gz
 
 git submodule update --init
 
 cp limine.cfg limine/limine.sys limine/limine-cd.bin limine/limine-cd-efi.bin iso/
-cp build/{kernel.gz,system.gz} iso
+cp build/{kernel.gz,system.gz,home.gz} iso
 
 xorriso -as mkisofs -b limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot limine-cd-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label iso -o build/cyjon.iso > /dev/null 2>&1
 

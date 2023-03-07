@@ -38,7 +38,7 @@ kernel_init_storage:
 	mov	r11,	qword [rdx + rax * STATIC_PTR_SIZE_byte]
 
 	;-----------------------------------------------------------------------
-	; PKG module?
+	; VFS module?
 	;----------------------------------------------------------------------
 
 	; properties of module
@@ -46,8 +46,8 @@ kernel_init_storage:
 	mov	rsi,	qword [r11 + LIMINE_FILE.address]
 
 	; magic identificator exist?
-	cmp	dword [rsi + rcx - LIB_PKG_length],	LIB_PKG_magic
-	jne	.no_pkg	; no
+	cmp	dword [rsi + rcx - LIB_VFS_length],	LIB_VFS_magic
+	jne	.no_vfs	; no
 
 	; register module as memory storage
 	mov	al,	KERNEL_STORAGE_TYPE_memory
@@ -55,7 +55,7 @@ kernel_init_storage:
 
 	; all device slots are used?
 	test	rdi,	rdi
-	jz	.no_pkg	; ignore device
+	jz	.no_vfs	; ignore device
 
 	; set device properties
 	mov	qword [rdi + KERNEL_STORAGE_STRUCTURE.device_blocks],	rcx
@@ -63,7 +63,10 @@ kernel_init_storage:
 	mov	qword [rdi + KERNEL_STORAGE_STRUCTURE.storage_file],	kernel_storage_file
 	mov	qword [rdi + KERNEL_STORAGE_STRUCTURE.storage_read],	kernel_storage_read
 
-.no_pkg:
+	; initialize VFS storage
+	call	lib_vfs_init
+
+.no_vfs:
 	; next module?
 	inc	rax
 	cmp	rax,	qword [rbx + LIMINE_MODULE_RESPONSE.module_count]

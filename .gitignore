@@ -3,6 +3,6 @@ serial.log
 iso
 build
 limine
-pkg
+vfs
 import.sh
 system

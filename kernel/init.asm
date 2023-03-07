@@ -9,7 +9,7 @@
 	%include	"default.inc"
 	; library --------------------------------------------------------------
 	%include	"library/elf.inc"
-	%include	"library/pkg.inc"
+	%include	"library/vfs.inc"
 	%include	"library/sys.inc"
 	; driver ---------------------------------------------------------------
 	%include	"kernel/driver/ps2.inc"
@@ -58,7 +58,7 @@ section .text
 	; routines
 	;-----------------------------------------------------------------------
 	; library --------------------------------------------------------------
-	%include	"library/pkg.asm"
+	%include	"library/vfs.asm"
 	%include	"library/elf.asm"
 	%include	"library/string/compare.asm"
 	%include	"library/string/length.asm"

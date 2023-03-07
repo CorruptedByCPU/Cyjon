@@ -2,19 +2,22 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
-%define	LIB_PKG
+%define	LIB_VFS
 
-%define	LIB_PKG_align		16
-%define	LIB_PKG_base		64
-%define	LIB_PKG_length		4
-%define	LIB_PKG_magic		"#PKG"
-%define	LIB_PKG_name_limit	40
-%define	LIB_PKG_shift		6
+%define	LIB_VFS_align		16
+%define	LIB_VFS_base		64
+%define	LIB_VFS_length		4
+%define	LIB_VFS_magic		"#VFS"
+%define	LIB_VFS_name_limit	40
+%define	LIB_VFS_shift		6
+
+%define	LIB_VFS_TYPE_default	0
 
 ; this structure should be divisible by power of 2
-struc	LIB_PKG_STRUCTURE
+struc	LIB_VFS_STRUCTURE
 	.offset		resq	1
 	.size		resq	1
 	.length		resq	1
-	.name		resb	LIB_PKG_name_limit
+	.name		resb	LIB_VFS_name_limit
+	.SIZE:
 endstruc

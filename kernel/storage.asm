@@ -37,7 +37,7 @@ kernel_storage_file:
 
 	; search for requested file
 	mov	rdi,	qword [r10 + rax + KERNEL_STORAGE_STRUCTURE.device_first_block]
-	call	lib_pkg_file
+	call	lib_vfs_file
 
 .end:
 	; restore original registers
@@ -78,7 +78,7 @@ kernel_storage_read:
 	jne	.end	; no
 
 	; load file
-	call	lib_pkg_read
+	call	lib_vfs_read
 
 .end:
 	; restore original registers
