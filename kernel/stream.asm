@@ -51,7 +51,7 @@ kernel_stream:
 
 .found:
 	; prepare space for stream
-	mov	ecx,	((KERNEL_STREAM_limit * KERNEL_STREAM_STRUCTURE.SIZE) + ~STATIC_PAGE_mask) >> STATIC_PAGE_SIZE_shift
+	mov	ecx,	KERNEL_STREAM_SIZE_page
 	call	kernel_memory_alloc
 
 	; store space of stream
@@ -516,7 +516,7 @@ kernel_stream_release:
 	jnz	.end	; someone is still using it
 
 	; release stream cache
-	mov	rsi,	LIB_SYS_STREAM_SIZE_page
+	mov	rsi,	KERNEL_STREAM_SIZE_page
 	mov	rdi,	qword [rdi + KERNEL_STREAM_STRUCTURE.base_address]
 	call	kernel_memory_release
 

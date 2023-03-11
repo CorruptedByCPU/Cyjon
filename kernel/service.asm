@@ -345,6 +345,7 @@ kernel_service_ipc_send:
 ;-------------------------------------------------------------------------------
 ; in:
 ;	rdi - pointer to message descriptor
+;	sil - message type
 ; out:
 ;	TRUE if message retrieved
 kernel_service_ipc_receive:
@@ -395,6 +396,15 @@ kernel_service_ipc_receive:
 	jmp	.end
 
 .check:
+	; message type selected?
+	test	sil,	LIB_SYS_IPC_TYPE_ANY
+	jz	.any	; no
+
+	; requested message type?
+	test	sil,	byte [rsi + LIB_SYS_STRUCTURE_IPC_DEFAULT.type]
+	jnz	.next	; no
+
+.any:
 	; message for us?
 	cmp	qword [rsi + LIB_SYS_STRUCTURE_IPC.target],	rax
 	jne	.next	; no
