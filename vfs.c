@@ -9,15 +9,16 @@ Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 	#include	<dirent.h>
 	#include	<stdint.h>
 	#include	<stdio.h>
+	#include	<stdlib.h>
 	#include	<string.h>
 	#include	<sys/stat.h>
 	// library -------------------------------------------------------------
 	#define	LIB_VFS_align		16
-	#define	LIB_VFS_base		64
 	#define	LIB_VFS_length		4
 	#define	LIB_VFS_magic		0x53465623	// "#VFS"
 	#define	LIB_VFS_name_limit	40
 	#define	LIB_VFS_shift		6
+	#define	LIB_VFS_default		2
 
 	#define	LIB_VFS_TYPE_default	0
 
@@ -36,17 +37,26 @@ Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 
 char path_export[] = "build/";
 char file_extension[] = ".vfs";
+char name_symlink[] = "..";
 
 int main( int argc, char *argv[] ) {
 	// prepare import path
 	char path_import[ sizeof( argv[ 1 ] ) ];
 	snprintf( path_import, sizeof( path_import ), "%s%c", argv[ 1 ], 0x2F );
 
-	// prepare empty file header
-	struct LIB_VFS_STRUCTURE vfs[ LIB_VFS_base ] = { 0 };
+	// prepare vfs header
+	struct LIB_VFS_STRUCTURE *vfs = malloc( sizeof( struct LIB_VFS_STRUCTURE ) * LIB_VFS_default );
+
+	// prepare default symlinks for root directory
+	vfs[ 0 ].offset = EMPTY;
+	vfs[ 0 ].length = 1;
+	strncpy( (char *) &vfs[ 0 ].name, name_symlink, 1 );
+	vfs[ 1 ].offset = EMPTY;
+	vfs[ 1 ].length = 2;
+	strncpy( (char *) &vfs[ 1 ].name, name_symlink, 2 );
 
 	// included files
-	uint64_t files_included = 0;
+	uint64_t files_included = 2;
 
 	// directory entry
 	struct dirent *entry = NULL;
@@ -62,6 +72,9 @@ int main( int argc, char *argv[] ) {
 		// file name longer than limit?
 		if( strlen( entry -> d_name ) > LIB_VFS_name_limit ) { printf( "Name \"%s\" too long.", entry -> d_name ); return -1; }
 
+		// resize header for new file
+		vfs = realloc( vfs, sizeof( struct LIB_VFS_STRUCTURE ) * (files_included + 1) );
+
 		// insert: name, length
 		vfs[ files_included ].length = strlen( entry -> d_name );
 		strcpy( (char *) vfs[ files_included ].name, entry -> d_name );
@@ -75,11 +88,8 @@ int main( int argc, char *argv[] ) {
 		stat( (char *) path_local, &finfo );	// get file specification
 		vfs[ files_included ].size = finfo.st_size;
 
-		// next directory entry if possible
-		if( ++files_included < LIB_VFS_base ) continue;
-
-		// show error message
-		printf( "Overflow.\n" ); return -1;
+		// next directory entry
+		files_included++;
 	}
 
 	// we don't need it anymore, close it up
@@ -92,13 +102,16 @@ int main( int argc, char *argv[] ) {
 	uint64_t offset = MACRO_PAGE_ALIGN_UP( sizeof( struct LIB_VFS_STRUCTURE ) * files_included );
 
 	// calculate offset for every registered file
-	for( uint64_t i = 0; i < files_included; i++ ) {
+	for( uint64_t i = LIB_VFS_default; i < files_included - 1; i++ ) {
 		// first file
 		vfs[ i ].offset = offset;
 
 		// next file (align file position)
 		offset += MACRO_PAGE_ALIGN_UP( vfs[ i ].size );
 	}
+
+	// update size of root directory inside symlinks
+	for( uint8_t i = 0; i < LIB_VFS_default; i++ ) vfs[ i ].size = MACRO_PAGE_ALIGN_UP( sizeof( struct LIB_VFS_STRUCTURE ) * files_included );
 
 	// show content of package with properties of file
 	printf( "Offset [byte]\tSize [Bytes]\tLength\tName\n" );	// header of table
@@ -118,10 +131,10 @@ int main( int argc, char *argv[] ) {
 
 	// append file header
 	uint64_t size = sizeof( struct LIB_VFS_STRUCTURE ) * files_included;	// last data offset in Bytes
-	fwrite( &vfs, size, 1, fvfs );
+	fwrite( vfs, size, 1, fvfs );
 
 	// append files described in header
-	for( uint64_t i = 0; i < files_included - 1; i++ ) {
+	for( uint64_t i = LIB_VFS_default; i < files_included - 1; i++ ) {
 		// align file to offset
 		for( uint64_t j = 0; j < MACRO_PAGE_ALIGN_UP( size ) - size; j++ ) fputc( '\x00', fvfs );
 
@@ -137,6 +150,9 @@ int main( int argc, char *argv[] ) {
 		// last data offset in Bytes
 		size = vfs[ i ].offset + vfs[ i ].size;
 	}
+
+	// release header
+	free( vfs );
 
 	// align magic value to uint32_t size
 	for( uint8_t a = 0; a < sizeof( uint32_t ) - (size % sizeof( uint32_t )); a++ ) fputc( '\x00', fvfs );

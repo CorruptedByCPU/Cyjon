@@ -51,7 +51,7 @@ lib_vfs_file:
 
 .next:
 	; no more files in VFS?
-	cmp	qword [rdi + LIB_VFS_STRUCTURE.offset],	EMPTY
+	cmp	qword [rdi + LIB_VFS_STRUCTURE.length],	EMPTY
 	je	.end
 
 	; move pointer to next file
@@ -95,7 +95,7 @@ lib_vfs_init:
 
 .loop:
 	; all files parsed?
-	cmp	qword [rsi + LIB_VFS_STRUCTURE.offset],	EMPTY
+	cmp	qword [rsi + LIB_VFS_STRUCTURE.length],	EMPTY
 	je	.end	; yes
 
 	; set correct file content offsets, related to package inside memory

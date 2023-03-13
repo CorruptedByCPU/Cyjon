@@ -13,11 +13,15 @@ kernel_init_storage:
 	push	rdx
 	push	rsi
 	push	rdi
+	push	r9
 	push	r11
 
 	; modules available?
 	cmp	qword [kernel_limine_module_request + LIMINE_MODULE_REQUEST.response],	EMPTY
 	je	.error	; no
+
+	; kernel task properties
+	call	kernel_task_active
 
 	; assign space for storage list
 	mov	ecx,	((KERNEL_STORAGE_limit * KERNEL_STORAGE_STRUCTURE.SIZE) + ~STATIC_PAGE_mask) >> STATIC_PAGE_SIZE_shift
@@ -45,6 +49,9 @@ kernel_init_storage:
 	mov	rcx,	qword [r11 + LIMINE_FILE.size]
 	mov	rsi,	qword [r11 + LIMINE_FILE.address]
 
+	; preserve module id
+	push	rax
+
 	; magic identificator exist?
 	cmp	dword [rsi + rcx - LIB_VFS_length],	LIB_VFS_magic
 	jne	.no_vfs	; no
@@ -67,6 +74,9 @@ kernel_init_storage:
 	call	lib_vfs_init
 
 .no_vfs:
+	; restore module id
+	pop	rax
+
 	; next module?
 	inc	rax
 	cmp	rax,	qword [rbx + LIMINE_MODULE_RESPONSE.module_count]
@@ -87,7 +97,7 @@ kernel_init_storage:
 	dec	rcx
 	js	.error	; Geralt: Hmmm...
 
-	; search for system files?
+	; device exist?
 	cmp	byte [rax + KERNEL_STORAGE_STRUCTURE.device_type],	EMPTY
 	jne	.files	; yes
 
@@ -115,6 +125,9 @@ kernel_init_storage:
 	mov	rsi,	kernel_exec_file_init
 	call	kernel_storage_file
 
+	; set storage of kernel process
+	mov	qword [r9 + KERNEL_TASK_STRUCTURE.storage],	rax
+
 	; system storage located?
 	cmp	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
 	jne	.release	; yes
@@ -134,6 +147,10 @@ kernel_init_storage:
 	pop	rcx
 	pop	rax
 
+	; set root directory of kernel process
+	push	qword [rax + KERNEL_STORAGE_STRUCTURE.device_first_block]
+	pop	qword [r9 + KERNEL_TASK_STRUCTURE.directory]
+
 	; show information about system storage
 	mov	ecx,	kernel_log_system_end - kernel_log_system
 	mov	rsi,	kernel_log_system
@@ -151,6 +168,7 @@ kernel_init_storage:
 .end:
 	; restore original registers
 	pop	r11
+	pop	r9
 	pop	rdi
 	pop	rsi
 	pop	rdx
