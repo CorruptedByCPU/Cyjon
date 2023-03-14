@@ -16,7 +16,7 @@
 	%define	LIB_SYS_REQUEST_MEMORY_RELEASE		0x03
 	%define	LIB_SYS_REQUEST_TASK_PID		0x04
 	%define	LIB_SYS_REQUEST_DRIVER_MOUSE		0x05
-	%define	LIB_SYS_REQUEST_STORAGE_READ		0x06
+	%define	LIB_SYS_REQUEST_STORAGE_READ_FILE	0x06
 	%define	LIB_SYS_REQUEST_EXEC			0x07
 	%define	LIB_SYS_REQUEST_IPC_SEND		0x08
 	%define	LIB_SYS_REQUEST_IPC_RECEIVE		0x09
@@ -46,10 +46,6 @@
 	struc	LIB_SYS_STRUCTURE_FRAMEBUFFER
 		.width_pixel	resw	1
 		.height_pixel	resw	1
-
-		; align next label
-		alignb	0x08
-
 		.base_address	resq	1
 		.scanline_byte	resq	1
 		.pid		resq	1
