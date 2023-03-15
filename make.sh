@@ -31,26 +31,17 @@ gzip -fk build/kernel
 
 rm -f build/*.o
 
-wget -i https://blackdev.org/repository/list.txt -P system --reject-regex list.txt > /dev/null 2>&1
-
-rm system/list.txt
-
-clang vfs.c -o vfs
-./vfs system && gzip -fk build/system.vfs && mv build/system.vfs.gz build/system.gz
-#./vfs home && gzip -fk build/home.vfs && mv build/home.vfs.gz build/home.gz
 
 git submodule update --init
 
 cp limine.cfg limine/limine.sys limine/limine-cd.bin limine/limine-cd-efi.bin iso/
-cp build/{kernel.gz,system.gz} iso
-#cp build/{kernel.gz,system.gz,home.gz} iso
+cp build/kernel.gz iso
+wget https://blackdev.org/repository/system.gz -P iso > /dev/null 2>&1
 
 xorriso -as mkisofs -b limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot limine-cd-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label iso -o build/cyjon.iso > /dev/null 2>&1
 
 (git submodule update --init && cd limine && make ) > /dev/null 2>&1
 limine/limine-deploy build/cyjon.iso > /dev/null 2>&1
 
-echo -e "\nbuild:"
+echo -e "build:"
 ls -lah build/ | tail -n +4 | awk '//{printf "%16s %8s\n",$(NF),$5 }'
-echo -e "\nsystem:"
-ls -lah system/ | tail -n +4 | awk '//{printf "%16s %8s\n",$(NF),$5 }'
