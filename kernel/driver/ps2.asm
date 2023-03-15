@@ -115,7 +115,7 @@ driver_ps2_keyboard_matrix_low				dw	EMPTY
 							dw	DRIVER_PS2_KEYBOARD_PRESS_F11
 							dw	DRIVER_PS2_KEYBOARD_PRESS_F12
 
-driver_ps2_keyboard_matrix_high				dw	0x0000
+driver_ps2_keyboard_matrix_high				dw	EMPTY
 							dw	DRIVER_PS2_KEYBOARD_PRESS_ESC
 							dw	0x0021	; !
 							dw	0x0040	; @
@@ -228,7 +228,8 @@ driver_ps2:
 
 	; retrieve PS2 controller configuration
 	mov	al,	DRIVER_PS2_COMMAND_CONFIGURATION_GET
-	call	driver_ps2_send_command_receive_answer
+	call	driver_ps2_command
+	call	driver_ps2_data_read
 
 	; enable interrupts on second device of PS2 controller (mouse)
 	or	al,	DRIVER_PS2_CONFIGURATION_PORT_SECOND_INTERRUPT
@@ -240,34 +241,34 @@ driver_ps2:
 
 	; set new PS2 controller configuration
 	mov	al,	DRIVER_PS2_COMMAND_CONFIGURATION_SET
-	call	driver_ps2_send_command
+	call	driver_ps2_command
 	pop	rax	; restore answer
-	call	driver_ps2_send_data
+	call	driver_ps2_data_write
 
 	;-----------------------------------------------------------------------
 
 	; send RESET command to second device on PS2 controller (mouse)
 	mov	al,	DRIVER_PS2_COMMAND_PORT_SECOND
-	call	driver_ps2_send_command
+	call	driver_ps2_command
 	mov	al,	DRIVER_PS2_DEVICE_reset
-	call	driver_ps2_send_data
+	call	driver_ps2_data_write
 
 	; receive first answer
-	call	driver_ps2_receive_data
+	call	driver_ps2_data_read
 
 	; command accepted?
 	cmp	al,	DRIVER_PS2_ANSWER_ACKNOWLEDGED
 	jne	.no_mouse	; no
 
 	; receive second answer
-	call	driver_ps2_receive_data
+	call	driver_ps2_data_read
 
 	; device is working properly?
 	cmp	al,	DRIVER_PS2_ANSWER_SELF_TEST_SUCCESS
 	jne	.no_mouse	;no
 
 	; receive third answer
-	call	driver_ps2_receive_data
+	call	driver_ps2_data_read
 
 	; preserve mouse device type
 	mov	byte [driver_ps2_mouse_type],	al
@@ -276,12 +277,12 @@ driver_ps2:
 
 	; init device by its own DEFAULT configuration (mouse)
 	mov	al,	DRIVER_PS2_COMMAND_PORT_SECOND
-	call	driver_ps2_send_command
+	call	driver_ps2_command
 	mov	al,	DRIVER_PS2_DEVICE_SET_DEFAULT
-	call	driver_ps2_send_data
+	call	driver_ps2_data_write
 
 	; receive answer
-	call	driver_ps2_receive_data
+	call	driver_ps2_data_read
 
 	; command accepted?
 	cmp	al,	DRIVER_PS2_ANSWER_ACKNOWLEDGED
@@ -291,12 +292,12 @@ driver_ps2:
 
 	; init device by its own DEFAULT configuration (mouse)
 	mov	al,	DRIVER_PS2_COMMAND_PORT_SECOND
-	call	driver_ps2_send_command
+	call	driver_ps2_command
 	mov	al,	DRIVER_PS2_DEVICE_PACKETS_ENABLE
-	call	driver_ps2_send_data
+	call	driver_ps2_data_write
 
 	; receive answer
-	call	driver_ps2_receive_data
+	call	driver_ps2_data_read
 
 	; command accepted?
 	cmp	al,	DRIVER_PS2_ANSWER_ACKNOWLEDGED
@@ -346,30 +347,7 @@ driver_ps2:
 	; return from routine
 	ret
 
-;-------------------------------------------------------------------------------
-; void
-driver_ps2_drain:
-	; preserve original registers
-	push	rax
 
-.loop:
-	; check controller status
-	in	al,	DRIVER_PS2_PORT_COMMAND_OR_STATUS
-	test	al,	DRIVER_PS2_STATUS_output
-	jz	.end	; there is nothig, good
-
-	; release data from controller data port
-	in	al,	DRIVER_PS2_PORT_DATA
-
-	; try again
-	jmp	.loop
-
-.end:
-	; restore original registers
-	pop	rax
-
-	; return from routine
-	ret
 
 ; align routine
 align	0x08,	db	EMPTY
@@ -408,8 +386,8 @@ driver_ps2_keyboard:
 
 .no_sequence:
 	; complete the sequence?
-	test	word [driver_ps2_keyboard_scancode],	EMPTY
-	jz	.no_complete	; no
+	cmp	word [driver_ps2_keyboard_scancode],	EMPTY
+	je	.no_complete	; no
 
 	; compose scancode
 	or	ax,	word [driver_ps2_keyboard_scancode]
@@ -733,7 +711,7 @@ driver_ps2_mouse:
 
 ;-------------------------------------------------------------------------------
 ; void
-driver_ps2_read_check:
+driver_ps2_check_read:
 	; preserve original registers
 	push	rax
 
@@ -749,66 +727,10 @@ driver_ps2_read_check:
 	; return from routine
 	ret
 
-;-------------------------------------------------------------------------------
-; out:
-;	al - answer
-driver_ps2_receive_data:
-	; wait for read opportunity
-	call	driver_ps2_read_check
-
-	; receive answer
-	in	al,	DRIVER_PS2_PORT_DATA
-
-	; return from routine
-	ret
-
-;-------------------------------------------------------------------------------
-; in:
-;	al - value to send
-driver_ps2_send_command:
-	; wait for command send opportunity
-	call	driver_ps2_write_check
-
-	; send command
-	out	DRIVER_PS2_PORT_COMMAND_OR_STATUS,	al
-
-	; return from routine
-	ret
-
-;-------------------------------------------------------------------------------
-; in:
-;	al - command
-; out:
-;	al - answer
-driver_ps2_send_command_receive_answer:
-	; wait for send command opportunity
-	call	driver_ps2_write_check
-
-	; send command
-	out	DRIVER_PS2_PORT_COMMAND_OR_STATUS,	al
-
-	; receive answer from controller
-	call	driver_ps2_receive_data
-
-	; return from routine
-	ret
-
-;-------------------------------------------------------------------------------
-; in:
-;	al - value to send
-driver_ps2_send_data:
-	; wait for data send opportunity
-	call	driver_ps2_write_check
-
-	; send data to controller
-	out	DRIVER_PS2_PORT_DATA,	al
-
-	; return from routine
-	ret
 
 ;-------------------------------------------------------------------------------
 ; void
-driver_ps2_write_check:
+driver_ps2_check_write:
 	; preserve original registers
 	push	rax
 
@@ -818,6 +740,70 @@ driver_ps2_write_check:
 	test	al,	DRIVER_PS2_STATUS_input
 	jnz	.loop	; controller not ready
 
+	; restore original registers
+	pop	rax
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	al - value to send
+driver_ps2_command:
+	; wait for controller to be ready to accept command
+	call	driver_ps2_check_write
+
+	; send command
+	out	DRIVER_PS2_PORT_COMMAND_OR_STATUS,	al
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; out:
+;	al - answer
+driver_ps2_data_read:
+	; wait for controller to be ready to accept answer/data
+	call	driver_ps2_check_read
+
+	; receive answer/data
+	in	al,	DRIVER_PS2_PORT_DATA
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	al - value to send
+driver_ps2_data_write:
+	; wait for controller to be ready to accept command/data
+	call	driver_ps2_check_write
+
+	; transfer command/data
+	out	DRIVER_PS2_PORT_DATA,	al
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; void
+driver_ps2_drain:
+	; preserve original registers
+	push	rax
+
+.loop:
+	; flush PS2 controller output buffer
+	in	al,	DRIVER_PS2_PORT_COMMAND_OR_STATUS
+	test	al,	DRIVER_PS2_STATUS_output
+	jz	.end	; there is nothig left, good
+
+	; drop data from PS2 controller
+	in	al,	DRIVER_PS2_PORT_DATA
+
+	; try again
+	jmp	.loop
+
+.end:
 	; restore original registers
 	pop	rax
 
