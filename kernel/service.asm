@@ -151,8 +151,9 @@ kernel_service_driver_mouse:
 
 ;-------------------------------------------------------------------------------
 ; in:
-;	rsi - stream flags
-;	rdi - pointer to file name/path ended with STATIC_ASCII_TERMINATOR
+;	rdx - stream flags
+;	rsi - length of file name/path
+;	rdi - pointer to file name/path
 ; out:
 ;	rax - process ID
 kernel_service_exec:
@@ -166,9 +167,10 @@ kernel_service_exec:
 	; kernel environment variables/rountines base address
 	mov	r8,	qword [kernel_environment_base_address]
 
-	; recognize file name/path length
-	xchg	rsi,	rdi
-	call	lib_string_length
+	; reorganize registers
+	mov	rcx,	rsi	; length of string
+	mov	rsi,	rdx	; pointer to string
+	xchg	rsi,	rdi	; stream flags
 
 	; execute file from path
 	call	kernel_exec

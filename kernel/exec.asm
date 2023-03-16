@@ -13,6 +13,7 @@
 kernel_exec:
 	; preserve original registers
 	push	rbx
+	push	rcx
 	push	rdx
 	push	rsi
 	push	rdi
@@ -27,6 +28,10 @@ kernel_exec:
 	; kernel environment variables/rountines base address
 	mov	r8,	qword [kernel_environment_base_address]
 
+	; select file name from string
+	mov	al,	STATIC_ASCII_SPACE
+	call	lib_string_word
+
 	; by default there is no PID for new process
 	xor	eax,	eax
 
@@ -35,6 +40,7 @@ kernel_exec:
 	;-----------------------------------------------------------------------
 
 	; file descriptor
+	mov	rcx,	rbx
 	sub	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
 	mov	rbp,	rsp	; pointer of file descriptor
 	call	kernel_exec_load
@@ -50,6 +56,9 @@ kernel_exec:
 	;-----------------------------------------------------------------------
 	; configure executable
 	;-----------------------------------------------------------------------
+
+	; orignal name/path length
+	mov	rcx,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + 0x50]
 	call	kernel_exec_configure
 
 	;-----------------------------------------------------------------------
@@ -129,6 +138,7 @@ kernel_exec:
 	pop	rdi
 	pop	rsi
 	pop	rdx
+	pop	rcx
 	pop	rbx
 
 	; return from routine
