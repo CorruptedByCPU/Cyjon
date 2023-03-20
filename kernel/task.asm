@@ -143,7 +143,7 @@ kernel_task:
 
 	; first run?
 	test	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_init
-	jz	.no_init	; no
+	jz	.ready	; no
 
 	; disable init flag
 	and	word [r10 + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_init
@@ -157,12 +157,29 @@ kernel_task:
 
 	; it's a daemon?
 	test	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_daemon
-	jz	.no_init	; no
+	jz	.no_daemon	; no
 
 	; share with daemon - kernel environment variables/rountines base address
 	mov	qword [rsp + 0x48],	r8
 
-.no_init:
+	; initialized
+	jmp	.ready
+
+.no_daemon:
+	; retrieve from stack:
+	mov	rax,	qword [rsp + 0x90]
+
+	; length of string
+	mov	rcx,	qword [rax]
+
+	; pointer to string
+	add	rax,	STATIC_QWORD_SIZE_byte
+
+	; and pass them to process
+	mov	qword [rsp + 0x48],	rcx
+	mov	qword [rsp + 0x50],	rax
+
+.ready:
 	; reload CPU cycle counter in APIC controller
 	mov	rax,	qword [r8 + KERNEL_STRUCTURE.lapic_base_address]
 	mov	dword [rax + KERNEL_LAPIC_STRUCTURE.tic],	KERNEL_LAPIC_Hz

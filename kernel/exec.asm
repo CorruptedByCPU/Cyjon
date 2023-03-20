@@ -228,11 +228,57 @@ kernel_exec_configure:
 	; stack
 	;-----------------------------------------------------------------------
 
-	; describe the space under process stack
-	mov	rax,	KERNEL_EXEC_STACK_address
+	; length of string passed to process
+	mov	rcx,	qword [rsp + 0x50]
+	xor	cl,	cl
+	add	rcx,	0x10
+
+	; remember as offset inside process stack
+	mov	rdx,	rcx
+	not	dx
+	and	dx,	~STATIC_PAGE_mask
+	inc	dx
+
+	; new stack pointer of process
+	sub	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.rsp], rcx
+
+	; stack base address
+	mov	rax,	KERNEL_EXEC_STACK_pointer
+	add	rcx,	~STATIC_PAGE_mask
+	and	rcx,	STATIC_PAGE_mask
+	sub	rax,	rcx
+
+	; alloc stack of size with arguments
+	shr	rcx,	STATIC_PAGE_SIZE_shift
+	call	kernel_memory_alloc
+
+	; preserve length and pointer to stack
+	push	rcx
+	push	rdi
+
+	; arguments line position on stack
+	add	di,	dx	; offset
+
+	; share to process:
+
+	; length of arguments in Bytes
+	mov	rcx,	qword [rsp + 0x60]
+	mov	qword [rdi],	rcx	; length of string
+
+	; string of arguments
+	mov	rsi,	qword [rsp + 0x50]
+	add	rdi,	0x08
+	rep	movsb
+
+	; restore length and pointer to stack
+	pop	rdi
+	pop	rcx
+
+	; map executable space to process paging array
 	or	bx,	KERNEL_PAGE_FLAG_user
-	mov	ecx,	KERNEL_EXEC_STACK_SIZE_page
-	call	kernel_page_alloc
+	mov	rsi,	rdi
+	sub	rsi,	qword [kernel_page_mirror]
+	call	kernel_page_map
 
 	;-----------------------------------------------------------------------
 	; allocate space for executable segments
