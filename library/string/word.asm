@@ -12,7 +12,6 @@
 ;-------------------------------------------------------------------------------
 ;===============================================================================
 ; in:
-;	al - ASCII code of separator
 ;	rcx - length of string
 ;	rsi - pointer to string
 ; out:
@@ -26,8 +25,10 @@ lib_string_word:
 
 .search:
 	; separator found?
-	cmp	byte [rsi + rbx],	al
-	je	.end	; yes
+	cmp	byte [rsi + rbx],	STATIC_ASCII_EXCLAMATION
+	jb	.end	; yes
+	cmp	byte [rsi + rbx],	STATIC_ASCII_TILDE
+	ja	.end	; yes
 
 	; word size
 	inc	rbx

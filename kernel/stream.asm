@@ -279,6 +279,7 @@ kernel_stream_out:
 ;	rdi - value
 ;	sil - number base
 ;	dl - required N digits, but no more than 64 (QWORD limit)
+;	cl - ASCII code of characters
 kernel_stream_out_value:
 	; preserve original registers
 	push	rax
@@ -287,28 +288,22 @@ kernel_stream_out_value:
 	push	rdx
 	push	rsi
 	push	rdi
-	push	rbp
 
 	; prefix overflow?
 	cmp	dl,	STATIC_QWORD_SIZE_bit
 	ja	.end	; yes
 
-	; preserve stack pointer
-	mov	rbp,	rsp
+	; string cache
+	mov	eax,	STATIC_QWORD_SIZE_bit
+	sub	rsp,	rax
 
-	; prepare string cache (64 digits)
-	mov	rax,	0x3030303030303030
-	push	rax
-	push	rax
-	push	rax
-	push	rax
-	push	rax
-	push	rax
-	push	rax
-	push	rax
+	; fill with prefix value
+	xchg	al,	cl
+	mov	rdi,	rsp
+	rep	stosb
 
 	; prepare acumulator
-	mov	rax,	rdi
+	mov	rax,	qword [rsp + STATIC_QWORD_SIZE_bit]
 
 	; preserve prefix value
 	movzx	rbx,	dl
@@ -334,7 +329,7 @@ kernel_stream_out_value:
 
 	; convert digit to ASCII
 	add	dl,	STATIC_ASCII_DIGIT_0
-	mov	byte [rbp + rcx],	dl	; and keep on stack
+	mov	byte [rsp + rcx + STATIC_QWORD_SIGN_bit],	dl	; and keep on stack
 
 	; keep parsing?
 	test	rax,	rax
@@ -354,15 +349,14 @@ kernel_stream_out_value:
 	inc	rsi
 
 	; send string to stdout
-	lea	rdi,	[rbp + rcx]
+	lea	rdi,	[rsp + rcx + STATIC_QWORD_SIGN_bit]
 	call	kernel_stream_out
 
-	; remove string from stack
-	mov	rsp,	rbp
+	; remove string cache from stack
+	add	rsp,	STATIC_QWORD_SIZE_bit
 
 .end:
 	; restore original registers
-	pop	rbp
 	pop	rdi
 	pop	rsi
 	pop	rdx

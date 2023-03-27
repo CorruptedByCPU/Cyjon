@@ -29,7 +29,6 @@ kernel_exec:
 	mov	r8,	qword [kernel_environment_base_address]
 
 	; select file name from string
-	mov	al,	STATIC_ASCII_SPACE
 	call	lib_string_word
 
 	; by default there is no PID for new process
