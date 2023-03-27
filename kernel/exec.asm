@@ -231,7 +231,7 @@ kernel_exec_configure:
 	; length of string passed to process
 	mov	rcx,	qword [rsp + 0x50]
 	xor	cl,	cl
-	add	rcx,	0x10
+	add	rcx,	0x18
 
 	; remember as offset inside process stack
 	mov	rdx,	rcx

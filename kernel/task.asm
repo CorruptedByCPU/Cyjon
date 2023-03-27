@@ -282,6 +282,9 @@ kernel_task_add:
 	add	rdi,	KERNEL_TASK_STRUCTURE.name
 	rep	movsb
 
+	; last character as TERMINATOR
+	mov	byte [rdi],	STATIC_ASCII_TERMINATOR
+
 	; number of tasks inside queue
 	inc	qword [r8 + KERNEL_STRUCTURE.task_count]
 
