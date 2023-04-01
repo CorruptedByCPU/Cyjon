@@ -76,6 +76,9 @@ kernel_init_daemon:
 	mov	r11,	rdi
 	call	kernel_page_alloc
 
+	; process memory usage
+	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
+
 	; set process context stack pointer
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	KERNEL_TASK_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
 
@@ -116,6 +119,9 @@ kernel_init_daemon:
 	add	rcx,	~STATIC_PAGE_mask
 	shr	rcx,	STATIC_PAGE_SIZE_shift
 	call	kernel_memory_alloc
+
+	; process memory usage
+	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
 
 	;-----------------------------------------------------------------------
 	; load program segments in place
@@ -180,6 +186,9 @@ kernel_init_daemon:
 	; set default input stream
 	call	kernel_stream
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_in],	rsi
+
+	; process memory usage
+	inc	qword [r10 + KERNEL_TASK_STRUCTURE.page]
 
 	; properties of parent task
 	call	kernel_task_active

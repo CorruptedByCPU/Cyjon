@@ -266,6 +266,9 @@ kernel_task_add:
 	call	kernel_task_id_parent
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.pid_parent],	rdx
 
+	; task doesn't use memory, yet
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.page],	EMPTY
+
 	; process name too long?
 	cmp	rcx,	KERNEL_TASK_NAME_limit
 	jbe	.proper_length	; no

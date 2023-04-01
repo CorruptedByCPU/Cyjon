@@ -76,6 +76,9 @@ kernel_exec:
 	call	kernel_stream
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_in],	rsi
 
+	; process memory usage
+	inc	qword [r10 + KERNEL_TASK_STRUCTURE.page]
+
 	; connect output with input?
 	test	rax,	LIB_SYS_STREAM_FLOW_out_to_in
 	jnz	.stream_set	; yes
@@ -195,6 +198,9 @@ kernel_exec_configure:
 	mov	r11,	rdi
 	call	kernel_page_alloc
 
+	; process memory usage
+	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
+
 	; set process context stack pointer
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	KERNEL_TASK_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
 
@@ -279,6 +285,9 @@ kernel_exec_configure:
 	sub	rsi,	qword [kernel_page_mirror]
 	call	kernel_page_map
 
+	; process memory usage
+	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
+
 	;-----------------------------------------------------------------------
 	; allocate space for executable segments
 	;-----------------------------------------------------------------------
@@ -303,6 +312,9 @@ kernel_exec_configure:
 	mov	rsi,	rdi
 	sub	rsi,	qword [kernel_page_mirror]
 	call	kernel_page_map
+
+	; process memory usage
+	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
 
 	;-----------------------------------------------------------------------
 	; load program segments in place
@@ -364,6 +376,9 @@ kernel_exec_configure:
 	add	rcx,	~STATIC_PAGE_mask	; align up to page boundaries
 	shr	rcx,	STATIC_PAGE_SIZE_shift	; convert to pages
 	call	kernel_memory_alloc
+
+	; process memory usage
+	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
 
 	; store binary memory map address of process inside task properties
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.memory_map],	rdi

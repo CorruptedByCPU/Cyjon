@@ -480,7 +480,7 @@ kernel_service_memory_alloc:
 	mov	rax,	rdi
 	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_process
 	call	kernel_page_alloc
-	jnc	.end	; space allocated
+	jnc	.allocated	; space allocated
 
 	; take back modifications
 	mov	rsi,	rcx
@@ -489,6 +489,16 @@ kernel_service_memory_alloc:
 .error:
 	; no enough memory
 	xor	eax,	eax
+
+	; end
+	jmp	.end
+
+.allocated:
+	; retrieve pointer to current task descriptor
+	call	kernel_task_active
+
+	; process memory usage
+	add	qword [r9 + KERNEL_TASK_STRUCTURE.page],	rcx
 
 .end:
 	; restore original registers
@@ -526,6 +536,9 @@ kernel_service_memory_release:
 	; pointer and counter at place
 	mov	rcx,	rsi
 	mov	rsi,	rdi
+
+	; process memory usage
+	sub	qword [r9 + KERNEL_TASK_STRUCTURE.page],	rcx
 
 .loop:
 	; delete first physical page from logical address
@@ -754,55 +767,29 @@ kernel_service_storage_read:
 	je	.end	; no
 
 	; prepare space for file content
-	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
-	add	rcx,	~STATIC_PAGE_mask
-	shr	rcx,	STATIC_PAGE_SIZE_shift
-	call	kernel_memory_alloc
-	jc	.end	; no enough memory
+	mov	rdi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
+	call	kernel_service_memory_alloc
+
+	; no enough memory?
+	test	rax,	rax
+	jz	.end	; yes
 
 	; load file content into prepared space
 	mov	rsi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id]
+	mov	rdi,	rax
+	movzx	eax,	byte [r8 + KERNEL_STRUCTURE.storage_root_id]
 	call	kernel_storage_read
 
 	; retrieve current task pointer
 	call	kernel_task_active
 
-	; preserve file content address
-	sub	rdi,	qword [kernel_page_mirror]	; convert address to physical
-	mov	rsi,	rdi
-
-	; aquire memory inside process space for file
-	mov	r9,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]
-	call	kernel_memory_acquire
-	jc	.error	; no enough memory
-
-	; convert first page number to logical address
-	shl	rdi,	STATIC_PAGE_SIZE_shift
-
-	; map file content to process space
-	mov	rax,	rdi	; first page number of memory space inside process
-	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_process
-	mov	r11,	cr3	; task paging array
-	call	kernel_page_map
-	jc	.error	; no enough memory
-
 	; restore file descriptor
-	mov	rdi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE]
+	mov	rax,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE]
 
 	; inform process about file location and size
 	push	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
-	pop	qword [rdi + LIB_SYS_STRUCTURE_STORAGE.size_byte]
-	mov	qword [rdi + LIB_SYS_STRUCTURE_STORAGE.address],	rax
-
-	; file loaded to process memory
-	jmp	.end
-
-.error:
-	; release memory assigned for file
-	mov	rdi,	rsi
-	or	rdi,	qword [kernel_page_mirror]
-	mov	rsi,	rcx
-	call	kernel_memory_release
+	pop	qword [rax + LIB_SYS_STRUCTURE_STORAGE.size_byte]
+	mov	qword [rax + LIB_SYS_STRUCTURE_STORAGE.address],	rdi
 
 .end:
 	; remove file descriptor from stack

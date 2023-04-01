@@ -4,7 +4,7 @@
 
 %define	KERNEL_name			"Cyjon"
 %define	KERNEL_version			"0"
-%define	KERNEL_revision			"2116"
+%define	KERNEL_revision			"2117"
 %define	KERNEL_architecture		"x86_64"
 %define	KERNEL_language			"Assembly"
 
@@ -59,6 +59,7 @@ struc	KERNEL_STRUCTURE
 	.page_total			resq	1
 	.page_available			resq	1
 	.page_limit			resq	1
+	.page_array			resq	1
 	; pointers of Page management functions
 	.page_deconstruction		resq	1
 
