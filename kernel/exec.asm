@@ -2,8 +2,6 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
-debug_start	db	"exec: %d pages registered", STATIC_ASCII_NEW_LINE, STATIC_ASCII_TERMINATOR
-
 ;-------------------------------------------------------------------------------
 ; in:
 ;	rcx - length of string in characters
@@ -14,8 +12,6 @@ debug_start	db	"exec: %d pages registered", STATIC_ASCII_NEW_LINE, STATIC_ASCII_
 ;	rax - new process ID
 kernel_exec:
 	; preserve original registers
-; debug
-push	r15
 	push	rbx
 	push	rcx
 	push	rdx
@@ -28,9 +24,6 @@ push	r15
 	push	r11
 	push	r13
 	push	r14
-
-; debug
-mov	r15,	qword [r8 + KERNEL_STRUCTURE.page_available]
 
 	; kernel environment variables/rountines base address
 	mov	r8,	qword [kernel_environment_base_address]
@@ -136,12 +129,6 @@ mov	r15,	qword [r8 + KERNEL_STRUCTURE.page_available]
 	; remove file descriptor from stack
 	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
 
-; debug
-sub	r15,	qword [r8 + KERNEL_STRUCTURE.page_available]
-mov	rsi,	r15
-mov	rdi,	debug_start
-call	kernel_log
-
 	; restore original registers
 	pop	r14
 	pop	r13
@@ -155,8 +142,6 @@ call	kernel_log
 	pop	rdx
 	pop	rcx
 	pop	rbx
-; debug
-pop	r15
 
 	; return from routine
 	ret
