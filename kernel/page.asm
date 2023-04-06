@@ -358,13 +358,13 @@ kernel_page_deconstruction:
 	xor	ecx,	ecx
 
 .pml1:
-	; kernel entry is empty?
-	cmp	qword [r8 + rcx * STATIC_PTR_SIZE_byte],	EMPTY
-	je	.pml1_next	; yes
-
 	; page belongs to process?
 	test	word [r8 + rcx * STATIC_PTR_SIZE_byte],	KERNEL_PAGE_FLAG_process
 	jz	.pml1_next	; no
+
+	; page is not shared?
+	test	word [r8 + rcx * STATIC_PTR_SIZE_byte],	KERNEL_PAGE_FLAG_shared
+	jnz	.pml1_next	; yes
 
 	; release page from array
 	mov	rdi,	qword [r8 + rcx * STATIC_PTR_SIZE_byte]

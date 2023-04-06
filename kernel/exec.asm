@@ -2,6 +2,8 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
+debug_start	db	"exec: %d pages registered", STATIC_ASCII_NEW_LINE, STATIC_ASCII_TERMINATOR
+
 ;-------------------------------------------------------------------------------
 ; in:
 ;	rcx - length of string in characters
@@ -12,6 +14,8 @@
 ;	rax - new process ID
 kernel_exec:
 	; preserve original registers
+; debug
+push	r15
 	push	rbx
 	push	rcx
 	push	rdx
@@ -24,6 +28,9 @@ kernel_exec:
 	push	r11
 	push	r13
 	push	r14
+
+; debug
+mov	r15,	qword [r8 + KERNEL_STRUCTURE.page_available]
 
 	; kernel environment variables/rountines base address
 	mov	r8,	qword [kernel_environment_base_address]
@@ -129,6 +136,12 @@ kernel_exec:
 	; remove file descriptor from stack
 	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
 
+; debug
+sub	r15,	qword [r8 + KERNEL_STRUCTURE.page_available]
+mov	rsi,	r15
+mov	rdi,	debug_start
+call	kernel_log
+
 	; restore original registers
 	pop	r14
 	pop	r13
@@ -142,6 +155,8 @@ kernel_exec:
 	pop	rdx
 	pop	rcx
 	pop	rbx
+; debug
+pop	r15
 
 	; return from routine
 	ret
@@ -376,9 +391,6 @@ kernel_exec_configure:
 	add	rcx,	~STATIC_PAGE_mask	; align up to page boundaries
 	shr	rcx,	STATIC_PAGE_SIZE_shift	; convert to pages
 	call	kernel_memory_alloc
-
-	; process memory usage
-	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
 
 	; store binary memory map address of process inside task properties
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.memory_map],	rdi

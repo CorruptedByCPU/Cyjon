@@ -611,7 +611,7 @@ kernel_service_memory_share:
 
 	; connect memory space of parent process with child
 	mov	rax,	rdi
-	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_shared
+	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_process | KERNEL_PAGE_FLAG_shared
 	call	kernel_page_clang
 
 	; restore original registers

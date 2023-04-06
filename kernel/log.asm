@@ -48,8 +48,6 @@ kernel_log:
 	push	rbp
 
 .loop:
-	xchg	bx,bx
-
 	; retrieve character from string
 	mov	al,	byte [rdi]
 	inc	rdi	; next character in progress
