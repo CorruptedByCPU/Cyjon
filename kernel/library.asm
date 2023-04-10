@@ -2,6 +2,9 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
+kernel_library_string_dynsym	db	".dynsym", STATIC_ASCII_TERMINATOR
+kernel_library_string_shstrtab	db	".shstrtab", STATIC_ASCII_TERMINATOR
+
 ;-------------------------------------------------------------------------------
 ; out:
 ;	r14 - pointer to new library entry
@@ -298,6 +301,64 @@ kernel_library_import:
 
 ;-------------------------------------------------------------------------------
 ; in:
+;	rsi - pointer to string of requested section
+;	r13 - pointer to file content
+; out:
+;	rdi - pointer to found section of EMPTY
+kernel_library_locate:
+	xchg	bx,bx
+
+	; preserve origibal registers
+	push	rbx
+	push	rcx
+	push	rdi
+	push	r13
+
+	; amount of entries in section headers
+	movzx	ebx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
+
+	; length of string to search for
+	call	lib_string_length
+
+.loop:
+	; first entry location
+	mov	rdi,	qword [rsp]
+	add	rdi,	qword [r13 + rbx * LIB_ELF_STRUCTURE_SECTION.SIZE + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	inc	rdi
+
+	; compare section names
+	call	lib_string_compare
+	jnc	.found	; match
+
+	; move pointer to next entry
+	add	r13,	LIB_ELF_STRUCTURE_SECTION.SIZE
+
+	; end of entries?
+	dec	rbx
+	jnz	.loop	; nope
+
+	; entry not found
+	xor	eax,	eax
+
+	; end of routine
+	jmp	.end
+
+.found:
+	; return section pointer
+	mov	rax,	qword [r13 + ]
+
+.end:
+	; restore original registers
+	pop	r13
+	pop	rdi
+	pop	rcx
+	pop	rbx
+
+	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
 ;	rdi - pointer to logical executable space
 ;	r13 - pointer to file content
 kernel_library_link:
@@ -307,6 +368,7 @@ kernel_library_link:
 	push	rcx
 	push	rdx
 	push	rsi
+	push	rdi
 	push	r8
 	push	r9
 	push	r10
@@ -316,6 +378,10 @@ kernel_library_link:
 	push	r13
 
 	; we need to find 4 header locations to be able to resolve bindings to functions
+
+	; locate ".dynsym" section
+	mov	rsi,	kernel_library_string_shstrtab
+	call	kernel_library_locate
 
 	; number of entries in header table
 	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
@@ -451,6 +517,7 @@ kernel_library_link:
 	pop	r10
 	pop	r9
 	pop	r8
+	pop	rdi
 	pop	rsi
 	pop	rdx
 	pop	rcx
