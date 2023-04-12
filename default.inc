@@ -104,6 +104,7 @@
 %define	STATIC_MULTIPLE_BY_PTR_shift		STATIC_MULTIPLE_BY_8_shift
 %define	STATIC_MULTIPLE_BY_QWORD_shift		STATIC_MULTIPLE_BY_8_shift
 %define	STATIC_MULTIPLE_BY_16_shift		4
+%define	STATIC_MULTIPLE_BY_64_shift		6
 %define	STATIC_MULTIPLE_BY_512_shift		9
 
 %define	STATIC_WORD_SIZE_byte			2

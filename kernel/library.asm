@@ -3,7 +3,198 @@
 ;===============================================================================
 
 kernel_library_string_dynsym	db	".dynsym", STATIC_ASCII_TERMINATOR
+kernel_library_string_strtab	db	".strtab", STATIC_ASCII_TERMINATOR
 kernel_library_string_shstrtab	db	".shstrtab", STATIC_ASCII_TERMINATOR
+kernel_library_string_got_plt	db	".got.plt", STATIC_ASCII_TERMINATOR
+
+;-------------------------------------------------------------------------------
+; in:
+;	r13 - pointer to file content
+; out:
+;	CF is library was not loaded
+kernel_library:
+	; preserve original registers
+	push	rax
+	push	rcx
+	push	rsi
+	push	r13
+
+	; search for STRTAB (function/library names) section of file
+	mov	eax,	LIB_ELF_SECTION_TYPE_strtab
+	call	kernel_library_section_by_type
+
+	; set STRTAB section pointer in place
+	mov	rsi,	qword [rax + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	rsi,	r13
+
+	; search for DYNAMIC section of file
+	mov	eax,	LIB_ELF_SECTION_TYPE_dynamic
+	call	kernel_library_section_by_type
+
+	; set STRTAB section pointer in place
+	mov	rax,	qword [rax + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	rax,	r13
+	mov	r13,	rax
+
+.library:
+	; library required?
+	cmp	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.type],	LIB_ELF_SECTION_DYNAMIC_TYPE_needed
+	jne	.end	; no, and no more should be listed
+
+	; preserve original registers
+	push	rsi
+
+	; set pointer to library name
+	add	rsi,	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.offset]
+	call	lib_string_length
+
+	; load library
+	call	kernel_library_load_new
+
+	; restore original registers
+	pop	rsi
+
+	; error while loading library?
+	jc	.end	; yes
+
+	; next entry from list
+	add	r13,	LIB_ELF_STRUCTURE_SECTION_DYNAMIC.SIZE
+
+	; continue
+	jmp	.library
+
+.end:
+	; restore original registers
+	pop	r13
+	pop	rsi
+	pop	rcx
+	pop	rax
+
+	; return from routine
+	ret
+
+;------------------------------------------------------------------------------
+; in:
+;	eax - type of requested section
+;	r13 - pointer to file content
+; out:
+;	rax - pointer to section properties or garbage if CF is set
+;	CF if not found
+kernel_library_section_by_type:
+	; preserve original registers
+	push	rbx
+	push	r13
+
+	; amount of entries of section headers
+	mov	bx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
+
+	; move pointer to section headers
+	add	r13,	qword [r13 + LIB_ELF_STRUCTURE.section_table_position]
+
+.section:
+	; exact section type?
+	cmp	eax,	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type]
+	je	.found	; yes
+
+	; move pointer to next entry of section headers
+	add	r13,	LIB_ELF_STRUCTURE_SECTION.SIZE
+
+	; no more entries?
+	dec	bx
+	jnz	.section	; no
+
+	; section not found
+	stc
+
+	; end of routine
+	jmp	.end
+
+.found:
+	; return section properties
+	mov	rax,	r13
+	; mov	rax,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	; add	rax,	qword [rsp]
+
+.end:
+	; restore original registers
+	pop	r13
+	pop	rbx
+
+	; return from routine
+	ret
+
+;------------------------------------------------------------------------------
+; in:
+;	rsi - pointer to section name (string)
+;	r13 - pointer to file content
+; out:
+;	rax - pointer to section properties or garbage if CF is set
+kernel_library_section_by_name:
+	; preserve original registers
+	push	rbx
+	push	rcx
+	push	rdi
+	push	r13
+
+	; amount of entries of section headers
+	mov	bx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
+
+	; section name length
+	call	lib_string_length
+
+	; move pointer to section headers
+	add	r13,	qword [r13 + LIB_ELF_STRUCTURE.section_table_position]
+
+	; calculate SHSTRTAB offset
+	movzx	eax,	bx
+	dec	rax	; always last entry
+	shl	rax,	STATIC_MULTIPLE_BY_64_shift
+
+	; retrieve pointer to SHSTRTAB section
+	mov	rax,	qword [r13 + rax + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	rax,	qword [rsp]
+
+.section:
+	; retrieve section name pointer
+	mov	edi,	dword [r13 + LIB_ELF_STRUCTURE_SECTION.name]
+	add	rdi,	rax
+
+	; check section name
+	call	lib_string_compare
+	jc	.next	; different
+
+	; check if section name wasn't part of something else
+	test	byte [rdi + rcx],	STATIC_ASCII_TERMINATOR
+	jnz	.next	; it is
+
+	; return section properties
+	mov	rax,	r13
+	; mov	rax,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	; add	rax,	qword [rsp]
+
+	; end of routine
+	jmp	.end
+
+.next:
+	; move pointer to next entry of section headers
+	add	r13,	LIB_ELF_STRUCTURE_SECTION.SIZE
+
+	; no more entries?
+	dec	bx
+	jnz	.section	; no
+
+	; section not found
+	stc
+
+.end:
+	; restore original registers
+	pop	r13
+	pop	rdi
+	pop	rcx
+	pop	rbx
+
+	; return from routine
+	ret
 
 ;-------------------------------------------------------------------------------
 ; out:
@@ -197,7 +388,6 @@ kernel_library_function:
 
 	; return function address
 	mov	rax,	qword [r13 + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address]
-	add	rax,	qword [r14 + KERNEL_LIBRARY_STRUCTURE.address]
 
 .end:
 	; restore original registers
@@ -214,145 +404,44 @@ kernel_library_function:
 
 ;-------------------------------------------------------------------------------
 ; in:
-;	r13 - pointer file content
-; out:
-;	CF - set if cannot load library
-kernel_library_import:
+;	rdi - pointer to logical executable space
+;	r13 - pointer to file content
+kernel_library_local:
 	; preserve original registers
-	push	rcx
-	push	rsi
-	push	r14
-	push	r13
+	push	rax
+	push	rbx
 
-	; number of entries in section header
-	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
+	; search for DYNSYM section of file
+	mov	eax,	LIB_ELF_SECTION_TYPE_dynsym
+	call	kernel_library_section_by_type
 
-	; set pointer to begining of section header
-	add	r13,	qword [r13 + LIB_ELF_STRUCTURE.section_table_position]
+	; set pointer to dynamic symbols
+	mov	rbx,	qword [rax + LIB_ELF_STRUCTURE_SECTION.virtual_address]
+	add	rbx,	rdi
 
-.section:
-	; string table?
-	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_strtab
-	jne	.next	; no
+	; and size on Bytes
+	mov	rax,	qword [rax + LIB_ELF_STRUCTURE_SECTION.size_byte]
 
-	; preserve pointer to string table
-	mov	rsi,	qword [rsp]
-	add	rsi,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
+.local:
+	; it's a local function?
+	cmp	qword [rbx + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address],	EMPTY
+	je	.next	; no
+
+	; insert function address to GOT at RCX offset
+	add	qword [rbx + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address],	rdi
 
 .next:
-	; dynamic section?
-	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_dynamic
-	je	.parse	; yes
-
 	; move pointer to next entry
-	add	r13,	LIB_ELF_STRUCTURE_SECTION.SIZE
+	add	rbx,	LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.SIZE
 
-	; end of library structure?
-	loop	.section
-
-	; end of routine
-	jmp	.end
-
-.parse:
-	; set pointer to dynamic section
-	mov	r13,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
-	add	r13,	qword [rsp]
-
-.library:
-	; library needed?
-	cmp	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.type],	LIB_ELF_SECTION_DYNAMIC_TYPE_needed
-	jne	.end	; at the same time, no more needed libaries
-
-	; preserve original registers
-	push	rcx
-	push	rsi
-
-	; set pointer to library name
-	add	rsi,	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.offset]
-
-	; calculate string length
-	call	lib_string_length
-
-	; load library
-	call	kernel_library_load
-
-	; restore original registers
-	pop	rsi
-	pop	rcx
-
-	; error while loading library?
-	jc	.end	; yes
-
-	; next entry from list
-	add	r13,	LIB_ELF_STRUCTURE_SECTION_DYNAMIC.SIZE
-
-	; continue
-	jmp	.library
+	; no more entries?
+	sub	rax,	LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.SIZE
+	jnz	.local	; no
 
 .end:
 	; restore original registers
-	pop	r13
-	pop	r14
-	pop	rsi
-	pop	rcx
-
-	; return from routine
-	ret
-
-;-------------------------------------------------------------------------------
-; in:
-;	rsi - pointer to string of requested section
-;	r13 - pointer to file content
-; out:
-;	rdi - pointer to found section of EMPTY
-kernel_library_locate:
-	xchg	bx,bx
-
-	; preserve origibal registers
-	push	rbx
-	push	rcx
-	push	rdi
-	push	r13
-
-	; amount of entries in section headers
-	movzx	ebx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
-
-	; length of string to search for
-	call	lib_string_length
-
-.loop:
-	; first entry location
-	mov	rdi,	qword [rsp]
-	add	rdi,	qword [r13 + rbx * LIB_ELF_STRUCTURE_SECTION.SIZE + LIB_ELF_STRUCTURE_SECTION.file_offset]
-	inc	rdi
-
-	; compare section names
-	call	lib_string_compare
-	jnc	.found	; match
-
-	; move pointer to next entry
-	add	r13,	LIB_ELF_STRUCTURE_SECTION.SIZE
-
-	; end of entries?
-	dec	rbx
-	jnz	.loop	; nope
-
-	; entry not found
-	xor	eax,	eax
-
-	; end of routine
-	jmp	.end
-
-.found:
-	; return section pointer
-	mov	rax,	qword [r13 + ]
-
-.end:
-	; restore original registers
-	pop	r13
-	pop	rdi
-	pop	rcx
 	pop	rbx
+	pop	rax
 
 	; return from routine
 	ret
@@ -361,7 +450,7 @@ kernel_library_locate:
 ; in:
 ;	rdi - pointer to logical executable space
 ;	r13 - pointer to file content
-kernel_library_link:
+kernel_library_external:
 	; preserve original registers
 	push	rax
 	push	rbx
@@ -377,79 +466,45 @@ kernel_library_link:
 	push	r14
 	push	r13
 
-	; we need to find 4 header locations to be able to resolve bindings to functions
+	; we need to locate 4 sections of programm to be able to resolve bindings to functions
 
-	; locate ".dynsym" section
-	mov	rsi,	kernel_library_string_shstrtab
-	call	kernel_library_locate
+	; search for RELA section of file
+	mov	eax,	LIB_ELF_SECTION_TYPE_rela
+	call	kernel_library_section_by_type
+	jc	.end	; file doesn't require external libraries
 
-	; number of entries in header table
-	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
-
-	; set pointer to begining of header table
-	add	r13,	qword [r13 + LIB_ELF_STRUCTURE.section_table_position]
-
-	; reset section locations
-	xor	r8,	r8
-	xor	r9,	r9
-	xor	r10,	r10
-	xor	r11,	r11
-
-.section:
-	; program data?
-	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_progbits
-	jne	.no_program_data	; no
-
-	; set pointer to program data
-	mov	r11,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.virtual_address]
-	add	r11,	rdi
-
-.no_program_data:
-	; string table?
-	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_strtab
-	jne	.no_string_table	;no
-
-	; first only
-	test	r10,	r10
-	jnz	.no_string_table
-
-	; set pointer to string table
-	mov	r10,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
-	add	r10,	qword [rsp]
-
-.no_string_table:
-	; dynamic relocation?
-	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_rela
-	jne	.no_dynamic_relocation	; no
-
-	; set pointer to dynamic relocation
-	mov	r8,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	; set pointer to RELA
+	mov	r8,	qword [rax + LIB_ELF_STRUCTURE_SECTION.file_offset]
 	add	r8,	qword [rsp]
 
 	; and size on Bytes
-	mov	rbx,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.size_byte]
+	mov	rbx,	qword [rax + LIB_ELF_STRUCTURE_SECTION.size_byte]
 
-.no_dynamic_relocation:
-	; dynamic symbols?
-	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_dynsym
-	jne	.no_dynamic_symbols	; no
+	; search for RELA section of file
+	mov	eax,	LIB_ELF_SECTION_TYPE_dynsym
+	call	kernel_library_section_by_type
 
 	; set pointer to dynamic symbols
-	mov	r9,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.virtual_address]
+	mov	r9,	qword [rax + LIB_ELF_STRUCTURE_SECTION.virtual_address]
 	add	r9,	rdi
 
-.no_dynamic_symbols:
-	; move pointer to next entry
-	add	r13,	LIB_ELF_STRUCTURE_SECTION.SIZE
+	; search for STRTAB section of file
+	mov	eax,	LIB_ELF_SECTION_TYPE_strtab
+	call	kernel_library_section_by_type
 
-	; end of section header?
-	loop	.section	; no
+	; set pointer to STRTAB
+	mov	r10,	qword [rax + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	r10,	qword [rsp]
+
+	; search for GOT.PLT section of file
+	mov	rsi,	kernel_library_string_got_plt
+	call	kernel_library_section_by_name
+
+	; set pointer to GOT.PLT
+	mov	r11,	qword [rax + LIB_ELF_STRUCTURE_SECTION.virtual_address]
+	add	r11,	rdi
 
 	;---
-
-	; if dynamic relocations doesn't exist
-	test	r8,	r8
-	jz	.end	; executable doesn't need external functions
 
 	; move pointer to first function address entry
 	add	r11,	0x18
@@ -474,11 +529,10 @@ kernel_library_link:
 	je	.function_global	; no
 
 	; retrieve local function correct address
-	mov	rsi,	qword [r9 + rax + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address]
-	add	rsi,	rdi
+	push	qword [r9 + rax + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address]
 
 	; insert function address to GOT at RCX offset
-	mov	qword [r11 + r12 * 0x08],	rsi
+	pop	qword [r11 + r12 * 0x08]
 
 	; next relocation
 	jmp	.function_next
@@ -612,13 +666,365 @@ kernel_library_load:
 	; prepare error code
 	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_undefinied
 
+	;-----------------------------------------------------------------------
+	; calculate library size in Pages
+	;-----------------------------------------------------------------------
+
+	; first of we should calculate much space unpacked library needs (in pages)
+
+	; number of program headers
+	movzx	ebx,	word [r13 + LIB_ELF_STRUCTURE.header_entry_count]
+
+	; length of memory space in Bytes
+	xor	ecx,	ecx
+
+	; beginning of header section
+	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.header_table_position]
+	add	rdx,	r13
+
+.calculate:
+	; ignore empty headers
+	cmp	dword [rdx + LIB_ELF_STRUCTURE_HEADER.type],	EMPTY
+	je	.leave	; empty one
+	cmp	qword [rdx + LIB_ELF_STRUCTURE_HEADER.memory_size],	EMPTY
+	je	.leave	; this too
+
+	; segment required in memory?
+	cmp	dword [rdx + LIB_ELF_STRUCTURE_HEADER.type],	LIB_ELF_HEADER_TYPE_load
+	jne	.leave	; no
+
+	; this segment is after previous one?
+	cmp	rcx,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.virtual_address]
+	ja	.leave	; no
+
+	; remember end of segment address
+	mov	rcx,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.virtual_address]
+	add	rcx,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.segment_size]
+
+.leave:
+	; move pointer to next entry
+	add	rdx,	LIB_ELF_STRUCTURE_HEADER.SIZE
+
+	; end of hedaer table?
+	dec	ebx
+	jnz	.calculate	; no
+
+	; by now we have address of fartest point in memory of library
+	; convert this address to length in pages
+	add	rcx,	~STATIC_PAGE_mask
+	shr	rcx,	STATIC_PAGE_SIZE_shift
+
+	; prepare error code
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_memory_no_enough
+
+	; aquire memory space inside library environment
+	mov	r9,	qword [r8 + KERNEL_STRUCTURE.library_memory_map_address]
+	call	kernel_memory_acquire
+	jc	.error_level_file	; no enough memory
+
+	; convert page number to logical address
+	shl	rdi,	STATIC_PAGE_SIZE_shift
+	add	rdi,	qword [kernel_library_base_address]
+
+	; prepare space for file content
+	mov	rax,	rdi
+	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_library
+	mov	r11,	qword [r8 + KERNEL_STRUCTURE.page_base_address]
+	call	kernel_page_alloc
+	jc	.error_level_aquire	; no enough memory
+
+	; preserve library space size
+	mov	r15,	rcx
+
+	;-----------------------------------------------------------------------
+	; load library segments in place
+	;-----------------------------------------------------------------------
+
+	; number of program headers
+	movzx	ebx,	word [r13 + LIB_ELF_STRUCTURE.header_entry_count]
+
+	; beginning of header section
+	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.header_table_position]
+	add	rdx,	r13
+
+.segment:
+	; ignore empty headers
+	cmp	dword [rdx + LIB_ELF_STRUCTURE_HEADER.type],	EMPTY
+	je	.next	; empty one
+	cmp	qword [rdx + LIB_ELF_STRUCTURE_HEADER.memory_size],	EMPTY
+	je	.next	; this too
+
+	; segment required in memory?
+	cmp	dword [rdx + LIB_ELF_STRUCTURE_HEADER.type],	LIB_ELF_HEADER_TYPE_load
+	jne	.next	; no
+
+	; segment source
+	mov	rsi,	r13
+	add	rsi,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.segment_offset]
+
+	; preserve original library location
+	push	rdi
+
+	; segment target
+	add	rdi,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.virtual_address]
+
+	; copy library segment in place
+	mov	rcx,	qword [rdx + LIB_ELF_STRUCTURE_HEADER.segment_size]
+	rep	movsb
+
+	; restore original library location
+	pop	rdi
+
+.next:
+	; move pointer to next entry
+	add	rdx,	LIB_ELF_STRUCTURE_HEADER.SIZE
+
+	; end of header table?
+	dec	ebx
+	jnz	.segment	; no
+
+	call	kernel_library_local
+
+	;----------------------------------------------------------------------
+
 	; import all depended libraries
-	call	kernel_library_import
+	call	kernel_library
 	jc	.error_level_file	; no enough memory or library not found
 
 	; prepare new entry for current library
 	call	kernel_library_add
 	jc	.error_level_file	; no enough memory
+
+	;-----------------------------------------------------------------------
+	; connect libraries (if needed)
+	;-----------------------------------------------------------------------
+	call	kernel_library_external
+
+	;-----------------------------------------------------------------------
+	; library available, update entry
+	;-----------------------------------------------------------------------
+
+	; retrieve information about:
+	; - symbol table
+	; - string table
+
+	; number of entries in section header
+	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
+
+	; set pointer to begining of section header
+	mov	rsi,	qword [r13 + LIB_ELF_STRUCTURE.section_table_position]
+	add	rsi,	r13
+
+.section:
+	; function string table?
+	cmp	dword [rsi + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_strtab
+	jne	.no_string_table
+
+	; first string table is for functions
+	cmp	qword [r14 + KERNEL_LIBRARY_STRUCTURE.strtab],	EMPTY
+	jnz	.no_string_table	; not a function string table
+
+	; preserve pointer to string table
+	mov	rbx,	qword [rsi + LIB_ELF_STRUCTURE_SECTION.virtual_address]
+	add	rbx,	rdi
+	mov	qword [r14 + KERNEL_LIBRARY_STRUCTURE.strtab],	rbx
+
+.no_string_table:
+	; symbol table?
+	cmp	dword [rsi + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_dynsym
+	jne	.no_symbol_table
+
+	; preserve pointer to symbol table
+	mov	rbx,	qword [rsi + LIB_ELF_STRUCTURE_SECTION.virtual_address]
+	add	rbx,	rdi
+	mov	qword [r14 + KERNEL_LIBRARY_STRUCTURE.dynsym],	rbx
+
+	; and entries limit
+	push	qword [rsi + LIB_ELF_STRUCTURE_SECTION.size_byte]
+	pop	qword [r14 + KERNEL_LIBRARY_STRUCTURE.dynsym_limit]
+
+.no_symbol_table:
+	; move pointer to next section entry
+	add	rsi,	LIB_ELF_STRUCTURE_SECTION.SIZE
+
+	; end of library structure?
+	dec	ecx
+	jnz	.section	; no
+
+	; remove file descriptor from stack
+	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
+
+	; preserve library content pointer and size in pages
+	mov	qword [r14 + KERNEL_LIBRARY_STRUCTURE.address],	rdi
+	mov	word [r14 + KERNEL_LIBRARY_STRUCTURE.size_page],	r15w
+
+	; share access to library content space for processes (read-only)
+	mov	rax,	rdi
+	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_library
+	mov	rcx,	r15
+	mov	r11,	qword [r8 + KERNEL_STRUCTURE.page_base_address]
+	call	kernel_page_flags
+
+	; release space of loaded file
+	mov	rsi,	r12
+	mov	rdi,	r13
+	call	kernel_memory_release
+
+	; register library name and length
+
+	; length in characters
+	mov	rcx,	qword [rsp + STATIC_QWORD_SIZE_byte]
+	mov	byte [r14 + KERNEL_LIBRARY_STRUCTURE.length],	cl
+
+	; name
+	mov	rsi,	qword [rsp + (STATIC_QWORD_SIZE_byte << STATIC_MULTIPLE_BY_2_shift)]
+	lea	rdi,	[r14 + KERNEL_LIBRARY_STRUCTURE.name]
+	rep	movsb
+
+	; library parsed
+	or	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
+
+.exist:
+	; return pointer to library entry
+	mov	qword [rsp],	r14
+
+.end:
+	; restore original registers
+	pop	r14
+	pop	rcx
+	pop	rsi
+	pop	r15
+	pop	r13
+	pop	r12
+	pop	r11
+	pop	r9
+	pop	r8
+	pop	rbp
+	pop	rdi
+	pop	rdx
+	pop	rbx
+	pop	rax
+
+	; return from routine
+	ret
+
+.error_level_aquire:
+	; first page of acquired space
+	shr	rax,	STATIC_PAGE_SIZE_shift
+
+.error_level_aquire_release:
+	; release first page of space
+	bts	qword [r9],	rax
+
+	; next page?
+	inc	rax
+	dec	rcx
+	jnz	.error_level_aquire_release	; yes
+
+.error_level_file:
+	; release space of loaded file
+	mov	rsi,	r12
+	mov	rdi,	r13
+	call	kernel_memory_release
+
+.error_level_descriptor:
+	; remove file descriptor from stack
+	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE	
+
+.error_level_default:
+	; free up library entry
+	mov	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	EMPTY
+
+	; set error flag
+	stc
+
+	; end of routine
+	jmp	.end
+
+;-------------------------------------------------------------------------------
+; in:
+;	cl - length of name
+;	rsi - pointer to string
+; out:
+;	r14 - library descriptor pointer or error
+;	CF - set if there was error
+kernel_library_load_new:
+	; preserve original registers
+	push	rax
+	push	rbx
+	push	rdx
+	push	rdi
+	push	rbp
+	push	r8
+	push	r9
+	push	r11
+	push	r12
+	push	r13
+	push	r15
+	push	rsi
+	push	rcx
+	push	r14
+
+	; library already loaded?
+	call	kernel_library_find
+	jnc	.exist	; yes
+
+	; prepare error code
+	mov	qword [rsp],	LIB_SYS_ERROR_memory_no_enough
+
+	;-----------------------------------------------------------------------
+	; locate and load file into memory
+	;-----------------------------------------------------------------------
+
+	; kernel environment variables/rountines base address
+	mov	r8,	qword [kernel_environment_base_address]
+
+	; file descriptor
+	sub	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
+	mov	rbp,	rsp	; pointer of file descriptor
+
+	; get file properties
+	movzx	eax,	byte [r8 + KERNEL_STRUCTURE.storage_root_id]
+	call	kernel_storage_file
+
+	; prepare error code
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_file_not_found
+
+	; file found?
+	cmp	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
+	je	.error_level_descriptor	; no
+
+	; prepare error code
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_memory_no_enough
+
+	; prepare space for file content
+	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
+	add	rcx,	~STATIC_PAGE_mask
+	shr	rcx,	STATIC_PAGE_SIZE_shift
+	call	kernel_memory_alloc
+	jc	.error_level_descriptor	; no enough memory
+
+	; load file content into prepared space
+	mov	rsi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id]
+	call	kernel_storage_read
+
+	; preserve file size in pages and location
+	mov	r12,	rcx
+	mov	r13,	rdi
+
+	; prepare error code
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_exec_not_executable
+
+	; check if file have proper ELF header
+	call	lib_elf_check
+	jc	.error_level_file	; it's not an ELF file
+
+	; check if it is a shared library
+	cmp	byte [rdi + LIB_ELF_STRUCTURE.type],	LIB_ELF_TYPE_shared_object
+	jne	.error_level_file	; no library
+
+	; prepare error code
+	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_undefinied
 
 	;-----------------------------------------------------------------------
 	; calculate library size in Pages
@@ -740,7 +1146,22 @@ kernel_library_load:
 	;-----------------------------------------------------------------------
 	; connect libraries (if needed)
 	;-----------------------------------------------------------------------
-	call	kernel_library_link
+	call	kernel_library_local
+
+	;----------------------------------------------------------------------
+
+	; import all depended libraries
+	call	kernel_library
+	jc	.error_level_file	; no enough memory or library not found
+
+	; prepare new entry for current library
+	call	kernel_library_add
+	jc	.error_level_file	; no enough memory
+
+	;-----------------------------------------------------------------------
+	; connect libraries (if needed)
+	;-----------------------------------------------------------------------
+	call	kernel_library_external
 
 	;-----------------------------------------------------------------------
 	; library available, update entry

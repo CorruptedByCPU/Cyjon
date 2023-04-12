@@ -48,9 +48,9 @@ kernel_exec:
 	cmp	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
 	je	.end	; no
 
-	; load depended libraries
+	; load library dependencies
 	mov	r13,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.address]
-	call	kernel_library_import
+	call	kernel_library
 
 	;-----------------------------------------------------------------------
 	; configure executable

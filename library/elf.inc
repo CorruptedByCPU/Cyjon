@@ -57,6 +57,7 @@ struc	LIB_ELF_STRUCTURE_HEADER
 	.SIZE:
 endstruc
 
+; should be divisible by highest power of 2
 struc	LIB_ELF_STRUCTURE_SECTION
 	.name			resd	1
 	.type			resd	1
