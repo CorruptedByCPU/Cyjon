@@ -451,78 +451,51 @@ kernel_exec_link:
 
 	; we need to find 4 header locations to be able to resolve bindings to functions
 
-	; number of entries in header table
-	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
+	;----------------------------------------------------------------------
+	; search for RELA section of file
+	mov	eax,	LIB_ELF_SECTION_TYPE_rela
+	call	kernel_library_section_by_type
+	jc	.end	; file doesn't require external libraries
 
-	; set pointer to begining of header table
-	add	r13,	qword [r13 + LIB_ELF_STRUCTURE.section_table_position]
-
-	; reset section locations
-	xor	r8,	r8
-	xor	r9,	r9
-	xor	r10,	r10
-	xor	r11,	r11
-
-.section:
-	; program data?
-	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_progbits
-	jne	.no_program_data	; no
-
-	; set pointer to program data
-	mov	r11,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.virtual_address]
-	sub	r11,	KERNEL_EXEC_BASE_address
-	add	r11,	rdi
-
-.no_program_data:
-	; string table?
-	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_strtab
-	jne	.no_string_table	;no
-
-	; first only
-	test	r10,	r10
-	jnz	.no_string_table
-
-	; set pointer to string table
-	mov	r10,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
-	add	r10,	qword [rsp]
-
-.no_string_table:
-	; dynamic relocation?
-	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_rela
-	jne	.no_dynamic_relocation	; no
-
-	; set pointer to dynamic relocation
-	mov	r8,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
-	add	r8,	qword [rsp]
+	; set pointer to RELA
+	mov	r8,	qword [rax + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	r8,	r13
 
 	; and size on Bytes
-	mov	rbx,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.size_byte]
+	mov	rbx,	qword [rax + LIB_ELF_STRUCTURE_SECTION.size_byte]
 
-.no_dynamic_relocation:
-	; dynamic symbols?
-	cmp	dword [r13 + LIB_ELF_STRUCTURE_SECTION.type],	LIB_ELF_SECTION_TYPE_dynsym
-	jne	.no_dynamic_symbols	; no
+	;----------------------------------------------------------------------
+	; search for DYNAMIC SYMBOLS section of file
+	mov	eax,	LIB_ELF_SECTION_TYPE_dynsym
+	call	kernel_library_section_by_type
 
-	; set pointer to dynamic symbols
-	mov	r9,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
-	add	r9,	qword [rsp]
+	; set pointer to DYNAMIC SYMBOLS
+	mov	r9,	qword [rax + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	r9,	r13
 
-.no_dynamic_symbols:
-	; move pointer to next entry
-	add	r13,	LIB_ELF_STRUCTURE_SECTION.SIZE
+	;----------------------------------------------------------------------
+	; search for STRTAB section of file
+	mov	eax,	LIB_ELF_SECTION_TYPE_strtab
+	call	kernel_library_section_by_type
 
-	; end of section header?
-	loop	.section	; no
+	; set pointer to STRTAB
+	mov	r10,	qword [rax + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	r10,	r13
 
-	;---
+	;----------------------------------------------------------------------
+	; search for GOT.PLT section of file
+	mov	rsi,	kernel_library_string_got_plt
+	call	kernel_library_section_by_name
 
-	; if dynamic relocations doesn't exist
-	test	r8,	r8
-	jz	.end	; executable doesn't need external functions
+	; set pointer to GOT.PLT
+	mov	r11,	qword [rax + LIB_ELF_STRUCTURE_SECTION.virtual_address]
+	sub	r11,	KERNEL_EXEC_BASE_address
+	add	r11,	rdi
 
 	; move pointer to first function address entry
 	add	r11,	0x18
 
+	;----------------------------------------------------------------------
 	; function index inside Global Offset Table
 	xor	r12,	r12
 
