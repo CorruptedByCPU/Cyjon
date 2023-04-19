@@ -82,6 +82,40 @@ kernel_log:
 	jmp	.loop
 
 .no_decimal:
+	; hexadecimal value?
+	cmp	al,	'x'
+	jne	.no_hexadecimal
+
+	; retrieve variable
+	mov	rax,	qword [rbp]
+	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
+	mov	ecx,	1	; at least 1 digit
+	xor	dl,	dl	; unsigned
+	call	driver_serial_value
+
+	; variable parsed
+	add	rbp, STATIC_QWORD_SIZE_byte
+
+	; continue
+	jmp	.loop
+
+.no_hexadecimal:
+	; string?
+	cmp	al,	's'
+	jne	.no_string
+
+	; retrieve string pointer
+	mov	rsi,	qword [rbp]
+	call	lib_string_length
+	call	driver_serial_string
+
+	; variable parsed
+	add	rbp, STATIC_QWORD_SIZE_byte
+
+	; continue
+	jmp	.loop
+
+.no_string:
 	; unrecognized value, show whole sequence
 	push	rax
 	mov	al,	STATIC_ASCII_PERCENT

@@ -2,6 +2,8 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
+driver_serial_semaphore	db	FALSE
+
 ;-------------------------------------------------------------------------------
 ; void
 driver_serial:

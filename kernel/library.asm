@@ -2,10 +2,14 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
-kernel_library_string_dynsym	db	".dynsym", STATIC_ASCII_TERMINATOR
-kernel_library_string_strtab	db	".strtab", STATIC_ASCII_TERMINATOR
-kernel_library_string_shstrtab	db	".shstrtab", STATIC_ASCII_TERMINATOR
-kernel_library_string_got_plt	db	".got.plt", STATIC_ASCII_TERMINATOR
+kernel_library_string_dynstr			db	".dynstr", STATIC_ASCII_TERMINATOR
+kernel_library_string_shstrtab			db	".shstrtab", STATIC_ASCII_TERMINATOR
+kernel_library_string_got_plt			db	".got.plt", STATIC_ASCII_TERMINATOR
+
+kernel_library_string_debug_new_line		db	STATIC_ASCII_NEW_LINE, STATIC_ASCII_TERMINATOR
+kernel_library_string_debug_load_request	db	"[kernel] library load request: %s", STATIC_ASCII_TERMINATOR
+kernel_library_string_debug_load_request_exist	db	" [exist]", STATIC_ASCII_NEW_LINE, STATIC_ASCII_TERMINATOR
+kernel_library_string_debug_local		db	"[kernel]                       0x%x %s", STATIC_ASCII_NEW_LINE, STATIC_ASCII_TERMINATOR
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -50,14 +54,26 @@ kernel_library:
 	add	rsi,	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.offset]
 	call	lib_string_length
 
+; debug, can be removed
+push	rdi
+mov	rdi,	kernel_library_string_debug_load_request
+call	kernel_log
+pop	rdi
+
 	; library already loaded?
 	call	kernel_library_find
 	jnc	.exist	; yes
 
+; debug, can be removed
+push	rdi
+mov	rdi,	kernel_library_string_debug_new_line
+call	kernel_log
+pop	rdi
+
 	; load library
 	call	kernel_library_load
 
-.exist:
+.next:
 	; restore original registers
 	pop	rsi
 
@@ -79,6 +95,16 @@ kernel_library:
 
 	; return from routine
 	ret
+
+.exist:
+; debug, can be removed
+push	rdi
+mov	rdi,	kernel_library_string_debug_load_request_exist
+call	kernel_log
+pop	rdi
+
+	; continue
+	jmp	.next
 
 ;------------------------------------------------------------------------------
 ; in:
@@ -176,8 +202,8 @@ kernel_library_section_by_name:
 
 	; return section properties
 	mov	rax,	r13
-	; mov	rax,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
-	; add	rax,	qword [rsp]
+	mov	rax,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
+	add	rax,	qword [rsp]
 
 	; end of routine
 	jmp	.end
@@ -475,6 +501,15 @@ kernel_library_local:
 	; preserve original registers
 	push	rax
 	push	rbx
+	push	rdx
+	push	rsi
+
+	; search for DYNSYM section of file
+	mov	rsi,	kernel_library_string_dynstr
+	call	kernel_library_section_by_name
+
+	; set pointer to dynamic strings
+	mov	rsi,	rax
 
 	; search for DYNSYM section of file
 	mov	eax,	LIB_ELF_SECTION_TYPE_dynsym
@@ -495,6 +530,19 @@ kernel_library_local:
 	; insert function address to GOT at RCX offset
 	add	qword [rbx + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address],	rdi
 
+	xchg	bx,bx
+
+; debug, can be removed
+push	rdi
+push	rsi
+mov	edx,	dword [rbx + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.name_offset]
+add	rdx,	rsi
+mov	rsi,	qword [rbx + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address]
+mov	rdi,	kernel_library_string_debug_local
+call	kernel_log
+pop	rsi
+pop	rdi
+
 .next:
 	; move pointer to next entry
 	add	rbx,	LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.SIZE
@@ -505,6 +553,8 @@ kernel_library_local:
 
 .end:
 	; restore original registers
+	pop	rsi
+	pop	rdx
 	pop	rbx
 	pop	rax
 
