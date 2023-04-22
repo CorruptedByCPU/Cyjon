@@ -487,12 +487,12 @@ kernel_exec_link:
 	mov	rsi,	kernel_library_string_got_plt
 	call	kernel_library_section_by_name
 
-	; set pointer to GOT.PLT
-	mov	r11,	qword [rax + LIB_ELF_STRUCTURE_SECTION.virtual_address]
-	sub	r11,	KERNEL_EXEC_BASE_address
+
+	; change memory location to process
+	mov	r11,	qword [rax + LIB_ELF_STRUCTURE_SECTION.file_offset]
 	add	r11,	rdi
 
-	; move pointer to first function address entry
+	; set pointer to first function address entry
 	add	r11,	0x18
 
 	;----------------------------------------------------------------------
@@ -511,26 +511,6 @@ kernel_exec_link:
 	mov	rcx,	LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.SIZE
 	mul	rcx
 
-; software is not relocatable yet, so for now we don't use this piece of code
-
-; 	; it's a local function?
-; 	cmp	qword [r9 + rax + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address],	EMPTY
-; 	je	.function_global	; no
-
-; 	; retrieve local function correct address
-; 	mov	rsi,	qword [r9 + rax + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address]
-; 	add	rsi,	KERNEL_EXEC_BASE_address
-
-; 	; update executable local function address
-; 	mov	qword [r9 + rax + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address],	rsi
-
-; 	; insert function address to GOT at RCX offset
-; 	mov	qword [r11 + r12 * 0x08],	rsi
-
-; 	; next relocation
-; 	jmp	.function_next
-
-; .function_global:
 	; set pointer to function name
 	mov	esi,	dword [r9 + rax]
 	add	rsi,	r10

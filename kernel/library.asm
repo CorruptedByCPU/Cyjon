@@ -6,11 +6,6 @@ kernel_library_string_dynstr			db	".dynstr", STATIC_ASCII_TERMINATOR
 kernel_library_string_shstrtab			db	".shstrtab", STATIC_ASCII_TERMINATOR
 kernel_library_string_got_plt			db	".got.plt", STATIC_ASCII_TERMINATOR
 
-kernel_library_string_debug_new_line		db	STATIC_ASCII_NEW_LINE, STATIC_ASCII_TERMINATOR
-kernel_library_string_debug_load_request	db	"[kernel] library load request: %s", STATIC_ASCII_TERMINATOR
-kernel_library_string_debug_load_request_exist	db	" [exist]", STATIC_ASCII_NEW_LINE, STATIC_ASCII_TERMINATOR
-kernel_library_string_debug_local		db	"[kernel]                       0x%x %s", STATIC_ASCII_NEW_LINE, STATIC_ASCII_TERMINATOR
-
 ;-------------------------------------------------------------------------------
 ; in:
 ;	r13 - pointer to file content
@@ -54,21 +49,9 @@ kernel_library:
 	add	rsi,	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.offset]
 	call	lib_string_length
 
-; debug, can be removed
-push	rdi
-mov	rdi,	kernel_library_string_debug_load_request
-call	kernel_log
-pop	rdi
-
 	; library already loaded?
 	call	kernel_library_find
-	jnc	.exist	; yes
-
-; debug, can be removed
-push	rdi
-mov	rdi,	kernel_library_string_debug_new_line
-call	kernel_log
-pop	rdi
+	jnc	.next	; yes
 
 	; load library
 	call	kernel_library_load
@@ -95,16 +78,6 @@ pop	rdi
 
 	; return from routine
 	ret
-
-.exist:
-; debug, can be removed
-push	rdi
-mov	rdi,	kernel_library_string_debug_load_request_exist
-call	kernel_log
-pop	rdi
-
-	; continue
-	jmp	.next
 
 ;------------------------------------------------------------------------------
 ; in:
@@ -145,8 +118,6 @@ kernel_library_section_by_type:
 .found:
 	; return section properties
 	mov	rax,	r13
-	; mov	rax,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
-	; add	rax,	qword [rsp]
 
 .end:
 	; restore original registers
@@ -202,8 +173,6 @@ kernel_library_section_by_name:
 
 	; return section properties
 	mov	rax,	r13
-	mov	rax,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
-	add	rax,	qword [rsp]
 
 	; end of routine
 	jmp	.end
@@ -360,9 +329,9 @@ kernel_library_find:
 .find:
 	; this check below is not necessary
 
-	; ; entry is active?
-	; test	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
-	; jz	.next	; no
+	; entry is active?
+	test	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
+	jz	.next	; no
 
 	; length of entry name is the same?
 	cmp	byte [r14 + KERNEL_LIBRARY_STRUCTURE.length],	cl
@@ -501,7 +470,6 @@ kernel_library_local:
 	; preserve original registers
 	push	rax
 	push	rbx
-	push	rdx
 	push	rsi
 
 	; search for DYNSYM section of file
@@ -530,19 +498,6 @@ kernel_library_local:
 	; insert function address to GOT at RCX offset
 	add	qword [rbx + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address],	rdi
 
-	xchg	bx,bx
-
-; debug, can be removed
-push	rdi
-push	rsi
-mov	edx,	dword [rbx + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.name_offset]
-add	rdx,	rsi
-mov	rsi,	qword [rbx + LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.address]
-mov	rdi,	kernel_library_string_debug_local
-call	kernel_log
-pop	rsi
-pop	rdi
-
 .next:
 	; move pointer to next entry
 	add	rbx,	LIB_ELF_STRUCTURE_DYNAMIC_SYMBOL.SIZE
@@ -554,7 +509,6 @@ pop	rdi
 .end:
 	; restore original registers
 	pop	rsi
-	pop	rdx
 	pop	rbx
 	pop	rax
 
@@ -570,9 +524,7 @@ kernel_library_external:
 	push	rax
 	push	rbx
 	push	rcx
-	push	rdx
 	push	rsi
-	push	rdi
 	push	r8
 	push	r9
 	push	r10
@@ -689,9 +641,7 @@ kernel_library_external:
 	pop	r10
 	pop	r9
 	pop	r8
-	pop	rdi
 	pop	rsi
-	pop	rdx
 	pop	rcx
 	pop	rbx
 	pop	rax
@@ -926,9 +876,6 @@ kernel_library_load:
 	mov	r11,	qword [r8 + KERNEL_STRUCTURE.page_base_address]
 	call	kernel_page_flags
 
-	; library parsed
-	or	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
-
 	; register library name and length
 
 	; length in characters
@@ -940,6 +887,9 @@ kernel_library_load:
 	push	rdi	; preserve library content location
 	lea	rdi,	[r14 + KERNEL_LIBRARY_STRUCTURE.name]
 	rep	movsb
+
+	; library parsed
+	or	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
 
 	; restore library content location
 	pop	rdi
