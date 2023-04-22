@@ -2,10 +2,9 @@
 ;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;===============================================================================
 
-kernel_library_string_dynsym	db	".dynsym", STATIC_ASCII_TERMINATOR
-kernel_library_string_strtab	db	".strtab", STATIC_ASCII_TERMINATOR
-kernel_library_string_shstrtab	db	".shstrtab", STATIC_ASCII_TERMINATOR
-kernel_library_string_got_plt	db	".got.plt", STATIC_ASCII_TERMINATOR
+kernel_library_string_dynstr			db	".dynstr", STATIC_ASCII_TERMINATOR
+kernel_library_string_shstrtab			db	".shstrtab", STATIC_ASCII_TERMINATOR
+kernel_library_string_got_plt			db	".got.plt", STATIC_ASCII_TERMINATOR
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -52,12 +51,12 @@ kernel_library:
 
 	; library already loaded?
 	call	kernel_library_find
-	jnc	.exist	; yes
+	jnc	.next	; yes
 
 	; load library
 	call	kernel_library_load
 
-.exist:
+.next:
 	; restore original registers
 	pop	rsi
 
@@ -119,8 +118,6 @@ kernel_library_section_by_type:
 .found:
 	; return section properties
 	mov	rax,	r13
-	; mov	rax,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
-	; add	rax,	qword [rsp]
 
 .end:
 	; restore original registers
@@ -176,8 +173,6 @@ kernel_library_section_by_name:
 
 	; return section properties
 	mov	rax,	r13
-	; mov	rax,	qword [r13 + LIB_ELF_STRUCTURE_SECTION.file_offset]
-	; add	rax,	qword [rsp]
 
 	; end of routine
 	jmp	.end
@@ -334,9 +329,9 @@ kernel_library_find:
 .find:
 	; this check below is not necessary
 
-	; ; entry is active?
-	; test	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
-	; jz	.next	; no
+	; entry is active?
+	test	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
+	jz	.next	; no
 
 	; length of entry name is the same?
 	cmp	byte [r14 + KERNEL_LIBRARY_STRUCTURE.length],	cl
@@ -475,6 +470,14 @@ kernel_library_local:
 	; preserve original registers
 	push	rax
 	push	rbx
+	push	rsi
+
+	; search for DYNSYM section of file
+	mov	rsi,	kernel_library_string_dynstr
+	call	kernel_library_section_by_name
+
+	; set pointer to dynamic strings
+	mov	rsi,	rax
 
 	; search for DYNSYM section of file
 	mov	eax,	LIB_ELF_SECTION_TYPE_dynsym
@@ -505,6 +508,7 @@ kernel_library_local:
 
 .end:
 	; restore original registers
+	pop	rsi
 	pop	rbx
 	pop	rax
 
@@ -520,9 +524,7 @@ kernel_library_external:
 	push	rax
 	push	rbx
 	push	rcx
-	push	rdx
 	push	rsi
-	push	rdi
 	push	r8
 	push	r9
 	push	r10
@@ -639,9 +641,7 @@ kernel_library_external:
 	pop	r10
 	pop	r9
 	pop	r8
-	pop	rdi
 	pop	rsi
-	pop	rdx
 	pop	rcx
 	pop	rbx
 	pop	rax
@@ -876,9 +876,6 @@ kernel_library_load:
 	mov	r11,	qword [r8 + KERNEL_STRUCTURE.page_base_address]
 	call	kernel_page_flags
 
-	; library parsed
-	or	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
-
 	; register library name and length
 
 	; length in characters
@@ -890,6 +887,9 @@ kernel_library_load:
 	push	rdi	; preserve library content location
 	lea	rdi,	[r14 + KERNEL_LIBRARY_STRUCTURE.name]
 	rep	movsb
+
+	; library parsed
+	or	word [r14 + KERNEL_LIBRARY_STRUCTURE.flags],	KERNEL_LIBRARY_FLAG_active
 
 	; restore library content location
 	pop	rdi

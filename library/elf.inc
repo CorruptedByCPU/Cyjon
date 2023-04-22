@@ -4,21 +4,21 @@
 
 %define	LIB_ELF
 
-%define	LIB_ELF_FLAG_execute		0b00000001
-%define	LIB_ELF_FLAG_write		0b00000010
-%define	LIB_ELF_FLAG_read		0b00000100
+%define	LIB_ELF_FLAG_execute			00000001b
+%define	LIB_ELF_FLAG_write			00000010b
+%define	LIB_ELF_FLAG_read			00000100b
 
-%define	LIB_ELF_TYPE_executable		2
-%define	LIB_ELF_TYPE_shared_object	3
+%define	LIB_ELF_TYPE_executable			2
+%define	LIB_ELF_TYPE_shared_object		3
 
-%define	LIB_ELF_HEADER_TYPE_load	1
+%define	LIB_ELF_HEADER_TYPE_load		1
 
-%define	LIB_ELF_SECTION_TYPE_null	0x00
-%define	LIB_ELF_SECTION_TYPE_progbits	0x01
-%define	LIB_ELF_SECTION_TYPE_rela	0x04
-%define	LIB_ELF_SECTION_TYPE_strtab	0x03
-%define	LIB_ELF_SECTION_TYPE_dynamic	0x06
-%define	LIB_ELF_SECTION_TYPE_dynsym	0x0B
+%define	LIB_ELF_SECTION_TYPE_null		0x00
+%define	LIB_ELF_SECTION_TYPE_progbits		0x01
+%define	LIB_ELF_SECTION_TYPE_rela		0x04
+%define	LIB_ELF_SECTION_TYPE_strtab		0x03
+%define	LIB_ELF_SECTION_TYPE_dynamic		0x06
+%define	LIB_ELF_SECTION_TYPE_dynsym		0x0B
 
 %define	LIB_ELF_SECTION_DYNAMIC_TYPE_needed	1
 
