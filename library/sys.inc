@@ -93,8 +93,6 @@
 	struc	LIB_SYS_STRUCTURE_IPC_MOUSE
 		.type		resb	1
 		.status		resb	1
-		.x		resw	1
-		.y		resw	1
 	endstruc
 
 	%define	LIB_SYS_DRIVER_MOUSE_STATUS_left_mouse_button	00000001b
