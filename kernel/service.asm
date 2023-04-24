@@ -314,7 +314,7 @@ kernel_service_ipc_send:
 
 .found:
 	; set message time out
-	add	rax,	DRIVER_RTC_Hz * 100
+	add	rax,	DRIVER_RTC_Hz
 	mov	qword [rdx + LIB_SYS_STRUCTURE_IPC.ttl],	rax
 
 	; set message source
@@ -354,9 +354,9 @@ kernel_service_ipc_receive:
 	; preserve original registers
 	push	rbx
 	push	rcx
-	push	rsi
 	push	rdi
 	push	r8
+	push	rsi
 
 	; kernel environment variables/rountines base address
 	mov	r8,	qword [kernel_environment_base_address]
@@ -399,12 +399,13 @@ kernel_service_ipc_receive:
 
 .check:
 	; message type selected?
-	test	sil,	LIB_SYS_IPC_TYPE_ANY
-	jz	.any	; no
+	cmp	byte [rsp],	LIB_SYS_IPC_TYPE_ANY
+	je	.any	; no
 
 	; requested message type?
-	test	sil,	byte [rsi + LIB_SYS_STRUCTURE_IPC_DEFAULT.type]
-	jnz	.next	; no
+	mov	bl,	byte [rsp]
+	cmp	bl,	byte [rsi + LIB_SYS_STRUCTURE_IPC.data + LIB_SYS_STRUCTURE_IPC_DEFAULT.type]
+	jne	.next	; no
 
 .any:
 	; message for us?
@@ -432,9 +433,9 @@ kernel_service_ipc_receive:
 	mov	byte [r8 + KERNEL_STRUCTURE.ipc_semaphore],	UNLOCK
 
 	; restore original registers
+	pop	rsi
 	pop	r8
 	pop	rdi
-	pop	rsi
 	pop	rcx
 	pop	rbx
 
