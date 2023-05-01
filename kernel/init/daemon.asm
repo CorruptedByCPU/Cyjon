@@ -87,6 +87,7 @@ kernel_init_daemon:
 	call	kernel_page_address
 
 	; set pointer to return descriptor
+	and	rax,	STATIC_PAGE_mask	; drop flags
 	add	rax,	qword [kernel_page_mirror]	; convert to logical address
 	add	rax,	STATIC_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
 

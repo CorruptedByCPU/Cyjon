@@ -7,7 +7,7 @@
 ;	rsi - logical address of page
 ;	r11 - pointer to paging array
 ; out:
-;	rax - physical address of page
+;	rax - physical address of page with flags
 kernel_page_address:
 	; preserve original registers
 	push	rdx
@@ -76,7 +76,6 @@ kernel_page_address:
 	; retrieve PML1 address
 	or	r11,	qword [kernel_page_mirror]	; convert to logical address
 	mov	rdx,	qword [r11 + rax * STATIC_QWORD_SIZE_byte]
-	and	rdx,	STATIC_PAGE_mask	; drop flags
 
 	; restore original registers
 	pop	rcx
@@ -205,7 +204,8 @@ kernel_page_clang:
 	pop	r11
 
 	; store physical source address with corresponding flags
-	or	ax,	bx	; apply flags
+	and	rax,	STATIC_PAGE_mask	; drop old flags
+	or	ax,	bx	; apply new flags
 	mov	qword [r8 + r12 * STATIC_QWORD_SIZE_byte],	rax
 
 	; next part of space
@@ -1160,12 +1160,27 @@ kernel_page_remove:
 	; localize and retrieve page
 	call	kernel_page_address.traverse
 
+	; is it shared?
+	test	rdx,	KERNEL_PAGE_FLAG_shared
+	jz	.remove	; no
+
+	; keep page
+	xor	eax,	eax
+
+	; end of routine
+	jmp	.end
+
+.remove:
+	; drop flags
+	and	rdx,	STATIC_PAGE_mask
+
 	; remove page from pagings
 	mov	qword [r11 + rax * STATIC_QWORD_SIZE_byte],	EMPTY
 
 	; return physical address of page
 	mov	rax,	rdx
 
+.end:
 	; restore original registers
 	pop	r11
 	pop	rdx

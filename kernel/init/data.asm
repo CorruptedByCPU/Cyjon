@@ -31,7 +31,7 @@ kernel_log_storage		db	STATIC_ASCII_NEW_LINE, "Operation failed successfully."
 kernel_log_storage_end:
 kernel_log_system		db	STATIC_ASCII_NEW_LINE, "System disk [KiB]: "
 kernel_log_system_end:
-kernel_log_welcome		db	KERNEL_name, " (build v", KERNEL_version, ".", KERNEL_revision, " ", KERNEL_architecture, " ", KERNEL_language, ", compiled ", __DATE__, " ", __TIME__, ")", STATIC_ASCII_NEW_LINE
+kernel_log_welcome		db	KERNEL_name, " (v", KERNEL_version, ".", KERNEL_revision, " ", KERNEL_architecture, " ", KERNEL_language, ", build on ", __DATE__, " ", __TIME__, ")", STATIC_ASCII_NEW_LINE
 kernel_log_welcome_end:
 
 kernel_smp_count		dq	EMPTY

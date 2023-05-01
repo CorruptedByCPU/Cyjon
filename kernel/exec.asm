@@ -43,6 +43,7 @@ kernel_exec:
 	sub	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
 	mov	rbp,	rsp	; pointer of file descriptor
 	call	kernel_exec_load
+	jc	.end	; something wrong with file
 
 	; file loaded?
 	cmp	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
@@ -209,6 +210,7 @@ kernel_exec_configure:
 	call	kernel_page_address
 
 	; set pointer to return descriptor
+	and	rax,	STATIC_PAGE_mask	; drop flags
 	add	rax,	qword [kernel_page_mirror]	; convert to logical address
 	add	rax,	STATIC_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
 
@@ -587,6 +589,26 @@ kernel_exec_load:
 	mov	rsi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id]
 	call	kernel_storage_read
 
+	; proper ELF file?
+	call	lib_elf_check
+	jc	.error	; no
+
+	; it's an executable file?
+	cmp	word [rdi + LIB_ELF_STRUCTURE.type],	LIB_ELF_TYPE_executable
+	je	.ok	; yes
+
+.error:
+	; release assigned memory
+	mov	rsi,	rcx
+	call	kernel_memory_release
+
+	; set error flag
+	stc
+
+	; end of routine
+	jmp	.end
+
+.ok:
 	; return file content address
 	mov	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.address],	rdi
 

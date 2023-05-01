@@ -538,14 +538,22 @@ kernel_service_memory_release:
 	mov	rcx,	rsi
 	mov	rsi,	rdi
 
-	; process memory usage
-	sub	qword [r9 + KERNEL_TASK_STRUCTURE.page],	rcx
-
 .loop:
 	; delete first physical page from logical address
 	mov	r11,	qword [r9 + KERNEL_TASK_STRUCTURE.cr3]
 	call	kernel_page_remove
 
+	; page removed?
+	test	rax,	rax
+	jnz	.release	; yes
+
+	; convert to page number
+	shr	rsi,	STATIC_PAGE_SIZE_shift
+
+	; continue
+	jmp	.next
+
+.release:
 	; release page inside kernels binary memory map
 	mov	rdi,	rax
 	or	rdi,	qword [kernel_page_mirror]
@@ -556,6 +564,10 @@ kernel_service_memory_release:
 	mov	rdi,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]
 	bts	qword [rdi],	rsi
 
+	; process memory usage
+	dec	qword [r9 + KERNEL_TASK_STRUCTURE.page]
+
+.next:
 	; next page from space
 	inc	rsi
 	shl	rsi,	STATIC_PAGE_SIZE_shift
