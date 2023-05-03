@@ -591,6 +591,7 @@ kernel_page_map:
 ;-------------------------------------------------------------------------------
 ; in:
 ;	r11 - physical pointer to process paging array
+;	r15 - logical pointer to "base" paging array
 kernel_page_merge:
 	; preserve original registers
 	push	rcx
@@ -609,11 +610,13 @@ kernel_page_merge:
 	; first kernel entry in PML4 array
 	xor	rcx,	rcx
 
-	; kernel PML4 array
-	mov	r15,	qword [kernel_environment_base_address]
-	mov	r15,	qword [r15 + KERNEL_STRUCTURE.page_base_address]
-
 .pml4:
+	; redundant entries?
+	cmp	rcx,	KERNEL_PAGE_ENTRY_stack
+	je	.pml4_next	; yes
+	cmp	rcx,	KERNEL_PAGE_ENTRY_stack_context
+	je	.pml4_next	; yes
+
 	; kernel entry is empty?
 	cmp	qword [r15 + rcx * STATIC_PTR_SIZE_byte],	EMPTY
 	je	.pml4_next	; yes

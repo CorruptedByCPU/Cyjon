@@ -34,6 +34,7 @@ kernel_service_list:
 	dq	kernel_stream_out_value
 	dq	kernel_service_task
 	dq	kernel_service_memory
+	dq	kernel_service_thread
 kernel_service_list_end:
 
 ; information for linker
@@ -932,4 +933,147 @@ kernel_service_task:
 	pop	rbx
 
 	; return from routine
+	ret
+
+;-------------------------------------------------------------------------------
+; in:
+;	rdi - pointer to function of current task to execute as thread
+;	rsi - pointer to string as name of thread
+;	rdx - length of that string
+;out:
+;	rax - process ID of thread
+kernel_service_thread:
+	; preserve original registers
+	push	rbx
+	push	rcx
+	push	rdx
+	push	rsi
+	push	r9
+	push	r10
+	push	r11
+	push	r15
+	push	rdi
+
+	;-----------------------------------------------------------------------
+	; prepare task for execution
+	;-----------------------------------------------------------------------
+
+	; register new task on queue
+	mov	rcx,	rdx
+	call	kernel_task_add
+
+	;-----------------------------------------------------------------------
+	; paging array of new process
+	;-----------------------------------------------------------------------
+
+	; make space for the process paging table
+	call	kernel_memory_alloc_page
+
+	; update task entry about paging array
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.cr3],	rdi
+
+	;-----------------------------------------------------------------------
+	; context stack and return point (initialization entry)
+	;-----------------------------------------------------------------------
+
+	; describe the space under context stack of process
+	mov	rax,	KERNEL_TASK_STACK_address
+	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_process
+	mov	ecx,	KERNEL_TASK_STACK_SIZE_page
+	mov	r11,	rdi
+	call	kernel_page_alloc
+
+	; set process context stack pointer
+	mov	rsi,	KERNEL_TASK_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsi
+
+	; prepare exception exit mode on context stack of process
+	mov	rsi,	KERNEL_TASK_STACK_pointer - STATIC_PAGE_SIZE_byte
+	call	kernel_page_address
+
+	; set pointer to return descriptor
+	and	rax,	STATIC_PAGE_mask	; drop flags
+	add	rax,	qword [kernel_page_mirror]	; convert to logical address
+	add	rax,	STATIC_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
+
+	; set first instruction executed by thread
+	mov	rdx,	qword [rsp]
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.rip],	rdx
+
+	; code descriptor
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.cs],	KERNEL_GDT_STRUCTURE.cs_ring3 | 0x03
+
+	; default processor state flags
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.eflags],	KERNEL_TASK_EFLAGS_default
+
+	; default stack pointer
+	mov	rdx,	KERNEL_EXEC_STACK_pointer - 0x10	; no args
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.rsp],	rdx
+
+	; stack descriptor
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.ss],	KERNEL_GDT_STRUCTURE.ds_ring3 | 0x03
+
+	;-----------------------------------------------------------------------
+	; stack
+	;-----------------------------------------------------------------------
+
+	; alloc stack space
+	mov	rcx,	KERNEL_EXEC_STACK_SIZE_page
+	call	kernel_memory_alloc
+
+	; map executable space to thread paging array
+	mov	rax,	KERNEL_EXEC_STACK_address
+	or	bx,	KERNEL_PAGE_FLAG_user
+	mov	rsi,	rdi
+	sub	rsi,	qword [kernel_page_mirror]
+	call	kernel_page_map
+
+	; process memory usage
+	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
+
+	; process stack size
+	add	qword [r10 + KERNEL_TASK_STRUCTURE.stack],	rcx
+
+	; aquire parent task properties
+	call	kernel_task_active
+
+	; threads use same memory map as parent
+	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.memory_map],	rax
+
+	; threads use same streams as parent
+
+	; in
+	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_in]
+	inc	qword [rax + KERNEL_STREAM_STRUCTURE.count]
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_in],	rax
+
+	; out
+	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]
+	inc	qword [rax + KERNEL_STREAM_STRUCTURE.count]
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_out],	rax
+
+	; map kernel space to process
+	mov	r15,	qword [r9 + KERNEL_TASK_STRUCTURE.cr3]
+	or	r15,	qword [kernel_page_mirror]
+	call	kernel_page_merge
+
+	; mark thread as ready
+	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_thread | KERNEL_TASK_FLAG_init
+
+	; return process ID of new thread
+	mov	rax,	qword [r10 + KERNEL_TASK_STRUCTURE.pid]
+
+	; restore original registers
+	pop	rdi
+	pop	r15
+	pop	r11
+	pop	r10
+	pop	r9
+	pop	rsi
+	pop	rdx
+	pop	rcx
+	pop	rbx
+
+	; end of routine
 	ret

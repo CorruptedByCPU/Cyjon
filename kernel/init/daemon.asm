@@ -80,7 +80,8 @@ kernel_init_daemon:
 	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
 
 	; set process context stack pointer
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	KERNEL_TASK_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
+	mov	rsi,	KERNEL_TASK_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsi
 
 	; prepare exception exit mode on context stack of process
 	mov	rsi,	KERNEL_TASK_STACK_pointer - STATIC_PAGE_SIZE_byte
@@ -178,6 +179,8 @@ kernel_init_daemon:
 	;-----------------------------------------------------------------------
 
 	; map kernel space to process
+	mov	r15,	qword [kernel_environment_base_address]
+	mov	r15,	qword [r15 + KERNEL_STRUCTURE.page_base_address]
 	call	kernel_page_merge
 
 	;-----------------------------------------------------------------------

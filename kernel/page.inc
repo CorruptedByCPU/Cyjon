@@ -21,3 +21,6 @@
 %define	KERNEL_PAGE_FLAG_process	1 << 9
 %define	KERNEL_PAGE_FLAG_shared		1 << 10
 %define	KERNEL_PAGE_FLAG_library	1 << 11
+
+%define KERNEL_PAGE_ENTRY_stack		223
+%define KERNEL_PAGE_ENTRY_stack_context	510

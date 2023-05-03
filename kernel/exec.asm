@@ -77,9 +77,6 @@ kernel_exec:
 	call	kernel_stream
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_in],	rsi
 
-	; process memory usage
-	inc	qword [r10 + KERNEL_TASK_STRUCTURE.page]
-
 	; connect output with input?
 	test	rax,	LIB_SYS_STREAM_FLOW_out_to_in
 	jnz	.stream_set	; yes
@@ -199,11 +196,9 @@ kernel_exec_configure:
 	mov	r11,	rdi
 	call	kernel_page_alloc
 
-	; process memory usage
-	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
-
 	; set process context stack pointer
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	KERNEL_TASK_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
+	mov	rsi,	KERNEL_TASK_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
+	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsi
 
 	; prepare exception exit mode on context stack of process
 	mov	rsi,	KERNEL_TASK_STACK_pointer - STATIC_PAGE_SIZE_byte
@@ -289,6 +284,9 @@ kernel_exec_configure:
 
 	; process memory usage
 	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
+
+	; process stack size
+	add	qword [r10 + KERNEL_TASK_STRUCTURE.stack],	rcx
 
 	;-----------------------------------------------------------------------
 	; allocate space for executable segments
@@ -410,6 +408,8 @@ kernel_exec_configure:
 	;-----------------------------------------------------------------------
 
 	; map kernel space to process
+	mov	r15,	qword [kernel_environment_base_address]
+	mov	r15,	qword [r15 + KERNEL_STRUCTURE.page_base_address]
 	call	kernel_page_merge
 
 	; restore executable space address
