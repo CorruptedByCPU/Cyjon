@@ -7,7 +7,7 @@ clear
 
 /bin/bash prepare.sh
 
-wget https://blackdev.org/workbench/system.gz -P iso > /dev/null 2>&1
+cp ../fern/build/system.gz iso
 
 xorriso -as mkisofs -b limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot limine-cd-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label iso -o build/cyjon.iso > /dev/null 2>&1
 

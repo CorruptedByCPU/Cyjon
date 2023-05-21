@@ -19,4 +19,7 @@ qemu-system-x86_64			\
 	-netdev user,id=ethx		\
 	-device e1000,netdev=ethx	\
 	-rtc base=localtime 		\
-	-serial mon:stdio
+	-serial mon:stdio		\
+	-vga vmware			\
+	-usb -device usb-tablet		\
+	-k en-us
