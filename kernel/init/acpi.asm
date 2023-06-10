@@ -115,7 +115,8 @@ kernel_init_acpi:
 	mov	ecx,	kernel_acpi_lapic_end - kernel_acpi_lapic
 	mov	rsi,	kernel_acpi_lapic
 	call	driver_serial_string
-	mov	rax,	qword [r8 + KERNEL_STRUCTURE.lapic_base_address]
+	mov	rax,	KERNEL_PAGE_mirror
+	add	rax,	qword [r8 + KERNEL_STRUCTURE.lapic_base_address]
 	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
 	xor	ecx,	ecx	; no prefix
 	xor	dl,	dl	; value unsigned
@@ -129,9 +130,25 @@ kernel_init_acpi:
 	mov	ecx,	kernel_acpi_io_apic_end - kernel_acpi_io_apic
 	mov	rsi,	kernel_acpi_io_apic
 	call	driver_serial_string
-	mov	rax,	qword [r8 + KERNEL_STRUCTURE.io_apic_base_address]
+	mov	rax,	KERNEL_PAGE_mirror
+	add	rax,	qword [r8 + KERNEL_STRUCTURE.io_apic_base_address]
 	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
 	xor	ecx,	ecx	; no prefix
+	call	driver_serial_value
+
+	; HPET controller is available?
+	cmp	qword [r8 + KERNEL_STRUCTURE.hpet_base_address],	EMPTY
+	je	.error	; no
+
+	; show information about LAPIC
+	mov	ecx,	kernel_acpi_hpet_end - kernel_acpi_hpet
+	mov	rsi,	kernel_acpi_hpet
+	call	driver_serial_string
+	mov	rax,	KERNEL_PAGE_mirror
+	add	rax,	qword [r8 + KERNEL_STRUCTURE.hpet_base_address]
+	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
+	xor	ecx,	ecx	; no prefix
+	xor	dl,	dl	; value unsigned
 	call	driver_serial_value
 
 	; restore original registers
@@ -150,8 +167,20 @@ kernel_init_acpi:
 
 .parse:
 	; header of MADT (Multiple APIC Description Table)?
-	cmp	dword [rsi + KERNEL_INIT_ACPI_STRUCTURE_MADT.madt + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.signature],	"APIC"
+	cmp	dword [rsi + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.signature],	KERNEL_INIT_ACPI_MADT_signature
 	je	.madt	; yes
+
+	; header of HPET (High Presision Event Timer)?
+	cmp	dword [rsi + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.signature],	KERNEL_INIT_ACPI_HPET_signature
+	je	.hpet	; yes
+
+	; return from subroutine
+	ret
+
+.hpet:
+	; store HPET base address
+	mov	rax,	qword [rsi + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.SIZE + KERNEL_INIT_ACPI_STRUCTURE_HPET.base_address]
+	mov	qword [r8 + KERNEL_STRUCTURE.hpet_base_address],	rax
 
 	; return from subroutine
 	ret
@@ -163,19 +192,19 @@ kernel_init_acpi:
 	push	rsi
 
 	; store LAPIC base address
-	mov	eax,	dword [rsi + KERNEL_INIT_ACPI_STRUCTURE_MADT.lapic_address]
+	mov	eax,	dword [rsi + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.SIZE + KERNEL_INIT_ACPI_STRUCTURE_MADT.lapic_address]
 	mov	dword [r8 + KERNEL_STRUCTURE.lapic_base_address],	eax
 
 	; length of MADT table in entries
-	mov	ecx,	dword [rsi + KERNEL_INIT_ACPI_STRUCTURE_MADT.madt + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.length]
-	sub	ecx,	KERNEL_INIT_ACPI_STRUCTURE_MADT.SIZE	; adjust for header size
+	mov	ecx,	dword [rsi + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.length]
+	sub	ecx,	KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.SIZE + KERNEL_INIT_ACPI_STRUCTURE_MADT.SIZE	; adjust for header size
 
 	; move pointer to first MADT entry
-	add	rsi,	KERNEL_INIT_ACPI_STRUCTURE_MADT.SIZE
+	add	rsi,	KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.SIZE + KERNEL_INIT_ACPI_STRUCTURE_MADT.SIZE
 
 .madt_entry:
 	; we found I/O APIC?
-	cmp	byte [rsi + KERNEL_INIT_ACPI_STRUCTURE_MADT_ENTRY.type],	KERNEL_INIT_ACPI_MADT_ENTRY_TYPE_io_apic
+	cmp	byte [rsi + KERNEL_INIT_ACPI_STRUCTURE_MADT_ENTRY.type],	KERNEL_INIT_ACPI_APIC_TYPE_io_apic
 	je	.madt_io_apic	; yes
 
 .madt_next:

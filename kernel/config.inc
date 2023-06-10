@@ -4,7 +4,7 @@
 
 %define	KERNEL_name			"Cyjon"
 %define	KERNEL_version			"0"
-%define	KERNEL_revision			"2139"
+%define	KERNEL_revision			"2148"
 %define	KERNEL_architecture		"x86_64"
 %define	KERNEL_language			"Assembly"
 
@@ -19,15 +19,16 @@ struc	KERNEL_STRUCTURE
 	.driver_ps2_mouse_y		resw	1
 	.driver_ps2_mouse_status	resb	1
 
-	; variables of RTC controller management functions
-	.driver_rtc_microtime		resq	1
-
 	; variables of Framebuffer management functions
 	.framebuffer_base_address	resq	1
 	.framebuffer_width_pixel	resw	1
 	.framebuffer_height_pixel	resw	1
 	.framebuffer_scanline_byte	resd	1
 	.framebuffer_pid		resq	1
+
+	; variables of HPET management functions
+	.hpet_base_address		resq	1
+	.hpet_microtime			resq	1
 
 	; variables of I/O APIC management functions
 	.io_apic_base_address		resq	1
@@ -39,7 +40,6 @@ struc	KERNEL_STRUCTURE
 	; variables of LAPIC management functions
 	.lapic_base_address		resq	1
 	.lapic_last_id			resd	1
-	.lapic_microtime		resq	1
 
 	; variables of Library management functions
 	.library_base_address		resq	1

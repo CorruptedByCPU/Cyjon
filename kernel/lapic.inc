@@ -2,7 +2,7 @@
 ;Copyright (C) Andrzej Adamczyk (at https:;blackdev.org/). All rights reserved.
 ;===============================================================================
 
-%define	KERNEL_LAPIC_Hz					32768
+%define	KERNEL_LAPIC_Hz					1024
 
 %define	KERNEL_LAPIC_IRQ_number				0x20
 %define	KERNEL_LAPIC_INIT_READY_bit			12

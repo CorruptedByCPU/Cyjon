@@ -19,6 +19,7 @@
 	%include	"kernel/config.inc"
 	%include	"kernel/exec.inc"
 	%include	"kernel/gdt.inc"
+	%include	"kernel/hpet.inc"
 	%include	"kernel/idt.inc"
 	%include	"kernel/io_apic.inc"
 	%include	"kernel/ipc.inc"
@@ -69,6 +70,7 @@ section .text
 	%include	"kernel/driver/serial.asm"
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/exec.asm"
+	%include	"kernel/hpet.asm"
 	%include	"kernel/idt.asm"
 	%include	"kernel/io_apic.asm"
 	%include	"kernel/lapic.asm"
@@ -89,6 +91,7 @@ section .text
 	%include	"kernel/init/framebuffer.asm"
 	%include	"kernel/init/free.asm"
 	%include	"kernel/init/gdt.asm"
+	%include	"kernel/init/hpet.asm"
 	%include	"kernel/init/idt.asm"
 	%include	"kernel/init/ipc.asm"
 	%include	"kernel/init/library.asm"
@@ -148,6 +151,9 @@ init:
 
 	; configure Real Time Clock
 	call	driver_rtc
+
+	; configure HPET controller
+	call	kernel_init_hpet
 
 	; initialize PS2 keyboard/mouse driver
 	call	driver_ps2

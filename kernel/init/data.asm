@@ -10,6 +10,8 @@ kernel_acpi_lapic		db	STATIC_ASCII_NEW_LINE, " LAPIC base address 0x"
 kernel_acpi_lapic_end:
 kernel_acpi_io_apic		db	STATIC_ASCII_NEW_LINE, " I/O APIC base address 0x"
 kernel_acpi_io_apic_end:
+kernel_acpi_hpet		db	STATIC_ASCII_NEW_LINE, " HPET base address 0x"
+kernel_acpi_hpet_end:
 
 kernel_log_framebuffer		db	STATIC_ASCII_NEW_LINE, "Where are my testicles, Summer?"
 kernel_log_framebuffer_end:

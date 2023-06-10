@@ -107,6 +107,12 @@ kernel_init_page:
 	or	rax,	rsi
 	call	kernel_page_map
 
+	; map HPET controller space
+	mov	rax,	KERNEL_PAGE_mirror
+	mov	rsi,	qword [r8 + KERNEL_STRUCTURE.hpet_base_address]
+	or	rax,	rsi
+	call	kernel_page_map
+
 	;-----------------------------------------------------------------------
 	; kernel environment needs its own stack :)
 	;-----------------------------------------------------------------------

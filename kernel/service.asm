@@ -97,7 +97,7 @@ kernel_service_sleep:
 	call	kernel_task_active
 
 	; current uptime
-	add	rdi,	qword [r8 + KERNEL_STRUCTURE.lapic_microtime]
+	add	rdi,	qword [r8 + KERNEL_STRUCTURE.hpet_microtime]
 
 	; go to sleep for N ticks
 	mov	qword [r9 + KERNEL_TASK_STRUCTURE.sleep],	rdi
@@ -119,7 +119,7 @@ kernel_service_sleep:
 kernel_service_uptime:
 	; return current microtime index
 	mov	rax,	qword [kernel_environment_base_address]
-	mov	rax,	qword [rax + KERNEL_STRUCTURE.lapic_microtime]
+	mov	rax,	qword [rax + KERNEL_STRUCTURE.hpet_microtime]
 
 	; return from routine
 	ret
@@ -299,7 +299,7 @@ kernel_service_ipc_send:
 
 .loop:
 	; free entry?
-	mov	rax,	qword [r8 + KERNEL_STRUCTURE.lapic_microtime]
+	mov	rax,	qword [r8 + KERNEL_STRUCTURE.hpet_microtime]
 	cmp	qword [rdx + LIB_SYS_STRUCTURE_IPC.ttl],	rax
 	jbe	.found	; yes
 
@@ -315,7 +315,7 @@ kernel_service_ipc_send:
 
 .found:
 	; set message time out
-	add	rax,	DRIVER_RTC_Hz
+	add	rax,	KERNEL_IPC_timeout
 	mov	qword [rdx + LIB_SYS_STRUCTURE_IPC.ttl],	rax
 
 	; set message source
@@ -382,7 +382,7 @@ kernel_service_ipc_receive:
 
 .loop:
 	; message alive?
-	mov	rbx,	qword [r8 + KERNEL_STRUCTURE.lapic_microtime]
+	mov	rbx,	qword [r8 + KERNEL_STRUCTURE.hpet_microtime]
 	cmp	qword [rsi + LIB_SYS_STRUCTURE_IPC.ttl],	rbx
 	ja	.check	; yes
 

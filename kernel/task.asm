@@ -69,14 +69,6 @@ kernel_task:
 	; set flag of current task as free for execution by next CPU
 	and	word [r10 + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_exec
 
-	; increase microtime?
-	call	kernel_lapic_id
-	cmp	eax,	dword [r8 + KERNEL_STRUCTURE.lapic_last_id]
-	jne	.lock	; no
-
-	; increase ticks
-	inc	qword [r8 + KERNEL_STRUCTURE.lapic_microtime]
-
 	;-----------------------------------------------------------------------
 	; [SELECT]
 
@@ -115,7 +107,7 @@ kernel_task:
 
 	; a dormant task?
 	mov	rdx,	qword [r10 + KERNEL_TASK_STRUCTURE.sleep]
-	cmp	rdx,	qword [r8 + KERNEL_STRUCTURE.lapic_microtime]
+	cmp	rdx,	qword [r8 + KERNEL_STRUCTURE.hpet_microtime]
 	ja	.next	; yes
 
 	; task can be executed?
