@@ -283,6 +283,9 @@ kernel_idt_exception_security:
 ;-------------------------------------------------------------------------------
 ; void
 kernel_idt_exception:
+	; bochs breakpoint
+	xchg	bx,	bx
+
 	; keep original registers
 	push	rax
 	push	rbx
@@ -300,9 +303,6 @@ kernel_idt_exception:
 	push	r14
 	push	r15
 
-	; bochs breakpoint
-	xchg	bx,	bx
-
 	; put on the stack value of CR2 register
 	mov	rax,	cr2
 	push	rax
@@ -310,6 +310,38 @@ kernel_idt_exception:
 	; turn off Direction Flag
 	cld
 
+	; kernel environment variables/rountines base address
+	call	kernel_task_active
+
+	; calculate stack position before exception
+	and	qword [rsp],	STATIC_PAGE_mask
+	add	qword [rsp],	STATIC_PAGE_SIZE_byte
+
+	; process assigned stack address
+	mov	rax,	KERNEL_EXEC_STACK_pointer
+	mov	rbx,	qword [r9 + KERNEL_TASK_STRUCTURE.stack]
+	shl	rbx,	STATIC_PAGE_SIZE_shift
+	sub	rax,	rbx
+
+	; exception related to process stack?
+	cmp	rax,	qword [rsp]
+	jne	.different	; no
+
+	; extend stack by page
+	inc	qword [r9 + KERNEL_TASK_STRUCTURE.stack]
+
+	; describe additional space under process stack
+	sub	rax,	STATIC_PAGE_SIZE_byte
+	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_process
+	mov	ecx,	1
+	mov	r11,	KERNEL_PAGE_mirror
+	or	r11,	qword [r9 + KERNEL_TASK_STRUCTURE.cr3]
+	call	kernel_page_alloc
+
+	; go back to process
+	jmp	.approved
+
+.different:
 	; show on debug console, exception name
 	xor	dl,	dl	; string not reversed
 	mov	rsi,	qword [rsp + KERNEL_IDT_STRUCTURE_EXCEPTION.id]
@@ -331,6 +363,7 @@ kernel_idt_exception:
 	; hold the door
 	jmp	$
 
+.approved:
 	; release value of CR2 register from stack
 	add	rsp,	0x08
 
