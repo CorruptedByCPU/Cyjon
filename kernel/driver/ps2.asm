@@ -577,7 +577,7 @@ driver_ps2_mouse:
 	mov	r8,	qword [kernel_environment_base_address]
 
 	; receive data from PS2 controller output buffer
-	xor	ax,	ax	; behave as 16 bit value
+	xor	eax,	eax	; behave as 64 bit value
 	in	al,	DRIVER_PS2_PORT_DATA
 
 	; status byte?
@@ -622,6 +622,9 @@ driver_ps2_mouse:
 	xor	ah,	ah
 	not	al
 
+	; calculate absolute position
+	sub	qword [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x_absolute],	rax
+
 	; set new pointer position
 	sub	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x],	ax
 	jns	.end
@@ -636,6 +639,9 @@ driver_ps2_mouse:
 	; retrieve framebuffer limit of X axis
 	mov	cx,	word [r8 + KERNEL_STRUCTURE.framebuffer_width_pixel]
 	dec	cx
+
+	; calculate absolute position
+	add	qword [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x_absolute],	rax
 
 	; set new pointer position
 	add	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x],	ax
@@ -662,6 +668,9 @@ driver_ps2_mouse:
 	mov	cx,	word [r8 + KERNEL_STRUCTURE.framebuffer_height_pixel]
 	dec	cx
 
+	; calculate absolute position
+	sub	qword [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y_absolute],	rax
+
 	; set new pointer position
 	sub	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y],	ax
 	jns	.reset
@@ -680,6 +689,9 @@ driver_ps2_mouse:
 	; convert to absolute value
 	xor	ah,	ah
 	not	al
+
+	; calculate absolute position
+	add	qword [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y_absolute],	rax
 
 	; set new pointer position
 	add	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y],	ax
