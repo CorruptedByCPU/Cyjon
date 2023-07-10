@@ -17,6 +17,8 @@ struc	KERNEL_STRUCTURE
 	; variables of PS2 controller management functions
 	.driver_ps2_mouse_x		resw	1
 	.driver_ps2_mouse_y		resw	1
+	.driver_ps2_mouse_x_relative	resq	1
+	.driver_ps2_mouse_y_relative	resq	1
 	.driver_ps2_mouse_status	resb	1
 
 	; variables of Framebuffer management functions
