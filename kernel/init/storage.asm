@@ -121,7 +121,7 @@ kernel_init_storage:
 	shr	rax,	KERNEL_STORAGE_STRUCTURE_SIZE_shift
 
 	; search for "init" file on storage device
-	mov	ecx,	kernel_exec_file_init_end - kernel_exec_file_init
+	movzx	ecx,	byte [kernel_exec_file_init_length]
 	mov	rsi,	kernel_exec_file_init
 	call	kernel_storage_file
 

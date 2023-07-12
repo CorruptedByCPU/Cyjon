@@ -62,6 +62,8 @@ malloc:
 	jc	.end	; not enough space
 
 	; store information about size of this space
+	add	rdi,	STATIC_PAGE_mask
+	shr	rdi,	STATIC_PAGE_SIZE_shift
 	mov	qword [rax],	rdi
 
 	; return pointer to space

@@ -672,9 +672,17 @@ kernel_service_task_status:
 	mov	rdx,	rdi
 	call	kernel_task_by_id
 
+	; by default not found
+	xor	ax,	ax
+
+	; not found?
+	test	rbx,	rbx
+	jz	.error	; yep
+
 	; set pointer of process paging array
 	mov	ax,	word [rbx + KERNEL_TASK_STRUCTURE.flags]
 
+.error:
 	; restore original registers
 	pop	rdx
 	pop	rbx
@@ -854,13 +862,20 @@ kernel_service_task:
 
 	; assign place for task descriptor list
 	mov	rdi,	rax
+	add	rdi,	STATIC_QWORD_SIZE_byte << STATIC_MULTIPLE_BY_2_shift
 	call	kernel_service_memory_alloc
+
+	; store information about size of this space
+	add	rdi,	~STATIC_PAGE_mask
+	shr	rdi,	STATIC_PAGE_SIZE_shift
+	mov	qword [rax],	rdi
 
 	; parse every entry
 	mov	rbx,	KERNEL_TASK_limit
 	mov	r10,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
 
 	; preserve memory space pointer of tasks descriptors
+	add	rax,	STATIC_QWORD_SIZE_byte << STATIC_MULTIPLE_BY_2_shift
 	push	rax
 
 .loop:

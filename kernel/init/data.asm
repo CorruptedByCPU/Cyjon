@@ -38,8 +38,9 @@ kernel_log_welcome_end:
 
 kernel_smp_count		dq	EMPTY
 
-kernel_exec_file_init		db	"wm"
-kernel_exec_file_init_end:
+kernel_exec_file_init_length	db	EMPTY
+kernel_exec_file_init:
+		times 256	db	EMPTY
 
 kernel_daemon_file_gc		db	"gc.d"
 kernel_daemon_file_gc_end:

@@ -86,6 +86,7 @@ section .text
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.asm"
 	%include	"kernel/init/ap.asm"
+	%include	"kernel/init/cmd.asm"
 	%include	"kernel/init/daemon.asm"
 	%include	"kernel/init/exec.asm"
 	%include	"kernel/init/framebuffer.asm"
@@ -113,6 +114,9 @@ init:
 	mov	rcx,	kernel_log_welcome_end - kernel_log_welcome
 	mov	rsi,	kernel_log_welcome
 	call	driver_serial_string
+
+	; retrieve file to execute
+	call	kernel_init_cmd
 
 	; create binary memory map
 	call	kernel_init_memory
