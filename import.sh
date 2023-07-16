@@ -3,5 +3,4 @@
 #Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 #===============================================================================
 
-# no use for you :|
-cd ../fern && ./release.sh $1 && cd - && ./make.sh
+cd ../fern-night && ./make.sh $1 && cd - && ./make.sh
