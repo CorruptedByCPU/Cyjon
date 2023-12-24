@@ -41,7 +41,6 @@ driver_rtc:
 
 	; set registry flags
 	or	al,	DRIVER_RTC_STATUS_REGISTER_B_24_hour_mode
-	or	al,	DRIVER_RTC_STATUS_REGISTER_B_data_mode_binary
 	; or	al,	DRIVER_RTC_STATUS_REGISTER_B_periodic_interrupt
 	; and	al,	~DRIVER_RTC_STATUS_REGISTER_B_update_ended_interrupt
 	; and	al,	~DRIVER_RTC_STATUS_REGISTER_B_alarm_interrupt
@@ -100,6 +99,17 @@ driver_rtc:
 ; 	; return from interrupt
 ; 	iretq
 
+read_rtc_reg:
+	in	al,	DRIVER_RTC_PORT_data
+
+	mov	bx, ax
+	and	bl, 0x0F
+	and	al, 0xF0
+	shr	al, 4
+	mul	cl
+	add	ax, bx
+
+	ret
 ;-------------------------------------------------------------------------------
 ; out:
 ;	rax - 0x00wwyymmddHHMMSS
@@ -112,6 +122,15 @@ driver_rtc:
 ;	MM - Minute (0..59)
 ;	SS - Second (0..59)
 driver_rtc_time:
+	mov	al,	DRIVER_RTC_STATUS_REGISTER_B
+	out	DRIVER_RTC_PORT_command,	al
+	in	al,	DRIVER_RTC_PORT_data
+	mov	cl,	10
+	test	al,	DRIVER_RTC_STATUS_REGISTER_B_data_mode_binary
+	jz	bcd
+	mov	cl,	16
+bcd:
+
 	; clear time register
 	xor	eax,	eax
 
@@ -122,46 +141,46 @@ driver_rtc_time:
 	in	al,	DRIVER_RTC_PORT_data
 	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
 
-	; request weekday
+	; request year
 	mov	al,	DRIVER_RTC_REGISTER_year
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
-	in	al,	DRIVER_RTC_PORT_data
+	call	read_rtc_reg
 	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
 
-	; request weekday
+	; request month
 	mov	al,	DRIVER_RTC_REGISTER_month
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
-	in	al,	DRIVER_RTC_PORT_data
+	call	read_rtc_reg
 	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
 
-	; request weekday
+	; request day
 	mov	al,	DRIVER_RTC_REGISTER_day_of_month
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
-	in	al,	DRIVER_RTC_PORT_data
+	call	read_rtc_reg
 	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
 
-	; request weekday
+	; request hour
 	mov	al,	DRIVER_RTC_REGISTER_hour
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
-	in	al,	DRIVER_RTC_PORT_data
+	call	read_rtc_reg
 	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
 
-	; request weekday
+	; request minutes
 	mov	al,	DRIVER_RTC_REGISTER_minutes
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
-	in	al,	DRIVER_RTC_PORT_data
+	call	read_rtc_reg
 	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
 
-	; request weekday
+	; request seconds
 	mov	al,	DRIVER_RTC_REGISTER_seconds
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve
-	in	al,	DRIVER_RTC_PORT_data
+	call	read_rtc_reg
 
 	; return from routine
 	ret
