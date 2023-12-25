@@ -7,7 +7,7 @@ clear
 
 /bin/bash prepare.sh
 
-cp -rf ../fern-night/system/* system
+cp ../fern-night/build/system.gz iso
 
 xorriso -as mkisofs -b limine-cd.bin -no-emul-boot -boot-load-size 4 -boot-info-table --efi-boot limine-cd-efi.bin -efi-boot-part --efi-boot-image --protective-msdos-label iso -o build/cyjon.iso > /dev/null 2>&1
 
