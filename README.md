@@ -6,7 +6,7 @@ Every comment, label is now in English.
 
 Old version of Cyjon is still available at **[old 0.1440](https://github.com/CorruptedByCPU/Cyjon/tree/old)** branch and **[eldest 0.674](https://github.com/CorruptedByCPU/Cyjon/tree/eldest)** branch.
 
-# Cyjon (workname)
+# Cyjon v0.2164 (workname)
 
 A simple, clean, multi-tasking operating system written in pure assembly (kernel) language for 64-bit processors from the AMD64 family.
 
