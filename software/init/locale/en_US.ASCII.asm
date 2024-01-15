@@ -1,0 +1,3 @@
+text_init	db	VARIABLE_ASCII_CODE_ENTER, VARIABLE_ASCII_CODE_NEWLINE
+		db	"INIT: ", VARIABLE_PROGRAM_VERSION, " ready.", VARIABLE_ASCII_CODE_RETURN
+text_no_process	db	"INIT: No free memory to execute new process.", VARIABLE_ASCII_CODE_RETURN

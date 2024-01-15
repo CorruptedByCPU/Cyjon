@@ -1,25 +1,23 @@
 #!/bin/bash
-#===============================================================================
-#Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-#===============================================================================
+#=================================================================================
+# Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+#=================================================================================
 
-if [ -z "${1}" ]; then
-	smp="2"
-else
-	smp="${1}"
-fi
+# default CPUs amount: 2
+SMP="${1}"
+if [ -z "${SMP}" ]; then SMP="2"; fi
 
-# run with specific configration
-qemu-system-x86_64			\
-	--enable-kvm			\
-	-cpu max			\
-	-smp ${smp}			\
-	-m 128				\
-	-cdrom build/cyjon.iso		\
-	-netdev user,id=ethx		\
-	-device e1000,netdev=ethx	\
-	-rtc base=localtime 		\
-	-serial mon:stdio		\
-	-vga vmware			\
-	-usb -device usb-tablet		\
-	-k en-us
+# default Memory size: 64 MiB
+MEM="${2}"
+if [ -z "${MEM}" ]; then MEM="64"; fi
+
+qemu-system-x86_64				\
+	--enable-kvm				\
+	-cpu host				\
+	-smp ${SMP}				\
+	-m ${MEM}				\
+	-hda build/disk_with_omega.raw		\
+	-rtc base=localtime			\
+	-serial stdio				\
+	# -usb -device usb-mouse,id=mouse		\
+	# -usb -device usb-kbd,id=keyboard	\

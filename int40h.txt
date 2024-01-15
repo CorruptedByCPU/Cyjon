@@ -1,0 +1,259 @@
+ah 0x00	- obsługa procesów
+	al 0x00 - zakończ proces
+		brak przekazywanych parametrów, proces który wykonał usługę zostanie zamknięty
+	al 0x01 - uruchom nowy proces
+		WEJŚCIE:
+			rcx - ilość znaków w nazwie programu do uruchomienia
+			rsi - wskaźnik do nazwy programu
+			rdx - ilość danych w Bajtach
+				ZERO jeśli brak
+			rdi - wskaźnik do argumentów przekazywanych nowemu procesowi
+				ZERO jeśli brak
+		WYJŚCIE:
+			rbx - kod błędu, jeśli ZERO wszystko ok
+				0x01 - plik nie jest wykonywalny
+				0x02 - pliku nie znaleziono
+				0x03 - brak wystarczającej ilości pamięci do uruchomienia procesu
+			rcx - numer PID uruchomionego procesu
+	al 0x02 - sprawdź czy proces jest uruchomiony
+		WEJŚCIE:
+			rcx - numer PID procesu do sprawdzenia
+		WYJŚCIE
+			rcx - ZERO jeśli proces o podanym PID nie istnieje
+	al 0x03 - przydziel przestrzeń pamięci
+		WEJŚCIE:
+			rcx - ilość stron (4 KiB jedna strona) do przydzielenia
+			rdi - wskaźnik adresu gdzie przydzielić przestrzeń pamięci
+				adres powinien być wyrównany do pełnej strony tj.
+				and	di,	0xF000
+		WYJŚCIE:
+			brak
+	al 0x04 - lista uruchomionych procesów/demonów
+		WEJŚCIE:
+			rdi - wskaźnik, gdzie utworzyć tablicę uruchomionych procesów
+				struktura rekordu tablicy:
+				struc VARIABLE_TABLE_SERPENTINE_RECORD
+					.PID	resq	1
+					.CR3	resq	1	; wartość pusta
+					.RSP	resq	1	; wartość pusta
+					.FLAGS	resq	1
+					.NAME	resb	32
+					.ARGS	resq	1
+					.SIZE	resb	1
+				endstruc
+		WYJŚCIE:
+			brak
+	al 0x05 - pobierz dostępne argumenty dla procesu
+		WEJŚCIE:
+			rdi - wskaźnik, gdzie załadować przesłane argumenty
+		WYJŚCIE:
+			rcx - ilość danych w Bajtach
+	al 0x06 - pobierz własny numer PID
+		WEJŚCIE:
+			brak
+		WYJŚCIE:
+			rcx - własny numer PID
+	al 0x07 - wyłącz proces o podanym PID
+		WEJŚCIE:
+			rcx - numer PID procesu do zabicia
+		WYŚJCIE:
+			rcx - ZERO jeśli proces o podanym PID nie istniał
+ah 0x01	- obsługa trybu tekstowego
+	al 0x00	- wyczyść ekran
+		WEJŚCIE:
+			rbx - numer linii (od ZERA) od której wyczyścić ekran
+			rcx - ilość linii do wyczyszczenia
+				jeśli ZERO, cały ekran
+	al 0x01	- wyświetl ciąg znaków (string)
+		WEJŚCIE:
+			rbx - kolor znaków (16 dostępnych kolorów z palety BIOS'u)
+			rcx - ilość znaków z ciągu do wyświetlenia
+			rdx - kolot tła znaków (8 pierwszych dostępnych kolorów z palety BIOS'u)
+			rsi - wskaźnik do ciągu znaków, zakończony TERMINATOREM jeśli ilość znaków nie jest wiadoma
+		WYJŚCIE:
+			brak
+	al 0x02 - wyświetl znak
+		WEJŚCIE:
+			rbx - kolor znaków (16 dostępnych kolorów z palety BIOS'u)
+			rdx - kolot tła znaków (8 pierwszych dostępnych kolorów z palety BIOS'u)
+			r8b - kod ASCII znaku do wyświetlenia
+		WYJŚCIE:
+			brak
+	al 0x03 - wyświetl cyfrę/liczbę
+		WEJŚCIE:
+			rbx - kolor znaków (16 dostępnych kolorów z palety BIOS'u)
+			cl - system liczbowy
+				przedział od 2 do 36(zostaną przypisane wszystkie litery z alfabetu łacińskiego)
+				0x02 - binarny
+				0x08 - oktobinarny
+				0x0A - decymalny
+				0x10 - heksadecymalny
+			ch - prefix, oznacza ilość cyfr ZERO uzupełniających wyświetloną liczbę
+				np.
+					liczba 3, ch=0, cl=binarny
+					wynik: 11
+					liczba 3, ch=4, cl=binarny
+					wynik: 0011
+					liczba 3, ch=8, cl=binarny
+					wynik: 00000011
+			rdx - kolot tła znaków (8 pierwszych dostępnych kolorów z palety BIOS'u)
+			r8 - cyfra/liczba do wyświetlenia
+		WYJŚCIE:
+			brak
+	al 0x04 - pobierz pozycję kursora
+		WEJŚCIE:
+			brak
+		WYJŚCIE:
+			rbx - pozycja kursora (ebx - kolumna, wiersz w starszej części)
+				wiersz    |kolumna
+				0x00000000|00000000
+	al 0x05 - ustaw pozycję kursora
+		WEJŚCIE:
+			rbx - pozycja kursora (ebx - kolumna, wiersz w starszej części)
+				wiersz    |kolumna
+				0x00000000|00000000
+		WYJŚCIE:
+			brak
+	al 0x06 - pobierz własności ekranu (szerokość/wysokość w znakach)
+		WEJŚCIE:
+			brak
+		WYJŚCIE:
+			rbx - rozmiar ekranu w znakach
+				wierszy    |kolumn
+				0x00000000|00000000
+	al 0x07 - ukryj kursor
+		brak przekazywanych parametrów
+	al 0x08 - pokaż kursor
+		brak przekazywanych parametrów
+	al 0x09	- przesuń część ekranu o linie w dół/górę
+		przerwanie jako pierwsze zostało wykorzystanie w edytorze tekstu ;)
+		WEJŚCIE:
+			rbx - kierunek przesuwania ekranu
+				0x00 - w dół
+				0x01 - w górę
+			rcx - łączna ilość linii do przesunięcia
+			rdx - rozpocznij od linii X
+		WYJŚCIE:
+			brak
+ah 0x02	- obsługa klawiatury
+	al 0x00 - pobierz kod ASCII naciśniętego klawisza
+		WEJŚCIE:
+			brak
+		WYJŚCIE:
+			ax - ZERO jeśli brak znaku w buforze klawiatury
+ah 0x03	- obsługa systemu
+	al 0x02 - pobierz informacje o pamięci
+		WEJŚCIE:
+			brak
+		WYJŚCIE:
+			r11 - całkowita ilość pamięci w stronach (4 KiB jedna strona)
+			r12 - ilość wolnej pamięci w stronach
+			r13 - ilość pamięci przeznaczonej na stronicowanie
+			r14 - ilość pamięci przeznaczonej na bufory
+			r15 - ilość pamięci zarewerwowanej/niedostępnej
+ah 0x04	- obsługa sieci
+	al 0x00 - ustaw adres IPv4
+		WEJŚCIE:
+			ebx - adres w formacie IPv4
+				np.
+					0x0A000001 10.0.0.1
+					0xC0A80001 192.168.0.1
+		WYJŚCIE:
+			brak
+	al 0x01 - pobierz adres IPv4
+		WEJŚCIE:
+			brak
+		WYJŚCIE:
+			rbx - adres w formacie IPv4
+				np.
+					0x0A000001 10.0.0.1
+					0xC0A80001 192.168.0.1
+	al 0x02 - przydziel port
+		WEJŚCIE:
+			rcx - numer portu, który proces chce zająć
+			rdx - rozmiar bufora w stronach (4 KiB jedna strona)
+			rdi - wskaźnik do bufora procesu, na który będą przychodzić pakiety
+		WYJŚCIE:
+			rcx - ZERO jeśli port jest już zajęty przez inny proces
+	al 0x03 - zwolnij port
+		WYJŚCIE:
+			rcx - numer portu do zwolnienia
+		WYJŚCIE:
+			jeśli proces zwalniający nie jest właścicielem portu, zostanie zniszczony(zamknięty)
+	al 0x04 - wyślij pakiet
+		WEJŚCIE:
+			rbx - identyfikator połaczenia
+			rcx - ilość danych do wysłania
+			rsi - wskaźnik do danych pakietu
+		WYJŚCIE:
+			brak
+ah 0x05	- obsługa wirtualnego systemu plików
+	al 0x00	- pobierz zawartość katalogu głównego
+		WEJŚCIE:
+			rdi - gdzie w przestrzeni procesu zapisać zawartość katalogu głównego
+				jeśli adres nie będzie wyrównany do pełnej strony tj. 0xF000
+				jądro systemu samo tego dokona, zaokrąglając w górę!
+				struktura supła w drzewie katalogu
+				struc STRUCTURE_VFS_KNOT
+					.id		resq	1
+					.permission	resq	1
+					.size		resq	1
+					.chars		resq	1
+					.name		resb	32	; ilość znaków na nazwę pliku
+					.SIZE		resb	1	; rozmiar struktury w Bajtach
+				endstruc
+		WYJŚCIE:
+			rdi - ZERO jeśli błąd adresu docelowego
+	al 0x01	- odczytaj plik
+		WEJŚCIE:
+			rcx - ilość znaków w nazwie pliku
+			rsi - wskaźnik do nazwy pliku
+			rdi - adres docelowy ładowanego pliku
+		WYJŚCIE:
+			rbx - kod błędu, ZERO jeśli OK
+				0x03 - pliku nie znaleziono
+			rcx - rozmiar wczytanego pliku w Bajtach
+			rdx - identyfikator pliku
+			rdi - ZERO jeśli błąd adresu
+	al 0x02	- zapisz nowy plik
+		WEJŚCIE:
+			rbx - uprawnienia do pliku
+			rcx - ilość znaków w nazwie pliku
+			rdx - rozmiar pliku w Bajtach
+			rsi - wskaźnik do nazwy pliku
+			rdi - wskaźnik do danych pliku
+		WYJŚCIE:
+			rbx - kod błędu, ZERO jeśli OK
+				0x01 - plik o podanej nazwie już istnieje
+				0x02 - brak wolnej pamięci
+			rcx - identyfikator pliku w katalogu głównym
+ah 0x06 - obsługa trybu graficznego
+	al 0x00 - pobierz informacje o trybie graficznym
+		WEJŚCIE:
+			brak
+		WYJŚCIE:
+			rbx - wskaźnik adresu początku przestrzeni pamięci
+			rcx - rozmiar przestrzeni w Bajtach
+			rdx - szerokość rzeczywista ekranu w Bajtach
+			r8 - szerokość w pikselach
+			r9 - wysokość w pikselach
+	al 0x01 - uzyskaj dostęp na wyłączność do przestrzeni pamięci ekranu
+		WEJŚCIE:
+			brak
+		WYJŚCIE:
+			rbx - kod błędu, ZERO jeśli OK
+				0x01 - przestrzeń paięci ekranu jest już zajęta
+ah 0x07	- obsługa nośników danych
+	al 0x00	- pobierz tablicę dostępnych nośników
+		WEJŚCIE:
+			rdi - gdzie zapisać pobraną listę
+				adres wyrównany do pełnej ramki tj. 0xF000
+		Wyjście:
+			rdi - jeśli ZERO, błąd adresu w RDI
+	al 0x01	- odczytaj sektor z nośnika
+		WEJŚCIE:
+			rbx - identyfikator nośnika z którego odczytać sektor
+			rcx - numer sektora w postaci LBA
+			rdi - gdzie zapisać odczytany sektor
+		WYJŚCIE:
+			rdi - jeśli ZERO, nie udało się odczytać sektora

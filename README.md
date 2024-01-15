@@ -1,34 +1,39 @@
-# Info
+# Jest to ostatnia wersja z kodem źródłowym podanym dla szerszej publiczności.
+Repozytorium nie będzie już aktualizowane. Projekt nie jest zawieszony, aktualna wersja (14.12.2016) v0.674.
 
-Cyjon is fully compatible with ![Fern-Night](https://github.com/CorruptedByCPU/Fern-Night/). Any modification to either repository will be reflected in the other.
+#Cyjon
 
-Every comment, label is now in English.
+Prosty i wielozadaniowy System Operacyjny (zobaczymy co z tego wyjdzie, może System Usług), napisany w języku asemblera dla procesorów z rodziny amd64/x86-64.
 
-Old version of Cyjon is still available at **[old](https://github.com/CorruptedByCPU/Cyjon/tree/old)** branch.
+![screenshot](screenshot.gif)
 
-# Cyjon (workname)
+#Wymagania sprzętowe:
+- procesor z rodziny amd64/x86-64,
+- 1 MiB pamięci RAM pod adresem fizycznym 0x0000000000100000,
 
-A simple, clean, multi-tasking operating system written in pure assembly (kernel) language for 64-bit processors from the AMD64 family.
+#Oprogramowanie:
+- kompilator Nasm v2.11.08+ (http://www.nasm.us/)
+- oprogramowanie Bochs v2.6.8+ (http://sourceforge.net/projects/bochs/files/bochs/),
+- lub oprogramowanie Qemu v2.5.0+ (http://wiki.qemu.org/Main_Page),
+- lub oprogramowanie VirtualBox v5.0.18+ (https://www.virtualbox.org/wiki/Downloads)
 
-![Cyjon 0.2128](https://blackdev.org/shot/2128.png?)
+#Kompilacja (z poziomu konsoli):
 
-## Hey!
+    GNU/Linux:
+    polecenie "make"
 
-So the code is optimized for readability, not speed.
+#Uruchomienie:
 
-### Download (current release in alpha state)
+    W konfiguracji oprogramowania Bochs i VirtualBox ustawiamy dysk wirtualny "build/disk with omega.raw" jako IDE0 Master.
 
-   https://blackdev.org/files/cyjon.iso
+    qemu-system-x86_64 -hda "build/disk with omega.raw"
 
-### Software (if you want to build and run your own ISO):
+#Uwagi:
+Emulatory pod systemem z rodziny MS/Windows mogą nie obsługiwać prawidłowo klawiszy strzałek/kursorów. Nie mam pojęcia kogo to wina - emulatora czy systemu.
 
-  - qemu-system-x86_64
-  - nasm
-  - clang
-  - others (gzip, ld, xorriso, git, wget)
+#Credit:
+Jeśli udało ci się nanieść poprawkę, ulepszenie lub coś zupełnie nowego w źródle systemu,
+dopisz się do grupy programistów Wataha.net!
 
-### Compilation/Exec (GNU/Linux):
-
-	user@hostname:~/Cyjon$ chmod +x release.sh qemu.sh
-	user@hostname:~/Cyjon$ ./release.sh
-	user@hostname:~/Cyjon$ ./qemu.sh
+- Andrzej Adamczyk, akasei
+- Darek Kwieciński, devport
