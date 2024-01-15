@@ -4,7 +4,7 @@ Cyjon is fully compatible with ![Fern-Night](https://github.com/CorruptedByCPU/F
 
 Every comment, label is now in English.
 
-Old version of Cyjon is still available at **[old](https://github.com/CorruptedByCPU/Cyjon/tree/old)** branch.
+Old version of Cyjon is still available at **[old](https://github.com/CorruptedByCPU/Cyjon/tree/old)** branch. Same as **[eldest 0.674](https://github.com/CorruptedByCPU/Cyjon/tree/eldest)** branch.
 
 # Cyjon (workname)
 
