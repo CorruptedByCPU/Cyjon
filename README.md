@@ -16,10 +16,6 @@ A simple, clean, multi-tasking operating system written in pure assembly (kernel
 
 So the code is optimized for readability, not speed.
 
-### Download (current release in alpha state)
-
-   https://blackdev.org/files/cyjon.iso
-
 ### Software (if you want to build and run your own ISO):
 
   - qemu-system-x86_64
