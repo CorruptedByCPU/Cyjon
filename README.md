@@ -25,6 +25,8 @@ So the code is optimized for readability, not speed.
 
 ### Compilation/Exec (GNU/Linux):
 
-	user@hostname:~/Cyjon$ chmod +x release.sh qemu.sh
-	user@hostname:~/Cyjon$ ./release.sh
-	user@hostname:~/Cyjon$ ./qemu.sh
+	user@hostname ~ $ git clone https://github.com/CorruptedByCPU/fern-night
+  user@hostname ~ $ git clone https://github.com/CorruptedByCPU/cyjon
+	user@hostname ~ $ cd fern-night && /bin/bash make.sh
+	user@hostname ~ $ cd ../cyjon && /bin/bash make.sh
+  user@hostname ~ $ /bin/bash qemu.sh
