@@ -18,7 +18,7 @@ kernel_stream:
 .lock:
 	; request an exclusive access
 	mov	al,	LOCK
-	lock xchg	byte [r8 + KERNEL_STRUCTURE.stream_semaphore],	al
+	xchg	byte [r8 + KERNEL_STRUCTURE.stream_semaphore],	al
 
 	; assigned?
 	test	al,	al
@@ -111,7 +111,7 @@ kernel_stream_in:
 .lock:
 	; request an exclusive access
 	mov	dl,	LOCK
-	lock xchg	byte [rbx + KERNEL_STREAM_STRUCTURE.lock],	dl
+	xchg	byte [rbx + KERNEL_STREAM_STRUCTURE.lock],	dl
 
 	; assigned?
 	test	dl,	dl
@@ -205,7 +205,7 @@ kernel_stream_out:
 .lock:
 	; request an exclusive access
 	mov	dl,	LOCK
-	lock xchg	byte [rbx + KERNEL_STREAM_STRUCTURE.lock],	dl
+	xchg	byte [rbx + KERNEL_STREAM_STRUCTURE.lock],	dl
 
 	; assigned?
 	test	dl,	dl
@@ -400,7 +400,7 @@ kernel_stream_get:
 .lock:
 	; request an exclusive access
 	mov	cl,	LOCK
-	lock xchg	byte [rsi + KERNEL_STREAM_STRUCTURE.lock],	cl
+	xchg	byte [rsi + KERNEL_STREAM_STRUCTURE.lock],	cl
 
 	; assigned?
 	test	cl,	cl
@@ -459,7 +459,7 @@ kernel_stream_set:
 .lock:
 	; request an exclusive access
 	mov	cl,	LOCK
-	lock xchg	byte [rdi + KERNEL_STREAM_STRUCTURE.lock],	cl
+	xchg	byte [rdi + KERNEL_STREAM_STRUCTURE.lock],	cl
 
 	; assigned?
 	test	cl,	cl

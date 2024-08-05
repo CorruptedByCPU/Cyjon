@@ -6,7 +6,7 @@
 	; structures, definitions
 	;-----------------------------------------------------------------------
 	; global ---------------------------------------------------------------
-	%include	"default.inc"
+	%include	"library/std.inc"
 	; library --------------------------------------------------------------
 	%include	"library/elf.inc"
 	%include	"library/vfs.inc"

@@ -20,7 +20,7 @@ kernel_memory_alloc:
 .lock:
 	; request an exclusive access
 	mov	al,	LOCK
-	lock xchg	byte [r8 + KERNEL_STRUCTURE.memory_semaphore],	al
+	xchg	byte [r8 + KERNEL_STRUCTURE.memory_semaphore],	al
 
 	; assigned?
 	test	al,	al

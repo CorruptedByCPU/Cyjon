@@ -128,7 +128,7 @@ kernel_storage_register:
 
 .register:
 	; mark slot as used
-	lock xchg	byte [rdi + KERNEL_STORAGE_STRUCTURE.device_type],	al
+	xchg	byte [rdi + KERNEL_STORAGE_STRUCTURE.device_type],	al
 	jnz	.next	; could not mark a slot
 
 .end:

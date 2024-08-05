@@ -6,7 +6,7 @@
 	; structures, definitions
 	;-----------------------------------------------------------------------
 	; global ---------------------------------------------------------------
-	%include	"default.inc"	; not required, but nice to have
+	%include	"library/std.inc"	; not required, but nice to have
 	; library --------------------------------------------------------------
 	%ifndef	LIB_SYS
 		%include	"library/sys.inc"

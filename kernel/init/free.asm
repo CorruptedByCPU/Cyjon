@@ -69,7 +69,7 @@ kernel_init_free:
 .lock:
 	; request an exclusive access
 	mov	dl,	LOCK
-	lock xchg	byte [r8 + KERNEL_STRUCTURE.memory_semaphore],	dl
+	xchg	byte [r8 + KERNEL_STRUCTURE.memory_semaphore],	dl
 
 	; assigned?
 	test	dl,	dl

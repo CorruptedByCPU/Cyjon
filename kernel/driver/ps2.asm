@@ -487,7 +487,7 @@ driver_ps2_keyboard_key_read:
 .lock:
 	; request an exclusive access
 	mov	al,	LOCK
-	lock xchg	byte [driver_ps2_keyboard_semaphore],	al
+	xchg	byte [driver_ps2_keyboard_semaphore],	al
 
 	; assigned?
 	test	al,	al
@@ -522,7 +522,7 @@ driver_ps2_keyboard_key_save:
 .lock:
 	; request an exclusive access
 	mov	cl,	LOCK
-	lock xchg	byte [driver_ps2_keyboard_semaphore],	cl
+	xchg	byte [driver_ps2_keyboard_semaphore],	cl
 
 	; assigned?
 	test	cl,	cl

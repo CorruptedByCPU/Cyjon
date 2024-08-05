@@ -75,7 +75,7 @@ kernel_task:
 .lock:
 	; request an exclusive access
 	mov	al,	LOCK
-	lock xchg	byte [r8 + KERNEL_STRUCTURE.task_cpu_semaphore],	al
+	xchg	byte [r8 + KERNEL_STRUCTURE.task_cpu_semaphore],	al
 
 	; assigned?
 	test	al,	al
@@ -229,7 +229,7 @@ kernel_task_add:
 .lock:
 	; request an exclusive access
 	mov	al,	LOCK
-	lock xchg	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	al
+	xchg	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	al
 
 .loop:
 	; free queue entry?

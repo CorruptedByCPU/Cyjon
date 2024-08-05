@@ -284,7 +284,7 @@ kernel_service_ipc_send:
 .lock:
 	; request an exclusive access
 	mov	cl,	LOCK
-	lock xchg	byte [r8 + KERNEL_STRUCTURE.ipc_semaphore],	cl
+	xchg	byte [r8 + KERNEL_STRUCTURE.ipc_semaphore],	cl
 
 	; assigned?
 	test	cl,	cl
@@ -365,7 +365,7 @@ kernel_service_ipc_receive:
 .lock:
 	; request an exclusive access
 	mov	cl,	LOCK
-	lock xchg	byte [r8 + KERNEL_STRUCTURE.ipc_semaphore],	cl
+	xchg	byte [r8 + KERNEL_STRUCTURE.ipc_semaphore],	cl
 
 	; assigned?
 	test	cl,	cl
@@ -850,7 +850,7 @@ kernel_service_task:
 .lock:
 	; request an exclusive access
 	mov	al,	LOCK
-	lock xchg	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	al
+	xchg	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	al
 
 	; assigned?
 	test	al,	al
