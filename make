@@ -17,7 +17,7 @@ LDFLAGS="-nostdlib -zmax-page-size=0x1000 -static -no-dynamic-linker"
 clear
 
 # external resources initialization
-# git submodule update --init
+git submodule update --init
 
 (cd limine && clang limine.c -o limine)
 (cd fern-night && ./make.sh)
