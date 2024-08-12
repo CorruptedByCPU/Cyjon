@@ -7,8 +7,9 @@
 green=$(tput setaf 2)
 default=$(tput sgr0)
 
+AA="nasm"
+A="nasm -p library/std.inc"
 LD="ld.lld"
-ASM="nasm"
 ISO="xorriso"
 QEMU="qemu-system-x86_64"
 LDFLAGS="-nostdlib -zmax-page-size=0x1000 -static -no-dynamic-linker"
@@ -26,7 +27,7 @@ git submodule update --init
 ENV=true
 echo -n "Cyjon environment: "
 	type -a ${LD} &> /dev/null || (echo -en "\e[38;5;196m${LD}\e[0m" && ENV=false)
-	type -a ${ASM} &> /dev/null || (echo -en "\e[38;5;196m${ASM}\e[0m" && ENV=false)
+	type -a ${AA} &> /dev/null || (echo -en "\e[38;5;196m${AA}\e[0m" && ENV=false)
 	type -a ${ISO} &> /dev/null || (echo -en "\e[38;5;196m${ISO}\e[0m" && ENV=false)
 if [ "${ENV}" = false ]; then echo -e "\n[please install missing software]"; exit 1; else echo -e "\e[38;5;2m\xE2\x9C\x94\e[0m"; fi
 
@@ -38,7 +39,7 @@ rm -rf build && mkdir -p build/iso
 rm -f bx_enh_dbg.ini	# just to make clean directory, if you executed bochs.sh
 
 # build kernel file
-${ASM} -f elf64 kernel/init.asm -o build/kernel.o || exit 1
+${A} -f elf64 kernel/init.asm -o build/kernel.o || exit 1
 ${LD} build/kernel.o -o build/kernel -T tools/kernel.ld ${LDFLAGS} || exit 1;
 strip -s build/kernel
 

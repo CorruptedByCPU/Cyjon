@@ -12,31 +12,41 @@
 
 struc	KERNEL
 	; variables of Kernel management functions
-	.cpu_count			resq	1
+	.cpu_count				resq	1
 
 	; variables of Input devices
-	.device_mouse_status	resb	1
-	.device_mouse_x		resw	1
-	.device_mouse_y		resw	1
-	.device_keyboard	resw	8	; cache size of 8 keys
+	.device_mouse_status			resb	1
+	.device_mouse_x				resw	1
+	.device_mouse_y				resw	1
+	.device_keyboard			resw	8	; cache size of 8 keys
 
 	; variables of Framebuffer management functions
-	.framebuffer_base_address	resq	1
-	.framebuffer_width_pixel	resw	1
-	.framebuffer_height_pixel	resw	1
-	.framebuffer_pitch_byte	resd	1
-	.framebuffer_pid		resq	1
+	.framebuffer_base_address		resq	1
+	.framebuffer_width_pixel		resw	1
+	.framebuffer_height_pixel		resw	1
+	.framebuffer_pitch_byte			resd	1
+	.framebuffer_pid			resq	1
+
+	; variables of GDT management functions
+.gdt_header:
+	.gdt_header_limit			resw	1
+	.gdt_header_base_address		resq	1
 
 	; variables of HPET management functions
-	; .hpet_base_address		resq	1
-	; .time_rtc			resq	1
+	; .hpet_base_address			resq	1
+
+
+
+
+
+
 
 	; variables of I/O APIC management functions
-	.io_apic_base_address		resq	1
+	.io_apic_base_address			resq	1
 
 	; variables of IPC management functions
-	.ipc_base_address		resq	1
-	.ipc_semaphore			resb	1
+	.ipc_base_address			resq	1
+	.ipc_semaphore				resb	1
 
 	; variables of LAPIC management functions
 	.lapic_base_address		resq	1
