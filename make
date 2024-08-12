@@ -20,7 +20,7 @@ clear
 git submodule update --init
 
 (cd limine && clang limine.c -o limine)
-(cd fern-night && make)
+(cd fern-night && ./make ${1} ${2})
 
 # check environment software, required!
 ENV=true

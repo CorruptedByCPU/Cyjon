@@ -1,0 +1,23 @@
+#!/bin/bash
+#=================================================================================
+# Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+#=================================================================================
+
+# default CPU count: 2
+SMP="${1}"
+if [ -z "${SMP}" ]; then SMP="2"; fi
+
+# default Memory amount: 64 MiB
+MEM="${2}"
+if [ -z "${MEM}" ]; then MEM="64"; fi
+
+# generate Bochs configuration file
+cp -f tools/linux.bxrc build/linux.bxrc
+sed -e "s|SMP|${SMP}|g" -i build/linux.bxrc
+sed -e "s|MEM|${MEM}|g" -i build/linux.bxrc
+
+# start Bochs Debugger with predefinied configuration file
+/opt/bochs-dbg/bin/bochs -f build/linux.bxrc -q -rc tools/bochs.rc
+
+# show debug output
+cat serial.log

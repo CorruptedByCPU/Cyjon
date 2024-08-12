@@ -283,9 +283,6 @@ kernel_idt_exception_security:
 ;-------------------------------------------------------------------------------
 ; void
 kernel_idt_exception:
-	; bochs breakpoint
-	xchg	bx,	bx
-
 	; keep original registers
 	push	rax
 	push	rbx
