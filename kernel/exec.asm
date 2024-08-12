@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -371,7 +371,7 @@ kernel_exec_configure:
 	;-----------------------------------------------------------------------
 
 	; assign memory space for binary memory map with same size as kernels
-	mov	rcx,	qword [r8 + KERNEL_STRUCTURE.page_limit]
+	mov	rcx,	qword [r8 + KERNEL.page_limit]
 	shr	rcx,	STATIC_DIVIDE_BY_8_shift	; 8 pages per Byte
 	add	rcx,	~STATIC_PAGE_mask	; align up to page boundaries
 	shr	rcx,	STATIC_PAGE_SIZE_shift	; convert to pages
@@ -385,7 +385,7 @@ kernel_exec_configure:
 
 	; fill memory map with available pages
 	mov	eax,	STATIC_MAX_unsigned
-	mov	rcx,	qword [r8 + KERNEL_STRUCTURE.page_limit]
+	mov	rcx,	qword [r8 + KERNEL.page_limit]
 	shr	rcx,	STATIC_DIVIDE_BY_32_shift	; 32 pages per chunk
 
 	; first 1 MiB is reserved for future devices mapping
@@ -409,7 +409,7 @@ kernel_exec_configure:
 
 	; map kernel space to process
 	mov	r15,	qword [kernel_environment_base_address]
-	mov	r15,	qword [r15 + KERNEL_STRUCTURE.page_base_address]
+	mov	r15,	qword [r15 + KERNEL.page_base_address]
 	call	kernel_page_merge
 
 	; restore executable space address
@@ -572,7 +572,7 @@ kernel_exec_load:
 	mov	r8,	qword [kernel_environment_base_address]
 
 	; get file properties
-	movzx	eax,	byte [r8 + KERNEL_STRUCTURE.storage_root_id]
+	movzx	eax,	byte [r8 + KERNEL.storage_root_id]
 	call	kernel_storage_file
 
 	; file exist?

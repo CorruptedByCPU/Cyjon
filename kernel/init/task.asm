@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -18,7 +18,7 @@ kernel_init_task:
 	call	kernel_memory_alloc
 
 	; save pointer to task queue
-	mov	qword [r8 + KERNEL_STRUCTURE.task_queue_address],	rdi
+	mov	qword [r8 + KERNEL.task_queue_address],	rdi
 
 	; properties of first job on queue which is the kernel of the system
 
@@ -26,11 +26,11 @@ kernel_init_task:
 	mov	word [rdi + KERNEL_TASK_STRUCTURE.flags], KERNEL_TASK_FLAG_secured
 
 	; entry paging array
-	mov	rax,	qword [r8 + KERNEL_STRUCTURE.page_base_address]
+	mov	rax,	qword [r8 + KERNEL.page_base_address]
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.cr3],	rax
 
 	; kernel memory map
-	mov	rax,	qword [r8 + KERNEL_STRUCTURE.memory_base_address]
+	mov	rax,	qword [r8 + KERNEL.memory_base_address]
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.memory_map],	rax
 
 	; remember pointer to first task in queue
@@ -57,7 +57,7 @@ kernel_init_task:
 
 	; assign space for task list and store it
 	call	kernel_memory_alloc
-	mov	qword [r8 + KERNEL_STRUCTURE.task_ap_address],	rdi
+	mov	qword [r8 + KERNEL.task_ap_address],	rdi
 
 	; mark in processor task list, BSP processor with its kernel task
 	call	kernel_lapic_id
@@ -71,7 +71,7 @@ kernel_init_task:
 	call	kernel_idt_update
 
 	; done, task registered
-	inc	qword [r8 + KERNEL_STRUCTURE.task_count]
+	inc	qword [r8 + KERNEL.task_count]
 
 	; restore original registers
 	pop	rdi

@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; void
@@ -17,7 +17,7 @@ kernel_init_hpet:
 
 	; configure Timer 2 as uptime counter
 	mov	rcx,	KERNEL_PAGE_mirror
-	add	rcx,	qword [rbx + KERNEL_STRUCTURE.hpet_base_address]
+	add	rcx,	qword [rbx + KERNEL.hpet_base_address]
 	add	rcx,	KERNEL_HPET_TIMER_offset + (KERNEL_HPET_STRUCTURE_TIMER.SIZE * 2)
 
 	; by default not configured
@@ -48,7 +48,7 @@ kernel_init_hpet:
 
 	; HPET controller registers
 	mov	rcx,	KERNEL_PAGE_mirror
-	add	rcx,	qword [rbx + KERNEL_STRUCTURE.hpet_base_address]
+	add	rcx,	qword [rbx + KERNEL.hpet_base_address]
 
 	; enable HPET controller
 	mov	rax,	qword [rcx + KERNEL_HPET_STRUCTURE_REGISTER.general_configuration]

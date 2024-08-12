@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -15,17 +15,17 @@ kernel_init_library:
 	call	kernel_memory_alloc
 
 	; save pointer to library list
-	mov	qword [r8 + KERNEL_STRUCTURE.library_base_address],	rdi
+	mov	qword [r8 + KERNEL.library_base_address],	rdi
 
 	; assign memory space for binary memory map with same size as kernels
-	mov	rcx,	qword [r8 + KERNEL_STRUCTURE.page_limit]
+	mov	rcx,	qword [r8 + KERNEL.page_limit]
 	shr	rcx,	STATIC_DIVIDE_BY_8_shift	; 8 pages per Byte
 	add	rcx,	~STATIC_PAGE_mask	; align up to page boundaries
 	shr	rcx,	STATIC_PAGE_SIZE_shift	; convert to pages
 	call	kernel_memory_alloc
 
 	; save pointer to library memory map
-	mov	qword [r8 + KERNEL_STRUCTURE.library_memory_map_address],	rdi
+	mov	qword [r8 + KERNEL.library_memory_map_address],	rdi
 
 	; fill memory map with available pages
 	mov	rax,	STATIC_MAX_unsigned

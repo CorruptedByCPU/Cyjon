@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -40,17 +40,17 @@ kernel_init_smp:
 
 .wait:
 	; wait for AP initialization
-	mov	rbx,	qword [r8 + KERNEL_STRUCTURE.cpu_count]
+	mov	rbx,	qword [r8 + KERNEL.cpu_count]
 	cmp	rbx,	qword [kernel_smp_count]
 	jne	.wait
 
 	; current AP have higest ID?
 	mov	ebx,	dword [rdi + LIMINE_SMP_INFO.lapic_id]
-	cmp	ebx,	dword [r8 + KERNEL_STRUCTURE.lapic_last_id]
+	cmp	ebx,	dword [r8 + KERNEL.lapic_last_id]
 	jb	.next	; no
 
 	; remember CPU ID
-	mov	dword [r8 + KERNEL_STRUCTURE.lapic_last_id],	ebx
+	mov	dword [r8 + KERNEL.lapic_last_id],	ebx
 
 	; next AP from list
 	jmp	.next

@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ; align routine to full address
 align	0x08,	db	0x00
@@ -41,12 +41,12 @@ kernel_task:
 	mov	r8,	qword [kernel_environment_base_address]
 
 	; retrieve CPU ID from LAPIC
-	mov	rbx,	qword [r8 + KERNEL_STRUCTURE.lapic_base_address]
+	mov	rbx,	qword [r8 + KERNEL.lapic_base_address]
 	mov	ebx,	dword [rbx + KERNEL_LAPIC_STRUCTURE.id]
 	shr	ebx,	24	; move ID at a begining of EAX register
 
 	; get pointer to current task of AP
-	mov	r9,	qword [r8 + KERNEL_STRUCTURE.task_ap_address]
+	mov	r9,	qword [r8 + KERNEL.task_ap_address]
 	mov	r10,	qword [r9 + rbx * STATIC_PTR_SIZE_byte]
 
 	;=======================================================================
@@ -59,7 +59,7 @@ kernel_task:
 	jnz	.ok
 
 	; set initial task as closed
-	mov	r10,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
+	mov	r10,	qword [r8 + KERNEL.task_queue_address]
 	;=======================================================================
 
 .ok:
@@ -75,7 +75,7 @@ kernel_task:
 .lock:
 	; request an exclusive access
 	mov	al,	LOCK
-	xchg	byte [r8 + KERNEL_STRUCTURE.task_cpu_semaphore],	al
+	xchg	byte [r8 + KERNEL.task_cpu_semaphore],	al
 
 	; assigned?
 	test	al,	al
@@ -87,7 +87,7 @@ kernel_task:
 	mul	rcx
 
 	; set queue limit pointer
-	add	rax,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
+	add	rax,	qword [r8 + KERNEL.task_queue_address]
 
 .next:
 	; move pointer to next task in queue
@@ -98,7 +98,7 @@ kernel_task:
 	jb	.check	; no
 
 	; start searching from beginning
-	mov	r10,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
+	mov	r10,	qword [r8 + KERNEL.task_queue_address]
 
 .check:
 	; task is active? (close etc.)
@@ -107,7 +107,7 @@ kernel_task:
 
 	; a dormant task?
 	mov	rdx,	qword [r10 + KERNEL_TASK_STRUCTURE.sleep]
-	cmp	rdx,	qword [r8 + KERNEL_STRUCTURE.hpet_microtime]
+	cmp	rdx,	qword [r8 + KERNEL.time_rtc]
 	ja	.next	; yes
 
 	; task can be executed?
@@ -118,7 +118,7 @@ kernel_task:
 	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_exec
 
 	; release access
-	mov	byte [r8 + KERNEL_STRUCTURE.task_cpu_semaphore],	UNLOCK
+	mov	byte [r8 + KERNEL.task_cpu_semaphore],	UNLOCK
 
 	;-----------------------------------------------------------------------
 	; [RESTORE]
@@ -173,7 +173,7 @@ kernel_task:
 
 .ready:
 	; reload CPU cycle counter in APIC controller
-	mov	rax,	qword [r8 + KERNEL_STRUCTURE.lapic_base_address]
+	mov	rax,	qword [r8 + KERNEL.lapic_base_address]
 	mov	dword [rax + KERNEL_LAPIC_STRUCTURE.tic],	KERNEL_LAPIC_Hz
 
 	; accept current interrupt call
@@ -224,12 +224,12 @@ kernel_task_add:
 
 	; search for free entry from beginning
 	mov	rax,	KERNEL_TASK_limit
-	mov	r10,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
+	mov	r10,	qword [r8 + KERNEL.task_queue_address]
 
 .lock:
 	; request an exclusive access
 	mov	al,	LOCK
-	xchg	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	al
+	xchg	byte [r8 + KERNEL.task_queue_semaphore],	al
 
 .loop:
 	; free queue entry?
@@ -281,11 +281,11 @@ kernel_task_add:
 	mov	byte [rdi],	STATIC_ASCII_TERMINATOR
 
 	; number of tasks inside queue
-	inc	qword [r8 + KERNEL_STRUCTURE.task_count]
+	inc	qword [r8 + KERNEL.task_count]
 
 .end:
 	; release access
-	mov	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	UNLOCK
+	mov	byte [r8 + KERNEL.task_queue_semaphore],	UNLOCK
 
 	; restore original registers
 	pop	r8
@@ -314,7 +314,7 @@ kernel_task_by_id:
 
 	; search for free entry from beginning
 	mov	rcx,	KERNEL_TASK_limit
-	mov	rbx,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
+	mov	rbx,	qword [r8 + KERNEL.task_queue_address]
 
 .loop:
 	; our task we are looking for?
@@ -357,7 +357,7 @@ kernel_task_active:
 
 	; set pointer to current task of CPU
 	mov	r9,	qword [kernel_environment_base_address]
-	mov	r9,	qword [r9 + KERNEL_STRUCTURE.task_ap_address]
+	mov	r9,	qword [r9 + KERNEL.task_ap_address]
 	mov	r9,	qword [r9 + rax * STATIC_PTR_SIZE_byte]
 
 	; restore original flags
@@ -378,10 +378,10 @@ kernel_task_id_new:
 	mov	r8,	qword [kernel_environment_base_address]
 
 	; generate new ID :D
-	inc	qword [r8 + KERNEL_STRUCTURE.task_id]
+	inc	qword [r8 + KERNEL.task_id]
 
 	; new ID
-	mov	rax,	qword [r8 + KERNEL_STRUCTURE.task_id]
+	mov	rax,	qword [r8 + KERNEL.task_id]
 
 	; restore original registers
 	pop	r8
@@ -426,7 +426,7 @@ kernel_task_pid:
 
 	; set pointer to current task of CPU
 	mov	r8,	qword [kernel_environment_base_address]
-	mov	r8,	qword [r8 + KERNEL_STRUCTURE.task_ap_address]
+	mov	r8,	qword [r8 + KERNEL.task_ap_address]
 	mov	r8,	qword [r8 + rax * STATIC_PTR_SIZE_byte]
 	mov	rax,	qword [r8 + KERNEL_TASK_STRUCTURE.pid]
 

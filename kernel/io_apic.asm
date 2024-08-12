@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;===============================================================================
 ; in:
@@ -14,7 +14,7 @@ kernel_io_apic_connect:
 
 	; kernel environment variables/rountines base address
 	mov	rdi,	qword [kernel_environment_base_address]
-	mov	rdi,	qword [rdi + KERNEL_STRUCTURE.io_apic_base_address]
+	mov	rdi,	qword [rdi + KERNEL.io_apic_base_address]
 
 	; inside lower half of register
 	add	ebx,	KERNEL_IO_APIC_iowin_low

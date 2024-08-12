@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; void
@@ -12,7 +12,7 @@ kernel_hpet_irq:
 	mov	rax,	qword [kernel_environment_base_address]
 
 	; increment microtime counter
-	inc	qword [rax + KERNEL_STRUCTURE.hpet_microtime]
+	inc	qword [rax + KERNEL.time_rtc]
 
 	; accept this interrupt
 	call	kernel_lapic_accept

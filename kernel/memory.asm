@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -20,14 +20,14 @@ kernel_memory_alloc:
 .lock:
 	; request an exclusive access
 	mov	al,	LOCK
-	xchg	byte [r8 + KERNEL_STRUCTURE.memory_semaphore],	al
+	xchg	byte [r8 + KERNEL.memory_semaphore],	al
 
 	; assigned?
 	test	al,	al
 	jnz	.lock	; no
 
 	; start searching from first page of binary memory map
-	mov	r9,	qword [r8 + KERNEL_STRUCTURE.memory_base_address]
+	mov	r9,	qword [r8 + KERNEL.memory_base_address]
 	call	kernel_memory_acquire
 	jc	.end	; no enough memory
 
@@ -36,11 +36,11 @@ kernel_memory_alloc:
 	add	rdi,	qword [kernel_page_mirror]
 
 	; less memory available
-	sub	qword [r8 + KERNEL_STRUCTURE.page_available],	rcx
+	sub	qword [r8 + KERNEL.page_available],	rcx
 
 .end:
 	; release access
-	mov	byte [r8 + KERNEL_STRUCTURE.memory_semaphore],	UNLOCK
+	mov	byte [r8 + KERNEL.memory_semaphore],	UNLOCK
 
 	; restore original registers
 	pop	r9
@@ -116,7 +116,7 @@ kernel_memory_acquire:
 	je	.found	; yes
 
 	; end of binary memory map?
-	cmp	rax,	qword [r8 + KERNEL_STRUCTURE.page_limit]
+	cmp	rax,	qword [r8 + KERNEL.page_limit]
 	je	.error	; yes
 
 	; conitnue search
@@ -178,7 +178,7 @@ kernel_memory_release:
 	mov	rcx,	qword [kernel_environment_base_address]
 
 	; put page back to binary memory map
-	mov	rdi,	qword [rcx + KERNEL_STRUCTURE.memory_base_address]
+	mov	rdi,	qword [rcx + KERNEL.memory_base_address]
 
 .page:
 	; release first page of space
@@ -191,7 +191,7 @@ kernel_memory_release:
 
 	; released RSI pages
 	mov	rsi,	qword [rsp]
-	add	qword [rcx + KERNEL_STRUCTURE.page_available],	rsi
+	add	qword [rcx + KERNEL.page_available],	rsi
 
 	; restore original registers
 	pop	rsi

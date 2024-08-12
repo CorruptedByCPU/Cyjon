@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -10,6 +10,7 @@ kernel_init_acpi:
 	push	rax
 	push	rbx
 	push	rcx
+	push	rdx
 	push	rsi
 	push	rdi
 
@@ -108,7 +109,7 @@ kernel_init_acpi:
 
 .acpi_end:
 	; LAPIC controller is available?
-	cmp	qword [r8 + KERNEL_STRUCTURE.lapic_base_address],	EMPTY
+	cmp	qword [r8 + KERNEL.lapic_base_address],	EMPTY
 	je	.error	; no
 
 	; show information about LAPIC
@@ -116,14 +117,14 @@ kernel_init_acpi:
 	mov	rsi,	kernel_acpi_lapic
 	call	driver_serial_string
 	mov	rax,	KERNEL_PAGE_mirror
-	add	rax,	qword [r8 + KERNEL_STRUCTURE.lapic_base_address]
+	add	rax,	qword [r8 + KERNEL.lapic_base_address]
 	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
 	xor	ecx,	ecx	; no prefix
 	xor	dl,	dl	; value unsigned
 	call	driver_serial_value
 
 	; I/O APIC controller is available?
-	cmp	qword [r8 + KERNEL_STRUCTURE.io_apic_base_address],	EMPTY
+	cmp	qword [r8 + KERNEL.io_apic_base_address],	EMPTY
 	je	.error	; no
 
 	; show information about I/O APIC
@@ -131,29 +132,30 @@ kernel_init_acpi:
 	mov	rsi,	kernel_acpi_io_apic
 	call	driver_serial_string
 	mov	rax,	KERNEL_PAGE_mirror
-	add	rax,	qword [r8 + KERNEL_STRUCTURE.io_apic_base_address]
+	add	rax,	qword [r8 + KERNEL.io_apic_base_address]
 	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
 	xor	ecx,	ecx	; no prefix
 	call	driver_serial_value
 
-	; HPET controller is available?
-	cmp	qword [r8 + KERNEL_STRUCTURE.hpet_base_address],	EMPTY
-	je	.error	; no
+	; ; HPET controller is available?
+	; cmp	qword [r8 + KERNEL.hpet_base_address],	EMPTY
+	; je	.error	; no
 
-	; show information about LAPIC
-	mov	ecx,	kernel_acpi_hpet_end - kernel_acpi_hpet
-	mov	rsi,	kernel_acpi_hpet
-	call	driver_serial_string
-	mov	rax,	KERNEL_PAGE_mirror
-	add	rax,	qword [r8 + KERNEL_STRUCTURE.hpet_base_address]
-	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
-	xor	ecx,	ecx	; no prefix
-	xor	dl,	dl	; value unsigned
-	call	driver_serial_value
+	; ; show information about HPET
+	; mov	ecx,	kernel_acpi_hpet_end - kernel_acpi_hpet
+	; mov	rsi,	kernel_acpi_hpet
+	; call	driver_serial_string
+	; mov	rax,	KERNEL_PAGE_mirror
+	; add	rax,	qword [r8 + KERNEL.hpet_base_address]
+	; mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
+	; xor	ecx,	ecx	; no prefix
+	; xor	dl,	dl	; value unsigned
+	; call	driver_serial_value
 
 	; restore original registers
 	pop	rdi
 	pop	rsi
+	pop	rdx
 	pop	rcx
 	pop	rbx
 	pop	rax
@@ -170,20 +172,20 @@ kernel_init_acpi:
 	cmp	dword [rsi + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.signature],	KERNEL_INIT_ACPI_MADT_signature
 	je	.madt	; yes
 
-	; header of HPET (High Presision Event Timer)?
-	cmp	dword [rsi + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.signature],	KERNEL_INIT_ACPI_HPET_signature
-	je	.hpet	; yes
+	; ; header of HPET (High Presision Event Timer)?
+	; cmp	dword [rsi + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.signature],	KERNEL_INIT_ACPI_HPET_signature
+	; je	.hpet	; yes
 
 	; return from subroutine
 	ret
 
-.hpet:
-	; store HPET base address
-	mov	rax,	qword [rsi + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.SIZE + KERNEL_INIT_ACPI_STRUCTURE_HPET.base_address]
-	mov	qword [r8 + KERNEL_STRUCTURE.hpet_base_address],	rax
+; .hpet:
+; 	; store HPET base address
+; 	mov	rax,	qword [rsi + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.SIZE + KERNEL_INIT_ACPI_STRUCTURE_HPET.base_address]
+; 	mov	qword [r8 + KERNEL.hpet_base_address],	rax
 
-	; return from subroutine
-	ret
+; 	; return from subroutine
+; 	ret
 
 .madt:
 	; preserve original registers
@@ -193,7 +195,7 @@ kernel_init_acpi:
 
 	; store LAPIC base address
 	mov	eax,	dword [rsi + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.SIZE + KERNEL_INIT_ACPI_STRUCTURE_MADT.lapic_address]
-	mov	dword [r8 + KERNEL_STRUCTURE.lapic_base_address],	eax
+	mov	dword [r8 + KERNEL.lapic_base_address],	eax
 
 	; length of MADT table in entries
 	mov	ecx,	dword [rsi + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.length]
@@ -231,7 +233,7 @@ kernel_init_acpi:
 
 	; store I/O APIC base address
 	mov	eax,	dword [rsi + KERNEL_INIT_ACPI_STRUCTURE_IO_APIC.base_address]
-	mov	dword [r8 + KERNEL_STRUCTURE.io_apic_base_address],	eax
+	mov	dword [r8 + KERNEL.io_apic_base_address],	eax
 
 	; continue
 	jmp	.madt_next

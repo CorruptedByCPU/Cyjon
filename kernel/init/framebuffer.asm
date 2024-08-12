@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -37,19 +37,19 @@ kernel_init_framebuffer:
 
 	; base address
 	mov	rax,	qword [rsi + LIMINE_FRAMEBUFFER.address]
-	mov	qword [r8 + KERNEL_STRUCTURE.framebuffer_base_address],	rax
+	mov	qword [r8 + KERNEL.framebuffer_base_address],	rax
 
 	; width in pixels
 	mov	ax,	word [rsi + LIMINE_FRAMEBUFFER.width]
-	mov	word [r8 + KERNEL_STRUCTURE.framebuffer_width_pixel],	ax
+	mov	word [r8 + KERNEL.framebuffer_width_pixel],	ax
 
 	; height in pixels
 	mov	ax,	word [rsi + LIMINE_FRAMEBUFFER.height]
-	mov	word [r8 + KERNEL_STRUCTURE.framebuffer_height_pixel],	ax
+	mov	word [r8 + KERNEL.framebuffer_height_pixel],	ax
 
 	; scanline in Bytes
 	mov	eax,	dword [rsi + LIMINE_FRAMEBUFFER.pitch]
-	mov	dword [r8 + KERNEL_STRUCTURE.framebuffer_scanline_byte],	eax
+	mov	dword [r8 + KERNEL.framebuffer_pitch_byte],	eax
 
 	; restore original registers
 	pop	rsi

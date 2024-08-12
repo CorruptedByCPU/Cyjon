@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -17,7 +17,7 @@ kernel_init_stream:
 	call	kernel_memory_alloc
 
 	; save it
-	mov	qword [r8 + KERNEL_STRUCTURE.stream_base_address],	rdi
+	mov	qword [r8 + KERNEL.stream_base_address],	rdi
 
 	; prepare streams for kernel process
 	call	kernel_stream
@@ -31,7 +31,7 @@ kernel_init_stream:
 	mov	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out],	rsi
 
 	; share stream functions with daemons
-	mov	qword [r8 + KERNEL_STRUCTURE.stream_release],	kernel_stream_release
+	mov	qword [r8 + KERNEL.stream_release],	kernel_stream_release
 
 	; restore original registers
 	pop	r9

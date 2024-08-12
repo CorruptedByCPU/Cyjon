@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -69,15 +69,15 @@ kernel_init_free:
 .lock:
 	; request an exclusive access
 	mov	dl,	LOCK
-	xchg	byte [r8 + KERNEL_STRUCTURE.memory_semaphore],	dl
+	xchg	byte [r8 + KERNEL.memory_semaphore],	dl
 
 	; assigned?
 	test	dl,	dl
 	jnz	.lock	; no
 
 	; extend binary memory map of those area pages
-	add	qword [r8 + KERNEL_STRUCTURE.page_total],	rcx
-	add	qword [r8 + KERNEL_STRUCTURE.page_available],	rcx
+	add	qword [r8 + KERNEL.page_total],	rcx
+	add	qword [r8 + KERNEL.page_available],	rcx
 
 	; amount of freed up pages
 	add	rax,	rcx
@@ -98,7 +98,7 @@ kernel_init_free:
 	jnz	.register	; no
 
 	; release access
-	mov	byte [r8 + KERNEL_STRUCTURE.memory_semaphore],	UNLOCK
+	mov	byte [r8 + KERNEL.memory_semaphore],	UNLOCK
 
 	; next area from array
 	jmp	.area

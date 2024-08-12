@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -20,7 +20,7 @@ kernel_vfs_init:
 	mov	rcx,	KERNEL_STORAGE_limit
 
 	; devices list base address
-	mov	rax,	qword [r8 + KERNEL_STRUCTURE.storage_base_address]
+	mov	rax,	qword [r8 + KERNEL.storage_base_address]
 
 .storage:
 	; no more devices?
@@ -47,7 +47,7 @@ kernel_vfs_init:
 	mov	rbp,	rsp	; pointer of file descriptor
 
 	; change storage pointer to ID
-	sub	rax,	qword [r8 + KERNEL_STRUCTURE.storage_base_address]
+	sub	rax,	qword [r8 + KERNEL.storage_base_address]
 	shr	rax,	KERNEL_STORAGE_STRUCTURE_SIZE_shift
 
 	; search for "welcome.txt" file on storage device
@@ -76,7 +76,7 @@ kernel_vfs_init:
 
 	; preserve home storage id
 	shr	rax,	KERNEL_STORAGE_STRUCTURE_SIZE_shift
-	mov	qword [r8 + KERNEL_STRUCTURE.storage_home_id],	rax
+	mov	qword [r8 + KERNEL.storage_home_id],	rax
 
 	; initialize VFS storage
 	call	lib_vfs_init

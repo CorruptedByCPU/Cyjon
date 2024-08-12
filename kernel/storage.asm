@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -22,7 +22,7 @@ kernel_storage_file:
 	mov	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
 
 	; stograge base address
-	mov	r10,	qword [r8 + KERNEL_STRUCTURE.storage_base_address]
+	mov	r10,	qword [r8 + KERNEL.storage_base_address]
 
 	; device ID overflow?
 	cmp	rax,	KERNEL_STORAGE_limit
@@ -64,7 +64,7 @@ kernel_storage_read:
 	mov	r8,	qword [kernel_environment_base_address]
 
 	; stograge base address
-	mov	r10,	qword [r8 + KERNEL_STRUCTURE.storage_base_address]
+	mov	r10,	qword [r8 + KERNEL.storage_base_address]
 
 	; device ID overflow?
 	cmp	rax,	KERNEL_STORAGE_limit
@@ -106,7 +106,7 @@ kernel_storage_register:
 	mov	rcx,	KERNEL_STORAGE_limit
 
 	; base address of device list
-	mov	rdi,	qword [r8 + KERNEL_STRUCTURE.storage_base_address]
+	mov	rdi,	qword [r8 + KERNEL.storage_base_address]
 
 .next:
 	; free device slot?

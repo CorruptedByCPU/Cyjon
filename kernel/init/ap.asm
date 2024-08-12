@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 kernel_init_ap:
@@ -19,7 +19,7 @@ kernel_init_ap:
 
 	; switch to new kernel paging array
 	mov	rax,	~KERNEL_PAGE_mirror	; physical address
-	and	rax,	qword [r8 + KERNEL_STRUCTURE.page_base_address]
+	and	rax,	qword [r8 + KERNEL.page_base_address]
 	mov	cr3,	rax
 
 	;-----
@@ -140,11 +140,11 @@ kernel_init_ap:
 
 	; set task in queue being processed by AP
 	call	kernel_lapic_id
-	push	qword [r8 + KERNEL_STRUCTURE.task_queue_address]	; by default: kernel
+	push	qword [r8 + KERNEL.task_queue_address]	; by default: kernel
 
 	; insert into task cpu list at AP position
 	shl	rax,	STATIC_MULTIPLE_BY_8_shift
-	add	rax,	qword [r8 + KERNEL_STRUCTURE.task_ap_address]
+	add	rax,	qword [r8 + KERNEL.task_ap_address]
 	pop	qword [rax]
 
 	;-------
@@ -161,7 +161,7 @@ kernel_init_ap:
 	call	kernel_lapic_accept
 
 	; AP initialized
-	inc	qword [r8 + KERNEL_STRUCTURE.cpu_count]
+	inc	qword [r8 + KERNEL.cpu_count]
 
 	; enable interrupt handling
 	sti

@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 	;-----------------------------------------------------------------------
 	; structures, definitions
@@ -19,7 +19,7 @@
 	%include	"kernel/config.inc"
 	%include	"kernel/exec.inc"
 	%include	"kernel/gdt.inc"
-	%include	"kernel/hpet.inc"
+	; %include	"kernel/hpet.inc"
 	%include	"kernel/idt.inc"
 	%include	"kernel/io_apic.inc"
 	%include	"kernel/ipc.inc"
@@ -70,7 +70,7 @@ section .text
 	%include	"kernel/driver/serial.asm"
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/exec.asm"
-	%include	"kernel/hpet.asm"
+	; %include	"kernel/hpet.asm"
 	%include	"kernel/idt.asm"
 	%include	"kernel/io_apic.asm"
 	%include	"kernel/lapic.asm"
@@ -78,6 +78,7 @@ section .text
 	%include	"kernel/log.asm"
 	%include	"kernel/memory.asm"
 	%include	"kernel/page.asm"
+	%include	"kernel/rtc.asm"
 	%include	"kernel/service.asm"
 	%include	"kernel/storage.asm"
 	%include	"kernel/stream.asm"
@@ -92,12 +93,13 @@ section .text
 	%include	"kernel/init/framebuffer.asm"
 	%include	"kernel/init/free.asm"
 	%include	"kernel/init/gdt.asm"
-	%include	"kernel/init/hpet.asm"
+	; %include	"kernel/init/hpet.asm"
 	%include	"kernel/init/idt.asm"
 	%include	"kernel/init/ipc.asm"
 	%include	"kernel/init/library.asm"
 	%include	"kernel/init/memory.asm"
 	%include	"kernel/init/page.asm"
+	%include	"kernel/init/rtc.asm"
 	%include	"kernel/init/smp.asm"
 	%include	"kernel/init/storage.asm"
 	%include	"kernel/init/stream.asm"
@@ -122,7 +124,7 @@ init:
 	call	kernel_init_memory
 
 	; share Log functions with daemons
-	mov	qword [r8 + KERNEL_STRUCTURE.log],	kernel_log
+	mov	qword [r8 + KERNEL.log],	kernel_log
 
 	; store information about framebuffer properties
 	call	kernel_init_framebuffer
@@ -135,7 +137,7 @@ init:
 
 	; switch to new kernel paging array
 	mov	rax,	~KERNEL_PAGE_mirror	; physical address
-	and	rax,	qword [r8 + KERNEL_STRUCTURE.page_base_address]
+	and	rax,	qword [r8 + KERNEL.page_base_address]
 	mov	cr3,	rax
 
 	; set new stack pointer
@@ -153,11 +155,11 @@ init:
 	; prepare stream cache
 	call	kernel_init_stream
 
-	; configure Real Time Clock
-	call	driver_rtc
+	; configure RTC
+	call	kernel_init_rtc
 
 	; configure HPET controller
-	call	kernel_init_hpet
+	; call	kernel_init_hpet
 
 	; initialize PS2 keyboard/mouse driver
 	call	driver_ps2

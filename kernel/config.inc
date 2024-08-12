@@ -1,36 +1,35 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 %define	KERNEL_name			"Cyjon"
 %define	KERNEL_version			"0"
-%define	KERNEL_revision			"2166"
+%define	KERNEL_revision			"2167"
 %define	KERNEL_architecture		"x86_64"
 %define	KERNEL_language			"Assembly"
 
 %define	KERNEL_BASE_location		0xFFFFFFFF80000000
 
-struc	KERNEL_STRUCTURE
-	; variables of SMP Management functions
+struc	KERNEL
+	; variables of Kernel management functions
 	.cpu_count			resq	1
 
-	; variables of PS2 controller management functions
-	.driver_ps2_mouse_x		resw	1
-	.driver_ps2_mouse_y		resw	1
-	.driver_ps2_mouse_x_absolute	resq	1
-	.driver_ps2_mouse_y_absolute	resq	1
-	.driver_ps2_mouse_status	resb	1
+	; variables of Input devices
+	.device_mouse_status	resb	1
+	.device_mouse_x		resw	1
+	.device_mouse_y		resw	1
+	.device_keyboard	resw	8	; cache size of 8 keys
 
 	; variables of Framebuffer management functions
 	.framebuffer_base_address	resq	1
 	.framebuffer_width_pixel	resw	1
 	.framebuffer_height_pixel	resw	1
-	.framebuffer_scanline_byte	resd	1
+	.framebuffer_pitch_byte	resd	1
 	.framebuffer_pid		resq	1
 
 	; variables of HPET management functions
-	.hpet_base_address		resq	1
-	.hpet_microtime			resq	1
+	; .hpet_base_address		resq	1
+	; .time_rtc			resq	1
 
 	; variables of I/O APIC management functions
 	.io_apic_base_address		resq	1
@@ -83,6 +82,10 @@ struc	KERNEL_STRUCTURE
 	.task_id			resq	1
 	.task_count			resq	1
 	.task_cpu_semaphore		resb	1
+
+	; variables of Time management functions
+	.time_rdtsc			resq	1
+	.time_rtc			resq	1
 
 	; length of this structure in Bytes
 	.SIZE:

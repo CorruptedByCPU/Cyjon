@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -28,7 +28,7 @@ kernel_init_storage:
 	call	kernel_memory_alloc
 
 	; save pointer to storage list
-	mov	qword [r8 + KERNEL_STRUCTURE.storage_base_address],	rdi
+	mov	qword [r8 + KERNEL.storage_base_address],	rdi
 
 	; pointer of modules response structure
 	mov	rbx,	qword [kernel_limine_module_request + LIMINE_MODULE_REQUEST.response]
@@ -90,7 +90,7 @@ kernel_init_storage:
 	mov	rcx,	KERNEL_STORAGE_limit
 
 	; devices list base address
-	mov	rax,	qword [r8 + KERNEL_STRUCTURE.storage_base_address]
+	mov	rax,	qword [r8 + KERNEL.storage_base_address]
 
 .storage:
 	; no more devices?
@@ -117,7 +117,7 @@ kernel_init_storage:
 	mov	rbp,	rsp	; pointer of file descriptor
 
 	; change storage pointer to ID
-	sub	rax,	qword [r8 + KERNEL_STRUCTURE.storage_base_address]
+	sub	rax,	qword [r8 + KERNEL.storage_base_address]
 	shr	rax,	KERNEL_STORAGE_STRUCTURE_SIZE_shift
 
 	; search for "init" file on storage device

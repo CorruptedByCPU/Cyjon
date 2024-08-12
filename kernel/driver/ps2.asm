@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ; information for linker
 section	.data
@@ -329,14 +329,14 @@ driver_ps2:
 	; even if there is no mouse, set its default position for Window Manager
 
 	; X axis
-	mov	ax,	word [r8 + KERNEL_STRUCTURE.framebuffer_width_pixel]
+	mov	ax,	word [r8 + KERNEL.framebuffer_width_pixel]
 	shr	ax,	STATIC_DIVIDE_BY_2_shift
-	mov	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x],	ax
+	mov	word [r8 + KERNEL.device_mouse_x],	ax
 
 	; Y axis
-	mov	ax,	word [r8 + KERNEL_STRUCTURE.framebuffer_height_pixel]
+	mov	ax,	word [r8 + KERNEL.framebuffer_height_pixel]
 	shr	ax,	STATIC_DIVIDE_BY_2_shift
-	mov	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y],	ax
+	mov	word [r8 + KERNEL.device_mouse_y],	ax
 
 	; restore original registers
 	pop	r8
@@ -481,7 +481,7 @@ driver_ps2_keyboard_key_read:
 
 	; only framebuffer is allowed
 	mov	r9,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
-	cmp	r9,	qword [rsi + KERNEL_STRUCTURE.framebuffer_pid]
+	cmp	r9,	qword [rsi + KERNEL.framebuffer_pid]
 	jne	.end	; not allowed
 
 .lock:
@@ -600,7 +600,7 @@ driver_ps2_mouse:
 	inc	byte [driver_ps2_mouse_packet_id]
 
 	; save mouse status
-	mov	byte [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_status],	al
+	mov	byte [r8 + KERNEL.device_mouse_status],	al
 
 	; interrupt end
 	jmp	.end
@@ -614,7 +614,7 @@ driver_ps2_mouse:
 	inc	byte [driver_ps2_mouse_packet_id]
 
 	; value with sign?
-	mov	cl,	byte [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_status]
+	mov	cl,	byte [r8 + KERNEL.device_mouse_status]
 	test	cl,	DRIVER_PS2_DEVICE_MOUSE_PACKET_X_SIGNED
 	jz	.x_unsigned	; no
 
@@ -623,67 +623,67 @@ driver_ps2_mouse:
 	not	al
 
 	; calculate absolute position
-	sub	qword [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x_absolute],	rax
+	; sub	qword [r8 + KERNEL.device_mouse_x_absolute],	rax
 
 	; set new pointer position
-	sub	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x],	ax
+	sub	word [r8 + KERNEL.device_mouse_x],	ax
 	jns	.end
 
 	; overflow, correct a position
-	mov	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x],	EMPTY
+	mov	word [r8 + KERNEL.device_mouse_x],	EMPTY
 
 	; interrupt end
 	jmp	.end
 
 .x_unsigned:
 	; retrieve framebuffer limit of X axis
-	mov	cx,	word [r8 + KERNEL_STRUCTURE.framebuffer_width_pixel]
+	mov	cx,	word [r8 + KERNEL.framebuffer_width_pixel]
 	dec	cx
 
 	; calculate absolute position
-	add	qword [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x_absolute],	rax
+	; add	qword [r8 + KERNEL.device_mouse_x_absolute],	rax
 
 	; set new pointer position
-	add	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x],	ax
+	add	word [r8 + KERNEL.device_mouse_x],	ax
 	js	.x_overflow	; strange...
 
 	; outside of framebuffer properties
-	cmp	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x],	cx
+	cmp	word [r8 + KERNEL.device_mouse_x],	cx
 	jbe	.end	; inside scope
 
 .x_overflow:
 	; overflow, correct a position
-	mov	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x],	cx
+	mov	word [r8 + KERNEL.device_mouse_x],	cx
 
 	; interrupt end
 	jmp	.end
 
 .y:
 	; value with sign?
-	mov	cl,	byte [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_status]
+	mov	cl,	byte [r8 + KERNEL.device_mouse_status]
 	test	cl,	DRIVER_PS2_DEVICE_MOUSE_PACKET_Y_SIGNED
 	jnz	.y_signed	; yes
 
 	; retrieve framebuffer limit of X axis
-	mov	cx,	word [r8 + KERNEL_STRUCTURE.framebuffer_height_pixel]
+	mov	cx,	word [r8 + KERNEL.framebuffer_height_pixel]
 	dec	cx
 
 	; calculate absolute position
-	sub	qword [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y_absolute],	rax
+	; sub	qword [r8 + KERNEL.device_mouse_y_absolute],	rax
 
 	; set new pointer position
-	sub	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y],	ax
+	sub	word [r8 + KERNEL.device_mouse_y],	ax
 	jns	.reset
 
 	; overflow, correct a position
-	mov	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y],	EMPTY
+	mov	word [r8 + KERNEL.device_mouse_y],	EMPTY
 
 	; interrupt end
 	jmp	.reset
 
 .y_signed:
 	; retrieve framebuffer limit of X axis
-	mov	cx,	word [r8 + KERNEL_STRUCTURE.framebuffer_height_pixel]
+	mov	cx,	word [r8 + KERNEL.framebuffer_height_pixel]
 	dec	cx
 
 	; convert to absolute value
@@ -691,19 +691,19 @@ driver_ps2_mouse:
 	not	al
 
 	; calculate absolute position
-	add	qword [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y_absolute],	rax
+	; add	qword [r8 + KERNEL.device_mouse_y_absolute],	rax
 
 	; set new pointer position
-	add	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y],	ax
+	add	word [r8 + KERNEL.device_mouse_y],	ax
 	js	.y_overflow	; strange...
 
 	; outside of framebuffer properties
-	cmp	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y],	cx
+	cmp	word [r8 + KERNEL.device_mouse_y],	cx
 	jbe	.reset	; inside scope
 
 .y_overflow:
 	; overflow, correct a position
-	mov	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y],	cx
+	mov	word [r8 + KERNEL.device_mouse_y],	cx
 
 .reset:
 	; reset status byte

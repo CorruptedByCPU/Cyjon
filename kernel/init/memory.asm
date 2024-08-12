@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; out:
@@ -74,13 +74,13 @@ kernel_init_memory:
 	mov	r8,	qword [kernel_environment_base_address]
 
 	; place binary memory map after kernel environment variables/rountines (aligned to page boundaries)
-	mov	r9,	KERNEL_STRUCTURE.SIZE
+	mov	r9,	KERNEL.SIZE
 	add	r9,	~STATIC_PAGE_mask
 	and	r9,	STATIC_PAGE_mask
 	add	r9,	r8
 
 	; store pointer inside kernel environment
-	mov	qword [r8 + KERNEL_STRUCTURE.memory_base_address],	r9
+	mov	qword [r8 + KERNEL.memory_base_address],	r9
 
 	;-----------------------------------------------------------------------
 	; next we will register every area marked as LIMINE_MEMMAP_USABLE
@@ -108,15 +108,15 @@ kernel_init_memory:
 	; length of binary memory map in pages (and available too)
 	mov	rcx,	qword [rdi + LIMINE_MEMMAP_ENTRY.length]
 	shr	rcx,	STATIC_PAGE_SIZE_shift
-	add	qword [r8 + KERNEL_STRUCTURE.page_total],	rcx
-	add	qword [r8 + KERNEL_STRUCTURE.page_available],	rcx
+	add	qword [r8 + KERNEL.page_total],	rcx
+	add	qword [r8 + KERNEL.page_available],	rcx
 
 	; limine assures us that all entries are sorted by addresses (ascending)
 	; so we can and need to store the address of the end of farthest entry in memory
 	; of those types to calculate size of binary memory map
 	mov	rax,	qword [rdi + LIMINE_MEMMAP_ENTRY.base]
 	add	rax,	qword [rdi + LIMINE_MEMMAP_ENTRY.length]
-	mov	qword [r8 + KERNEL_STRUCTURE.page_limit],	rax
+	mov	qword [r8 + KERNEL.page_limit],	rax
 
 	; first page number of area
 	mov	rax,	qword [rdi + LIMINE_MEMMAP_ENTRY.base]
@@ -142,7 +142,7 @@ kernel_init_memory:
 	jne	.usable	; no
 
 	; convert preserved end address of last entry to binary memory map limit in pages
-	shr	qword [r8 + KERNEL_STRUCTURE.page_limit], STATIC_PAGE_SIZE_shift
+	shr	qword [r8 + KERNEL.page_limit], STATIC_PAGE_SIZE_shift
 
 	;-----------------------------------------------------------------------
 	; some of those registered pages are already used, and You know by who...
@@ -158,7 +158,7 @@ kernel_init_memory:
 	; length of unavailable space in pages
 
 	; length of binary memory map in Bytes
-	mov	rcx,	qword [r8 + KERNEL_STRUCTURE.page_limit]
+	mov	rcx,	qword [r8 + KERNEL.page_limit]
 	shr	rcx,	STATIC_DIVIDE_BY_8_shift
 
 	; sum with binary memory map address
@@ -172,7 +172,7 @@ kernel_init_memory:
 	shr	rcx,	STATIC_PAGE_SIZE_shift
 
 	; so, our available pages are less by
-	sub	qword [r8 + KERNEL_STRUCTURE.page_available],	rcx
+	sub	qword [r8 + KERNEL.page_available],	rcx
 
 .mark:
 	; mark page as unavailable
@@ -186,7 +186,7 @@ kernel_init_memory:
 	jnz	.mark	; no
 
 	; share memory functions with daemons
-	mov	qword [r8 + KERNEL_STRUCTURE.memory_release],	kernel_memory_release
+	mov	qword [r8 + KERNEL.memory_release],	kernel_memory_release
 
 	; restore original registers
 	pop	rdi

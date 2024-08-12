@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; void
@@ -180,7 +180,7 @@ kernel_init_daemon:
 
 	; map kernel space to process
 	mov	r15,	qword [kernel_environment_base_address]
-	mov	r15,	qword [r15 + KERNEL_STRUCTURE.page_base_address]
+	mov	r15,	qword [r15 + KERNEL.page_base_address]
 	call	kernel_page_merge
 
 	;-----------------------------------------------------------------------

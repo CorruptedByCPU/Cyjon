@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; out:
@@ -18,14 +18,14 @@ kernel_stream:
 .lock:
 	; request an exclusive access
 	mov	al,	LOCK
-	xchg	byte [r8 + KERNEL_STRUCTURE.stream_semaphore],	al
+	xchg	byte [r8 + KERNEL.stream_semaphore],	al
 
 	; assigned?
 	test	al,	al
 	jnz	.lock	; no
 
 	; stream first descriptor
-	mov	rsi,	qword [r8 + KERNEL_STRUCTURE.stream_base_address]
+	mov	rsi,	qword [r8 + KERNEL.stream_base_address]
 
 	; amount of streams
 	mov	rcx,	KERNEL_STREAM_limit
@@ -70,7 +70,7 @@ kernel_stream:
 
 .end:
 	; unlock access
-	mov	byte [r8 + KERNEL_STRUCTURE.stream_semaphore],	UNLOCK
+	mov	byte [r8 + KERNEL.stream_semaphore],	UNLOCK
 
 	; restore original registers
 	pop	r8

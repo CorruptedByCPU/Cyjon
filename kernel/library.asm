@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 kernel_library_string_dynstr			db	".dynstr", STATIC_ASCII_TERMINATOR
 kernel_library_string_shstrtab			db	".shstrtab", STATIC_ASCII_TERMINATOR
@@ -217,7 +217,7 @@ kernel_library_add:
 
 	; set pointer to begining of library entries
 	mov	r14,	qword [kernel_environment_base_address]
-	mov	r14,	qword [r14 + KERNEL_STRUCTURE.library_base_address]
+	mov	r14,	qword [r14 + KERNEL.library_base_address]
 
 .next:
 	; entry is free?
@@ -324,7 +324,7 @@ kernel_library_find:
 
 	; set pointer to begining of library entries
 	mov	r14,	qword [kernel_environment_base_address]
-	mov	r14,	qword [r14 + KERNEL_STRUCTURE.library_base_address]
+	mov	r14,	qword [r14 + KERNEL.library_base_address]
 
 .find:
 	; this check below is not necessary
@@ -392,7 +392,7 @@ kernel_library_function:
 
 	; set pointer to begining of library entries
 	mov	r14,	qword [kernel_environment_base_address]
-	mov	r14,	qword [r14 + KERNEL_STRUCTURE.library_base_address]
+	mov	r14,	qword [r14 + KERNEL.library_base_address]
 
 .library:
 	; entry configured?
@@ -688,7 +688,7 @@ kernel_library_load:
 	mov	rbp,	rsp	; pointer of file descriptor
 
 	; get file properties
-	movzx	eax,	byte [r8 + KERNEL_STRUCTURE.storage_root_id]
+	movzx	eax,	byte [r8 + KERNEL.storage_root_id]
 	call	kernel_storage_file
 
 	; prepare error code
@@ -782,7 +782,7 @@ kernel_library_load:
 	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_memory_no_enough
 
 	; aquire memory space inside library environment
-	mov	r9,	qword [r8 + KERNEL_STRUCTURE.library_memory_map_address]
+	mov	r9,	qword [r8 + KERNEL.library_memory_map_address]
 	call	kernel_memory_acquire
 	jc	.error_level_file	; no enough memory
 
@@ -793,7 +793,7 @@ kernel_library_load:
 	; prepare space for file content
 	mov	rax,	rdi
 	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_library
-	mov	r11,	qword [r8 + KERNEL_STRUCTURE.page_base_address]
+	mov	r11,	qword [r8 + KERNEL.page_base_address]
 	call	kernel_page_alloc
 	jc	.error_level_aquire	; no enough memory
 
@@ -873,7 +873,7 @@ kernel_library_load:
 	mov	rax,	rdi
 	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_library
 	mov	rcx,	r15
-	mov	r11,	qword [r8 + KERNEL_STRUCTURE.page_base_address]
+	mov	r11,	qword [r8 + KERNEL.page_base_address]
 	call	kernel_page_flags
 
 	; register library name and length

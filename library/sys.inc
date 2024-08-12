@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 %ifndef	LIB_SYS
 	%define	LIB_SYS
@@ -96,8 +96,8 @@
 		.status		resb	1
 	endstruc
 
-	%define	LIB_SYS_DRIVER_MOUSE_STATUS_left_mouse_button	00000001b
-	%define	LIB_SYS_DRIVER_MOUSE_STATUS_right_mouse_button	00000010b
+	%define	LIB_SYS_device_mouse_status_left_mouse_button	00000001b
+	%define	LIB_SYS_device_mouse_status_right_mouse_button	00000010b
 
 	struc	LIB_SYS_STRUCTURE_MOUSE
 		.x		resw	1

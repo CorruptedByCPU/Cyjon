@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -21,7 +21,7 @@ kernel_init_page:
 
 	; assign page for PML4 array and store it
 	call	kernel_memory_alloc_page
-	mov	qword [r8 + KERNEL_STRUCTURE.page_base_address],	rdi
+	mov	qword [r8 + KERNEL.page_base_address],	rdi
 
 	; all paging procedures use R11 register for PML4 address
 	mov	r11,	rdi
@@ -97,21 +97,21 @@ kernel_init_page:
 
 	; map LAPIC controller space
 	mov	rax,	KERNEL_PAGE_mirror
-	mov	rsi,	qword [r8 + KERNEL_STRUCTURE.lapic_base_address]
+	mov	rsi,	qword [r8 + KERNEL.lapic_base_address]
 	or	rax,	rsi
 	call	kernel_page_map
 
 	; map I/O APIC controller space
 	mov	rax,	KERNEL_PAGE_mirror
-	mov	rsi,	qword [r8 + KERNEL_STRUCTURE.io_apic_base_address]
+	mov	rsi,	qword [r8 + KERNEL.io_apic_base_address]
 	or	rax,	rsi
 	call	kernel_page_map
 
-	; map HPET controller space
-	mov	rax,	KERNEL_PAGE_mirror
-	mov	rsi,	qword [r8 + KERNEL_STRUCTURE.hpet_base_address]
-	or	rax,	rsi
-	call	kernel_page_map
+	; ; map HPET controller space
+	; mov	rax,	KERNEL_PAGE_mirror
+	; mov	rsi,	qword [r8 + KERNEL.hpet_base_address]
+	; or	rax,	rsi
+	; call	kernel_page_map
 
 	;-----------------------------------------------------------------------
 	; kernel environment needs its own stack :)
@@ -198,10 +198,10 @@ kernel_init_page:
 .end:
 	; correct pointers of environment variables
 	mov	rax,	KERNEL_PAGE_mirror
-	or	qword [r8 + KERNEL_STRUCTURE.io_apic_base_address],	rax
-	or	qword [r8 + KERNEL_STRUCTURE.lapic_base_address],	rax
-	or	qword [r8 + KERNEL_STRUCTURE.memory_base_address],	rax
-	or	qword [r8 + KERNEL_STRUCTURE.page_base_address],	rax
+	or	qword [r8 + KERNEL.io_apic_base_address],	rax
+	or	qword [r8 + KERNEL.lapic_base_address],	rax
+	or	qword [r8 + KERNEL.memory_base_address],	rax
+	or	qword [r8 + KERNEL.page_base_address],	rax
 
 	; and kernel environment variables/routines itself
 	or	qword [kernel_environment_base_address],	rax
@@ -209,7 +209,7 @@ kernel_init_page:
 	or	r9,	rax
 
 	; share page functions with daemons
-	mov	qword [r8 + KERNEL_STRUCTURE.page_deconstruction],	kernel_page_deconstruction
+	mov	qword [r8 + KERNEL.page_deconstruction],	kernel_page_deconstruction
 
 	; we are ready to switch paging arrays to new one
 

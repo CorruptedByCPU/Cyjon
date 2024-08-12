@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ; information for linker
 section	.rodata
@@ -54,11 +54,11 @@ kernel_service_memory:
 	; return information about
 
 	; all available pages
-	mov	rax,	qword [r8 + KERNEL_STRUCTURE.page_total]
+	mov	rax,	qword [r8 + KERNEL.page_total]
 	mov	qword [rdi + LIB_SYS_STRUCTURE_MEMORY.total],	rax
 
 	; and currently free
-	mov	rax,	qword [r8 + KERNEL_STRUCTURE.page_available]
+	mov	rax,	qword [r8 + KERNEL.page_available]
 	mov	qword [rdi + LIB_SYS_STRUCTURE_MEMORY.available],	rax
 
 	; restore original registers
@@ -97,7 +97,7 @@ kernel_service_sleep:
 	call	kernel_task_active
 
 	; current uptime
-	add	rdi,	qword [r8 + KERNEL_STRUCTURE.hpet_microtime]
+	add	rdi,	qword [r8 + KERNEL.time_rtc]
 
 	; go to sleep for N ticks
 	mov	qword [r9 + KERNEL_TASK_STRUCTURE.sleep],	rdi
@@ -119,7 +119,7 @@ kernel_service_sleep:
 kernel_service_uptime:
 	; return current microtime index
 	mov	rax,	qword [kernel_environment_base_address]
-	mov	rax,	qword [rax + KERNEL_STRUCTURE.hpet_microtime]
+	mov	rax,	qword [rax + KERNEL.time_rtc]
 
 	; return from routine
 	ret
@@ -136,11 +136,11 @@ kernel_service_driver_mouse:
 	mov	r8,	qword [kernel_environment_base_address]
 
 	; share information about mouse location and status
-	mov	ax,	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_x]
+	mov	ax,	word [r8 + KERNEL.device_mouse_x]
 	mov	word [rdi + LIB_SYS_STRUCTURE_MOUSE.x],	ax
-	mov	ax,	word [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_y]
+	mov	ax,	word [r8 + KERNEL.device_mouse_y]
 	mov	word [rdi + LIB_SYS_STRUCTURE_MOUSE.y],	ax
-	mov	al,	byte [r8 + KERNEL_STRUCTURE.driver_ps2_mouse_status]
+	mov	al,	byte [r8 + KERNEL.device_mouse_status]
 	mov	byte [rdi + LIB_SYS_STRUCTURE_MOUSE.status],	al
 
 	; restore original registers
@@ -205,19 +205,19 @@ kernel_service_framebuffer:
 	; return properties of framebuffer
 
 	; width in pixels
-	mov	ax,	word [r8 + KERNEL_STRUCTURE.framebuffer_width_pixel]
+	mov	ax,	word [r8 + KERNEL.framebuffer_width_pixel]
 	mov	word [rdi + LIB_SYS_STRUCTURE_FRAMEBUFFER.width_pixel],	ax
 
 	; height in pixels
-	mov	ax,	word [r8 + KERNEL_STRUCTURE.framebuffer_height_pixel]
+	mov	ax,	word [r8 + KERNEL.framebuffer_height_pixel]
 	mov	word [rdi + LIB_SYS_STRUCTURE_FRAMEBUFFER.height_pixel],	ax
 
 	; scanline in Bytes
-	mov	eax,	dword [r8 + KERNEL_STRUCTURE.framebuffer_scanline_byte]
+	mov	eax,	dword [r8 + KERNEL.framebuffer_pitch_byte]
 	mov	dword [rdi + LIB_SYS_STRUCTURE_FRAMEBUFFER.scanline_byte],	eax
 
 	; framebuffer manager
-	mov	rax,	qword [r8 + KERNEL_STRUCTURE.framebuffer_pid]
+	mov	rax,	qword [r8 + KERNEL.framebuffer_pid]
 
 	; framebuffer manager exist?
 	test	rax,	rax
@@ -238,7 +238,7 @@ kernel_service_framebuffer:
 	; share framebuffer memory space with process
 	xor	ecx,	ecx	; no framebuffer manager, if error on below function
 	xchg	rcx,	rax	; length of shared space in pages
-	mov	rsi,	qword [r8 + KERNEL_STRUCTURE.framebuffer_base_address]
+	mov	rsi,	qword [r8 + KERNEL.framebuffer_base_address]
 	mov	r11,	qword [r9 + KERNEL_TASK_STRUCTURE.cr3]
 	call	kernel_memory_share
 	jc	.return	; no enough memory?
@@ -248,7 +248,7 @@ kernel_service_framebuffer:
 
 	; new framebuffer manager
 	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
-	mov	qword [r8 + KERNEL_STRUCTURE.framebuffer_pid],	rax
+	mov	qword [r8 + KERNEL.framebuffer_pid],	rax
 
 .return:
 	; inform about framebuffer manager
@@ -284,7 +284,7 @@ kernel_service_ipc_send:
 .lock:
 	; request an exclusive access
 	mov	cl,	LOCK
-	xchg	byte [r8 + KERNEL_STRUCTURE.ipc_semaphore],	cl
+	xchg	byte [r8 + KERNEL.ipc_semaphore],	cl
 
 	; assigned?
 	test	cl,	cl
@@ -295,11 +295,11 @@ kernel_service_ipc_send:
 	mov	rcx,	KERNEL_IPC_limit
 
 	; set pointer to first message
-	mov	rdx,	qword [r8 + KERNEL_STRUCTURE.ipc_base_address]
+	mov	rdx,	qword [r8 + KERNEL.ipc_base_address]
 
 .loop:
 	; free entry?
-	mov	rax,	qword [r8 + KERNEL_STRUCTURE.hpet_microtime]
+	mov	rax,	qword [r8 + KERNEL.time_rtc]
 	cmp	qword [rdx + LIB_SYS_STRUCTURE_IPC.ttl],	rax
 	jbe	.found	; yes
 
@@ -333,7 +333,7 @@ kernel_service_ipc_send:
 
 .end:
 	; release access
-	mov	byte [r8 + KERNEL_STRUCTURE.ipc_semaphore],	UNLOCK
+	mov	byte [r8 + KERNEL.ipc_semaphore],	UNLOCK
 
 	; restore original registers
 	pop	r8
@@ -365,7 +365,7 @@ kernel_service_ipc_receive:
 .lock:
 	; request an exclusive access
 	mov	cl,	LOCK
-	xchg	byte [r8 + KERNEL_STRUCTURE.ipc_semaphore],	cl
+	xchg	byte [r8 + KERNEL.ipc_semaphore],	cl
 
 	; assigned?
 	test	cl,	cl
@@ -378,11 +378,11 @@ kernel_service_ipc_receive:
 	mov	rcx,	KERNEL_IPC_limit
 
 	; set pointer to first message
-	mov	rsi,	qword [r8 + KERNEL_STRUCTURE.ipc_base_address]
+	mov	rsi,	qword [r8 + KERNEL.ipc_base_address]
 
 .loop:
 	; message alive?
-	mov	rbx,	qword [r8 + KERNEL_STRUCTURE.hpet_microtime]
+	mov	rbx,	qword [r8 + KERNEL.time_rtc]
 	cmp	qword [rsi + LIB_SYS_STRUCTURE_IPC.ttl],	rbx
 	ja	.check	; yes
 
@@ -431,7 +431,7 @@ kernel_service_ipc_receive:
 
 .end:
 	; release access
-	mov	byte [r8 + KERNEL_STRUCTURE.ipc_semaphore],	UNLOCK
+	mov	byte [r8 + KERNEL.ipc_semaphore],	UNLOCK
 
 	; restore original registers
 	pop	rsi
@@ -779,7 +779,7 @@ kernel_service_storage_read:
 	mov	rbp,	rsp	; pointer of file descriptor
 
 	; get file properties
-	movzx	eax,	byte [r8 + KERNEL_STRUCTURE.storage_root_id]
+	movzx	eax,	byte [r8 + KERNEL.storage_root_id]
 	movzx	ecx,	byte [rdi + LIB_SYS_STRUCTURE_STORAGE.length]
 	lea	rsi,	[rdi + LIB_SYS_STRUCTURE_STORAGE.name]
 	call	kernel_storage_file
@@ -799,7 +799,7 @@ kernel_service_storage_read:
 	; load file content into prepared space
 	mov	rsi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id]
 	mov	rdi,	rax
-	movzx	eax,	byte [r8 + KERNEL_STRUCTURE.storage_root_id]
+	movzx	eax,	byte [r8 + KERNEL.storage_root_id]
 	call	kernel_storage_read
 
 	; retrieve current task pointer
@@ -850,7 +850,7 @@ kernel_service_task:
 .lock:
 	; request an exclusive access
 	mov	al,	LOCK
-	xchg	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	al
+	xchg	byte [r8 + KERNEL.task_queue_semaphore],	al
 
 	; assigned?
 	test	al,	al
@@ -858,7 +858,7 @@ kernel_service_task:
 
 	; length of tasks descriptors in Bytes	
 	mov	eax,	LIB_SYS_STRUCTURE_TASK.SIZE
-	mul	qword [r8 + KERNEL_STRUCTURE.task_count]
+	mul	qword [r8 + KERNEL.task_count]
 
 	; assign place for task descriptor list
 	mov	rdi,	rax
@@ -872,7 +872,7 @@ kernel_service_task:
 
 	; parse every entry
 	mov	rbx,	KERNEL_TASK_limit
-	mov	r10,	qword [r8 + KERNEL_STRUCTURE.task_queue_address]
+	mov	r10,	qword [r8 + KERNEL.task_queue_address]
 
 	; preserve memory space pointer of tasks descriptors
 	add	rax,	STATIC_QWORD_SIZE_byte << STATIC_MULTIPLE_BY_2_shift
@@ -936,7 +936,7 @@ kernel_service_task:
 	pop	rax
 
 	; release access
-	mov	byte [r8 + KERNEL_STRUCTURE.task_queue_semaphore],	UNLOCK
+	mov	byte [r8 + KERNEL.task_queue_semaphore],	UNLOCK
 
 	; restore original registers
 	pop	r10

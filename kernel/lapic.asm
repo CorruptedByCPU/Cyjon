@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; void
@@ -10,7 +10,7 @@ kernel_lapic_accept:
 
 	; LAPIC controller base address
 	mov	rax,	qword [kernel_environment_base_address]
-	mov	rax,	qword [rax + KERNEL_STRUCTURE.lapic_base_address]
+	mov	rax,	qword [rax + KERNEL.lapic_base_address]
 
 	; accept currently pending interrupt
 	mov	dword [rax + KERNEL_LAPIC_STRUCTURE.eoi],	EMPTY
@@ -29,7 +29,7 @@ kernel_lapic_id:
 	mov	rax,	qword [kernel_environment_base_address]
 
 	; retrieve CPU ID from LAPIC
-	mov	rax,	qword [rax + KERNEL_STRUCTURE.lapic_base_address]
+	mov	rax,	qword [rax + KERNEL.lapic_base_address]
 	mov	eax,	dword [rax + KERNEL_LAPIC_STRUCTURE.id]
 	shr	eax,	24	; move ID at a begining of EAX register
 
@@ -45,7 +45,7 @@ kernel_lapic_init:
 
 	; kernel environment variables/rountines base address
 	mov	rdi,	qword [kernel_environment_base_address]
-	mov	rdi,	qword [rdi + KERNEL_STRUCTURE.lapic_base_address]
+	mov	rdi,	qword [rdi + KERNEL.lapic_base_address]
 
 	; turn off Task Priority and Priority Sub-Class
 	mov	dword [rdi + KERNEL_LAPIC_STRUCTURE.tp],	EMPTY;
@@ -87,7 +87,7 @@ kernel_lapic_reload:
 
 	; LAPIC controller base address
 	mov	rax,	qword [kernel_environment_base_address]
-	mov	rax,	qword [rax + KERNEL_STRUCTURE.lapic_base_address]
+	mov	rax,	qword [rax + KERNEL.lapic_base_address]
 
 	; wake up internal interrupt after KERNEL_LAPIC_Hz cycles
 	mov	dword [rax + KERNEL_LAPIC_STRUCTURE.tic],	KERNEL_LAPIC_Hz

@@ -1,6 +1,6 @@
-;===============================================================================
-;Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
-;===============================================================================
+;=================================================================================
+; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
+;=================================================================================
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -17,7 +17,7 @@ kernel_init_ipc:
 	call	kernel_memory_alloc
 
 	; preserve pointer to IPC messages
-	mov	qword [r8 + KERNEL_STRUCTURE.ipc_base_address],	rdi
+	mov	qword [r8 + KERNEL.ipc_base_address],	rdi
 
 	; restore original registers
 	pop	rdi
