@@ -48,7 +48,7 @@ kernel_init_acpi:
 	; entries inside table
 	mov	ecx,	dword [edi + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.length]
 	sub	ecx,	KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.SIZE
-	shr	ecx,	STATIC_DIVIDE_BY_4_shift
+	shr	ecx,	STD_DIVIDE_BY_4_shift
 
 	; move pointer to first entry of RSDT table
 	add	edi,	KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.SIZE
@@ -59,7 +59,7 @@ kernel_init_acpi:
 	call	.parse
 
 	; next entry from RSDT table
-	add	edi,	STATIC_DWORD_SIZE_byte
+	add	edi,	STD_DWORD_SIZE_byte
 
 	; end of table?
 	dec	ecx
@@ -86,7 +86,7 @@ kernel_init_acpi:
 	; entries inside table
 	mov	ecx,	dword [edi + KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.length]
 	sub	ecx,	KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.SIZE
-	shr	ecx,	STATIC_DIVIDE_BY_8_shift
+	shr	ecx,	STD_DIVIDE_BY_8_shift
 
 	; move pointer to first entry of RSDT table
 	add	rdi,	KERNEL_INIT_ACPI_STRUCTURE_DEFAULT.SIZE
@@ -97,7 +97,7 @@ kernel_init_acpi:
 	call	.parse
 
 	; next entry from XSDT table
-	add	rdi,	STATIC_QWORD_SIZE_byte
+	add	rdi,	STD_QWORD_SIZE_byte
 
 	; end of table?
 	dec	rcx
@@ -118,7 +118,7 @@ kernel_init_acpi:
 	call	driver_serial_string
 	mov	rax,	KERNEL_PAGE_mirror
 	add	rax,	qword [r8 + KERNEL.lapic_base_address]
-	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
+	mov	ebx,	STD_NUMBER_SYSTEM_hexadecimal
 	xor	ecx,	ecx	; no prefix
 	xor	dl,	dl	; value unsigned
 	call	driver_serial_value
@@ -133,7 +133,7 @@ kernel_init_acpi:
 	call	driver_serial_string
 	mov	rax,	KERNEL_PAGE_mirror
 	add	rax,	qword [r8 + KERNEL.io_apic_base_address]
-	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
+	mov	ebx,	STD_NUMBER_SYSTEM_hexadecimal
 	xor	ecx,	ecx	; no prefix
 	call	driver_serial_value
 
@@ -147,7 +147,7 @@ kernel_init_acpi:
 	; call	driver_serial_string
 	; mov	rax,	KERNEL_PAGE_mirror
 	; add	rax,	qword [r8 + KERNEL.hpet_base_address]
-	; mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
+	; mov	ebx,	STD_NUMBER_SYSTEM_hexadecimal
 	; xor	ecx,	ecx	; no prefix
 	; xor	dl,	dl	; value unsigned
 	; call	driver_serial_value

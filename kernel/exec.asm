@@ -26,7 +26,7 @@ kernel_exec:
 	push	r14
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; select file name from string
 	call	lib_string_word
@@ -115,8 +115,8 @@ kernel_exec:
 
 	; release file content
 	mov	rsi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
-	add	rsi,	~STATIC_PAGE_mask
-	shr	rsi,	STATIC_PAGE_SIZE_shift
+	add	rsi,	~STD_PAGE_mask
+	shr	rsi,	STD_PAGE_SIZE_shift
 	mov	rdi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.address]
 	call	kernel_memory_release
 
@@ -201,13 +201,13 @@ kernel_exec_configure:
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsi
 
 	; prepare exception exit mode on context stack of process
-	mov	rsi,	KERNEL_TASK_STACK_pointer - STATIC_PAGE_SIZE_byte
+	mov	rsi,	KERNEL_TASK_STACK_pointer - STD_PAGE_SIZE_byte
 	call	kernel_page_address
 
 	; set pointer to return descriptor
-	and	rax,	STATIC_PAGE_mask	; drop flags
+	and	rax,	STD_PAGE_mask	; drop flags
 	add	rax,	qword [kernel_page_mirror]	; convert to logical address
-	add	rax,	STATIC_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
+	add	rax,	STD_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
 
 	; set first instruction executed by process
 	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.program_entry_position]
@@ -238,7 +238,7 @@ kernel_exec_configure:
 	; remember as offset inside process stack
 	mov	rdx,	rcx
 	not	dx
-	and	dx,	~STATIC_PAGE_mask
+	and	dx,	~STD_PAGE_mask
 	inc	dx
 
 	; new stack pointer of process
@@ -246,12 +246,12 @@ kernel_exec_configure:
 
 	; stack base address
 	mov	rax,	KERNEL_EXEC_STACK_pointer
-	add	rcx,	~STATIC_PAGE_mask
-	and	rcx,	STATIC_PAGE_mask
+	add	rcx,	~STD_PAGE_mask
+	and	rcx,	STD_PAGE_mask
 	sub	rax,	rcx
 
 	; alloc stack of size with arguments
-	shr	rcx,	STATIC_PAGE_SIZE_shift
+	shr	rcx,	STD_PAGE_SIZE_shift
 	call	kernel_memory_alloc
 
 	; preserve length and pointer to stack
@@ -299,8 +299,8 @@ kernel_exec_configure:
 	sub	rcx,	KERNEL_EXEC_BASE_address
 
 	; assign memory space for executable
-	add	rcx,	~STATIC_PAGE_mask
-	shr	rcx,	STATIC_PAGE_SIZE_shift
+	add	rcx,	~STD_PAGE_mask
+	shr	rcx,	STD_PAGE_SIZE_shift
 	call	kernel_memory_alloc
 
 	; preserve executable location and size in Pages
@@ -372,9 +372,9 @@ kernel_exec_configure:
 
 	; assign memory space for binary memory map with same size as kernels
 	mov	rcx,	qword [r8 + KERNEL.page_limit]
-	shr	rcx,	STATIC_DIVIDE_BY_8_shift	; 8 pages per Byte
-	add	rcx,	~STATIC_PAGE_mask	; align up to page boundaries
-	shr	rcx,	STATIC_PAGE_SIZE_shift	; convert to pages
+	shr	rcx,	STD_DIVIDE_BY_8_shift	; 8 pages per Byte
+	add	rcx,	~STD_PAGE_mask	; align up to page boundaries
+	shr	rcx,	STD_PAGE_SIZE_shift	; convert to pages
 	call	kernel_memory_alloc
 
 	; store binary memory map address of process inside task properties
@@ -384,13 +384,13 @@ kernel_exec_configure:
 	push	rdi
 
 	; fill memory map with available pages
-	mov	eax,	STATIC_MAX_unsigned
+	mov	eax,	STD_MAX_unsigned
 	mov	rcx,	qword [r8 + KERNEL.page_limit]
-	shr	rcx,	STATIC_DIVIDE_BY_32_shift	; 32 pages per chunk
+	shr	rcx,	STD_DIVIDE_BY_32_shift	; 32 pages per chunk
 
 	; first 1 MiB is reserved for future devices mapping
-	sub	rcx,	(KERNEL_EXEC_BASE_address >> STATIC_PAGE_SIZE_shift) >> STATIC_DIVIDE_BY_32_shift
-	add	rdi,	(KERNEL_EXEC_BASE_address >> STATIC_PAGE_SIZE_shift) >> STATIC_DIVIDE_BY_8_shift
+	sub	rcx,	(KERNEL_EXEC_BASE_address >> STD_PAGE_SIZE_shift) >> STD_DIVIDE_BY_32_shift
+	add	rdi,	(KERNEL_EXEC_BASE_address >> STD_PAGE_SIZE_shift) >> STD_DIVIDE_BY_8_shift
 
 	; proceed
 	rep	stosd
@@ -408,7 +408,7 @@ kernel_exec_configure:
 	;-----------------------------------------------------------------------
 
 	; map kernel space to process
-	mov	r15,	qword [kernel_environment_base_address]
+	mov	r15,	qword [kernel]
 	mov	r15,	qword [r15 + KERNEL.page_base_address]
 	call	kernel_page_merge
 
@@ -569,7 +569,7 @@ kernel_exec_load:
 	push	r8
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; get file properties
 	movzx	eax,	byte [r8 + KERNEL.storage_root_id]
@@ -581,8 +581,8 @@ kernel_exec_load:
 
 	; prepare space for file content
 	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
-	add	rcx,	~STATIC_PAGE_mask
-	shr	rcx,	STATIC_PAGE_SIZE_shift
+	add	rcx,	~STD_PAGE_mask
+	shr	rcx,	STD_PAGE_SIZE_shift
 	call	kernel_memory_alloc
 
 	; load file content into prepared space

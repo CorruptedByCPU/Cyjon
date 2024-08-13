@@ -9,7 +9,7 @@
 ; whole 223th entry of PML4 table, for easier thread closing
 %define	KERNEL_EXEC_STACK_SIZE_page		1
 %define	KERNEL_EXEC_STACK_pointer		0x0000700000000000
-%define	KERNEL_EXEC_STACK_address		KERNEL_EXEC_STACK_pointer - (KERNEL_EXEC_STACK_SIZE_page << STATIC_PAGE_SIZE_shift)
+%define	KERNEL_EXEC_STACK_address		KERNEL_EXEC_STACK_pointer - (KERNEL_EXEC_STACK_SIZE_page << STD_PAGE_SIZE_shift)
 
 %define	KERNEL_EXEC_STACK_OFFSET_registers	0x78
 

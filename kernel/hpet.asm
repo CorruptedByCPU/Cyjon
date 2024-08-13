@@ -9,7 +9,7 @@ kernel_hpet_irq:
 	push	rax
 
 	; kernel environment variables/rountines base address
-	mov	rax,	qword [kernel_environment_base_address]
+	mov	rax,	qword [kernel]
 
 	; increment microtime counter
 	inc	qword [rax + KERNEL.time_rtc]

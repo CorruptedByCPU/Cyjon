@@ -11,7 +11,7 @@ kernel_init_ap:
 	;-----------------------------------------------------------------------
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	;--------
 	; PAGE
@@ -36,7 +36,7 @@ kernel_init_ap:
 
 	; change CPU ID to descriptor offset
 	call	kernel_lapic_id
-	shl	rax,	STATIC_MULTIPLE_BY_16_shift
+	shl	rax,	STD_MULTIPLE_BY_16_shift
 	add	rax,	KERNEL_GDT_STRUCTURE.tss
 
 	; preserve TSS offset
@@ -125,7 +125,7 @@ kernel_init_ap:
 	mov	rax,	kernel_syscall
 	mov	ecx,	KERNEL_INIT_AP_MSR_LSTAR
 	mov	rdx,	kernel_syscall
-	shr	rdx,	STATIC_MOVE_HIGH_TO_EAX_shift
+	shr	rdx,	STD_MOVE_HIGH_TO_EAX_shift
 	wrmsr
 
 	; set EFLAGS mask of entry routine
@@ -143,7 +143,7 @@ kernel_init_ap:
 	push	qword [r8 + KERNEL.task_queue_address]	; by default: kernel
 
 	; insert into task cpu list at AP position
-	shl	rax,	STATIC_MULTIPLE_BY_8_shift
+	shl	rax,	STD_MULTIPLE_BY_8_shift
 	add	rax,	qword [r8 + KERNEL.task_ap_address]
 	pop	qword [rax]
 

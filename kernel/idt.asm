@@ -6,7 +6,7 @@
 align	0x08,	db	0x00
 kernel_irq:
 	; feature available?
-	cmp	rax,	(kernel_service_list_end - kernel_service_list) / STATIC_QWORD_SIZE_byte
+	cmp	rax,	(kernel_service_list_end - kernel_service_list) / STD_QWORD_SIZE_byte
 	jnb	.return	; no
 
 	; preserve original registers
@@ -27,7 +27,7 @@ kernel_irq:
 	pushf
 
 	; execute kernel function according to parameter in RAX
-	call	qword [kernel_service_list + rax * STATIC_QWORD_SIZE_byte]
+	call	qword [kernel_service_list + rax * STD_QWORD_SIZE_byte]
 
 	; restore original registers
 	popf
@@ -311,13 +311,13 @@ kernel_idt_exception:
 	call	kernel_task_active
 
 	; calculate stack position before exception
-	and	qword [rsp],	STATIC_PAGE_mask
-	add	qword [rsp],	STATIC_PAGE_SIZE_byte
+	and	qword [rsp],	STD_PAGE_mask
+	add	qword [rsp],	STD_PAGE_SIZE_byte
 
 	; process assigned stack address
 	mov	rax,	KERNEL_EXEC_STACK_pointer
 	mov	rbx,	qword [r9 + KERNEL_TASK_STRUCTURE.stack]
-	shl	rbx,	STATIC_PAGE_SIZE_shift
+	shl	rbx,	STD_PAGE_SIZE_shift
 	sub	rax,	rbx
 
 	; exception related to process stack?
@@ -328,7 +328,7 @@ kernel_idt_exception:
 	inc	qword [r9 + KERNEL_TASK_STRUCTURE.stack]
 
 	; describe additional space under process stack
-	sub	rax,	STATIC_PAGE_SIZE_byte
+	sub	rax,	STD_PAGE_SIZE_byte
 	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_user | KERNEL_PAGE_FLAG_process
 	mov	ecx,	1
 	mov	r11,	KERNEL_PAGE_mirror
@@ -342,7 +342,7 @@ kernel_idt_exception:
 	; show on debug console, exception name
 	xor	dl,	dl	; string not reversed
 	mov	rsi,	qword [rsp + KERNEL_IDT_STRUCTURE_EXCEPTION.id]
-	shl	rsi,	STATIC_MULTIPLE_BY_PTR_shift	; offset of entry at exception string table
+	shl	rsi,	STD_MULTIPLE_BY_PTR_shift	; offset of entry at exception string table
 	add	rsi,	kernel_idt_exception_string	; pointer to exception string table entry
 	mov	rsi,	qword [rsi]	; pointer to exception description
 	call	lib_string_length
@@ -350,7 +350,7 @@ kernel_idt_exception:
 
 	; and exception address
 	mov	rax,	qword [rsp + KERNEL_IDT_STRUCTURE_EXCEPTION.rip]
-	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
+	mov	ebx,	STD_NUMBER_SYSTEM_hexadecimal
 	xor	ecx,	ecx	; no prefix
 	call	driver_serial_value
 

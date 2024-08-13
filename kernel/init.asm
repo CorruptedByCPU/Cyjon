@@ -40,7 +40,7 @@
 default	rel
 
 ; main initialization procedure of kernel environment
-global	init
+global	_entry
 
 ; information for linker
 section	.data
@@ -88,7 +88,6 @@ section .text
 	%include	"kernel/init/cmd.asm"
 	%include	"kernel/init/daemon.asm"
 	%include	"kernel/init/exec.asm"
-	%include	"kernel/init/framebuffer.asm"
 	%include	"kernel/init/free.asm"
 	%include	"kernel/init/gdt.asm"
 	; %include	"kernel/init/hpet.asm"
@@ -102,30 +101,27 @@ section .text
 	%include	"kernel/init/storage.asm"
 	%include	"kernel/init/stream.asm"
 	%include	"kernel/init/task.asm"
+	%include	"kernel/init/limine.asm"
+	%include	"kernel/init/environment.asm"
 	;=======================================================================
 
-;-------------------------------------------------------------------------------
-; void
-init:
-	; configure failover output
-	call	driver_serial
+; our mighty init
+_entry:
+	; DEBUG ---------------------------------------------------------------
 
-	; show kernel name, version, architecture and build time
-	mov	rcx,	kernel_log_welcome_end - kernel_log_welcome
-	mov	rsi,	kernel_log_welcome
-	call	driver_serial_string
+	; initialize default debug output
+	call	driver_serial_init
 
-	; retrieve file to execute
-	call	kernel_init_cmd
+	; check passed variables/structures by Limine bootloader
+	call	kernel_init_limine
+
+	; BASE ----------------------------------------------------------------
+
+	; initialize global kernel environment variables/functions/rountines
+	call	kernel_init_environment
 
 	; create binary memory map
 	call	kernel_init_memory
-
-	; share Log functions with daemons
-	mov	qword [r8 + KERNEL.log],	kernel_log
-
-	; store information about framebuffer properties
-	call	kernel_init_framebuffer
 
 	; parse ACPI tables
 	call	kernel_init_acpi
@@ -146,6 +142,11 @@ init:
 
 	; create Interrupt Descriptor Table
 	call	kernel_init_idt
+
+	; ESSENTIAL -----------------------------------------------------------
+
+	; retrieve file to execute
+	call	kernel_init_cmd
 
 	; create Task queue
 	call	kernel_init_task

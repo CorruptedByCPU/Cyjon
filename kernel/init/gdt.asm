@@ -11,7 +11,7 @@ kernel_init_gdt:
 	push	rdi
 
 	; assign space for GDT and store it
-	mov	ecx,	STATIC_PAGE_SIZE_page
+	mov	ecx,	STD_PAGE_SIZE_page
 	call	kernel_memory_alloc
 	mov	qword [kernel_gdt_header + KERNEL_GDT_STRUCTURE_HEADER.address],	rdi
 

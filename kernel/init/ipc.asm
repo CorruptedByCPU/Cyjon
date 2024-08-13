@@ -12,8 +12,8 @@ kernel_init_ipc:
 
 	; prepare the space for the stream space
 	mov	rcx,	KERNEL_IPC_limit * LIB_SYS_STRUCTURE_IPC.SIZE
-	add	rcx,	~STATIC_PAGE_mask
-	shr	rcx,	STATIC_PAGE_SIZE_shift
+	add	rcx,	~STD_PAGE_mask
+	shr	rcx,	STD_PAGE_SIZE_shift
 	call	kernel_memory_alloc
 
 	; preserve pointer to IPC messages

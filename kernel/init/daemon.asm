@@ -23,7 +23,7 @@ kernel_init_daemon:
 	push	r15
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; by default there is no PID for new process
 	xor	eax,	eax
@@ -84,13 +84,13 @@ kernel_init_daemon:
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsi
 
 	; prepare exception exit mode on context stack of process
-	mov	rsi,	KERNEL_TASK_STACK_pointer - STATIC_PAGE_SIZE_byte
+	mov	rsi,	KERNEL_TASK_STACK_pointer - STD_PAGE_SIZE_byte
 	call	kernel_page_address
 
 	; set pointer to return descriptor
-	and	rax,	STATIC_PAGE_mask	; drop flags
+	and	rax,	STD_PAGE_mask	; drop flags
 	add	rax,	qword [kernel_page_mirror]	; convert to logical address
-	add	rax,	STATIC_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
+	add	rax,	STD_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
 
 	; set first instruction executed by process
 	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.program_entry_position]
@@ -118,8 +118,8 @@ kernel_init_daemon:
 	call	kernel_exec_size
 
 	; assign memory space for executable
-	add	rcx,	~STATIC_PAGE_mask
-	shr	rcx,	STATIC_PAGE_SIZE_shift
+	add	rcx,	~STD_PAGE_mask
+	shr	rcx,	STD_PAGE_SIZE_shift
 	call	kernel_memory_alloc
 
 	; process memory usage
@@ -179,7 +179,7 @@ kernel_init_daemon:
 	;-----------------------------------------------------------------------
 
 	; map kernel space to process
-	mov	r15,	qword [kernel_environment_base_address]
+	mov	r15,	qword [kernel]
 	mov	r15,	qword [r15 + KERNEL.page_base_address]
 	call	kernel_page_merge
 

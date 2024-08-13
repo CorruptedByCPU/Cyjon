@@ -41,7 +41,7 @@ endstruc
 struc	LIMINE_FRAMEBUFFER_RESPONSE
 	.revision		resq	1
 	.framebuffer_count	resq	1
-	.framebuffer		resq	1
+	.framebuffers		resq	1
 
 struc	LIMINE_FRAMEBUFFER_REQUEST
 	.id			resq	4
@@ -59,7 +59,7 @@ endstruc
 struc	LIMINE_MEMMAP_RESPONSE
 	.revision		resq	1
 	.entry_count		resq	1
-	.entry			resq	1
+	.entries		resq	1
 
 struc	LIMINE_MEMMAP_REQUEST
 	.id			resq	4

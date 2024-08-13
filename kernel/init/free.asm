@@ -17,14 +17,14 @@ kernel_init_free:
 
 	; first entry of memory map
 	xor	ebx,	ebx
-	mov	rdx,	qword [rsi + LIMINE_MEMMAP_RESPONSE.entry]
+	mov	rdx,	qword [rsi + LIMINE_MEMMAP_RESPONSE.entries]
 
 	; array for areas properties
 	mov	rbp,	rsp
 
 .next:
 	; retrieve entry address
-	mov	rdi,	qword [rdx + rbx * STATIC_PTR_SIZE_byte]
+	mov	rdi,	qword [rdx + rbx * STD_PTR_SIZE_byte]
 
 	; type of LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE?
 	cmp	qword [rdi + LIMINE_MEMMAP_ENTRY.type],	LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE
@@ -57,7 +57,7 @@ kernel_init_free:
 
 	; area size in pages
 	pop	rcx
-	shr	rcx,	STATIC_PAGE_SIZE_shift
+	shr	rcx,	STD_PAGE_SIZE_shift
 
 	; area position
 	mov	rdi,	qword [rsp]
@@ -84,7 +84,7 @@ kernel_init_free:
 
 	; first page number of area
 	pop	rdx
-	shr	rdx,	STATIC_PAGE_SIZE_shift
+	shr	rdx,	STD_PAGE_SIZE_shift
 
 .register:
 	; register inside binary memory map
@@ -110,10 +110,10 @@ kernel_init_free:
 	call	driver_serial_string
 
 	; convert pages to KiB
-	shl	rax,	STATIC_MULTIPLE_BY_4_shift
+	shl	rax,	STD_MULTIPLE_BY_4_shift
 
 	; show amount of released memory
-	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
+	mov	ebx,	STD_NUMBER_SYSTEM_decimal
 	xor	ecx,	ecx	; no prefix
 	call	driver_serial_value
 	mov	ecx,	kernel_log_free_end - kernel_log_free

@@ -24,7 +24,7 @@ kernel_init_storage:
 	call	kernel_task_active
 
 	; assign space for storage list
-	mov	ecx,	((KERNEL_STORAGE_limit * KERNEL_STORAGE_STRUCTURE.SIZE) + ~STATIC_PAGE_mask) >> STATIC_PAGE_SIZE_shift
+	mov	ecx,	((KERNEL_STORAGE_limit * KERNEL_STORAGE_STRUCTURE.SIZE) + ~STD_PAGE_mask) >> STD_PAGE_SIZE_shift
 	call	kernel_memory_alloc
 
 	; save pointer to storage list
@@ -39,7 +39,7 @@ kernel_init_storage:
 
 .next:
 	; retrieve entry address
-	mov	r11,	qword [rdx + rax * STATIC_PTR_SIZE_byte]
+	mov	r11,	qword [rdx + rax * STD_PTR_SIZE_byte]
 
 	;-----------------------------------------------------------------------
 	; VFS module?
@@ -158,10 +158,10 @@ kernel_init_storage:
 
 	; convert Bytes to KiB
 	mov	rax,	qword [rax + KERNEL_STORAGE_STRUCTURE.device_blocks]
-	shr	rax,	STATIC_DIVIDE_BY_1024_shift
+	shr	rax,	STD_DIVIDE_BY_1024_shift
 
 	; show size of system storage
-	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
+	mov	ebx,	STD_NUMBER_SYSTEM_decimal
 	xor	ecx,	ecx	; no prefix
 	call	driver_serial_value
 

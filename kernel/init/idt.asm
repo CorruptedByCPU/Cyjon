@@ -12,7 +12,7 @@ kernel_init_idt:
 	push	rdi
 
 	; assign space for IDT and store it
-	mov	ecx,	STATIC_PAGE_SIZE_page
+	mov	ecx,	STD_PAGE_SIZE_page
 	call	kernel_memory_alloc
 	mov	qword [kernel_idt_header + KERNEL_IDT_STRUCTURE_HEADER.address],	rdi
 
@@ -129,18 +129,18 @@ kernel_idt_update:
 	mov	rdi,	qword [kernel_idt_header + KERNEL_IDT_STRUCTURE_HEADER.address]
 
 	; move pointer to entry
-	shl	cx,	STATIC_MULTIPLE_BY_16_shift
+	shl	cx,	STD_MULTIPLE_BY_16_shift
 	or	di,	cx
 
 	; low bits of address (15...0)
 	mov	word [rdi + KERNEL_IDT_STRUCTURE_ENTRY.address_low],	ax
 
 	; middle bits of address (31...16)
-	shr	rax,	STATIC_MOVE_HIGH_TO_AX_shift
+	shr	rax,	STD_MOVE_HIGH_TO_AX_shift
 	mov	word [rdi + KERNEL_IDT_STRUCTURE_ENTRY.address_middle],	ax
 
 	; high bits of address (63...32)
-	shr	rax,	STATIC_MOVE_HIGH_TO_AX_shift
+	shr	rax,	STD_MOVE_HIGH_TO_AX_shift
 	mov	dword [rdi + KERNEL_IDT_STRUCTURE_ENTRY.address_high],	eax
 
 	; code descriptor of kernel environment

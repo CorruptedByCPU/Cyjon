@@ -11,7 +11,7 @@ kernel_init_hpet:
 	push	rcx
 
 	; kernel environment variables/rountines base address
-	mov	rbx,	qword [kernel_environment_base_address]
+	mov	rbx,	qword [kernel]
 
 	;-----------------------------------------------------------------------
 

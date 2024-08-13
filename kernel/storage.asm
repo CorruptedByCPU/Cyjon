@@ -16,7 +16,7 @@ kernel_storage_file:
 	push	r10
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; by default file does not exist
 	mov	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
@@ -61,7 +61,7 @@ kernel_storage_read:
 	push	r10
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; stograge base address
 	mov	r10,	qword [r8 + KERNEL.storage_base_address]
@@ -100,7 +100,7 @@ kernel_storage_register:
 	push	r8
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; limit of devices
 	mov	rcx,	KERNEL_STORAGE_limit

@@ -5,9 +5,9 @@
 %ifndef	KERNEL_STREAM
 	%define	KERNEL_STREAM
 
-	%define	KERNEL_STREAM_limit		(KERNEL_TASK_limit << STATIC_MULTIPLE_BY_2_shift)
+	%define	KERNEL_STREAM_limit		(KERNEL_TASK_limit << STD_MULTIPLE_BY_2_shift)
 
-	%define	KERNEL_STREAM_SIZE_page		(LIB_SYS_STREAM_SIZE_byte >> STATIC_PAGE_SIZE_shift)
+	%define	KERNEL_STREAM_SIZE_page		(LIB_SYS_STREAM_SIZE_byte >> STD_PAGE_SIZE_shift)
 
 	struc	KERNEL_STREAM_STRUCTURE
 		.base_address	resq	1

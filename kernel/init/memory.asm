@@ -4,7 +4,8 @@
 
 ;-------------------------------------------------------------------------------
 ; out:
-;	r8 - pointer to kernel environment variables/routines
+;	r8 - pointer to global kernel environment variables/functions/rountines
+;	r9 - pointer to binary memory map
 kernel_init_memory:
 	; preserve original registers
 	push	rax
@@ -14,179 +15,131 @@ kernel_init_memory:
 	push	rsi
 	push	rdi
 
-	; memory map available?
-	cmp	qword [kernel_limine_memmap_request + LIMINE_MEMMAP_REQUEST.response],	EMPTY
-	je	.error	; no
+	; global kernel environment variables/functions/rountines
+	mov	r8,	qword [kernel]
 
-	;-----------------------------------------------------------------------
-	; below instructions will clean up all areas of memory marked as USABLE
-	; and find of best place to store our kernel environment variables/routines
-	; & binary memory map
-	;-----------------------------------------------------------------------
+	; place binary memory map after global kernel environment variables/functions/rountines (aligned to page boundaries)
+	mov	qword [r8 + KERNEL.memory_base_address],	r8
+	add	qword [r8 + KERNEL.memory_base_address],	(KERNEL.SIZE + ~STD_PAGE_mask) & STD_PAGE_mask
 
-	; force consistency of available memory space for use (clean it up)
-	xor	eax,	eax	; and remember largest continous space in Bytes
+	; properties of binary memory map
+	mov	r9,	qword [r8 + KERNEL.memory_base_address]
 
-	; memory map response structure
+	;----------------------------------------------------------------------
+
+	; properties of memory map response
 	mov	rsi,	qword [kernel_limine_memmap_request + LIMINE_MEMMAP_REQUEST.response]
 
-	; first entry of memory map
-	xor	ebx,	ebx
-	mov	rdx,	qword [rsi + LIMINE_MEMMAP_RESPONSE.entry]
+	; amount of entries inside memory map
+	mov	rcx,	qword [rsi + LIMINE_MEMMAP_RESPONSE.entry_count]
 
-.next:
-	; retrieve entry address
-	mov	rdi,	qword [rdx + rbx * STATIC_PTR_SIZE_byte]
+	; list of memory map entires
+	mov	rsi,	qword [rsi + LIMINE_MEMMAP_RESPONSE.entries]
 
-	; type of LIMINE_MEMMAP_USABLE?
-	cmp	qword [rdi + LIMINE_MEMMAP_ENTRY.type],	LIMINE_MEMMAP_USABLE
-	jne	.omit	; no
+.entry:
+	; parse "next" entry?
+	dec	rcx
+	js	.done	; no
 
-	; this entry is larger than previous?
-	cmp	qword [rdi + LIMINE_MEMMAP_ENTRY.length],	rax
-	jng	.clean_up	; no
+	; retrieve entry
+	mov	rax,	qword [rsi + rcx * STD_PTR_SIZE_byte]
 
-	; preserve logical address of largest continous memory space
-	mov	rax,	qword [rdi + LIMINE_MEMMAP_ENTRY.base]
-	mov	qword [kernel_environment_base_address], rax
+	; USABLE, BOOTLOADER_RECLAIMABLE, KERNEL_AND_MODULES or ACPI_RECLAIMABLE memory area?
+	cmp	qword [rax + LIMINE_MEMMAP_ENTRY.type],	LIMINE_MEMMAP_USABLE
+	je	.parse
+	cmp	qword [rax + LIMINE_MEMMAP_ENTRY.type],	LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE
+	je	.parse
+	cmp	qword [rax + LIMINE_MEMMAP_ENTRY.type],	LIMINE_MEMMAP_KERNEL_AND_MODULES
+	je	.parse
+	cmp	qword [rax + LIMINE_MEMMAP_ENTRY.type],	LIMINE_MEMMAP_ACPI_RECLAIMABLE
+	jne	.entry	; next entry
 
-	; and its size in Bytes
-	mov	rax,	qword [rdi + LIMINE_MEMMAP_ENTRY.length]
+.parse:
+	; calculate farthest part of memory area for use
+	mov	rdx,	qword [rax + LIMINE_MEMMAP_ENTRY.base]
+	add	rdx,	qword [rax + LIMINE_MEMMAP_ENTRY.length]
+	shr	rdx,	STD_SHIFT_PAGE
 
-.clean_up:
-	; size of area in pages
-	mov	rcx,	qword [rdi + LIMINE_MEMMAP_ENTRY.length]
-	shr	rcx,	STATIC_PAGE_SIZE_shift
+	; further than previous?
+	cmp	rdx,	qword [r8 + KERNEL.page_limit]
+	jb	.below	; no
 
-	; clean memory area
-	mov	rdi,	qword [rdi + LIMINE_MEMMAP_ENTRY.base]
-	call	kernel_page_clean_few
+	; remember area
+	mov	qword [r8 + KERNEL.page_limit],	rdx
 
-.omit:
-	; next entry
-	inc	rbx
+.below:
+	; keep number of pages registered in the binary memory map
+	mov	rdx,	qword [rax + LIMINE_MEMMAP_ENTRY.length]
+	shr	rdx,	STD_SHIFT_PAGE
+	add	qword [r8 + KERNEL.page_total],	rdx
 
-	; end of entries?
-	cmp	rbx,	qword [rsi + LIMINE_MEMMAP_RESPONSE.entry_count]
-	jne	.next	; no
+	; USABLE memory area?
+	cmp	qword [rax + LIMINE_MEMMAP_ENTRY.type],	LIMINE_MEMMAP_USABLE
+	jne	.entry	; no, next entry
 
-	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
-
-	; place binary memory map after kernel environment variables/rountines (aligned to page boundaries)
-	mov	r9,	KERNEL.SIZE
-	add	r9,	~STATIC_PAGE_mask
-	and	r9,	STATIC_PAGE_mask
-	add	r9,	r8
-
-	; store pointer inside kernel environment
-	mov	qword [r8 + KERNEL.memory_base_address],	r9
-
-	;-----------------------------------------------------------------------
-	; next we will register every area marked as LIMINE_MEMMAP_USABLE
-	; inside our binary memory map
-	;
-	; about LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE,
-	; we will register that memory areas, after kernel environment initializations
-	;-----------------------------------------------------------------------
-
-	; memory map response structure
-	mov	rsi,	qword [kernel_limine_memmap_request + LIMINE_MEMMAP_REQUEST.response]
-
-	; first entry of memory map
-	xor	ebx,	ebx
-	mov	rdx,	qword [rsi + LIMINE_MEMMAP_RESPONSE.entry]
-
-.usable:
-	; retrieve entry address
-	mov	rdi,	qword [rdx + rbx * STATIC_PTR_SIZE_byte]
-
-	; type of LIMINE_MEMMAP_USABLE?
-	cmp	qword [rdi + LIMINE_MEMMAP_ENTRY.type],	LIMINE_MEMMAP_USABLE
-	jne	.leave	; no
-
-	; length of binary memory map in pages (and available too)
-	mov	rcx,	qword [rdi + LIMINE_MEMMAP_ENTRY.length]
-	shr	rcx,	STATIC_PAGE_SIZE_shift
-	add	qword [r8 + KERNEL.page_total],	rcx
-	add	qword [r8 + KERNEL.page_available],	rcx
-
-	; limine assures us that all entries are sorted by addresses (ascending)
-	; so we can and need to store the address of the end of farthest entry in memory
-	; of those types to calculate size of binary memory map
-	mov	rax,	qword [rdi + LIMINE_MEMMAP_ENTRY.base]
-	add	rax,	qword [rdi + LIMINE_MEMMAP_ENTRY.length]
-	mov	qword [r8 + KERNEL.page_limit],	rax
+	; add memory area to available memory
+	add	qword [r8 + KERNEL.page_available],	rdx
 
 	; first page number of area
-	mov	rax,	qword [rdi + LIMINE_MEMMAP_ENTRY.base]
-	shr	rax,	STATIC_PAGE_SIZE_shift
+	mov	rdi,	qword [rax + LIMINE_MEMMAP_ENTRY.base]
+	shr	rdi,	STD_SHIFT_PAGE
 
-.register:
+.fill:
 	; register inside binary memory map
-	bts	qword [r9],	rax
+	bts	qword [r9],	rdi
 
 	; next page
-	inc	rax
+	inc	rdi
 
-	; entire space is registered?
-	dec	rcx
-	jnz	.register	; no
+	; entire area is registered?
+	dec	rdx
+	jnz	.fill	; no
 
-.leave:
 	; next entry
-	inc	rbx
+	jmp	.entry
 
-	; end of entries?
-	cmp	rbx,	qword [rsi + LIMINE_MEMMAP_RESPONSE.entry_count]
-	jne	.usable	; no
+.done:
+	; round up kernel page limit up to Byte
+	mov	rax,	qword [r8 + KERNEL.page_limit]
+	xor	edx,	edx
+	mov	rcx,	STD_MOVE_BYTE
+	div	rcx
+	jz	.limited	; already done
 
-	; convert preserved end address of last entry to binary memory map limit in pages
-	shr	qword [r8 + KERNEL.page_limit], STATIC_PAGE_SIZE_shift
+	; apply new limit
+	add	qword [r8 + KERNEL.page_limit],	STD_MOVE_BYTE
+	sub	qword [r8 + KERNEL.page_limit],	rdx
 
-	;-----------------------------------------------------------------------
-	; some of those registered pages are already used, and You know by who...
-	; "kernel environment variables/routines and binary memory map"
-	; mark those pages as unavailable
-	;-----------------------------------------------------------------------
+.limited:
+	; first page number of reserved area (global kernel environment variables/functions/rountines and binary memory map)
+	mov	rdi,	~KERNEL_PAGE_mirror
+	and	rdi,	r8
+	shr	rdi,	STD_SHIFT_PAGE
 
-	; first page to be marked, thats simple :)
-	mov	rbx,	r8
-	shr	rbx,	STATIC_PAGE_SIZE_shift
-
-	; and more voyage...
-	; length of unavailable space in pages
-
-	; length of binary memory map in Bytes
-	mov	rcx,	qword [r8 + KERNEL.page_limit]
-	shr	rcx,	STATIC_DIVIDE_BY_8_shift
-
-	; sum with binary memory map address
-	add	rcx,	r9
-
-	; and substract kernel environment variables/routines address
-	sub	rcx,	r8
-
-	; align length to page boundaries and convert to pages
-	add	rcx,	~STATIC_PAGE_mask
-	shr	rcx,	STATIC_PAGE_SIZE_shift
+	; calculate length of reserved area in pages
+	mov	rdx,	qword [r8 + KERNEL.page_limit]
+	shr	rdx,	STD_SHIFT_8	; convert Bits to Bytes
+	inc	rdx			; add semaphore area
+	add	rdx,	~STD_PAGE_mask	; align up to page boundary
+	add	rdx,	r9		; add position of binary memory map
+	mov	rax,	~KERNEL_PAGE_mirror
+	and	rdx,	rax		; convert to physical address
+	shr	rdx,	STD_SHIFT_PAGE	; change to pages
 
 	; so, our available pages are less by
-	sub	qword [r8 + KERNEL.page_available],	rcx
+	sub	rdx,	rdi
+	sub	qword [r8 + KERNEL.page_available],	rdx
 
 .mark:
 	; mark page as unavailable
-	btr	qword [r9],	rbx
+	btr	qword [r9],	rdi
 
 	; next page
-	inc	rbx
+	inc	rdi
 
 	; unavailable space marked?
-	dec	rcx
+	dec	rdx
 	jnz	.mark	; no
-
-	; share memory functions with daemons
-	mov	qword [r8 + KERNEL.memory_release],	kernel_memory_release
 
 	; restore original registers
 	pop	rdi
@@ -198,12 +151,3 @@ kernel_init_memory:
 
 	; return from routine
 	ret
-
-.error:
-	; memory map is not available
-	mov	ecx,	kernel_log_memory_end - kernel_log_memory
-	mov	rsi,	kernel_log_memory
-	call	driver_serial_string
-
-	; hold the door
-	jmp	$

@@ -33,7 +33,7 @@ kernel_syscall:
 	push	r15
 
 	; execute kernel function according to parameter in RAX
-	call	qword [kernel_service_list + rax * STATIC_QWORD_SIZE_byte]
+	call	qword [kernel_service_list + rax * STD_QWORD_SIZE_byte]
 
 	; restore original registers
 	pop	r15
@@ -54,7 +54,7 @@ kernel_syscall:
 .return:
 	; restore the RIP and EFLAGS registers of the process
 	xchg	qword [rsp],	r11
-	xchg	qword [rsp + STATIC_QWORD_SIZE_byte],	rcx
+	xchg	qword [rsp + STD_QWORD_SIZE_byte],	rcx
 
 	; return to process code
 	o64	sysret

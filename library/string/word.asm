@@ -25,9 +25,9 @@ lib_string_word:
 
 .search:
 	; separator found?
-	cmp	byte [rsi + rbx],	STATIC_ASCII_EXCLAMATION
+	cmp	byte [rsi + rbx],	STD_ASCII_EXCLAMATION
 	jb	.end	; yes
-	cmp	byte [rsi + rbx],	STATIC_ASCII_TILDE
+	cmp	byte [rsi + rbx],	STD_ASCII_TILDE
 	ja	.end	; yes
 
 	; word size

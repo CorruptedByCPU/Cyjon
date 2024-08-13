@@ -2,6 +2,10 @@
 ; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;=================================================================================
 
+; debug, TODO remove this function
+driver_serial_string:
+	ret
+
 %MACRO	KERNEL_LOG_INITIALIZE 0
 	; prepare stack for arguments from variables
 	sub	rsp,	0x20
@@ -57,7 +61,7 @@ kernel_log:
 	jz	.end	; yes
 
 	; start of sequence?
-	cmp	al,	STATIC_ASCII_PERCENT
+	cmp	al,	STD_ASCII_PERCENT
 	jne	.unsequenced	; no
 
 	; retrieve sequence type
@@ -70,13 +74,13 @@ kernel_log:
 
 	; retrieve variable
 	mov	rax,	qword [rbp]
-	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
+	mov	ebx,	STD_NUMBER_SYSTEM_decimal
 	mov	ecx,	1	; at least 1 digit
 	xor	dl,	dl	; unsigned
 	call	driver_serial_value
 
 	; variable parsed
-	add	rbp, STATIC_QWORD_SIZE_byte
+	add	rbp, STD_QWORD_SIZE_byte
 
 	; continue
 	jmp	.loop
@@ -88,13 +92,13 @@ kernel_log:
 
 	; retrieve variable
 	mov	rax,	qword [rbp]
-	mov	ebx,	STATIC_NUMBER_SYSTEM_hexadecimal
+	mov	ebx,	STD_NUMBER_SYSTEM_hexadecimal
 	mov	ecx,	1	; at least 1 digit
 	xor	dl,	dl	; unsigned
 	call	driver_serial_value
 
 	; variable parsed
-	add	rbp, STATIC_QWORD_SIZE_byte
+	add	rbp, STD_QWORD_SIZE_byte
 
 	; continue
 	jmp	.loop
@@ -110,7 +114,7 @@ kernel_log:
 	call	driver_serial_string
 
 	; variable parsed
-	add	rbp, STATIC_QWORD_SIZE_byte
+	add	rbp, STD_QWORD_SIZE_byte
 
 	; continue
 	jmp	.loop
@@ -118,7 +122,7 @@ kernel_log:
 .no_string:
 	; unrecognized value, show whole sequence
 	push	rax
-	mov	al,	STATIC_ASCII_PERCENT
+	mov	al,	STD_ASCII_PERCENT
 	call	driver_serial_char
 	pop	rax
 

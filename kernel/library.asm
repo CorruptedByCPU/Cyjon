@@ -2,9 +2,9 @@
 ; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;=================================================================================
 
-kernel_library_string_dynstr			db	".dynstr", STATIC_ASCII_TERMINATOR
-kernel_library_string_shstrtab			db	".shstrtab", STATIC_ASCII_TERMINATOR
-kernel_library_string_got_plt			db	".got.plt", STATIC_ASCII_TERMINATOR
+kernel_library_string_dynstr			db	".dynstr", STD_ASCII_TERMINATOR
+kernel_library_string_shstrtab			db	".shstrtab", STD_ASCII_TERMINATOR
+kernel_library_string_got_plt			db	".got.plt", STD_ASCII_TERMINATOR
 
 ;-------------------------------------------------------------------------------
 ; in:
@@ -152,7 +152,7 @@ kernel_library_section_by_name:
 	; calculate SHSTRTAB offset
 	movzx	eax,	bx
 	dec	rax	; always last entry
-	shl	rax,	STATIC_MULTIPLE_BY_64_shift
+	shl	rax,	STD_MULTIPLE_BY_64_shift
 
 	; retrieve pointer to SHSTRTAB section
 	mov	rax,	qword [r13 + rax + LIB_ELF_STRUCTURE_SECTION.file_offset]
@@ -168,7 +168,7 @@ kernel_library_section_by_name:
 	jc	.next	; different
 
 	; check if section name wasn't part of something else
-	test	byte [rdi + rcx],	STATIC_ASCII_TERMINATOR
+	test	byte [rdi + rcx],	STD_ASCII_TERMINATOR
 	jnz	.next	; it is
 
 	; return section properties
@@ -216,7 +216,7 @@ kernel_library_add:
 	xor	ecx,	ecx
 
 	; set pointer to begining of library entries
-	mov	r14,	qword [kernel_environment_base_address]
+	mov	r14,	qword [kernel]
 	mov	r14,	qword [r14 + KERNEL.library_base_address]
 
 .next:
@@ -323,7 +323,7 @@ kernel_library_find:
 	xor	ebx,	ebx
 
 	; set pointer to begining of library entries
-	mov	r14,	qword [kernel_environment_base_address]
+	mov	r14,	qword [kernel]
 	mov	r14,	qword [r14 + KERNEL.library_base_address]
 
 .find:
@@ -391,7 +391,7 @@ kernel_library_function:
 	xor	ebx,	ebx
 
 	; set pointer to begining of library entries
-	mov	r14,	qword [kernel_environment_base_address]
+	mov	r14,	qword [kernel]
 	mov	r14,	qword [r14 + KERNEL.library_base_address]
 
 .library:
@@ -427,7 +427,7 @@ kernel_library_function:
 	add	rdi,	qword [r14 + KERNEL_LIBRARY_STRUCTURE.strtab]
 
 	; strings name are exact length?
-	cmp	byte [rdi + rcx],	STATIC_ASCII_TERMINATOR
+	cmp	byte [rdi + rcx],	STD_ASCII_TERMINATOR
 	je	.dynsym_name	; yes
 
 .dynsym_next:
@@ -681,7 +681,7 @@ kernel_library_load:
 	;-----------------------------------------------------------------------
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; file descriptor
 	sub	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
@@ -703,8 +703,8 @@ kernel_library_load:
 
 	; prepare space for file content
 	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
-	add	rcx,	~STATIC_PAGE_mask
-	shr	rcx,	STATIC_PAGE_SIZE_shift
+	add	rcx,	~STD_PAGE_mask
+	shr	rcx,	STD_PAGE_SIZE_shift
 	call	kernel_memory_alloc
 	jc	.error_level_descriptor	; no enough memory
 
@@ -775,8 +775,8 @@ kernel_library_load:
 
 	; by now we have address of fartest point in memory of library
 	; convert this address to length in pages
-	add	rcx,	~STATIC_PAGE_mask
-	shr	rcx,	STATIC_PAGE_SIZE_shift
+	add	rcx,	~STD_PAGE_mask
+	shr	rcx,	STD_PAGE_SIZE_shift
 
 	; prepare error code
 	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_memory_no_enough
@@ -787,7 +787,7 @@ kernel_library_load:
 	jc	.error_level_file	; no enough memory
 
 	; convert page number to logical address
-	shl	rdi,	STATIC_PAGE_SIZE_shift
+	shl	rdi,	STD_PAGE_SIZE_shift
 	add	rdi,	qword [kernel_library_base_address]
 
 	; prepare space for file content
@@ -879,11 +879,11 @@ kernel_library_load:
 	; register library name and length
 
 	; length in characters
-	mov	rcx,	qword [rsp + STATIC_QWORD_SIZE_byte]
+	mov	rcx,	qword [rsp + STD_QWORD_SIZE_byte]
 	mov	byte [r14 + KERNEL_LIBRARY_STRUCTURE.length],	cl
 
 	; name
-	mov	rsi,	qword [rsp + (STATIC_QWORD_SIZE_byte << STATIC_MULTIPLE_BY_2_shift)]
+	mov	rsi,	qword [rsp + (STD_QWORD_SIZE_byte << STD_MULTIPLE_BY_2_shift)]
 	push	rdi	; preserve library content location
 	lea	rdi,	[r14 + KERNEL_LIBRARY_STRUCTURE.name]
 	rep	movsb
@@ -929,7 +929,7 @@ kernel_library_load:
 
 .error_level_aquire:
 	; first page of acquired space
-	shr	rax,	STATIC_PAGE_SIZE_shift
+	shr	rax,	STD_PAGE_SIZE_shift
 
 .error_level_aquire_release:
 	; release first page of space

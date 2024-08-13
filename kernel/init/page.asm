@@ -39,11 +39,11 @@ kernel_init_page:
 	; first entry of memory map privded by Limine
 	xor	ecx,	ecx
 	mov	rax,	qword [kernel_limine_memmap_request + LIMINE_MEMMAP_REQUEST.response]
-	mov	rdi,	qword [rax + LIMINE_MEMMAP_RESPONSE.entry]
+	mov	rdi,	qword [rax + LIMINE_MEMMAP_RESPONSE.entries]
 
 .entry:
 	; retrieve entry address
-	mov	rsi,	qword [rdi + rcx * STATIC_PTR_SIZE_byte]
+	mov	rsi,	qword [rdi + rcx * STD_PTR_SIZE_byte]
 
 	; type of LIMINE_MEMMAP_USABLE?
 	cmp	qword [rsi + LIMINE_MEMMAP_ENTRY.type],	LIMINE_MEMMAP_USABLE
@@ -68,7 +68,7 @@ kernel_init_page:
 
 	; size of space in pages
 	mov	rcx,	qword [rsi + LIMINE_MEMMAP_ENTRY.length]
-	shr	rcx,	STATIC_PAGE_SIZE_shift
+	shr	rcx,	STD_PAGE_SIZE_shift
 
 	; map physical space to its High-Half mirror
 	mov	rax,	KERNEL_PAGE_mirror
@@ -93,7 +93,7 @@ kernel_init_page:
 	;-----------------------------------------------------------------------
 
 	; every controller space is about 4096 Bytes
-	mov	ecx,	STATIC_PAGE_SIZE_page
+	mov	ecx,	STD_PAGE_SIZE_page
 
 	; map LAPIC controller space
 	mov	rax,	KERNEL_PAGE_mirror
@@ -164,15 +164,15 @@ kernel_init_page:
 	; segment length
 	mov	rcx,	qword [rdi + LIB_ELF_STRUCTURE_HEADER.virtual_address]
 	add	rcx,	qword [rdi + LIB_ELF_STRUCTURE_HEADER.memory_size]
-	add	rcx,	~STATIC_PAGE_mask	; align up to page boundaries
-	and	cx,	STATIC_PAGE_mask
-	shr	rcx,	STATIC_PAGE_SIZE_shift	; convert to pages
+	add	rcx,	~STD_PAGE_mask	; align up to page boundaries
+	and	cx,	STD_PAGE_mask
+	shr	rcx,	STD_PAGE_SIZE_shift	; convert to pages
 	movzx	rcx,	cx	; limits kernel size to 256 MiB, not enough?
 
 	; segment offset
 	mov	rsi,	~KERNEL_BASE_location
 	and	rsi,	qword [rdi + LIB_ELF_STRUCTURE_HEADER.virtual_address]
-	and	si,	STATIC_PAGE_mask
+	and	si,	STD_PAGE_mask
 
 	; kernel segment target
 	mov	rax,	KERNEL_BASE_location
@@ -204,7 +204,7 @@ kernel_init_page:
 	or	qword [r8 + KERNEL.page_base_address],	rax
 
 	; and kernel environment variables/routines itself
-	or	qword [kernel_environment_base_address],	rax
+	or	qword [kernel],	rax
 	or	r8,	rax	; with pointer
 	or	r9,	rax
 

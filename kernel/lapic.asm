@@ -9,7 +9,7 @@ kernel_lapic_accept:
 	push	rax
 
 	; LAPIC controller base address
-	mov	rax,	qword [kernel_environment_base_address]
+	mov	rax,	qword [kernel]
 	mov	rax,	qword [rax + KERNEL.lapic_base_address]
 
 	; accept currently pending interrupt
@@ -26,7 +26,7 @@ kernel_lapic_accept:
 ;	eax - cpu id
 kernel_lapic_id:
 	; kernel environment variables/rountines base address
-	mov	rax,	qword [kernel_environment_base_address]
+	mov	rax,	qword [kernel]
 
 	; retrieve CPU ID from LAPIC
 	mov	rax,	qword [rax + KERNEL.lapic_base_address]
@@ -44,7 +44,7 @@ kernel_lapic_init:
 	push	rdi
 
 	; kernel environment variables/rountines base address
-	mov	rdi,	qword [kernel_environment_base_address]
+	mov	rdi,	qword [kernel]
 	mov	rdi,	qword [rdi + KERNEL.lapic_base_address]
 
 	; turn off Task Priority and Priority Sub-Class
@@ -86,7 +86,7 @@ kernel_lapic_reload:
 	push	rax
 
 	; LAPIC controller base address
-	mov	rax,	qword [kernel_environment_base_address]
+	mov	rax,	qword [kernel]
 	mov	rax,	qword [rax + KERNEL.lapic_base_address]
 
 	; wake up internal interrupt after KERNEL_LAPIC_Hz cycles

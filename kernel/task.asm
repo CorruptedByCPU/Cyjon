@@ -38,7 +38,7 @@ kernel_task:
 	; [PRESERVE]
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; retrieve CPU ID from LAPIC
 	mov	rbx,	qword [r8 + KERNEL.lapic_base_address]
@@ -47,7 +47,7 @@ kernel_task:
 
 	; get pointer to current task of AP
 	mov	r9,	qword [r8 + KERNEL.task_ap_address]
-	mov	r10,	qword [r9 + rbx * STATIC_PTR_SIZE_byte]
+	mov	r10,	qword [r9 + rbx * STD_PTR_SIZE_byte]
 
 	;=======================================================================
 	; todo, find why task_ap_address[ cpu_id ] doesn't contain task pointer
@@ -124,7 +124,7 @@ kernel_task:
 	; [RESTORE]
 
 	; set pointer to current task for AP
-	mov	qword [r9 + rbx * STATIC_PTR_SIZE_byte],	r10
+	mov	qword [r9 + rbx * STD_PTR_SIZE_byte],	r10
 
 	; restore tasks stack pointer
 	mov	rsp,	qword [r10 + KERNEL_TASK_STRUCTURE.rsp]
@@ -165,7 +165,7 @@ kernel_task:
 	mov	rcx,	qword [rax]
 
 	; pointer to string
-	add	rax,	STATIC_QWORD_SIZE_byte
+	add	rax,	STD_QWORD_SIZE_byte
 
 	; and pass them to process
 	mov	qword [rsp + 0x48],	rcx
@@ -220,7 +220,7 @@ kernel_task_add:
 	push	r8
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; search for free entry from beginning
 	mov	rax,	KERNEL_TASK_limit
@@ -278,7 +278,7 @@ kernel_task_add:
 	rep	movsb
 
 	; last character as TERMINATOR
-	mov	byte [rdi],	STATIC_ASCII_TERMINATOR
+	mov	byte [rdi],	STD_ASCII_TERMINATOR
 
 	; number of tasks inside queue
 	inc	qword [r8 + KERNEL.task_count]
@@ -310,7 +310,7 @@ kernel_task_by_id:
 	push	r8
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; search for free entry from beginning
 	mov	rcx,	KERNEL_TASK_limit
@@ -356,9 +356,9 @@ kernel_task_active:
 	call	kernel_lapic_id
 
 	; set pointer to current task of CPU
-	mov	r9,	qword [kernel_environment_base_address]
+	mov	r9,	qword [kernel]
 	mov	r9,	qword [r9 + KERNEL.task_ap_address]
-	mov	r9,	qword [r9 + rax * STATIC_PTR_SIZE_byte]
+	mov	r9,	qword [r9 + rax * STD_PTR_SIZE_byte]
 
 	; restore original flags
 	popf
@@ -375,7 +375,7 @@ kernel_task_id_new:
 	push	r8
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; generate new ID :D
 	inc	qword [r8 + KERNEL.task_id]
@@ -425,9 +425,9 @@ kernel_task_pid:
 	call	kernel_lapic_id
 
 	; set pointer to current task of CPU
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 	mov	r8,	qword [r8 + KERNEL.task_ap_address]
-	mov	r8,	qword [r8 + rax * STATIC_PTR_SIZE_byte]
+	mov	r8,	qword [r8 + rax * STD_PTR_SIZE_byte]
 	mov	rax,	qword [r8 + KERNEL_TASK_STRUCTURE.pid]
 
 	; restore original flags
