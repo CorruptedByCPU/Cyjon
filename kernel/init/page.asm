@@ -118,8 +118,8 @@ kernel_init_page:
 	;-----------------------------------------------------------------------
 
 	; alloc context stack for kernel environment
-	mov	rax,	KERNEL_TASK_STACK_address
-	mov	ecx,	KERNEL_TASK_STACK_SIZE_page
+	mov	rax,	KERNEL_STACK_address
+	mov	ecx,	KERNEL_STACK_page
 	call	kernel_page_alloc
 
 	;-----------------------------------------------------------------------
@@ -170,12 +170,12 @@ kernel_init_page:
 	movzx	rcx,	cx	; limits kernel size to 256 MiB, not enough?
 
 	; segment offset
-	mov	rsi,	~KERNEL_BASE_location
+	mov	rsi,	~KERNEL_BASE_address
 	and	rsi,	qword [rdi + LIB_ELF_STRUCTURE_HEADER.virtual_address]
 	and	si,	STD_PAGE_mask
 
 	; kernel segment target
-	mov	rax,	KERNEL_BASE_location
+	mov	rax,	KERNEL_BASE_address
 	add	rax,	rsi
 
 	; kernel segment source

@@ -190,18 +190,18 @@ kernel_exec_configure:
 	;-----------------------------------------------------------------------
 
 	; describe the space under context stack of process
-	mov	rax,	KERNEL_TASK_STACK_address
+	mov	rax,	KERNEL_STACK_address
 	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_process
-	mov	ecx,	KERNEL_TASK_STACK_SIZE_page
+	mov	ecx,	KERNEL_STACK_page
 	mov	r11,	rdi
 	call	kernel_page_alloc
 
 	; set process context stack pointer
-	mov	rsi,	KERNEL_TASK_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
+	mov	rsi,	KERNEL_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsi
 
 	; prepare exception exit mode on context stack of process
-	mov	rsi,	KERNEL_TASK_STACK_pointer - STD_PAGE_SIZE_byte
+	mov	rsi,	KERNEL_STACK_pointer - STD_PAGE_SIZE_byte
 	call	kernel_page_address
 
 	; set pointer to return descriptor
@@ -214,7 +214,7 @@ kernel_exec_configure:
 	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.rip],	rdx
 
 	; code descriptor
-	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.cs],	KERNEL_GDT_STRUCTURE.cs_ring3 | 0x03
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.cs],	KERNEL_STRUCTURE_GDT.cs_ring3 | 0x03
 
 	; default processor state flags
 	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.eflags],	KERNEL_TASK_EFLAGS_default
@@ -224,7 +224,7 @@ kernel_exec_configure:
 	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.rsp],	rdx
 
 	; stack descriptor
-	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.ss],	KERNEL_GDT_STRUCTURE.ds_ring3 | 0x03
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.ss],	KERNEL_STRUCTURE_GDT.ss_ring3 | 0x03
 
 	;-----------------------------------------------------------------------
 	; stack

@@ -16,7 +16,6 @@
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/config.inc"
 	%include	"kernel/exec.inc"
-	%include	"kernel/gdt.inc"
 	; %include	"kernel/hpet.inc"
 	%include	"kernel/idt.inc"
 	%include	"kernel/io_apic.inc"
@@ -123,25 +122,25 @@ _entry:
 	; create binary memory map
 	call	kernel_init_memory
 
-	; parse ACPI tables
-	call	kernel_init_acpi
+; parse ACPI tables
+call	kernel_init_acpi
 
-	; recreate kernel's paging structures
-	call	kernel_init_page
+; recreate kernel's paging structures
+call	kernel_init_page
 
-	; switch to new kernel paging array
-	mov	rax,	~KERNEL_PAGE_mirror	; physical address
-	and	rax,	qword [r8 + KERNEL.page_base_address]
-	mov	cr3,	rax
+; switch to new kernel paging array
+mov	rax,	~KERNEL_PAGE_mirror	; physical address
+and	rax,	qword [r8 + KERNEL.page_base_address]
+mov	cr3,	rax
 
-	; set new stack pointer
-	mov	rsp,	KERNEL_TASK_STACK_pointer
+; set new stack pointer
+mov	rsp,	KERNEL_STACK_pointer
 
 	; create Global Descriptor Table
 	call	kernel_init_gdt
 
-	; create Interrupt Descriptor Table
-	call	kernel_init_idt
+; create Interrupt Descriptor Table
+call	kernel_init_idt
 
 	; ESSENTIAL -----------------------------------------------------------
 

@@ -31,7 +31,7 @@ kernel_task:
 	push	r15
 
 	; keep "floating point" registers
-	mov	rbp,	KERNEL_TASK_STACK_pointer
+	mov	rbp,	KERNEL_STACK_pointer
 	FXSAVE64	[rbp]
 
 	;-----------------------------------------------------------------------
@@ -144,7 +144,7 @@ kernel_task:
 	fninit
 
 	; save FPU state/registers
-	mov	rbp,	KERNEL_TASK_STACK_pointer
+	mov	rbp,	KERNEL_STACK_pointer
 	FXSAVE64	[rbp]
 
 	; it's a daemon?
@@ -180,7 +180,7 @@ kernel_task:
 	mov	dword [rax + KERNEL_LAPIC_STRUCTURE.eoi],	EMPTY
 
 	; restore "floating point" registers
-	mov	rbp,	KERNEL_TASK_STACK_pointer
+	mov	rbp,	KERNEL_STACK_pointer
 	FXRSTOR64	[rbp]
 
 	; restore ogirinal registers

@@ -144,7 +144,7 @@ kernel_idt_update:
 	mov	dword [rdi + KERNEL_IDT_STRUCTURE_ENTRY.address_high],	eax
 
 	; code descriptor of kernel environment
-	mov	word [rdi + KERNEL_IDT_STRUCTURE_ENTRY.cs],	KERNEL_GDT_STRUCTURE.cs_ring0
+	mov	word [rdi + KERNEL_IDT_STRUCTURE_ENTRY.cs],	KERNEL_STRUCTURE_GDT.cs_ring0
 
 	; type of interrupt
 	mov	word [rdi + KERNEL_IDT_STRUCTURE_ENTRY.type],	bx

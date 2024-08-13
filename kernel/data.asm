@@ -11,20 +11,8 @@ kernel_page_mirror		dq	KERNEL_PAGE_mirror
 
 ; align table
 align	0x08,	db	0x00
-kernel_gdt_header		dw	STD_PAGE_SIZE_byte
-				dq	EMPTY
-
-; align table
-align	0x08,	db	0x00
 kernel_idt_header		dw	STD_PAGE_SIZE_byte
 				dq	EMPTY
-
-; align table
-align	0x08,	db	0x00
-kernel_tss_header		dd	EMPTY
-				dq	KERNEL_TASK_STACK_pointer	; rsp0
-		times 92	db	EMPTY
-kernel_tss_header_end:
 
 kernel_idt_exception_string_unknown			db	STD_ASCII_NEW_LINE, "{UNKNOWN CPU EXCEPTION}", STD_ASCII_TERMINATOR
 kernel_idt_exception_string_divide_by_zero_error	db	STD_ASCII_NEW_LINE, "Divide-by-zero Error", " at 0x", STD_ASCII_TERMINATOR

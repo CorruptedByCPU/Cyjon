@@ -70,9 +70,9 @@ kernel_init_daemon:
 	;-----------------------------------------------------------------------
 
 	; describe the space under context stack of process
-	mov	rax,	KERNEL_TASK_STACK_address
+	mov	rax,	KERNEL_STACK_address
 	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_process
-	mov	ecx,	KERNEL_TASK_STACK_SIZE_page
+	mov	ecx,	KERNEL_STACK_page
 	mov	r11,	rdi
 	call	kernel_page_alloc
 
@@ -80,11 +80,11 @@ kernel_init_daemon:
 	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
 
 	; set process context stack pointer
-	mov	rsi,	KERNEL_TASK_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
+	mov	rsi,	KERNEL_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsi
 
 	; prepare exception exit mode on context stack of process
-	mov	rsi,	KERNEL_TASK_STACK_pointer - STD_PAGE_SIZE_byte
+	mov	rsi,	KERNEL_STACK_pointer - STD_PAGE_SIZE_byte
 	call	kernel_page_address
 
 	; set pointer to return descriptor
@@ -98,17 +98,17 @@ kernel_init_daemon:
 	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.rip],	rdx
 
 	; code descriptor
-	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.cs],	KERNEL_GDT_STRUCTURE.cs_ring0
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.cs],	KERNEL_STRUCTURE_GDT.cs_ring0
 
 	; default processor state flags
 	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.eflags],	KERNEL_TASK_EFLAGS_default
 
 	; default stack pointer
-	mov	rdx,	KERNEL_TASK_STACK_pointer
+	mov	rdx,	KERNEL_STACK_pointer
 	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.rsp],	rdx
 
 	; stack descriptor
-	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.ss],	KERNEL_GDT_STRUCTURE.ds_ring0
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.ss],	KERNEL_STRUCTURE_GDT.ss_ring0
 
 	;-----------------------------------------------------------------------
 	; allocate space for executable segments

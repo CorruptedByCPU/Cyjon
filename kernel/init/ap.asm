@@ -27,7 +27,7 @@ kernel_init_ap:
 	;-----
 
 	; reload Global Descriptor Table
-	lgdt	[kernel_gdt_header]
+	lgdt	[r8 + KERNEL.gdt_header]
 	call	kernel_init_gdt_reload
 
 	;-----
@@ -37,21 +37,22 @@ kernel_init_ap:
 	; change CPU ID to descriptor offset
 	call	kernel_lapic_id
 	shl	rax,	STD_MULTIPLE_BY_16_shift
-	add	rax,	KERNEL_GDT_STRUCTURE.tss
+	add	rax,	KERNEL_STRUCTURE_GDT.tss
 
 	; preserve TSS offset
 	push	rax
 
 	; set pointer to TSS entry of this AP
-	mov	rdi,	qword [kernel_gdt_header + KERNEL_GDT_STRUCTURE_HEADER.address]
+	mov	rdi,	qword [r8 + KERNEL.gdt_header + KERNEL_STRUCTURE_GDT_HEADER.base_address]
 	add	rdi,	rax
 
 	; length of TSS header
-	mov	ax,	kernel_tss_header_end - kernel_tss_header
+	mov	ax,	KERNEL_STRUCTURE_TSS.SIZE
 	stosw	; save
 
 	; TSS header address
-	mov	rax,	kernel_tss_header
+	mov	rax,	r8
+	add	rax,	KERNEL.tss_table
 	stosw	; save (bits 15..0)
 	shr	rax,	16
 	stosb	; save (bits 23..16)
