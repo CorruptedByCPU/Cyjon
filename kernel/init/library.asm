@@ -3,8 +3,7 @@
 ;=================================================================================
 
 ;-------------------------------------------------------------------------------
-; in:
-;	r8 - pointer to kernel environment variables/routines
+; void
 kernel_init_library:
 	; preserve original registers
 	push	rcx

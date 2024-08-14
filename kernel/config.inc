@@ -42,16 +42,18 @@ struc	KERNEL
 	; variables of GDT management functions
 	.gdt_header			resb	KERNEL_STRUCTURE_GDT_HEADER.SIZE
 
-; variables of I/O APIC management functions
-.io_apic_base_address		resq	1
+	; variables of I/O APIC management functions
+	.io_apic_base_address		resq	1
+	.io_apic_irq_lines		resd	1
+	.io_apic_semaphore		resb	1
 
 ; variables of IPC management functions
 .ipc_base_address		resq	1
 .ipc_semaphore			resb	1
 
-; variables of LAPIC management functions
-.lapic_base_address		resq	1
-.lapic_last_id			resd	1
+	; variables of LAPIC management functions
+	.lapic_base_address		resq	1
+	.lapic_last_id			resd	1
 
 ; variables of Library management functions
 .library_base_address		resq	1
@@ -96,7 +98,7 @@ struc	KERNEL
 
 	; variables of Time management functions
 .time_rdtsc			resq	1
-	.time_rtc			resq	1
+.time_rtc			resq	1
 
 	; variables of TSS management functions
 	.tss_table			resb	KERNEL_STRUCTURE_TSS.SIZE

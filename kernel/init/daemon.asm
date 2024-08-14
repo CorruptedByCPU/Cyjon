@@ -93,7 +93,7 @@ kernel_init_daemon:
 	add	rax,	STD_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
 
 	; set first instruction executed by process
-	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.program_entry_position]
+	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.entry_ptr]
 	add	rdx,	r13
 	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.rip],	rdx
 
@@ -130,10 +130,10 @@ kernel_init_daemon:
 	;-----------------------------------------------------------------------
 
 	; number of program headers
-	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.header_entry_count]
+	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.h_entry_count]
 
 	; beginning of header section
-	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.header_table_position]
+	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.headers_offset]
 	add	rdx,	r13
 
 .elf_header:

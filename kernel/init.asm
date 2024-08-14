@@ -16,7 +16,6 @@
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/config.inc"
 	%include	"kernel/exec.inc"
-	; %include	"kernel/hpet.inc"
 	%include	"kernel/idt.inc"
 	%include	"kernel/io_apic.inc"
 	%include	"kernel/ipc.inc"
@@ -32,9 +31,6 @@
 	%include	"kernel/init/limine.inc"
 	;=======================================================================
 
-; 64 bit code
-[bits 64]
-
 ; we are using Position Independed Code
 default	rel
 
@@ -49,6 +45,9 @@ section	.data
 	%include	"kernel/data.asm"
 	%include	"kernel/init/data.asm"
 	;=======================================================================
+
+; 64 bit code
+[bits 64]
 
 ; information for linker
 section .text
@@ -67,7 +66,6 @@ section .text
 	%include	"kernel/driver/serial.asm"
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/exec.asm"
-	; %include	"kernel/hpet.asm"
 	%include	"kernel/idt.asm"
 	%include	"kernel/io_apic.asm"
 	%include	"kernel/lapic.asm"
@@ -89,7 +87,6 @@ section .text
 	%include	"kernel/init/exec.asm"
 	%include	"kernel/init/free.asm"
 	%include	"kernel/init/gdt.asm"
-	; %include	"kernel/init/hpet.asm"
 	%include	"kernel/init/idt.asm"
 	%include	"kernel/init/ipc.asm"
 	%include	"kernel/init/library.asm"
@@ -122,19 +119,19 @@ _entry:
 	; create binary memory map
 	call	kernel_init_memory
 
-; parse ACPI tables
-call	kernel_init_acpi
+	; parse ACPI tables
+	call	kernel_init_acpi
 
-; recreate kernel's paging structures
-call	kernel_init_page
+	; recreate kernel's paging structures
+	call	kernel_init_page
 
-; switch to new kernel paging array
-mov	rax,	~KERNEL_PAGE_mirror	; physical address
-and	rax,	qword [r8 + KERNEL.page_base_address]
-mov	cr3,	rax
+	; reload new kernel environment paging array
+	mov	rax,	~KERNEL_PAGE_mirror	; physical address
+	and	rax,	qword [r8 + KERNEL.page_base_address]
+	mov	cr3,	rax
 
-; set new stack pointer
-mov	rsp,	KERNEL_STACK_pointer
+	; set new stack pointer
+	mov	rsp,	KERNEL_STACK_pointer
 
 	; create Global Descriptor Table
 	call	kernel_init_gdt
@@ -155,9 +152,6 @@ call	kernel_init_idt
 
 	; configure RTC
 	call	kernel_init_rtc
-
-	; configure HPET controller
-	; call	kernel_init_hpet
 
 	; initialize PS2 keyboard/mouse driver
 	call	driver_ps2

@@ -39,14 +39,14 @@ kernel_library:
 
 .library:
 	; library required?
-	cmp	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.type],	LIB_ELF_SECTION_DYNAMIC_TYPE_needed
+	cmp	qword [r13 + LIB_ELF_STRUCTURE_DYNAMIC_ENTRY.type],	LIB_ELF_SECTION_DYNAMIC_TYPE_needed
 	jne	.end	; no, and no more should be listed
 
 	; preserve original registers
 	push	rsi
 
 	; set pointer to library name
-	add	rsi,	qword [r13 + LIB_ELF_STRUCTURE_SECTION_DYNAMIC.offset]
+	add	rsi,	qword [r13 + LIB_ELF_STRUCTURE_DYNAMIC_ENTRY.name_offset]
 	call	lib_string_length
 
 	; library already loaded?
@@ -64,7 +64,7 @@ kernel_library:
 	jc	.end	; yes
 
 	; next entry from list
-	add	r13,	LIB_ELF_STRUCTURE_SECTION_DYNAMIC.SIZE
+	add	r13,	LIB_ELF_STRUCTURE_DYNAMIC_ENTRY.SIZE
 
 	; continue
 	jmp	.library
@@ -92,10 +92,10 @@ kernel_library_section_by_type:
 	push	r13
 
 	; amount of entries of section headers
-	mov	bx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
+	mov	bx,	word [r13 + LIB_ELF_STRUCTURE.s_entry_count]
 
 	; move pointer to section headers
-	add	r13,	qword [r13 + LIB_ELF_STRUCTURE.section_table_position]
+	add	r13,	qword [r13 + LIB_ELF_STRUCTURE.sections_offset]
 
 .section:
 	; exact section type?
@@ -141,13 +141,13 @@ kernel_library_section_by_name:
 	push	r13
 
 	; amount of entries of section headers
-	mov	bx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
+	mov	bx,	word [r13 + LIB_ELF_STRUCTURE.s_entry_count]
 
 	; section name length
 	call	lib_string_length
 
 	; move pointer to section headers
-	add	r13,	qword [r13 + LIB_ELF_STRUCTURE.section_table_position]
+	add	r13,	qword [r13 + LIB_ELF_STRUCTURE.sections_offset]
 
 	; calculate SHSTRTAB offset
 	movzx	eax,	bx
@@ -254,10 +254,10 @@ kernel_library_add:
 	; - string table
 
 	; number of entries in section header
-	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.section_entry_count]
+	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.s_entry_count]
 
 	; set pointer to begining of section header
-	mov	rsi,	qword [r13 + LIB_ELF_STRUCTURE.section_table_position]
+	mov	rsi,	qword [r13 + LIB_ELF_STRUCTURE.sections_offset]
 	add	rsi,	r13
 
 .section:
@@ -720,7 +720,7 @@ kernel_library_load:
 	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_exec_not_executable
 
 	; check if file have proper ELF header
-	call	lib_elf_check
+	call	lib_elf_identify
 	jc	.error_level_file	; it's not an ELF file
 
 	; check if it is a shared library
@@ -737,13 +737,13 @@ kernel_library_load:
 	; first of we should calculate much space unpacked library needs (in pages)
 
 	; number of program headers
-	movzx	ebx,	word [r13 + LIB_ELF_STRUCTURE.header_entry_count]
+	movzx	ebx,	word [r13 + LIB_ELF_STRUCTURE.h_entry_count]
 
 	; length of memory space in Bytes
 	xor	ecx,	ecx
 
 	; beginning of header section
-	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.header_table_position]
+	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.headers_offset]
 	add	rdx,	r13
 
 .calculate:
@@ -805,10 +805,10 @@ kernel_library_load:
 	;-----------------------------------------------------------------------
 
 	; number of program headers
-	movzx	ebx,	word [r13 + LIB_ELF_STRUCTURE.header_entry_count]
+	movzx	ebx,	word [r13 + LIB_ELF_STRUCTURE.h_entry_count]
 
 	; beginning of header section
-	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.header_table_position]
+	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.headers_offset]
 	add	rdx,	r13
 
 .segment:

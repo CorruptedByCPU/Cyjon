@@ -2,46 +2,38 @@
 ; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;=================================================================================
 
-	;-----------------------------------------------------------------------
-	; structures, definitions
-	;-----------------------------------------------------------------------
-	; global ---------------------------------------------------------------
-	%include	"library/std.inc"	; not required, but nice to have
-	; library --------------------------------------------------------------
-	%ifndef	ELF
-		%include	"library/elf.inc"
+	;----------------------------------------------------------------------
+	; variables, structures, definitions
+	;----------------------------------------------------------------------
+	%ifndef	LIB_ELF
+		%include	"./elf.inc"
 	%endif
-	;=======================================================================
+
+; we are using Position Independed Code
+default	rel
 
 ; 64 bit code
 [bits 64]
 
-; we are using Position Independed Code
-default	rel
+; information for linker
+section .text
 
 ;-------------------------------------------------------------------------------
 ; in:
 ;	rdi - pointer to beginning of file
 ; out:
 ;	CF - if its not an ELF64 file
-lib_elf_check:
-	; file contains ELF header?
-	cmp	dword [rdi + LIB_ELF_STRUCTURE.magic_number],	0x464C457F
-	jne	.error	; no
-
-	; we do not need to know anything else, right now
-	; the ecosystem is closed, so we don't expect programs from outside
-
-	; test passed
+lib_elf_identify:
+	; by default
 	clc
 
-	; end of procedure
-	jmp	.end
+	; file contains ELF header?
+	cmp	dword [rdi + LIB_ELF_STRUCTURE.magic_number],	0x464C457F
+	je	.done	; yes
 
-.error:
-	; test failed
+	; undefinied file
 	stc
 
-.end:
+.done:
 	; return from routine
 	ret

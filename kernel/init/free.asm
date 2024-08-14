@@ -3,9 +3,7 @@
 ;=================================================================================
 
 ;-------------------------------------------------------------------------------
-; in:
-;	r8 - pointer to kernel environment variables/routines
-;	r9 - pointer to binary memory map
+; void
 kernel_init_free:
 	;-----------------------------------------------------------------------
 	; after last AP initialization, we can include bootloader memory

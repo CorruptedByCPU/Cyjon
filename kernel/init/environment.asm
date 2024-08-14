@@ -86,10 +86,13 @@ kernel_init_environment:
 	;----------------------------------------------------------------------
 
 	; share kernel early printf function
-	mov	qword [rdi + KERNEL.log],		kernel_log
+	mov	qword [rdi + KERNEL.log],			kernel_log
 
 	; share memory management functions
-	mov	qword [rdi + KERNEL.memory_release],	kernel_memory_release
+	mov	qword [rdi + KERNEL.memory_release],		kernel_memory_release
+
+	; share page management functions
+	mov	qword [rdi + KERNEL.page_deconstruction],	kernel_page_deconstruction
 
 	; restore original registers
 	pop	rsi

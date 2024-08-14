@@ -3,9 +3,7 @@
 ;=================================================================================
 
 ;-------------------------------------------------------------------------------
-; out:
-;	r8 - pointer to global kernel environment variables/functions/rountines
-;	r9 - pointer to binary memory map
+; void
 kernel_init_memory:
 	; preserve original registers
 	push	rax

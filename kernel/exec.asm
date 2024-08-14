@@ -210,7 +210,7 @@ kernel_exec_configure:
 	add	rax,	STD_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
 
 	; set first instruction executed by process
-	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.program_entry_position]
+	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.entry_ptr]
 	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.rip],	rdx
 
 	; code descriptor
@@ -321,10 +321,10 @@ kernel_exec_configure:
 	;-----------------------------------------------------------------------
 
 	; number of program headers
-	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.header_entry_count]
+	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.h_entry_count]
 
 	; beginning of header section
-	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.header_table_position]
+	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.headers_offset]
 	add	rdx,	r13
 
 .elf_header:
@@ -590,7 +590,7 @@ kernel_exec_load:
 	call	kernel_storage_read
 
 	; proper ELF file?
-	call	lib_elf_check
+	call	lib_elf_identify
 	jc	.error	; no
 
 	; it's an executable file?
@@ -633,13 +633,13 @@ kernel_exec_size:
 	push	rdx
 
 	; number of header entries
-	movzx	ebx,	word [r13 + LIB_ELF_STRUCTURE.header_entry_count]
+	movzx	ebx,	word [r13 + LIB_ELF_STRUCTURE.h_entry_count]
 
 	; length of memory space in Bytes
 	xor	ecx,	ecx
 
 	; beginning of header table
-	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.header_table_position]
+	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.headers_offset]
 	add	rdx,	r13
 
 .calculate:
