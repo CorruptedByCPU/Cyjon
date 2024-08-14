@@ -6,7 +6,7 @@
 	; variables, structures, definitions of driver
 	;----------------------------------------------------------------------
 	%ifndef	DRIVER_SERIAL
-		%include	"./serial.inc"
+		%include	"./kernel/driver/serial.inc"
 	%endif
 
 ;-------------------------------------------------------------------------------

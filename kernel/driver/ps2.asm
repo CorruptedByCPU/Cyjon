@@ -307,7 +307,7 @@ driver_ps2:
 	mov	rax,	driver_ps2_mouse
 	mov	bx,	KERNEL_IDT_TYPE_irq
 	mov	ecx,	KERNEL_IDT_IRQ_offset + DRIVER_PS2_MOUSE_IRQ_number
-	call	kernel_idt_update
+	call	kernel_idt_mount
 
 	; redirect interrupt vector inside I/O APIC controller to correct IDT entry
 	mov	eax,	KERNEL_IDT_IRQ_offset + DRIVER_PS2_MOUSE_IRQ_number
@@ -319,7 +319,7 @@ driver_ps2:
 	mov	rax,	driver_ps2_keyboard
 	mov	bx,	KERNEL_IDT_TYPE_irq
 	mov	ecx,	KERNEL_IDT_IRQ_offset + DRIVER_PS2_KEYBOARD_IRQ_number
-	call	kernel_idt_update
+	call	kernel_idt_mount
 
 	; redirect interrupt vector inside I/O APIC controller to correct IDT entry
 	mov	eax,	KERNEL_IDT_IRQ_offset + DRIVER_PS2_KEYBOARD_IRQ_number

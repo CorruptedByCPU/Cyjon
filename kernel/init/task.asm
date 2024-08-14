@@ -67,7 +67,7 @@ kernel_init_task:
 	mov	rax,	kernel_task
 	mov	bx,	KERNEL_IDT_TYPE_irq
 	mov	ecx,	KERNEL_TASK_irq
-	call	kernel_idt_update
+	call	kernel_idt_mount
 
 	; done, task registered
 	inc	qword [r8 + KERNEL.task_count]

@@ -7,27 +7,25 @@
 	;-----------------------------------------------------------------------
 	; library --------------------------------------------------------------
 	%include	"library/elf.inc"
-	%include	"library/vfs.inc"
-	%include	"library/sys.inc"
+%include	"library/vfs.inc"
+%include	"library/sys.inc"
 	; driver ---------------------------------------------------------------
-	%include	"kernel/driver/ps2.inc"
-	%include	"kernel/driver/rtc.inc"
-	%include	"kernel/driver/serial.inc"
+%include	"kernel/driver/ps2.inc"
+%include	"kernel/driver/rtc.inc"
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/config.inc"
-	%include	"kernel/exec.inc"
-	%include	"kernel/idt.inc"
-	%include	"kernel/io_apic.inc"
-	%include	"kernel/ipc.inc"
-	%include	"kernel/lapic.inc"
-	%include	"kernel/library.inc"
-	%include	"kernel/page.inc"
-	%include	"kernel/storage.inc"
-	%include	"kernel/stream.inc"
-	%include	"kernel/task.inc"
+%include	"kernel/exec.inc"
+%include	"kernel/io_apic.inc"
+%include	"kernel/ipc.inc"
+%include	"kernel/lapic.inc"
+%include	"kernel/library.inc"
+%include	"kernel/page.inc"
+%include	"kernel/storage.inc"
+%include	"kernel/stream.inc"
+%include	"kernel/task.inc"
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.inc"
-	%include	"kernel/init/ap.inc"
+%include	"kernel/init/ap.inc"
 	%include	"kernel/init/limine.inc"
 	;=======================================================================
 
@@ -42,8 +40,8 @@ section	.data
 	;-----------------------------------------------------------------------
 	; variables, constants
 	;-----------------------------------------------------------------------
-	%include	"kernel/data.asm"
-	%include	"kernel/init/data.asm"
+%include	"kernel/data.asm"
+%include	"kernel/init/data.asm"
 	;=======================================================================
 
 ; 64 bit code
@@ -55,51 +53,58 @@ section .text
 	; routines
 	;-----------------------------------------------------------------------
 	; library --------------------------------------------------------------
-	%include	"library/vfs.asm"
+%include	"library/vfs.asm"
 	%include	"library/elf.asm"
-	%include	"library/string/compare.asm"
-	%include	"library/string/length.asm"
-	%include	"library/string/word.asm"
+%include	"library/string/compare.asm"
+%include	"library/string/length.asm"
+%include	"library/string/word.asm"
 	; drivers --------------------------------------------------------------
-	%include	"kernel/driver/ps2.asm"
-	%include	"kernel/driver/rtc.asm"
+%include	"kernel/driver/ps2.asm"
+%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/serial.asm"
 	; kernel ---------------------------------------------------------------
-	%include	"kernel/exec.asm"
-	%include	"kernel/idt.asm"
-	%include	"kernel/io_apic.asm"
-	%include	"kernel/lapic.asm"
-	%include	"kernel/library.asm"
-	%include	"kernel/log.asm"
-	%include	"kernel/memory.asm"
-	%include	"kernel/page.asm"
-	%include	"kernel/rtc.asm"
-	%include	"kernel/service.asm"
-	%include	"kernel/storage.asm"
-	%include	"kernel/stream.asm"
-	%include	"kernel/syscall.asm"
-	%include	"kernel/task.asm"
+%include	"kernel/exec.asm"
+%include	"kernel/idt.asm"
+%include	"kernel/io_apic.asm"
+%include	"kernel/lapic.asm"
+%include	"kernel/library.asm"
+%include	"kernel/log.asm"
+%include	"kernel/memory.asm"
+%include	"kernel/page.asm"
+%include	"kernel/rtc.asm"
+%include	"kernel/service.asm"
+%include	"kernel/storage.asm"
+%include	"kernel/stream.asm"
+%include	"kernel/syscall.asm"
+%include	"kernel/task.asm"
 	; kernel environment initialization routines ---------------------------
-	%include	"kernel/init/acpi.asm"
-	%include	"kernel/init/ap.asm"
-	%include	"kernel/init/cmd.asm"
-	%include	"kernel/init/daemon.asm"
-	%include	"kernel/init/exec.asm"
-	%include	"kernel/init/free.asm"
-	%include	"kernel/init/gdt.asm"
-	%include	"kernel/init/idt.asm"
-	%include	"kernel/init/ipc.asm"
-	%include	"kernel/init/library.asm"
-	%include	"kernel/init/memory.asm"
-	%include	"kernel/init/page.asm"
-	%include	"kernel/init/rtc.asm"
-	%include	"kernel/init/smp.asm"
-	%include	"kernel/init/storage.asm"
-	%include	"kernel/init/stream.asm"
-	%include	"kernel/init/task.asm"
-	%include	"kernel/init/limine.asm"
 	%include	"kernel/init/environment.asm"
+	%include	"kernel/init/limine.asm"
+	%include	"kernel/init/memory.asm"
+	%include	"kernel/init/acpi.asm"
+	%include	"kernel/init/page.asm"
+	%include	"kernel/init/gdt.asm"
+%include	"kernel/init/idt.asm"
+%include	"kernel/init/ap.asm"
+%include	"kernel/init/cmd.asm"
+%include	"kernel/init/daemon.asm"
+%include	"kernel/init/exec.asm"
+%include	"kernel/init/free.asm"
+%include	"kernel/init/ipc.asm"
+%include	"kernel/init/library.asm"
+%include	"kernel/init/rtc.asm"
+%include	"kernel/init/smp.asm"
+%include	"kernel/init/storage.asm"
+%include	"kernel/init/stream.asm"
+%include	"kernel/init/task.asm"
 	;=======================================================================
+
+;------------------------------
+; ^ files for refactorization -
+; 	^ files already done  -
+;------------------------------
+; debug -
+;--------
 
 ; our mighty init
 _entry:
@@ -116,8 +121,12 @@ _entry:
 	; initialize global kernel environment variables/functions/rountines
 	call	kernel_init_environment
 
+	; from now on, register R8 will contain pointer to global kernel environment variables/functions/rountines, up to end of initialization
+
 	; create binary memory map
 	call	kernel_init_memory
+
+	; from now on, register R9 will contain pointer to binary memory map, up to end of initialization
 
 	; parse ACPI tables
 	call	kernel_init_acpi
@@ -141,37 +150,37 @@ call	kernel_init_idt
 
 	; ESSENTIAL -----------------------------------------------------------
 
-	; retrieve file to execute
-	call	kernel_init_cmd
+; retrieve file to execute
+call	kernel_init_cmd
 
-	; create Task queue
-	call	kernel_init_task
+; create Task queue
+call	kernel_init_task
 
-	; prepare stream cache
-	call	kernel_init_stream
+; prepare stream cache
+call	kernel_init_stream
 
-	; configure RTC
-	call	kernel_init_rtc
+; configure RTC
+call	kernel_init_rtc
 
-	; initialize PS2 keyboard/mouse driver
-	call	driver_ps2
+; initialize PS2 keyboard/mouse driver
+call	driver_ps2
 
-	; create interprocess communication system
-	call	kernel_init_ipc
+; create interprocess communication system
+call	kernel_init_ipc
 
-	; register all available data carriers
-	call	kernel_init_storage
+; register all available data carriers
+call	kernel_init_storage
 
-	; prepare library subsystem
-	call	kernel_init_library
+; prepare library subsystem
+call	kernel_init_library
 
-	; execute daemons
-	call	kernel_init_daemon
+; execute daemons
+call	kernel_init_daemon
 
-	; execute init process
-	call	kernel_init_exec
+; execute init process
+call	kernel_init_exec
 
 	; below, initialization functions does not guarantee original registers preservation
 
-	; initialize other CPUs
-	jmp	kernel_init_smp
+; initialize other CPUs
+jmp	kernel_init_smp

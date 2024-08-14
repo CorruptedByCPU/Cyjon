@@ -9,11 +9,6 @@ kernel_library_base_address	dq	KERNEL_LIBRARY_base_address
 ; often necessary
 kernel_page_mirror		dq	KERNEL_PAGE_mirror
 
-; align table
-align	0x08,	db	0x00
-kernel_idt_header		dw	STD_PAGE_SIZE_byte
-				dq	EMPTY
-
 kernel_idt_exception_string_unknown			db	STD_ASCII_NEW_LINE, "{UNKNOWN CPU EXCEPTION}", STD_ASCII_TERMINATOR
 kernel_idt_exception_string_divide_by_zero_error	db	STD_ASCII_NEW_LINE, "Divide-by-zero Error", " at 0x", STD_ASCII_TERMINATOR
 kernel_idt_exception_string_debug			db	STD_ASCII_NEW_LINE, "Debug", " at 0x", STD_ASCII_TERMINATOR

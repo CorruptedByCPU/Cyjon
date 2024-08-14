@@ -15,11 +15,15 @@
 %define	KERNEL_STACK_pointer		0xFFFFFFFFFFFFF000
 
 %ifndef	KERNEL_GDT
-	%include		"./kernel/gdt.inc"
+	%include			"./kernel/gdt.inc"
 %endif
 
 %ifndef	KERNEL_TSS
-	%include		"./kernel/tss.inc"
+	%include			"./kernel/tss.inc"
+%endif
+
+%ifndef	KERNEL_IDT
+	%include			"./kernel/idt.inc"
 %endif
 
 struc	KERNEL
@@ -41,6 +45,9 @@ struc	KERNEL
 
 	; variables of GDT management functions
 	.gdt_header			resb	KERNEL_STRUCTURE_GDT_HEADER.SIZE
+
+	; variables of IDT management functions
+	.idt_header			resb	KERNEL_STRUCTURE_IDT_HEADER.SIZE
 
 	; variables of I/O APIC management functions
 	.io_apic_base_address		resq	1

@@ -81,8 +81,8 @@ kernel_init_ap:
 	; IDT
 	;-----
 
-	; reload Global Descriptor Table
-	lidt	[kernel_idt_header]
+	; reload Interrupt Descriptor Table
+	lidt	[r8 + KERNEL.idt_header]
 
 	;-----------
 	; CPU Flags
