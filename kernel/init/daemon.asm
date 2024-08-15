@@ -23,7 +23,7 @@ kernel_init_daemon:
 	push	r15
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; by default there is no PID for new process
 	xor	eax,	eax
@@ -70,9 +70,9 @@ kernel_init_daemon:
 	;-----------------------------------------------------------------------
 
 	; describe the space under context stack of process
-	mov	rax,	KERNEL_TASK_STACK_address
+	mov	rax,	KERNEL_STACK_address
 	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_process
-	mov	ecx,	KERNEL_TASK_STACK_SIZE_page
+	mov	ecx,	KERNEL_STACK_page
 	mov	r11,	rdi
 	call	kernel_page_alloc
 
@@ -80,35 +80,35 @@ kernel_init_daemon:
 	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
 
 	; set process context stack pointer
-	mov	rsi,	KERNEL_TASK_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
+	mov	rsi,	KERNEL_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsi
 
 	; prepare exception exit mode on context stack of process
-	mov	rsi,	KERNEL_TASK_STACK_pointer - STATIC_PAGE_SIZE_byte
+	mov	rsi,	KERNEL_STACK_pointer - STD_PAGE_SIZE_byte
 	call	kernel_page_address
 
 	; set pointer to return descriptor
-	and	rax,	STATIC_PAGE_mask	; drop flags
+	and	rax,	STD_PAGE_mask	; drop flags
 	add	rax,	qword [kernel_page_mirror]	; convert to logical address
-	add	rax,	STATIC_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
+	add	rax,	STD_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
 
 	; set first instruction executed by process
-	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.program_entry_position]
+	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.entry_ptr]
 	add	rdx,	r13
 	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.rip],	rdx
 
 	; code descriptor
-	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.cs],	KERNEL_GDT_STRUCTURE.cs_ring0
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.cs],	KERNEL_STRUCTURE_GDT.cs_ring0
 
 	; default processor state flags
 	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.eflags],	KERNEL_TASK_EFLAGS_default
 
 	; default stack pointer
-	mov	rdx,	KERNEL_TASK_STACK_pointer
+	mov	rdx,	KERNEL_STACK_pointer
 	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.rsp],	rdx
 
 	; stack descriptor
-	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.ss],	KERNEL_GDT_STRUCTURE.ds_ring0
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.ss],	KERNEL_STRUCTURE_GDT.ss_ring0
 
 	;-----------------------------------------------------------------------
 	; allocate space for executable segments
@@ -118,8 +118,8 @@ kernel_init_daemon:
 	call	kernel_exec_size
 
 	; assign memory space for executable
-	add	rcx,	~STATIC_PAGE_mask
-	shr	rcx,	STATIC_PAGE_SIZE_shift
+	add	rcx,	~STD_PAGE_mask
+	shr	rcx,	STD_PAGE_SIZE_shift
 	call	kernel_memory_alloc
 
 	; process memory usage
@@ -130,10 +130,10 @@ kernel_init_daemon:
 	;-----------------------------------------------------------------------
 
 	; number of program headers
-	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.header_entry_count]
+	movzx	ecx,	word [r13 + LIB_ELF_STRUCTURE.h_entry_count]
 
 	; beginning of header section
-	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.header_table_position]
+	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.headers_offset]
 	add	rdx,	r13
 
 .elf_header:
@@ -179,7 +179,7 @@ kernel_init_daemon:
 	;-----------------------------------------------------------------------
 
 	; map kernel space to process
-	mov	r15,	qword [kernel_environment_base_address]
+	mov	r15,	qword [kernel]
 	mov	r15,	qword [r15 + KERNEL.page_base_address]
 	call	kernel_page_merge
 

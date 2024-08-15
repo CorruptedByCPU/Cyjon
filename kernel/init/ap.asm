@@ -3,6 +3,7 @@
 ;=================================================================================
 
 ;-------------------------------------------------------------------------------
+; void
 kernel_init_ap:
 	;-----------------------------------------------------------------------
 	; all that's left is the quintessential initialization of all local processors
@@ -11,7 +12,7 @@ kernel_init_ap:
 	;-----------------------------------------------------------------------
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	;--------
 	; PAGE
@@ -27,7 +28,7 @@ kernel_init_ap:
 	;-----
 
 	; reload Global Descriptor Table
-	lgdt	[kernel_gdt_header]
+	lgdt	[r8 + KERNEL.gdt_header]
 	call	kernel_init_gdt_reload
 
 	;-----
@@ -36,22 +37,23 @@ kernel_init_ap:
 
 	; change CPU ID to descriptor offset
 	call	kernel_lapic_id
-	shl	rax,	STATIC_MULTIPLE_BY_16_shift
-	add	rax,	KERNEL_GDT_STRUCTURE.tss
+	shl	rax,	STD_MULTIPLE_BY_16_shift
+	add	rax,	KERNEL_STRUCTURE_GDT.tss
 
 	; preserve TSS offset
 	push	rax
 
 	; set pointer to TSS entry of this AP
-	mov	rdi,	qword [kernel_gdt_header + KERNEL_GDT_STRUCTURE_HEADER.address]
+	mov	rdi,	qword [r8 + KERNEL.gdt_header + KERNEL_STRUCTURE_GDT_HEADER.base_address]
 	add	rdi,	rax
 
 	; length of TSS header
-	mov	ax,	kernel_tss_header_end - kernel_tss_header
+	mov	ax,	KERNEL_STRUCTURE_TSS.SIZE
 	stosw	; save
 
 	; TSS header address
-	mov	rax,	kernel_tss_header
+	mov	rax,	r8
+	add	rax,	KERNEL.tss_table
 	stosw	; save (bits 15..0)
 	shr	rax,	16
 	stosb	; save (bits 23..16)
@@ -79,8 +81,8 @@ kernel_init_ap:
 	; IDT
 	;-----
 
-	; reload Global Descriptor Table
-	lidt	[kernel_idt_header]
+	; reload Interrupt Descriptor Table
+	lidt	[r8 + KERNEL.idt_header]
 
 	;-----------
 	; CPU Flags
@@ -125,7 +127,7 @@ kernel_init_ap:
 	mov	rax,	kernel_syscall
 	mov	ecx,	KERNEL_INIT_AP_MSR_LSTAR
 	mov	rdx,	kernel_syscall
-	shr	rdx,	STATIC_MOVE_HIGH_TO_EAX_shift
+	shr	rdx,	STD_MOVE_HIGH_TO_EAX_shift
 	wrmsr
 
 	; set EFLAGS mask of entry routine
@@ -143,7 +145,7 @@ kernel_init_ap:
 	push	qword [r8 + KERNEL.task_queue_address]	; by default: kernel
 
 	; insert into task cpu list at AP position
-	shl	rax,	STATIC_MULTIPLE_BY_8_shift
+	shl	rax,	STD_MULTIPLE_BY_8_shift
 	add	rax,	qword [r8 + KERNEL.task_ap_address]
 	pop	qword [rax]
 

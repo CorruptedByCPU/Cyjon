@@ -15,7 +15,7 @@ kernel_memory_alloc:
 	push	r9
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 .lock:
 	; request an exclusive access
@@ -32,7 +32,7 @@ kernel_memory_alloc:
 	jc	.end	; no enough memory
 
 	; convert page number to its logical address
-	shl	rdi,	STATIC_PAGE_SIZE_shift
+	shl	rdi,	STD_PAGE_SIZE_shift
 	add	rdi,	qword [kernel_page_mirror]
 
 	; less memory available
@@ -59,7 +59,7 @@ kernel_memory_alloc_page:
 	push	rcx
 
 	; alloc only 1 page
-	mov	ecx,	STATIC_PAGE_SIZE_page
+	mov	ecx,	STD_PAGE_SIZE_page
 	call	kernel_memory_alloc
 	jc	.error	; no enough memory, really? ok
 
@@ -88,7 +88,7 @@ kernel_memory_acquire:
 	push	rcx
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; start from first page of binary memory map
 	xor	eax,	eax
@@ -172,10 +172,10 @@ kernel_memory_release:
 	; convert page address to physical, and offset of memory binary map
 	mov	rax,	~KERNEL_PAGE_mirror
 	and	rax,	rdi
-	shr	rax,	STATIC_PAGE_SIZE_shift
+	shr	rax,	STD_PAGE_SIZE_shift
 
 	; kernel environment variables/rountines base address
-	mov	rcx,	qword [kernel_environment_base_address]
+	mov	rcx,	qword [kernel]
 
 	; put page back to binary memory map
 	mov	rdi,	qword [rcx + KERNEL.memory_base_address]
@@ -210,7 +210,7 @@ kernel_memory_release_page:
 	push	rsi
 
 	; release page
-	mov	rsi,	STATIC_PAGE_SIZE_page
+	mov	rsi,	STD_PAGE_SIZE_page
 	call	kernel_memory_release
 
 	; restore original registers
@@ -236,7 +236,7 @@ kernel_memory_share:
 	push	r9
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; retrieve pointer to current task descriptor
 	call	kernel_task_active
@@ -247,7 +247,7 @@ kernel_memory_share:
 	jc	.end	; no enough memory
 
 	; convert page number to logical address
-	shl	rdi,	STATIC_PAGE_SIZE_shift
+	shl	rdi,	STD_PAGE_SIZE_shift
 
 	; map source space to process paging array
 	mov	rax,	rdi

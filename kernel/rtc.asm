@@ -26,7 +26,7 @@ driver_rtc_entry:
 	jz	.loop	; no
 
 	; global kernel environment variables/functions
-	mov	rax,	qword [kernel_environment_base_address]
+	mov	rax,	qword [kernel]
 
 	; increase the real-time controller invocation count
 	inc	qword [rax + KERNEL.time_rtc]

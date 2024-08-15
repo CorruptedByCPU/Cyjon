@@ -13,7 +13,7 @@ kernel_io_apic_connect:
 	push	rdi
 
 	; kernel environment variables/rountines base address
-	mov	rdi,	qword [kernel_environment_base_address]
+	mov	rdi,	qword [kernel]
 	mov	rdi,	qword [rdi + KERNEL.io_apic_base_address]
 
 	; inside lower half of register
@@ -28,7 +28,7 @@ kernel_io_apic_connect:
 	mov	dword [rdi + KERNEL_IO_APIC_ioregsel],	ebx
 
 	; save higher half of interrupt vector
-	shr	rax,	STATIC_MOVE_HIGH_TO_EAX_shift
+	shr	rax,	STD_MOVE_HIGH_TO_EAX_shift
 	mov	dword [rdi + KERNEL_IO_APIC_iowin],	eax
 
 	; restore original registers

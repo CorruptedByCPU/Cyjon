@@ -3,8 +3,7 @@
 ;=================================================================================
 
 ;-------------------------------------------------------------------------------
-; in:
-;	r8 - pointer to kernel environment variables/routines
+; void
 kernel_init_task:
 	; preserve original registers
 	push	rax
@@ -14,7 +13,7 @@ kernel_init_task:
 
 	;-----------------------------------------------------------------------
 	; assign space for task queue and store it
-	mov	ecx,	((KERNEL_TASK_limit * KERNEL_TASK_STRUCTURE.SIZE) + ~STATIC_PAGE_mask) >> STATIC_PAGE_SIZE_shift
+	mov	ecx,	((KERNEL_TASK_limit * KERNEL_TASK_STRUCTURE.SIZE) + ~STD_PAGE_mask) >> STD_PAGE_SIZE_shift
 	call	kernel_memory_alloc
 
 	; save pointer to task queue
@@ -50,10 +49,10 @@ kernel_init_task:
 
 .one_to_rule_all:
 	; calculate CPU list size in Pages
-	shl	rcx,	STATIC_MULTIPLE_BY_8_shift
-	add	rcx,	~STATIC_PAGE_mask
-	and	rcx,	STATIC_PAGE_mask
-	shr	rcx,	STATIC_PAGE_SIZE_shift
+	shl	rcx,	STD_MULTIPLE_BY_8_shift
+	add	rcx,	~STD_PAGE_mask
+	and	rcx,	STD_PAGE_mask
+	shr	rcx,	STD_PAGE_SIZE_shift
 
 	; assign space for task list and store it
 	call	kernel_memory_alloc
@@ -61,14 +60,14 @@ kernel_init_task:
 
 	; mark in processor task list, BSP processor with its kernel task
 	call	kernel_lapic_id
-	pop	qword [rdi + rax * STATIC_PTR_SIZE_byte]
+	pop	qword [rdi + rax * STD_PTR_SIZE_byte]
 
 	;-----------------------------------------------------------------------
 	; attach task switch interrupt routine handler
 	mov	rax,	kernel_task
 	mov	bx,	KERNEL_IDT_TYPE_irq
 	mov	ecx,	KERNEL_TASK_irq
-	call	kernel_idt_update
+	call	kernel_idt_mount
 
 	; done, task registered
 	inc	qword [r8 + KERNEL.task_count]

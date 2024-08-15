@@ -3,9 +3,7 @@
 ;=================================================================================
 
 ;-------------------------------------------------------------------------------
-; in:
-;	r8 - pointer to kernel environment variables/routines
-;	r9 - pointer to binary memory map
+; void
 kernel_init_cmd:
 	; kernel file available?
 	cmp	qword [kernel_limine_kernel_file_request + LIMINE_KERNEL_FILE_REQUEST.response],	EMPTY

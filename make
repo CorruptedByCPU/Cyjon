@@ -8,7 +8,7 @@ green=$(tput setaf 2)
 default=$(tput sgr0)
 
 AA="nasm"
-A="nasm -p library/std.inc"
+A="nasm -p ./library/std.inc"
 LD="ld.lld"
 ISO="xorriso"
 QEMU="qemu-system-x86_64"
@@ -26,8 +26,8 @@ git submodule update --init
 # check environment software, required!
 ENV=true
 echo -n "Cyjon environment: "
-	type -a ${LD} &> /dev/null || (echo -en "\e[38;5;196m${LD}\e[0m" && ENV=false)
 	type -a ${AA} &> /dev/null || (echo -en "\e[38;5;196m${AA}\e[0m" && ENV=false)
+	type -a ${LD} &> /dev/null || (echo -en "\e[38;5;196m${LD}\e[0m" && ENV=false)
 	type -a ${ISO} &> /dev/null || (echo -en "\e[38;5;196m${ISO}\e[0m" && ENV=false)
 if [ "${ENV}" = false ]; then echo -e "\n[please install missing software]"; exit 1; else echo -e "\e[38;5;2m\xE2\x9C\x94\e[0m"; fi
 

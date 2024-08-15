@@ -14,7 +14,7 @@ kernel_init_rtc:
 	mov	rax,	driver_rtc_entry
 	mov	bx,	KERNEL_IDT_TYPE_irq
 	mov	ecx,	KERNEL_IDT_IRQ_offset + DRIVER_RTC_IRQ_number
-	call	kernel_idt_update
+	call	kernel_idt_mount
 
 	; connect interrupt vector from IDT table in IOAPIC controller
 	mov	eax,	KERNEL_IDT_IRQ_offset + DRIVER_RTC_IRQ_number

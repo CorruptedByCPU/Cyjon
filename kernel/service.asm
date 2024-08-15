@@ -49,7 +49,7 @@ kernel_service_memory:
 	push	r8
 
 	; kernel environment variables/rountines base addrrax
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; return information about
 
@@ -91,7 +91,7 @@ kernel_service_sleep:
 	push	r9
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; retrieve pointer to current task descriptor
 	call	kernel_task_active
@@ -118,7 +118,7 @@ kernel_service_sleep:
 ;	rax - current uptime in microtime
 kernel_service_uptime:
 	; return current microtime index
-	mov	rax,	qword [kernel_environment_base_address]
+	mov	rax,	qword [kernel]
 	mov	rax,	qword [rax + KERNEL.time_rtc]
 
 	; return from routine
@@ -133,7 +133,7 @@ kernel_service_driver_mouse:
 	push	r8
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; share information about mouse location and status
 	mov	ax,	word [r8 + KERNEL.device_mouse_x]
@@ -166,7 +166,7 @@ kernel_service_exec:
 	push	r8
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; reorganize registers
 	mov	rcx,	rsi	; length of string
@@ -200,7 +200,7 @@ kernel_service_framebuffer:
 	push	r11
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; return properties of framebuffer
 
@@ -232,8 +232,8 @@ kernel_service_framebuffer:
 	mul	rcx
 
 	; convert to pages
-	add	rax,	~STATIC_PAGE_mask
-	shr	rax,	STATIC_PAGE_SIZE_shift
+	add	rax,	~STD_PAGE_mask
+	shr	rax,	STD_PAGE_SIZE_shift
 
 	; share framebuffer memory space with process
 	xor	ecx,	ecx	; no framebuffer manager, if error on below function
@@ -279,7 +279,7 @@ kernel_service_ipc_send:
 	push	r8
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 .lock:
 	; request an exclusive access
@@ -360,7 +360,7 @@ kernel_service_ipc_receive:
 	push	rsi
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 .lock:
 	; request an exclusive access
@@ -460,8 +460,8 @@ kernel_service_memory_alloc:
 	push	r11
 
 	; convert size to pages (align up to page boundaries)
-	add	rdi,	~STATIC_PAGE_mask
-	shr	rdi,	STATIC_PAGE_SIZE_shift
+	add	rdi,	~STD_PAGE_mask
+	shr	rdi,	STD_PAGE_SIZE_shift
 
 	; retrieve pointer to current task descriptor
 	call	kernel_task_active
@@ -476,7 +476,7 @@ kernel_service_memory_alloc:
 	jc	.error	; no enough memory
 
 	; convert first page number to logical address
-	shl	rdi,	STATIC_PAGE_SIZE_shift
+	shl	rdi,	STD_PAGE_SIZE_shift
 
 	; assign pages to allocated memory in process space
 	mov	rax,	rdi
@@ -532,8 +532,8 @@ kernel_service_memory_release:
 	call	kernel_task_active
 
 	; convert bytes to pages
-	add	rsi,	~STATIC_PAGE_mask
-	shr	rsi,	STATIC_PAGE_SIZE_shift
+	add	rsi,	~STD_PAGE_mask
+	shr	rsi,	STD_PAGE_SIZE_shift
 
 	; pointer and counter at place
 	mov	rcx,	rsi
@@ -549,7 +549,7 @@ kernel_service_memory_release:
 	jnz	.release	; yes
 
 	; convert to page number
-	shr	rsi,	STATIC_PAGE_SIZE_shift
+	shr	rsi,	STD_PAGE_SIZE_shift
 
 	; continue
 	jmp	.next
@@ -561,7 +561,7 @@ kernel_service_memory_release:
 	call	kernel_memory_release_page
 
 	; release page inside process binary memory map
-	shr	rsi,	STATIC_PAGE_SIZE_shift
+	shr	rsi,	STD_PAGE_SIZE_shift
 	mov	rdi,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]
 	bts	qword [rdi],	rsi
 
@@ -571,7 +571,7 @@ kernel_service_memory_release:
 .next:
 	; next page from space
 	inc	rsi
-	shl	rsi,	STATIC_PAGE_SIZE_shift
+	shl	rsi,	STD_PAGE_SIZE_shift
 
 	; another page?
 	dec	rcx
@@ -606,8 +606,8 @@ kernel_service_memory_share:
 
 	; convert Bytes to pages
 	mov	rcx,	rsi
-	add	rcx,	~STATIC_PAGE_mask
-	shr	rcx,	STATIC_PAGE_SIZE_shift
+	add	rcx,	~STD_PAGE_mask
+	shr	rcx,	STD_PAGE_SIZE_shift
 
 	; retrieve task paging structure pointer
 	call	kernel_task_by_id
@@ -621,7 +621,7 @@ kernel_service_memory_share:
 	call	kernel_memory_acquire
 
 	; convert page number to offset
-	shl	rdi,	STATIC_PAGE_SIZE_shift
+	shl	rdi,	STD_PAGE_SIZE_shift
 
 	; connect memory space of parent process with child
 	mov	rax,	rdi
@@ -772,7 +772,7 @@ kernel_service_storage_read:
 	push	rdi
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 	; prepare space for file descriptor
 	sub	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
@@ -845,7 +845,7 @@ kernel_service_task:
 	push	r10
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 .lock:
 	; request an exclusive access
@@ -862,12 +862,12 @@ kernel_service_task:
 
 	; assign place for task descriptor list
 	mov	rdi,	rax
-	add	rdi,	STATIC_QWORD_SIZE_byte << STATIC_MULTIPLE_BY_2_shift
+	add	rdi,	STD_QWORD_SIZE_byte << STD_MULTIPLE_BY_2_shift
 	call	kernel_service_memory_alloc
 
 	; store information about size of this space
-	add	rdi,	~STATIC_PAGE_mask
-	shr	rdi,	STATIC_PAGE_SIZE_shift
+	add	rdi,	~STD_PAGE_mask
+	shr	rdi,	STD_PAGE_SIZE_shift
 	mov	qword [rax],	rdi
 
 	; parse every entry
@@ -875,7 +875,7 @@ kernel_service_task:
 	mov	r10,	qword [r8 + KERNEL.task_queue_address]
 
 	; preserve memory space pointer of tasks descriptors
-	add	rax,	STATIC_QWORD_SIZE_byte << STATIC_MULTIPLE_BY_2_shift
+	add	rax,	STD_QWORD_SIZE_byte << STD_MULTIPLE_BY_2_shift
 	push	rax
 
 .loop:
@@ -992,31 +992,31 @@ kernel_service_thread:
 	;-----------------------------------------------------------------------
 
 	; describe the space under context stack of process
-	mov	rax,	KERNEL_TASK_STACK_address
+	mov	rax,	KERNEL_STACK_address
 	mov	bx,	KERNEL_PAGE_FLAG_present | KERNEL_PAGE_FLAG_write | KERNEL_PAGE_FLAG_process
-	mov	ecx,	KERNEL_TASK_STACK_SIZE_page
+	mov	ecx,	KERNEL_STACK_page
 	mov	r11,	rdi
 	call	kernel_page_alloc
 
 	; set process context stack pointer
-	mov	rsi,	KERNEL_TASK_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
+	mov	rsi,	KERNEL_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsi
 
 	; prepare exception exit mode on context stack of process
-	mov	rsi,	KERNEL_TASK_STACK_pointer - STATIC_PAGE_SIZE_byte
+	mov	rsi,	KERNEL_STACK_pointer - STD_PAGE_SIZE_byte
 	call	kernel_page_address
 
 	; set pointer to return descriptor
-	and	rax,	STATIC_PAGE_mask	; drop flags
+	and	rax,	STD_PAGE_mask	; drop flags
 	add	rax,	qword [kernel_page_mirror]	; convert to logical address
-	add	rax,	STATIC_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
+	add	rax,	STD_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
 
 	; set first instruction executed by thread
 	mov	rdx,	qword [rsp]
 	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.rip],	rdx
 
 	; code descriptor
-	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.cs],	KERNEL_GDT_STRUCTURE.cs_ring3 | 0x03
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.cs],	KERNEL_STRUCTURE_GDT.cs_ring3 | 0x03
 
 	; default processor state flags
 	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.eflags],	KERNEL_TASK_EFLAGS_default
@@ -1026,7 +1026,7 @@ kernel_service_thread:
 	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.rsp],	rdx
 
 	; stack descriptor
-	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.ss],	KERNEL_GDT_STRUCTURE.ds_ring3 | 0x03
+	mov	qword [rax + KERNEL_EXEC_STRUCTURE_RETURN.ss],	KERNEL_STRUCTURE_GDT.ss_ring3 | 0x03
 
 	;-----------------------------------------------------------------------
 	; stack

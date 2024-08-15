@@ -13,7 +13,7 @@ kernel_stream:
 	push	r8
 
 	; kernel environment variables/rountines base address
-	mov	r8,	qword [kernel_environment_base_address]
+	mov	r8,	qword [kernel]
 
 .lock:
 	; request an exclusive access
@@ -290,11 +290,11 @@ kernel_stream_out_value:
 	push	rdi
 
 	; prefix overflow?
-	cmp	dl,	STATIC_QWORD_SIZE_bit
+	cmp	dl,	STD_QWORD_SIZE_bit
 	ja	.end	; yes
 
 	; string cache
-	mov	eax,	STATIC_QWORD_SIZE_bit
+	mov	eax,	STD_QWORD_SIZE_bit
 	sub	rsp,	rax
 
 	; fill with prefix value
@@ -303,7 +303,7 @@ kernel_stream_out_value:
 	rep	stosb
 
 	; prepare acumulator
-	mov	rax,	qword [rsp + STATIC_QWORD_SIZE_bit]
+	mov	rax,	qword [rsp + STD_QWORD_SIZE_bit]
 
 	; preserve prefix value
 	movzx	rbx,	dl
@@ -328,15 +328,15 @@ kernel_stream_out_value:
 	dec	rbx
 
 	; convert digit to ASCII
-	add	dl,	STATIC_ASCII_DIGIT_0
-	mov	byte [rsp + rcx + STATIC_QWORD_SIGN_bit],	dl	; and keep on stack
+	add	dl,	STD_ASCII_DIGIT_0
+	mov	byte [rsp + rcx + STD_QWORD_SIGN_bit],	dl	; and keep on stack
 
 	; keep parsing?
 	test	rax,	rax
 	jnz	.loop	; yes
 
 	; prefix fulfilled
-	bt	rbx,	STATIC_QWORD_SIGN_bit
+	bt	rbx,	STD_QWORD_SIGN_bit
 	jc	.ready	; yes
 
 	; show N digits
@@ -349,11 +349,11 @@ kernel_stream_out_value:
 	inc	rsi
 
 	; send string to stdout
-	lea	rdi,	[rsp + rcx + STATIC_QWORD_SIGN_bit]
+	lea	rdi,	[rsp + rcx + STD_QWORD_SIGN_bit]
 	call	kernel_stream_out
 
 	; remove string cache from stack
-	add	rsp,	STATIC_QWORD_SIZE_bit
+	add	rsp,	STD_QWORD_SIZE_bit
 
 .end:
 	; restore original registers

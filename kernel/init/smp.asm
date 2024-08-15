@@ -3,8 +3,7 @@
 ;=================================================================================
 
 ;-------------------------------------------------------------------------------
-; in:
-;	r8 - pointer to kernel environment variables/routines
+; void
 kernel_init_smp:
 	; SMP specification available?
 	cmp	qword [kernel_limine_smp_request + LIMINE_SMP_REQUEST.response],	EMPTY
@@ -26,7 +25,7 @@ kernel_init_smp:
 	js	.alone	; no more APs
 
 	; properties of entry
-	mov	rdi,	qword [rsi + rcx * STATIC_PTR_SIZE_byte]
+	mov	rdi,	qword [rsi + rcx * STD_PTR_SIZE_byte]
 
 	; it's the BSP?
 	cmp	dword [rdi + LIMINE_SMP_INFO.lapic_id],	eax
@@ -67,7 +66,7 @@ kernel_init_smp:
 
 	; number of APs initialized
 	mov	rax,	qword [kernel_smp_count]
-	mov	ebx,	STATIC_NUMBER_SYSTEM_decimal
+	mov	ebx,	STD_NUMBER_SYSTEM_decimal
 	xor	ecx,	ecx	; no prefix
 	xor	dl,	dl	; value unsigned
 	call	driver_serial_value

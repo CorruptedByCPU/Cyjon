@@ -19,7 +19,7 @@ lib_string_length:
 	push	rsi
 
 	; empty string as default
-	mov	rcx,	STATIC_MAX_unsigned
+	mov	rcx,	STD_MAX_unsigned
 
 .next:
 	; length of current string
@@ -29,7 +29,7 @@ lib_string_length:
 	inc	rsi
 
 	; not end of string?
-	cmp	byte [rsi - 1],	STATIC_ASCII_TERMINATOR
+	cmp	byte [rsi - 1],	STD_ASCII_TERMINATOR
 	jne	.next	; yes
 
 .end:

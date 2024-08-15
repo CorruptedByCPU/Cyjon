@@ -55,14 +55,14 @@ driver_rtc_time:
 	in	al,	DRIVER_RTC_PORT_data
 
 	; by default BCD mode
-	mov	cl,	STATIC_NUMBER_SYSTEM_decimal
+	mov	cl,	STD_NUMBER_SYSTEM_decimal
 
 	; RTC controller operating in Binary mode?
 	test	al,	DRIVER_RTC_STATUS_REGISTER_B_data_mode_binary
 	jz	.no
 
 	; yes, change value base to hexadecimal
-	mov	cl,	STATIC_NUMBER_SYSTEM_hexadecimal
+	mov	cl,	STD_NUMBER_SYSTEM_hexadecimal
 
 .no:
 	; clear time register
@@ -73,42 +73,42 @@ driver_rtc_time:
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
 	in	al,	DRIVER_RTC_PORT_data
-	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
+	shl	rax,	STD_MOVE_AL_TO_HIGH_shift
 
 	; request year
 	mov	al,	DRIVER_RTC_REGISTER_year
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
 	call	driver_rtc_register
-	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
+	shl	rax,	STD_MOVE_AL_TO_HIGH_shift
 
 	; request month
 	mov	al,	DRIVER_RTC_REGISTER_month
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
 	call	driver_rtc_register
-	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
+	shl	rax,	STD_MOVE_AL_TO_HIGH_shift
 
 	; request day
 	mov	al,	DRIVER_RTC_REGISTER_day_of_month
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
 	call	driver_rtc_register
-	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
+	shl	rax,	STD_MOVE_AL_TO_HIGH_shift
 
 	; request hour
 	mov	al,	DRIVER_RTC_REGISTER_hour
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
 	call	driver_rtc_register
-	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
+	shl	rax,	STD_MOVE_AL_TO_HIGH_shift
 
 	; request minutes
 	mov	al,	DRIVER_RTC_REGISTER_minutes
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
 	call	driver_rtc_register
-	shl	rax,	STATIC_MOVE_AL_TO_HIGH_shift
+	shl	rax,	STD_MOVE_AL_TO_HIGH_shift
 
 	; request seconds
 	mov	al,	DRIVER_RTC_REGISTER_seconds

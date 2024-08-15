@@ -3,8 +3,7 @@
 ;=================================================================================
 
 ;-------------------------------------------------------------------------------
-; in:
-;	r8 - pointer to kernel environment variables/routines
+; void
 kernel_init_stream:
 	; preserve original registers
 	push	rcx
@@ -13,7 +12,7 @@ kernel_init_stream:
 	push	r9
 
 	; assign space for stream cache
-	mov	ecx,	((KERNEL_STREAM_limit * KERNEL_STREAM_STRUCTURE.SIZE) + ~STATIC_PAGE_mask) >> STATIC_PAGE_SIZE_shift
+	mov	ecx,	((KERNEL_STREAM_limit * KERNEL_STREAM_STRUCTURE.SIZE) + ~STD_PAGE_mask) >> STD_PAGE_SIZE_shift
 	call	kernel_memory_alloc
 
 	; save it
