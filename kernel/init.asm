@@ -145,8 +145,8 @@ _entry:
 	; create Global Descriptor Table
 	call	kernel_init_gdt
 
-; create Interrupt Descriptor Table
-call	kernel_init_idt
+	; create Interrupt Descriptor Table
+	call	kernel_init_idt
 
 	; ESSENTIAL -----------------------------------------------------------
 

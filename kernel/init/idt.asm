@@ -16,10 +16,11 @@ kernel_init_idt:
 	call	kernel_memory_alloc
 	mov	qword [r8 + KERNEL.idt_header + KERNEL_STRUCTURE_IDT_HEADER.base_address],	rdi
 
-	;-----------------------------------------------------------------------
-	; attach processor exception handlers
-	mov	rax,	kernel_idt_exception_divide_by_zero
+	; default IDT Entry type
 	mov	bx,	KERNEL_IDT_TYPE_gate_interrupt
+
+	; attach CPU exception handlers
+	mov	rax,	kernel_idt_exception_divide_by_zero
 	mov	ecx,	0
 	call	kernel_idt_mount
 	mov	rax,	kernel_idt_exception_debug
@@ -88,13 +89,26 @@ kernel_init_idt:
 	mov	rax,	kernel_idt_exception_security
 	mov	ecx,	30
 	call	kernel_idt_mount
-	;-----------------------------------------------------------------------
 
-	; attach software interrupt handler
-	mov	rax,	kernel_irq
-	mov	bx,	KERNEL_IDT_TYPE_isr
-	mov	ecx,	64
+	; attach default hardware interrupt handler
+	mov	rax,	kernel_idt_interrupt
+
+	; IDT Entry type
+	mov	bx,	KERNEL_IDT_TYPE_irq
+
+	; first hardware IRQ number
+	mov	cl,	KERNEL_IDT_IRQ_offset
+
+.loop:
+	; connect
 	call	kernel_idt_mount
+
+	; next entry
+	inc	cl
+
+	; all interrputs connected?
+	cmp	cl,	KERNEL_IDT_IRQ_offset + 16
+	jb	.loop	; no
 
 	; attach interrupt handler for "spurious interrupt"
 	mov	rax,	kernel_idt_interrupt_spurious
@@ -105,7 +119,7 @@ kernel_init_idt:
 	; configure header of Interrupt Descriptor Table
 	mov	word [r8 + KERNEL.idt_header + KERNEL_STRUCTURE_IDT_HEADER.limit],	STD_PAGE_byte
 
-	; reload Interrupt Descriptor Table
+	; load new Interrupt Descriptor Table
 	lidt	[r8 + KERNEL.idt_header]
 
 	; restore original registers

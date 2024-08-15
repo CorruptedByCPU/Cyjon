@@ -48,6 +48,8 @@ struc	KERNEL
 
 	; variables of IDT management functions
 	.idt_header			resb	KERNEL_STRUCTURE_IDT_HEADER.SIZE
+	; functions of IDT management
+	.idt_mount			resq	1
 
 	; variables of I/O APIC management functions
 	.io_apic_base_address		resq	1

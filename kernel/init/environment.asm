@@ -85,6 +85,9 @@ kernel_init_environment:
 
 	;----------------------------------------------------------------------
 
+	; share IDT management functions
+	mov	qword [rdi + KERNEL.idt_mount],			kernel_idt_mount
+
 	; share kernel early printf function
 	mov	qword [rdi + KERNEL.log],			kernel_log
 
