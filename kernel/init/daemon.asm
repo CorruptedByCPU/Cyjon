@@ -84,13 +84,13 @@ kernel_init_daemon:
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsi
 
 	; prepare exception exit mode on context stack of process
-	mov	rsi,	KERNEL_STACK_pointer - STD_PAGE_SIZE_byte
+	mov	rsi,	KERNEL_STACK_pointer - STD_PAGE_byte
 	call	kernel_page_address
 
 	; set pointer to return descriptor
 	and	rax,	STD_PAGE_mask	; drop flags
 	add	rax,	qword [kernel_page_mirror]	; convert to logical address
-	add	rax,	STD_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
+	add	rax,	STD_PAGE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
 
 	; set first instruction executed by process
 	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.entry_ptr]
@@ -119,7 +119,7 @@ kernel_init_daemon:
 
 	; assign memory space for executable
 	add	rcx,	~STD_PAGE_mask
-	shr	rcx,	STD_PAGE_SIZE_shift
+	shr	rcx,	STD_SHIFT_PAGE
 	call	kernel_memory_alloc
 
 	; process memory usage
@@ -202,7 +202,7 @@ kernel_init_daemon:
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_out],	rsi
 
 	; increase stream usage
-	inc	qword [rsi + KERNEL_STREAM_STRUCTURE.count]
+	inc	qword [rsi + KERNEL_STRUCTURE_STREAM.count]
 
 	;-----------------------------------------------------------------------
 	; new process initialized

@@ -233,7 +233,7 @@ kernel_service_framebuffer:
 
 	; convert to pages
 	add	rax,	~STD_PAGE_mask
-	shr	rax,	STD_PAGE_SIZE_shift
+	shr	rax,	STD_SHIFT_PAGE
 
 	; share framebuffer memory space with process
 	xor	ecx,	ecx	; no framebuffer manager, if error on below function
@@ -461,7 +461,7 @@ kernel_service_memory_alloc:
 
 	; convert size to pages (align up to page boundaries)
 	add	rdi,	~STD_PAGE_mask
-	shr	rdi,	STD_PAGE_SIZE_shift
+	shr	rdi,	STD_SHIFT_PAGE
 
 	; retrieve pointer to current task descriptor
 	call	kernel_task_active
@@ -476,7 +476,7 @@ kernel_service_memory_alloc:
 	jc	.error	; no enough memory
 
 	; convert first page number to logical address
-	shl	rdi,	STD_PAGE_SIZE_shift
+	shl	rdi,	STD_SHIFT_PAGE
 
 	; assign pages to allocated memory in process space
 	mov	rax,	rdi
@@ -533,7 +533,7 @@ kernel_service_memory_release:
 
 	; convert bytes to pages
 	add	rsi,	~STD_PAGE_mask
-	shr	rsi,	STD_PAGE_SIZE_shift
+	shr	rsi,	STD_SHIFT_PAGE
 
 	; pointer and counter at place
 	mov	rcx,	rsi
@@ -549,7 +549,7 @@ kernel_service_memory_release:
 	jnz	.release	; yes
 
 	; convert to page number
-	shr	rsi,	STD_PAGE_SIZE_shift
+	shr	rsi,	STD_SHIFT_PAGE
 
 	; continue
 	jmp	.next
@@ -561,7 +561,7 @@ kernel_service_memory_release:
 	call	kernel_memory_release_page
 
 	; release page inside process binary memory map
-	shr	rsi,	STD_PAGE_SIZE_shift
+	shr	rsi,	STD_SHIFT_PAGE
 	mov	rdi,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]
 	bts	qword [rdi],	rsi
 
@@ -571,7 +571,7 @@ kernel_service_memory_release:
 .next:
 	; next page from space
 	inc	rsi
-	shl	rsi,	STD_PAGE_SIZE_shift
+	shl	rsi,	STD_SHIFT_PAGE
 
 	; another page?
 	dec	rcx
@@ -607,7 +607,7 @@ kernel_service_memory_share:
 	; convert Bytes to pages
 	mov	rcx,	rsi
 	add	rcx,	~STD_PAGE_mask
-	shr	rcx,	STD_PAGE_SIZE_shift
+	shr	rcx,	STD_SHIFT_PAGE
 
 	; retrieve task paging structure pointer
 	call	kernel_task_by_id
@@ -621,7 +621,7 @@ kernel_service_memory_share:
 	call	kernel_memory_acquire
 
 	; convert page number to offset
-	shl	rdi,	STD_PAGE_SIZE_shift
+	shl	rdi,	STD_SHIFT_PAGE
 
 	; connect memory space of parent process with child
 	mov	rax,	rdi
@@ -862,12 +862,12 @@ kernel_service_task:
 
 	; assign place for task descriptor list
 	mov	rdi,	rax
-	add	rdi,	STD_QWORD_SIZE_byte << STD_MULTIPLE_BY_2_shift
+	add	rdi,	STD_SIZE_QWORD_byte << STD_SHIFT_2
 	call	kernel_service_memory_alloc
 
 	; store information about size of this space
 	add	rdi,	~STD_PAGE_mask
-	shr	rdi,	STD_PAGE_SIZE_shift
+	shr	rdi,	STD_SHIFT_PAGE
 	mov	qword [rax],	rdi
 
 	; parse every entry
@@ -875,7 +875,7 @@ kernel_service_task:
 	mov	r10,	qword [r8 + KERNEL.task_queue_address]
 
 	; preserve memory space pointer of tasks descriptors
-	add	rax,	STD_QWORD_SIZE_byte << STD_MULTIPLE_BY_2_shift
+	add	rax,	STD_SIZE_QWORD_byte << STD_SHIFT_2
 	push	rax
 
 .loop:
@@ -1003,13 +1003,13 @@ kernel_service_thread:
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsi
 
 	; prepare exception exit mode on context stack of process
-	mov	rsi,	KERNEL_STACK_pointer - STD_PAGE_SIZE_byte
+	mov	rsi,	KERNEL_STACK_pointer - STD_PAGE_byte
 	call	kernel_page_address
 
 	; set pointer to return descriptor
 	and	rax,	STD_PAGE_mask	; drop flags
 	add	rax,	qword [kernel_page_mirror]	; convert to logical address
-	add	rax,	STD_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
+	add	rax,	STD_PAGE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
 
 	; set first instruction executed by thread
 	mov	rdx,	qword [rsp]
@@ -1060,12 +1060,12 @@ kernel_service_thread:
 
 	; in
 	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_in]
-	inc	qword [rax + KERNEL_STREAM_STRUCTURE.count]
+	inc	qword [rax + KERNEL_STRUCTURE_STREAM.count]
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_in],	rax
 
 	; out
 	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]
-	inc	qword [rax + KERNEL_STREAM_STRUCTURE.count]
+	inc	qword [rax + KERNEL_STRUCTURE_STREAM.count]
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_out],	rax
 
 	; map kernel space to process

@@ -73,42 +73,42 @@ driver_rtc_time:
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
 	in	al,	DRIVER_RTC_PORT_data
-	shl	rax,	STD_MOVE_AL_TO_HIGH_shift
+	shl	rax,	STD_MOVE_BYTE
 
 	; request year
 	mov	al,	DRIVER_RTC_REGISTER_year
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
 	call	driver_rtc_register
-	shl	rax,	STD_MOVE_AL_TO_HIGH_shift
+	shl	rax,	STD_MOVE_BYTE
 
 	; request month
 	mov	al,	DRIVER_RTC_REGISTER_month
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
 	call	driver_rtc_register
-	shl	rax,	STD_MOVE_AL_TO_HIGH_shift
+	shl	rax,	STD_MOVE_BYTE
 
 	; request day
 	mov	al,	DRIVER_RTC_REGISTER_day_of_month
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
 	call	driver_rtc_register
-	shl	rax,	STD_MOVE_AL_TO_HIGH_shift
+	shl	rax,	STD_MOVE_BYTE
 
 	; request hour
 	mov	al,	DRIVER_RTC_REGISTER_hour
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
 	call	driver_rtc_register
-	shl	rax,	STD_MOVE_AL_TO_HIGH_shift
+	shl	rax,	STD_MOVE_BYTE
 
 	; request minutes
 	mov	al,	DRIVER_RTC_REGISTER_minutes
 	out	DRIVER_RTC_PORT_command,	al
 	; retrieve and set in place
 	call	driver_rtc_register
-	shl	rax,	STD_MOVE_AL_TO_HIGH_shift
+	shl	rax,	STD_MOVE_BYTE
 
 	; request seconds
 	mov	al,	DRIVER_RTC_REGISTER_seconds

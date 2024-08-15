@@ -80,7 +80,7 @@ kernel_log:
 	call	driver_serial_value
 
 	; variable parsed
-	add	rbp, STD_QWORD_SIZE_byte
+	add	rbp, STD_SIZE_QWORD_byte
 
 	; continue
 	jmp	.loop
@@ -98,7 +98,7 @@ kernel_log:
 	call	driver_serial_value
 
 	; variable parsed
-	add	rbp, STD_QWORD_SIZE_byte
+	add	rbp, STD_SIZE_QWORD_byte
 
 	; continue
 	jmp	.loop
@@ -114,7 +114,7 @@ kernel_log:
 	call	driver_serial_string
 
 	; variable parsed
-	add	rbp, STD_QWORD_SIZE_byte
+	add	rbp, STD_SIZE_QWORD_byte
 
 	; continue
 	jmp	.loop

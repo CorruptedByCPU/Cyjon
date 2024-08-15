@@ -25,7 +25,7 @@ kernel_init_smp:
 	js	.alone	; no more APs
 
 	; properties of entry
-	mov	rdi,	qword [rsi + rcx * STD_PTR_SIZE_byte]
+	mov	rdi,	qword [rsi + rcx * STD_SIZE_PTR_byte]
 
 	; it's the BSP?
 	cmp	dword [rdi + LIMINE_SMP_INFO.lapic_id],	eax

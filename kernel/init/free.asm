@@ -22,7 +22,7 @@ kernel_init_free:
 
 .next:
 	; retrieve entry address
-	mov	rdi,	qword [rdx + rbx * STD_PTR_SIZE_byte]
+	mov	rdi,	qword [rdx + rbx * STD_SIZE_PTR_byte]
 
 	; type of LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE?
 	cmp	qword [rdi + LIMINE_MEMMAP_ENTRY.type],	LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE
@@ -55,7 +55,7 @@ kernel_init_free:
 
 	; area size in pages
 	pop	rcx
-	shr	rcx,	STD_PAGE_SIZE_shift
+	shr	rcx,	STD_SHIFT_PAGE
 
 	; area position
 	mov	rdi,	qword [rsp]
@@ -82,7 +82,7 @@ kernel_init_free:
 
 	; first page number of area
 	pop	rdx
-	shr	rdx,	STD_PAGE_SIZE_shift
+	shr	rdx,	STD_SHIFT_PAGE
 
 .register:
 	; register inside binary memory map
@@ -108,7 +108,7 @@ kernel_init_free:
 	call	driver_serial_string
 
 	; convert pages to KiB
-	shl	rax,	STD_MULTIPLE_BY_4_shift
+	shl	rax,	STD_SHIFT_4
 
 	; show amount of released memory
 	mov	ebx,	STD_NUMBER_SYSTEM_decimal

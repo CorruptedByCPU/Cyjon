@@ -47,7 +47,7 @@ kernel_task:
 
 	; get pointer to current task of AP
 	mov	r9,	qword [r8 + KERNEL.task_ap_address]
-	mov	r10,	qword [r9 + rbx * STD_PTR_SIZE_byte]
+	mov	r10,	qword [r9 + rbx * STD_SIZE_PTR_byte]
 
 	;=======================================================================
 	; todo, find why task_ap_address[ cpu_id ] doesn't contain task pointer
@@ -124,7 +124,7 @@ kernel_task:
 	; [RESTORE]
 
 	; set pointer to current task for AP
-	mov	qword [r9 + rbx * STD_PTR_SIZE_byte],	r10
+	mov	qword [r9 + rbx * STD_SIZE_PTR_byte],	r10
 
 	; restore tasks stack pointer
 	mov	rsp,	qword [r10 + KERNEL_TASK_STRUCTURE.rsp]
@@ -165,7 +165,7 @@ kernel_task:
 	mov	rcx,	qword [rax]
 
 	; pointer to string
-	add	rax,	STD_QWORD_SIZE_byte
+	add	rax,	STD_SIZE_QWORD_byte
 
 	; and pass them to process
 	mov	qword [rsp + 0x48],	rcx
@@ -358,7 +358,7 @@ kernel_task_active:
 	; set pointer to current task of CPU
 	mov	r9,	qword [kernel]
 	mov	r9,	qword [r9 + KERNEL.task_ap_address]
-	mov	r9,	qword [r9 + rax * STD_PTR_SIZE_byte]
+	mov	r9,	qword [r9 + rax * STD_SIZE_PTR_byte]
 
 	; restore original flags
 	popf
@@ -427,7 +427,7 @@ kernel_task_pid:
 	; set pointer to current task of CPU
 	mov	r8,	qword [kernel]
 	mov	r8,	qword [r8 + KERNEL.task_ap_address]
-	mov	r8,	qword [r8 + rax * STD_PTR_SIZE_byte]
+	mov	r8,	qword [r8 + rax * STD_SIZE_PTR_byte]
 	mov	rax,	qword [r8 + KERNEL_TASK_STRUCTURE.pid]
 
 	; restore original flags

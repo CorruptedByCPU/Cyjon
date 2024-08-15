@@ -330,12 +330,12 @@ driver_ps2:
 
 	; X axis
 	mov	ax,	word [r8 + KERNEL.framebuffer_width_pixel]
-	shr	ax,	STD_DIVIDE_BY_2_shift
+	shr	ax,	STD_SHIFT_2
 	mov	word [r8 + KERNEL.device_mouse_x],	ax
 
 	; Y axis
 	mov	ax,	word [r8 + KERNEL.framebuffer_height_pixel]
-	shr	ax,	STD_DIVIDE_BY_2_shift
+	shr	ax,	STD_SHIFT_2
 	mov	word [r8 + KERNEL.device_mouse_y],	ax
 
 	; restore original registers
@@ -378,7 +378,7 @@ driver_ps2_keyboard:
 
 .sequence:
 	; save sequence type
-	shl	ax,	STD_MOVE_AL_TO_HIGH_shift
+	shl	ax,	STD_MOVE_BYTE
 	mov	word [driver_ps2_keyboard_scancode],	ax
 
 	; end of routine
@@ -408,7 +408,7 @@ driver_ps2_keyboard:
 
 	; retrieve correct key from keyboard matrix
 	sub	ax,	DRIVER_PS2_KEYBOARD_key_release
-	mov	ax,	word [rsi + rax * STD_WORD_SIZE_byte]
+	mov	ax,	word [rsi + rax * STD_SIZE_WORD_byte]
 
 	; update key with scancode
 	add	ax,	DRIVER_PS2_KEYBOARD_key_release
@@ -418,7 +418,7 @@ driver_ps2_keyboard:
 
 .inside_matrix:
 	; retrieve correct key from keyboard matrix
-	mov	ax,	word [rsi + rax * STD_WORD_SIZE_byte]
+	mov	ax,	word [rsi + rax * STD_SIZE_WORD_byte]
 
 .key:
 	; press SHIFT or CAPSLOCK?
@@ -497,8 +497,8 @@ driver_ps2_keyboard_key_read:
 	mov	ax,	word [driver_ps2_keyboard_storage]
 
 	; reload keyboard cache
-	shl	qword [driver_ps2_keyboard_storage],	STD_MOVE_HIGH_TO_AX_shift
-	shl	qword [driver_ps2_keyboard_storage + STD_QWORD_SIZE_byte],	STD_MOVE_HIGH_TO_AX_shift
+	shl	qword [driver_ps2_keyboard_storage],	STD_MOVE_WORD
+	shl	qword [driver_ps2_keyboard_storage + STD_SIZE_QWORD_byte],	STD_MOVE_WORD
 
 	; release access
 	mov	byte [driver_ps2_keyboard_semaphore],	UNLOCK
@@ -534,11 +534,11 @@ driver_ps2_keyboard_key_save:
 
 .cache:
 	; available entry?
-	cmp	word [rdi + rcx * STD_WORD_SIZE_byte],	EMPTY
+	cmp	word [rdi + rcx * STD_SIZE_WORD_byte],	EMPTY
 	je	.insert
 
 	; next cache entry
-	add	rdi,	STD_WORD_SIZE_byte
+	add	rdi,	STD_SIZE_WORD_byte
 
 	; cache is full?
 	inc	cl

@@ -37,7 +37,7 @@ kernel_init_ap:
 
 	; change CPU ID to descriptor offset
 	call	kernel_lapic_id
-	shl	rax,	STD_MULTIPLE_BY_16_shift
+	shl	rax,	STD_SHIFT_16
 	add	rax,	KERNEL_STRUCTURE_GDT.tss
 
 	; preserve TSS offset
@@ -127,7 +127,7 @@ kernel_init_ap:
 	mov	rax,	kernel_syscall
 	mov	ecx,	KERNEL_INIT_AP_MSR_LSTAR
 	mov	rdx,	kernel_syscall
-	shr	rdx,	STD_MOVE_HIGH_TO_EAX_shift
+	shr	rdx,	STD_MOVE_DWORD
 	wrmsr
 
 	; set EFLAGS mask of entry routine
@@ -145,7 +145,7 @@ kernel_init_ap:
 	push	qword [r8 + KERNEL.task_queue_address]	; by default: kernel
 
 	; insert into task cpu list at AP position
-	shl	rax,	STD_MULTIPLE_BY_8_shift
+	shl	rax,	STD_SHIFT_8
 	add	rax,	qword [r8 + KERNEL.task_ap_address]
 	pop	qword [rax]
 

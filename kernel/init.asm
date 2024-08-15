@@ -84,6 +84,7 @@ section .text
 	%include	"kernel/init/acpi.asm"
 	%include	"kernel/init/page.asm"
 	%include	"kernel/init/gdt.asm"
+	%include	"kernel/init/stream.asm"
 %include	"kernel/init/idt.asm"
 %include	"kernel/init/ap.asm"
 %include	"kernel/init/cmd.asm"
@@ -95,7 +96,6 @@ section .text
 %include	"kernel/init/rtc.asm"
 %include	"kernel/init/smp.asm"
 %include	"kernel/init/storage.asm"
-%include	"kernel/init/stream.asm"
 %include	"kernel/init/task.asm"
 	;=======================================================================
 
@@ -150,14 +150,14 @@ _entry:
 
 	; ESSENTIAL -----------------------------------------------------------
 
+	; initialize stream set
+	call	kernel_init_stream
+
 ; retrieve file to execute
 call	kernel_init_cmd
 
 ; create Task queue
 call	kernel_init_task
-
-; prepare stream cache
-call	kernel_init_stream
 
 ; configure RTC
 call	kernel_init_rtc

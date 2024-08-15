@@ -10,10 +10,11 @@ kernel_init_task:
 	push	rbx
 	push	rcx
 	push	rdi
+	push	rsi
 
 	;-----------------------------------------------------------------------
 	; assign space for task queue and store it
-	mov	ecx,	((KERNEL_TASK_limit * KERNEL_TASK_STRUCTURE.SIZE) + ~STD_PAGE_mask) >> STD_PAGE_SIZE_shift
+	mov	ecx,	((KERNEL_TASK_limit * KERNEL_TASK_STRUCTURE.SIZE) + ~STD_PAGE_mask) >> STD_SHIFT_PAGE
 	call	kernel_memory_alloc
 
 	; save pointer to task queue
@@ -32,6 +33,16 @@ kernel_init_task:
 	mov	rax,	qword [r8 + KERNEL.memory_base_address]
 	mov	qword [rdi + KERNEL_TASK_STRUCTURE.memory_map],	rax
 
+	; prepare streams for kernel process
+	call	kernel_stream
+
+	; as a kernel, both streams are of type null
+	or	byte [rsi + KERNEL_STRUCTURE_STREAM.flags],	LIB_SYS_STREAM_FLAG_null
+
+	; assing streams to kernel task entry
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.stream_in],	rsi
+	mov	qword [rdi + KERNEL_TASK_STRUCTURE.stream_out],	rsi
+
 	; remember pointer to first task in queue
 	push	rdi
 
@@ -49,10 +60,10 @@ kernel_init_task:
 
 .one_to_rule_all:
 	; calculate CPU list size in Pages
-	shl	rcx,	STD_MULTIPLE_BY_8_shift
+	shl	rcx,	STD_SHIFT_8
 	add	rcx,	~STD_PAGE_mask
 	and	rcx,	STD_PAGE_mask
-	shr	rcx,	STD_PAGE_SIZE_shift
+	shr	rcx,	STD_SHIFT_PAGE
 
 	; assign space for task list and store it
 	call	kernel_memory_alloc
@@ -60,7 +71,7 @@ kernel_init_task:
 
 	; mark in processor task list, BSP processor with its kernel task
 	call	kernel_lapic_id
-	pop	qword [rdi + rax * STD_PTR_SIZE_byte]
+	pop	qword [rdi + rax * STD_SIZE_PTR_byte]
 
 	;-----------------------------------------------------------------------
 	; attach task switch interrupt routine handler
@@ -74,6 +85,7 @@ kernel_init_task:
 
 	; restore original registers
 	pop	rdi
+	pop	rsi
 	pop	rcx
 	pop	rbx
 	pop	rax

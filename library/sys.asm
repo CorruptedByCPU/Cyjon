@@ -57,17 +57,17 @@ malloc:
 
 	; request for definied space
 	mov	eax,	LIB_SYS_REQUEST_MEMORY_ALLOC
-	add	rdi,	STD_QWORD_SIZE_byte << STD_MULTIPLE_BY_2_shift
+	add	rdi,	STD_SIZE_QWORD_byte << STD_SHIFT_2
 	call	lib_sys_request
 	jc	.end	; not enough space
 
 	; store information about size of this space
 	add	rdi,	STD_PAGE_mask
-	shr	rdi,	STD_PAGE_SIZE_shift
+	shr	rdi,	STD_SHIFT_PAGE
 	mov	qword [rax],	rdi
 
 	; return pointer to space
-	add	rax,	STD_QWORD_SIZE_byte << STD_MULTIPLE_BY_2_shift
+	add	rax,	STD_SIZE_QWORD_byte << STD_SHIFT_2
 
 .end:
 	; restore original registers
@@ -87,7 +87,7 @@ free:
 
 	; request for definied space
 	mov	eax,	LIB_SYS_REQUEST_MEMORY_RELEASE
-	mov	rsi,	qword [rdi - (STD_QWORD_SIZE_byte << STD_MULTIPLE_BY_2_shift)]
+	mov	rsi,	qword [rdi - (STD_SIZE_QWORD_byte << STD_SHIFT_2)]
 	and	di,	STD_PAGE_mask
 	call	lib_sys_request
 

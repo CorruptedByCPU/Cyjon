@@ -91,8 +91,8 @@ struc	KERNEL
 .storage_root_id		resb	1
 .storage_semaphore		resb	1
 
-; variables of Stream management functions
-.stream_base_address		resq	1
+	; variables of Stream management functions
+	.stream_base_address		resq	1
 .stream_semaphore		resb	1
 ; pointers of Stream management functions
 .stream_release			resq	1

@@ -152,7 +152,7 @@ kernel_library_section_by_name:
 	; calculate SHSTRTAB offset
 	movzx	eax,	bx
 	dec	rax	; always last entry
-	shl	rax,	STD_MULTIPLE_BY_64_shift
+	shl	rax,	STD_SHIFT_64
 
 	; retrieve pointer to SHSTRTAB section
 	mov	rax,	qword [r13 + rax + LIB_ELF_STRUCTURE_SECTION.file_offset]
@@ -704,7 +704,7 @@ kernel_library_load:
 	; prepare space for file content
 	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
 	add	rcx,	~STD_PAGE_mask
-	shr	rcx,	STD_PAGE_SIZE_shift
+	shr	rcx,	STD_SHIFT_PAGE
 	call	kernel_memory_alloc
 	jc	.error_level_descriptor	; no enough memory
 
@@ -776,7 +776,7 @@ kernel_library_load:
 	; by now we have address of fartest point in memory of library
 	; convert this address to length in pages
 	add	rcx,	~STD_PAGE_mask
-	shr	rcx,	STD_PAGE_SIZE_shift
+	shr	rcx,	STD_SHIFT_PAGE
 
 	; prepare error code
 	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_memory_no_enough
@@ -787,7 +787,7 @@ kernel_library_load:
 	jc	.error_level_file	; no enough memory
 
 	; convert page number to logical address
-	shl	rdi,	STD_PAGE_SIZE_shift
+	shl	rdi,	STD_SHIFT_PAGE
 	add	rdi,	qword [kernel_library_base_address]
 
 	; prepare space for file content
@@ -879,11 +879,11 @@ kernel_library_load:
 	; register library name and length
 
 	; length in characters
-	mov	rcx,	qword [rsp + STD_QWORD_SIZE_byte]
+	mov	rcx,	qword [rsp + STD_SIZE_QWORD_byte]
 	mov	byte [r14 + KERNEL_LIBRARY_STRUCTURE.length],	cl
 
 	; name
-	mov	rsi,	qword [rsp + (STD_QWORD_SIZE_byte << STD_MULTIPLE_BY_2_shift)]
+	mov	rsi,	qword [rsp + (STD_SIZE_QWORD_byte << STD_SHIFT_2)]
 	push	rdi	; preserve library content location
 	lea	rdi,	[r14 + KERNEL_LIBRARY_STRUCTURE.name]
 	rep	movsb
@@ -929,7 +929,7 @@ kernel_library_load:
 
 .error_level_aquire:
 	; first page of acquired space
-	shr	rax,	STD_PAGE_SIZE_shift
+	shr	rax,	STD_SHIFT_PAGE
 
 .error_level_aquire_release:
 	; release first page of space

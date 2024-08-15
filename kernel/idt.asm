@@ -338,18 +338,18 @@ kernel_idt_mount:
 	mov	rdi,	[r8 + KERNEL.idt_header + KERNEL_STRUCTURE_IDT_HEADER.base_address]
 
 	; move pointer to entry
-	shl	cx,	STD_MULTIPLE_BY_16_shift
+	shl	cx,	STD_SHIFT_16
 	or	di,	cx
 
 	; low bits of address (15...0)
 	mov	word [rdi + KERNEL_STRUCTURE_IDT_ENTRY.base_low],	ax
 
 	; middle bits of address (31...16)
-	shr	rax,	STD_MOVE_HIGH_TO_AX_shift
+	shr	rax,	STD_MOVE_WORD
 	mov	word [rdi + KERNEL_STRUCTURE_IDT_ENTRY.base_middle],	ax
 
 	; high bits of address (63...32)
-	shr	rax,	STD_MOVE_HIGH_TO_AX_shift
+	shr	rax,	STD_MOVE_WORD
 	mov	dword [rdi + KERNEL_STRUCTURE_IDT_ENTRY.base_high],	eax
 
 	; code descriptor of kernel environment

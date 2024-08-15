@@ -104,7 +104,7 @@ kernel_exec:
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_out],	rsi
 
 	; increase stream usage
-	inc	qword [rsi + KERNEL_STREAM_STRUCTURE.count]
+	inc	qword [rsi + KERNEL_STRUCTURE_STREAM.count]
 
 	;-----------------------------------------------------------------------
 	; new process initialized
@@ -116,7 +116,7 @@ kernel_exec:
 	; release file content
 	mov	rsi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
 	add	rsi,	~STD_PAGE_mask
-	shr	rsi,	STD_PAGE_SIZE_shift
+	shr	rsi,	STD_SHIFT_PAGE
 	mov	rdi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.address]
 	call	kernel_memory_release
 
@@ -201,13 +201,13 @@ kernel_exec_configure:
 	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsi
 
 	; prepare exception exit mode on context stack of process
-	mov	rsi,	KERNEL_STACK_pointer - STD_PAGE_SIZE_byte
+	mov	rsi,	KERNEL_STACK_pointer - STD_PAGE_byte
 	call	kernel_page_address
 
 	; set pointer to return descriptor
 	and	rax,	STD_PAGE_mask	; drop flags
 	add	rax,	qword [kernel_page_mirror]	; convert to logical address
-	add	rax,	STD_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
+	add	rax,	STD_PAGE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
 
 	; set first instruction executed by process
 	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.entry_ptr]
@@ -251,7 +251,7 @@ kernel_exec_configure:
 	sub	rax,	rcx
 
 	; alloc stack of size with arguments
-	shr	rcx,	STD_PAGE_SIZE_shift
+	shr	rcx,	STD_SHIFT_PAGE
 	call	kernel_memory_alloc
 
 	; preserve length and pointer to stack
@@ -300,7 +300,7 @@ kernel_exec_configure:
 
 	; assign memory space for executable
 	add	rcx,	~STD_PAGE_mask
-	shr	rcx,	STD_PAGE_SIZE_shift
+	shr	rcx,	STD_SHIFT_PAGE
 	call	kernel_memory_alloc
 
 	; preserve executable location and size in Pages
@@ -372,9 +372,9 @@ kernel_exec_configure:
 
 	; assign memory space for binary memory map with same size as kernels
 	mov	rcx,	qword [r8 + KERNEL.page_limit]
-	shr	rcx,	STD_DIVIDE_BY_8_shift	; 8 pages per Byte
+	shr	rcx,	STD_SHIFT_8	; 8 pages per Byte
 	add	rcx,	~STD_PAGE_mask	; align up to page boundaries
-	shr	rcx,	STD_PAGE_SIZE_shift	; convert to pages
+	shr	rcx,	STD_SHIFT_PAGE	; convert to pages
 	call	kernel_memory_alloc
 
 	; store binary memory map address of process inside task properties
@@ -386,11 +386,11 @@ kernel_exec_configure:
 	; fill memory map with available pages
 	mov	eax,	STD_MAX_unsigned
 	mov	rcx,	qword [r8 + KERNEL.page_limit]
-	shr	rcx,	STD_DIVIDE_BY_32_shift	; 32 pages per chunk
+	shr	rcx,	STD_SHIFT_32	; 32 pages per chunk
 
 	; first 1 MiB is reserved for future devices mapping
-	sub	rcx,	(KERNEL_EXEC_BASE_address >> STD_PAGE_SIZE_shift) >> STD_DIVIDE_BY_32_shift
-	add	rdi,	(KERNEL_EXEC_BASE_address >> STD_PAGE_SIZE_shift) >> STD_DIVIDE_BY_8_shift
+	sub	rcx,	(KERNEL_EXEC_BASE_address >> STD_SHIFT_PAGE) >> STD_SHIFT_32
+	add	rdi,	(KERNEL_EXEC_BASE_address >> STD_SHIFT_PAGE) >> STD_SHIFT_8
 
 	; proceed
 	rep	stosd
@@ -582,7 +582,7 @@ kernel_exec_load:
 	; prepare space for file content
 	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
 	add	rcx,	~STD_PAGE_mask
-	shr	rcx,	STD_PAGE_SIZE_shift
+	shr	rcx,	STD_SHIFT_PAGE
 	call	kernel_memory_alloc
 
 	; load file content into prepared space
