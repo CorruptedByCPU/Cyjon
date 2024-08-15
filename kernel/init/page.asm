@@ -135,8 +135,7 @@ kernel_init_page:
 	mov	rcx,	~KERNEL_BASE_address
 	and	rcx,	qword [rdi + LIB_ELF_STRUCTURE_HEADER.virtual_address]
 	add	rcx,	qword [rdi + LIB_ELF_STRUCTURE_HEADER.memory_size]
-	add	rcx,	~STD_PAGE_mask	; align up
-	and	cx,	STD_PAGE_mask	; to page boundaries
+	MACRO_PAGE_ALIGN_UP_REGISTER	rcx
 	shr	rcx,	STD_SHIFT_PAGE	; convert to pages
 
 	; segment offset

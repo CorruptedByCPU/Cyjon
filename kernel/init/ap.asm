@@ -142,11 +142,11 @@ kernel_init_ap:
 
 	; set task in queue being processed by AP
 	call	kernel_lapic_id
-	push	qword [r8 + KERNEL.task_queue_address]	; by default: kernel
+	push	qword [r8 + KERNEL.task_base_address]	; by default: kernel
 
 	; insert into task cpu list at AP position
 	shl	rax,	STD_SHIFT_8
-	add	rax,	qword [r8 + KERNEL.task_ap_address]
+	add	rax,	qword [r8 + KERNEL.task_cpu_address]
 	pop	qword [rax]
 
 	;-------

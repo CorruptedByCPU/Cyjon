@@ -75,7 +75,7 @@ kernel_exec:
 
 	; prepare default input stream
 	call	kernel_stream
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_in],	rsi
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.stream_in],	rsi
 
 	; connect output with input?
 	test	rax,	LIB_SYS_STREAM_FLOW_out_to_in
@@ -90,18 +90,18 @@ kernel_exec:
 	jz	.no_input	; no
 
 	; redirect output to parents input
-	mov	rsi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_in]
+	mov	rsi,	qword [r9 + KERNEL_STRUCTURE_TASK.stream_in]
 
 	; stream configured
 	jmp	.stream_set
 
 .no_input:
 	; default configuration
-	mov	rsi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]
+	mov	rsi,	qword [r9 + KERNEL_STRUCTURE_TASK.stream_out]
 
 .stream_set:
 	; update stream output of child
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_out],	rsi
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.stream_out],	rsi
 
 	; increase stream usage
 	inc	qword [rsi + KERNEL_STRUCTURE_STREAM.count]
@@ -111,7 +111,7 @@ kernel_exec:
 	;-----------------------------------------------------------------------
 
 	; mark task as ready
-	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_init
+	or	word [r10 + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_init
 
 	; release file content
 	mov	rsi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
@@ -121,7 +121,7 @@ kernel_exec:
 	call	kernel_memory_release
 
 	; return task ID
-	mov	rax,	qword [r10 + KERNEL_TASK_STRUCTURE.pid]
+	mov	rax,	qword [r10 + KERNEL_STRUCTURE_TASK.pid]
 
 .end:
 	; remove file descriptor from stack
@@ -183,7 +183,7 @@ kernel_exec_configure:
 	call	kernel_memory_alloc_page
 
 	; update task entry about paging array
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.cr3],	rdi
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.cr3],	rdi
 
 	;-----------------------------------------------------------------------
 	; context stack and return point (initialization entry)
@@ -198,7 +198,7 @@ kernel_exec_configure:
 
 	; set process context stack pointer
 	mov	rsi,	KERNEL_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsi
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.rsp],	rsi
 
 	; prepare exception exit mode on context stack of process
 	mov	rsi,	KERNEL_STACK_pointer - STD_PAGE_byte
@@ -283,10 +283,10 @@ kernel_exec_configure:
 	call	kernel_page_map
 
 	; process memory usage
-	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
+	add	qword [r10 + KERNEL_STRUCTURE_TASK.page],	rcx
 
 	; process stack size
-	add	qword [r10 + KERNEL_TASK_STRUCTURE.stack],	rcx
+	add	qword [r10 + KERNEL_STRUCTURE_TASK.stack],	rcx
 
 	;-----------------------------------------------------------------------
 	; allocate space for executable segments
@@ -314,7 +314,7 @@ kernel_exec_configure:
 	call	kernel_page_map
 
 	; process memory usage
-	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
+	add	qword [r10 + KERNEL_STRUCTURE_TASK.page],	rcx
 
 	;-----------------------------------------------------------------------
 	; load program segments in place
@@ -378,7 +378,7 @@ kernel_exec_configure:
 	call	kernel_memory_alloc
 
 	; store binary memory map address of process inside task properties
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.memory_map],	rdi
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.memory_map],	rdi
 
 	; preserve binary memory map location
 	push	rdi

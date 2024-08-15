@@ -242,7 +242,7 @@ kernel_memory_share:
 	call	kernel_task_active
 
 	; reserve space in binary memory map of process
-	mov	r9,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]
+	mov	r9,	qword [r9 + KERNEL_STRUCTURE_TASK.memory_map]
 	call	kernel_memory_acquire
 	jc	.end	; no enough memory
 

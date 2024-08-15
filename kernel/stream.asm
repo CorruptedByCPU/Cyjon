@@ -102,7 +102,7 @@ kernel_stream_in:
 	call	kernel_task_active
 
 	; stream in properties
-	mov	rbx,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_in]
+	mov	rbx,	qword [r9 + KERNEL_STRUCTURE_TASK.stream_in]
 
 	; there is data inside stream?
 	cmp	word [rbx + KERNEL_STRUCTURE_STREAM.free],	LIB_SYS_STREAM_SIZE_byte
@@ -196,7 +196,7 @@ kernel_stream_out:
 	call	kernel_task_active
 
 	; stream out properties
-	mov	rbx,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]
+	mov	rbx,	qword [r9 + KERNEL_STRUCTURE_TASK.stream_out]
 
 	; stream closed?
 	test	byte [rbx + KERNEL_STRUCTURE_STREAM.flags],	LIB_SYS_STREAM_FLAG_closed
@@ -388,14 +388,14 @@ kernel_stream_get:
 	jnz	.out	; yes
 
 	; change to stream in
-	mov	rsi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_in]
+	mov	rsi,	qword [r9 + KERNEL_STRUCTURE_TASK.stream_in]
 
 	; continue
 	jmp	.lock
 
 .out:
 	; set to stream out
-	mov	rsi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]
+	mov	rsi,	qword [r9 + KERNEL_STRUCTURE_TASK.stream_out]
 
 .lock:
 	; request an exclusive access
@@ -447,14 +447,14 @@ kernel_stream_set:
 	call	kernel_task_active
 
 	; by default stream out
-	mov	rdi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]
+	mov	rdi,	qword [r9 + KERNEL_STRUCTURE_TASK.stream_out]
 
 	; stream out?
 	test	rdi,	LIB_SYS_STREAM_out
 	jnz	.lock	; yes
 
 	; change to stream in
-	mov	rdi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_in]
+	mov	rdi,	qword [r9 + KERNEL_STRUCTURE_TASK.stream_in]
 
 .lock:
 	; request an exclusive access

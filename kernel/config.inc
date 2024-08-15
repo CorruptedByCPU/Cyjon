@@ -78,7 +78,7 @@ struc	KERNEL
 .memory_release			resq	1
 
 	; variables of Page management functions
-.page_base_address		resq	1
+	.page_base_address		resq	1
 	.page_total			resq	1
 	.page_available			resq	1
 	.page_limit			resq	1
@@ -97,13 +97,14 @@ struc	KERNEL
 ; pointers of Stream management functions
 .stream_release			resq	1
 
-; variables of Task management functions
-.task_queue_address		resq	1
-.task_ap_address		resq	1
-.task_queue_semaphore		resb	1
-.task_id			resq	1
-.task_count			resq	1
-.task_cpu_semaphore		resb	1
+	; variables of Task management functions
+	.task_base_address		resq	1
+	.task_cpu_address		resq	1
+	.task_cpu_semaphore		resb	1
+	.task_semaphore			resb	1
+	.task_limit			resq	1
+	.task_count			resq	1
+	.task_id			resq	1
 
 	; variables of Time management functions
 .time_rdtsc			resq	1

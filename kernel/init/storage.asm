@@ -125,7 +125,7 @@ kernel_init_storage:
 	call	kernel_storage_file
 
 	; set storage of kernel process
-	mov	qword [r9 + KERNEL_TASK_STRUCTURE.storage],	rax
+	mov	qword [r9 + KERNEL_STRUCTURE_TASK.storage],	rax
 
 	; system storage located?
 	cmp	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
@@ -148,7 +148,7 @@ kernel_init_storage:
 
 	; set root directory of kernel process
 	push	qword [rax + KERNEL_STORAGE_STRUCTURE.device_first_block]
-	pop	qword [r9 + KERNEL_TASK_STRUCTURE.directory]
+	pop	qword [r9 + KERNEL_STRUCTURE_TASK.directory]
 
 	; show information about system storage
 	mov	ecx,	kernel_log_system_end - kernel_log_system

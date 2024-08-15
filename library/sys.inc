@@ -61,9 +61,10 @@
 
 	%define LIB_SYS_STREAM_META_LENGTH_byte		0x08
 
-	%define	LIB_SYS_STREAM_FLAG_closed		00000001b
+	%define	LIB_SYS_STREAM_FLAG_data		00000001b
 	%define	LIB_SYS_STREAM_FLAG_undefinied		00000010b
-	%define	LIB_SYS_STREAM_FLAG_null		10000000b
+	%define	LIB_SYS_STREAM_FLAG_closed		00100000b
+	%define	LIB_SYS_STREAM_FLAG_null		01000000b
 
 	%define	LIB_SYS_STREAM_out			00000001b
 	%define	LIB_SYS_STREAM_in			00000010b

@@ -480,7 +480,7 @@ driver_ps2_keyboard_key_read:
 	call	kernel_task_active
 
 	; only framebuffer is allowed
-	mov	r9,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
+	mov	r9,	qword [r9 + KERNEL_STRUCTURE_TASK.pid]
 	cmp	r9,	qword [rsi + KERNEL.framebuffer_pid]
 	jne	.end	; not allowed
 

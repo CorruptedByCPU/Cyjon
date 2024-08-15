@@ -177,7 +177,7 @@ kernel_page_clang:
 
 	; retrieve parents paging array pointer
 	call	kernel_task_active
-	mov	rdx,	qword [r9 + KERNEL_TASK_STRUCTURE.cr3]
+	mov	rdx,	qword [r9 + KERNEL_STRUCTURE_TASK.cr3]
 
 	; prepare default paging structure
 	call	kernel_page_prepare

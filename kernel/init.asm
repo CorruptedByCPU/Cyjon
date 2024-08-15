@@ -22,7 +22,7 @@
 %include	"kernel/page.inc"
 %include	"kernel/storage.inc"
 %include	"kernel/stream.inc"
-%include	"kernel/task.inc"
+	%include	"kernel/task.inc"
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.inc"
 %include	"kernel/init/ap.inc"
@@ -85,6 +85,7 @@ section .text
 	%include	"kernel/init/page.asm"
 	%include	"kernel/init/gdt.asm"
 	%include	"kernel/init/stream.asm"
+	%include	"kernel/init/task.asm"
 %include	"kernel/init/idt.asm"
 %include	"kernel/init/ap.asm"
 %include	"kernel/init/cmd.asm"
@@ -96,7 +97,6 @@ section .text
 %include	"kernel/init/rtc.asm"
 %include	"kernel/init/smp.asm"
 %include	"kernel/init/storage.asm"
-%include	"kernel/init/task.asm"
 	;=======================================================================
 
 ;------------------------------
@@ -153,11 +153,11 @@ _entry:
 	; initialize stream set
 	call	kernel_init_stream
 
+	; create Task queue and insert kernel into it
+	call	kernel_init_task
+
 ; retrieve file to execute
 call	kernel_init_cmd
-
-; create Task queue
-call	kernel_init_task
 
 ; configure RTC
 call	kernel_init_rtc

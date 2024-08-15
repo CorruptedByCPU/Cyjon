@@ -63,7 +63,7 @@ kernel_init_daemon:
 	call	kernel_memory_alloc_page
 
 	; update task entry about paging array
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.cr3],	rdi
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.cr3],	rdi
 
 	;-----------------------------------------------------------------------
 	; context stack and return point (initialization entry)
@@ -77,11 +77,11 @@ kernel_init_daemon:
 	call	kernel_page_alloc
 
 	; process memory usage
-	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
+	add	qword [r10 + KERNEL_STRUCTURE_TASK.page],	rcx
 
 	; set process context stack pointer
 	mov	rsi,	KERNEL_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsi
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.rsp],	rsi
 
 	; prepare exception exit mode on context stack of process
 	mov	rsi,	KERNEL_STACK_pointer - STD_PAGE_byte
@@ -123,7 +123,7 @@ kernel_init_daemon:
 	call	kernel_memory_alloc
 
 	; process memory usage
-	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
+	add	qword [r10 + KERNEL_STRUCTURE_TASK.page],	rcx
 
 	;-----------------------------------------------------------------------
 	; load program segments in place
@@ -189,17 +189,17 @@ kernel_init_daemon:
 
 	; set default input stream
 	call	kernel_stream
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_in],	rsi
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.stream_in],	rsi
 
 	; process memory usage
-	inc	qword [r10 + KERNEL_TASK_STRUCTURE.page]
+	inc	qword [r10 + KERNEL_STRUCTURE_TASK.page]
 
 	; properties of parent task
 	call	kernel_task_active
 
 	; set default output stream
-	mov	rsi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_out],	rsi
+	mov	rsi,	qword [r9 + KERNEL_STRUCTURE_TASK.stream_out]
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.stream_out],	rsi
 
 	; increase stream usage
 	inc	qword [rsi + KERNEL_STRUCTURE_STREAM.count]
@@ -209,7 +209,7 @@ kernel_init_daemon:
 	;-----------------------------------------------------------------------
 
 	; mark task as ready
-	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_daemon | KERNEL_TASK_FLAG_init
+	or	word [r10 + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_module | KERNEL_TASK_FLAG_init
 
 .end:
 	; remove file descriptor from stack
