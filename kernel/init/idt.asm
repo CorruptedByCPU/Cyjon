@@ -14,6 +14,8 @@ kernel_init_idt:
 	; prepare area for Interrupt Descriptor Table
 	mov	ecx,	TRUE
 	call	kernel_memory_alloc
+
+	; preserve pointer inside KERNEL environment
 	mov	qword [r8 + KERNEL.idt_header + KERNEL_STRUCTURE_IDT_HEADER.base_address],	rdi
 
 	; default IDT Entry type

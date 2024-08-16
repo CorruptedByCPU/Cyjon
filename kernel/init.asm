@@ -11,18 +11,18 @@
 %include	"library/sys.inc"
 	; driver ---------------------------------------------------------------
 %include	"kernel/driver/ps2.inc"
-%include	"kernel/driver/rtc.inc"
+	%include	"kernel/driver/rtc.inc"
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/config.inc"
 %include	"kernel/exec.inc"
 %include	"kernel/io_apic.inc"
-%include	"kernel/ipc.inc"
+	%include	"kernel/ipc.inc"
 %include	"kernel/lapic.inc"
 %include	"kernel/library.inc"
 %include	"kernel/page.inc"
 %include	"kernel/storage.inc"
 %include	"kernel/stream.inc"
-%include	"kernel/task.inc"
+	%include	"kernel/task.inc"
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.inc"
 %include	"kernel/init/ap.inc"
@@ -60,7 +60,7 @@ section .text
 %include	"library/string/word.asm"
 	; drivers --------------------------------------------------------------
 %include	"kernel/driver/ps2.asm"
-%include	"kernel/driver/rtc.asm"
+	%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/serial.asm"
 	; kernel ---------------------------------------------------------------
 %include	"kernel/exec.asm"
@@ -71,7 +71,6 @@ section .text
 %include	"kernel/log.asm"
 %include	"kernel/memory.asm"
 %include	"kernel/page.asm"
-%include	"kernel/rtc.asm"
 %include	"kernel/service.asm"
 %include	"kernel/storage.asm"
 %include	"kernel/stream.asm"
@@ -84,19 +83,18 @@ section .text
 	%include	"kernel/init/acpi.asm"
 	%include	"kernel/init/page.asm"
 	%include	"kernel/init/gdt.asm"
+	%include	"kernel/init/stream.asm"
+	%include	"kernel/init/task.asm"
+	%include	"kernel/init/ipc.asm"
 %include	"kernel/init/idt.asm"
 %include	"kernel/init/ap.asm"
 %include	"kernel/init/cmd.asm"
 %include	"kernel/init/daemon.asm"
 %include	"kernel/init/exec.asm"
 %include	"kernel/init/free.asm"
-%include	"kernel/init/ipc.asm"
 %include	"kernel/init/library.asm"
-%include	"kernel/init/rtc.asm"
 %include	"kernel/init/smp.asm"
 %include	"kernel/init/storage.asm"
-%include	"kernel/init/stream.asm"
-%include	"kernel/init/task.asm"
 	;=======================================================================
 
 ;------------------------------
@@ -150,23 +148,23 @@ _entry:
 
 	; ESSENTIAL -----------------------------------------------------------
 
+	; initialize stream set
+	call	kernel_init_stream
+
+	; create Task queue and insert kernel into it
+	call	kernel_init_task
+
+	; create interprocess communication system
+	call	kernel_init_ipc
+
+	; configure RTC
+	call	driver_rtc_init
+
 ; retrieve file to execute
 call	kernel_init_cmd
 
-; create Task queue
-call	kernel_init_task
-
-; prepare stream cache
-call	kernel_init_stream
-
-; configure RTC
-call	kernel_init_rtc
-
 ; initialize PS2 keyboard/mouse driver
 call	driver_ps2
-
-; create interprocess communication system
-call	kernel_init_ipc
 
 ; register all available data carriers
 call	kernel_init_storage

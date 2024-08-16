@@ -23,7 +23,7 @@ kernel_init_storage:
 	call	kernel_task_active
 
 	; assign space for storage list
-	mov	ecx,	((KERNEL_STORAGE_limit * KERNEL_STORAGE_STRUCTURE.SIZE) + ~STD_PAGE_mask) >> STD_PAGE_SIZE_shift
+	mov	ecx,	((KERNEL_STORAGE_limit * KERNEL_STORAGE_STRUCTURE.SIZE) + ~STD_PAGE_mask) >> STD_SHIFT_PAGE
 	call	kernel_memory_alloc
 
 	; save pointer to storage list
@@ -38,7 +38,7 @@ kernel_init_storage:
 
 .next:
 	; retrieve entry address
-	mov	r11,	qword [rdx + rax * STD_PTR_SIZE_byte]
+	mov	r11,	qword [rdx + rax * STD_SIZE_PTR_byte]
 
 	;-----------------------------------------------------------------------
 	; VFS module?
@@ -125,7 +125,7 @@ kernel_init_storage:
 	call	kernel_storage_file
 
 	; set storage of kernel process
-	mov	qword [r9 + KERNEL_TASK_STRUCTURE.storage],	rax
+	mov	qword [r9 + KERNEL_STRUCTURE_TASK.storage],	rax
 
 	; system storage located?
 	cmp	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
@@ -148,7 +148,7 @@ kernel_init_storage:
 
 	; set root directory of kernel process
 	push	qword [rax + KERNEL_STORAGE_STRUCTURE.device_first_block]
-	pop	qword [r9 + KERNEL_TASK_STRUCTURE.directory]
+	pop	qword [r9 + KERNEL_STRUCTURE_TASK.directory]
 
 	; show information about system storage
 	mov	ecx,	kernel_log_system_end - kernel_log_system
@@ -157,7 +157,7 @@ kernel_init_storage:
 
 	; convert Bytes to KiB
 	mov	rax,	qword [rax + KERNEL_STORAGE_STRUCTURE.device_blocks]
-	shr	rax,	STD_DIVIDE_BY_1024_shift
+	shr	rax,	STD_SHIFT_1024
 
 	; show size of system storage
 	mov	ebx,	STD_NUMBER_SYSTEM_decimal

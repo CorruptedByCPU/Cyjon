@@ -40,7 +40,7 @@ kernel_init_memory:
 	js	.done	; no
 
 	; retrieve entry
-	mov	rax,	qword [rsi + rcx * STD_PTR_SIZE_byte]
+	mov	rax,	qword [rsi + rcx * STD_SIZE_PTR_byte]
 
 	; USABLE, BOOTLOADER_RECLAIMABLE, KERNEL_AND_MODULES or ACPI_RECLAIMABLE memory area?
 	cmp	qword [rax + LIMINE_MEMMAP_ENTRY.type],	LIMINE_MEMMAP_USABLE

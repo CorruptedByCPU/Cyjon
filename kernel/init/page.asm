@@ -47,7 +47,7 @@ kernel_init_page:
 	js	.done	; no
 
 	; retrieve entry
-	mov	rax,	qword [rsi + rcx * STD_PTR_SIZE_byte]
+	mov	rax,	qword [rsi + rcx * STD_SIZE_PTR_byte]
 
 	; USABLE, BOOTLOADER_RECLAIMABLE, KERNEL_AND_MODULES, FRAMEBUFFER or ACPI_RECLAIMABLE memory area?
 	cmp	qword [rax + LIMINE_MEMMAP_ENTRY.type],	LIMINE_MEMMAP_USABLE
@@ -89,7 +89,7 @@ kernel_init_page:
 	;---------------------------------------------------------------------
 
 	; every controller space is about 4096 Bytes
-	mov	ecx,	STD_PAGE_SIZE_page
+	mov	ecx,	STD_PAGE_page
 
 	; map LAPIC controller space
 	mov	rax,	qword [r8 + KERNEL.lapic_base_address]
@@ -135,8 +135,7 @@ kernel_init_page:
 	mov	rcx,	~KERNEL_BASE_address
 	and	rcx,	qword [rdi + LIB_ELF_STRUCTURE_HEADER.virtual_address]
 	add	rcx,	qword [rdi + LIB_ELF_STRUCTURE_HEADER.memory_size]
-	add	rcx,	~STD_PAGE_mask	; align up
-	and	cx,	STD_PAGE_mask	; to page boundaries
+	MACRO_PAGE_ALIGN_UP_REGISTER	rcx
 	shr	rcx,	STD_SHIFT_PAGE	; convert to pages
 
 	; segment offset

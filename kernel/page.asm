@@ -42,7 +42,7 @@ kernel_page_address:
 
 	; retrieve PML3 address
 	or	r11,	qword [kernel_page_mirror]	; convert to logical address
-	mov	r11,	qword [r11 + rax * STD_QWORD_SIZE_byte]
+	mov	r11,	qword [r11 + rax * STD_SIZE_QWORD_byte]
 	and	r11,	STD_PAGE_mask	; drop flags
 
 	; compute entry number of PML3 array
@@ -53,7 +53,7 @@ kernel_page_address:
 
 	; retrieve PML2 address
 	or	r11,	qword [kernel_page_mirror]	; convert to logical address
-	mov	r11,	qword [r11 + rax * STD_QWORD_SIZE_byte]
+	mov	r11,	qword [r11 + rax * STD_SIZE_QWORD_byte]
 	and	r11,	STD_PAGE_mask	; drop flags
 
 	; compute entry number of PML2 array
@@ -64,18 +64,18 @@ kernel_page_address:
 
 	; retrieve PML1 address
 	or	r11,	qword [kernel_page_mirror]	; convert to logical address
-	mov	r11,	qword [r11 + rax * STD_QWORD_SIZE_byte]
+	mov	r11,	qword [r11 + rax * STD_SIZE_QWORD_byte]
 	and	r11,	STD_PAGE_mask	; drop flags
 
 	; compute entry number of PML1 array
 	mov	rax,	rdx	; restore rest of division
-	mov	rcx,	STD_PAGE_SIZE_byte
+	mov	rcx,	STD_PAGE_byte
 	xor	edx,	edx	; higher of address part is not involved in calculations
 	div	rcx
 
 	; retrieve PML1 address
 	or	r11,	qword [kernel_page_mirror]	; convert to logical address
-	mov	rdx,	qword [r11 + rax * STD_QWORD_SIZE_byte]
+	mov	rdx,	qword [r11 + rax * STD_SIZE_QWORD_byte]
 
 	; restore original registers
 	pop	rcx
@@ -126,7 +126,7 @@ kernel_page_alloc:
 	or	di,	bx
 
 	; register inside entry
-	mov	qword [r8 + r12 * STD_QWORD_SIZE_byte],	rdi
+	mov	qword [r8 + r12 * STD_SIZE_QWORD_byte],	rdi
 
 	; next entry from PML1 array
 	inc	r12
@@ -177,7 +177,7 @@ kernel_page_clang:
 
 	; retrieve parents paging array pointer
 	call	kernel_task_active
-	mov	rdx,	qword [r9 + KERNEL_TASK_STRUCTURE.cr3]
+	mov	rdx,	qword [r9 + KERNEL_STRUCTURE_TASK.cr3]
 
 	; prepare default paging structure
 	call	kernel_page_prepare
@@ -206,10 +206,10 @@ kernel_page_clang:
 	; store physical source address with corresponding flags
 	and	rax,	STD_PAGE_mask	; drop old flags
 	or	ax,	bx	; apply new flags
-	mov	qword [r8 + r12 * STD_QWORD_SIZE_byte],	rax
+	mov	qword [r8 + r12 * STD_SIZE_QWORD_byte],	rax
 
 	; next part of space
-	add	rsi,	STD_PAGE_SIZE_byte
+	add	rsi,	STD_PAGE_byte
 
 	; next entry from PML1 array
 	inc	r12
@@ -244,7 +244,7 @@ kernel_page_clean:
 	push	rcx
 
 	; clean whole 1 page
-	mov	rcx,	STD_PAGE_SIZE_page
+	mov	rcx,	STD_PAGE_page
 	call	.proceed
 
 	; restore original register
@@ -263,7 +263,7 @@ kernel_page_clean:
 
 	; clean area
 	xor	rax,	rax
-	shl	rcx,	STD_MULTIPLE_BY_512_shift	; 8 Bytes at a time
+	shl	rcx,	STD_SHIFT_512	; 8 Bytes at a time
 	rep	stosq
 
 	; restore original registers
@@ -311,14 +311,14 @@ kernel_page_deconstruction:
 
 .pml4:
 	; kernel entry is empty?
-	cmp	qword [r11 + rcx * STD_PTR_SIZE_byte],	EMPTY
+	cmp	qword [r11 + rcx * STD_SIZE_PTR_byte],	EMPTY
 	je	.pml4_next	; yes
 
 	; preserve original register
 	push	rcx
 
 	; kernel PML3 array
-	mov	r10,	qword [r11 + rcx * STD_PTR_SIZE_byte]
+	mov	r10,	qword [r11 + rcx * STD_SIZE_PTR_byte]
 	or	r10,	qword [kernel_page_mirror]
 	and	r10,	STD_PAGE_mask
 
@@ -327,14 +327,14 @@ kernel_page_deconstruction:
 
 .pml3:
 	; kernel entry is empty?
-	cmp	qword [r10 + rcx * STD_PTR_SIZE_byte],	EMPTY
+	cmp	qword [r10 + rcx * STD_SIZE_PTR_byte],	EMPTY
 	je	.pml3_next	; yes
 
 	; preserve original register
 	push	rcx
 
 	; kernel PML2 array
-	mov	r9,	qword [r10 + rcx * STD_PTR_SIZE_byte]
+	mov	r9,	qword [r10 + rcx * STD_SIZE_PTR_byte]
 	or	r9,	qword [kernel_page_mirror]
 	and	r9,	STD_PAGE_mask
 
@@ -343,14 +343,14 @@ kernel_page_deconstruction:
 
 .pml2:
 	; kernel entry is empty?
-	cmp	qword [r9 + rcx * STD_PTR_SIZE_byte],	EMPTY
+	cmp	qword [r9 + rcx * STD_SIZE_PTR_byte],	EMPTY
 	je	.pml2_next	; yes
 
 	; preserve original register
 	push	rcx
 
 	; kernel PML1 array
-	mov	r8,	qword [r9 + rcx * STD_PTR_SIZE_byte]
+	mov	r8,	qword [r9 + rcx * STD_SIZE_PTR_byte]
 	or	r8,	qword [kernel_page_mirror]
 	and	r8,	STD_PAGE_mask
 
@@ -359,15 +359,15 @@ kernel_page_deconstruction:
 
 .pml1:
 	; page belongs to process?
-	test	word [r8 + rcx * STD_PTR_SIZE_byte],	KERNEL_PAGE_FLAG_process
+	test	word [r8 + rcx * STD_SIZE_PTR_byte],	KERNEL_PAGE_FLAG_process
 	jz	.pml1_next	; no
 
 	; page is not shared?
-	test	word [r8 + rcx * STD_PTR_SIZE_byte],	KERNEL_PAGE_FLAG_shared
+	test	word [r8 + rcx * STD_SIZE_PTR_byte],	KERNEL_PAGE_FLAG_shared
 	jnz	.pml1_next	; yes
 
 	; release page from array
-	mov	rdi,	qword [r8 + rcx * STD_PTR_SIZE_byte]
+	mov	rdi,	qword [r8 + rcx * STD_SIZE_PTR_byte]
 	and	di,	STD_PAGE_mask	; drop flags
 	or	rdi,	qword [kernel_page_mirror]	; convert page address to logical
 	call	kernel_memory_release_page
@@ -384,11 +384,11 @@ kernel_page_deconstruction:
 	pop	rcx
 
 	; PML1 belongs to process?
-	test	word [r9 + rcx * STD_PTR_SIZE_byte],	KERNEL_PAGE_FLAG_process
+	test	word [r9 + rcx * STD_SIZE_PTR_byte],	KERNEL_PAGE_FLAG_process
 	jz	.pml2_next	; no
 
 	; release PML1 from array
-	mov	rdi,	qword [r9 + rcx * STD_PTR_SIZE_byte]
+	mov	rdi,	qword [r9 + rcx * STD_SIZE_PTR_byte]
 	and	di,	STD_PAGE_mask	; drop flags
 	or	rdi,	qword [kernel_page_mirror]	; convert page address to logical
 	call	kernel_memory_release_page
@@ -405,11 +405,11 @@ kernel_page_deconstruction:
 	pop	rcx
 
 	; PML2 belongs to process?
-	test	word [r10 + rcx * STD_PTR_SIZE_byte],	KERNEL_PAGE_FLAG_process
+	test	word [r10 + rcx * STD_SIZE_PTR_byte],	KERNEL_PAGE_FLAG_process
 	jz	.pml3_next	; no
 
 	; release PML2 from array
-	mov	rdi,	qword [r10 + rcx * STD_PTR_SIZE_byte]
+	mov	rdi,	qword [r10 + rcx * STD_SIZE_PTR_byte]
 	and	di,	STD_PAGE_mask	; drop flags
 	or	rdi,	qword [kernel_page_mirror]	; convert page address to logical
 	call	kernel_memory_release_page
@@ -426,11 +426,11 @@ kernel_page_deconstruction:
 	pop	rcx
 
 	; PML3 belongs to process?
-	test	word [r11 + rcx * STD_PTR_SIZE_byte],	KERNEL_PAGE_FLAG_process
+	test	word [r11 + rcx * STD_SIZE_PTR_byte],	KERNEL_PAGE_FLAG_process
 	jz	.pml4_next	; no
 
 	; release PML3 from array
-	mov	rdi,	qword [r11 + rcx * STD_PTR_SIZE_byte]
+	mov	rdi,	qword [r11 + rcx * STD_SIZE_PTR_byte]
 	and	di,	STD_PAGE_mask	; drop flags
 	or	rdi,	qword [kernel_page_mirror]	; convert page address to logical
 	call	kernel_memory_release_page
@@ -495,8 +495,8 @@ kernel_page_flags:
 
 .entry:
 	; store physical source address with corresponding flags
-	and	word [r8 + r12 * STD_QWORD_SIZE_byte],	STD_PAGE_mask
-	or	word [r8 + r12 * STD_QWORD_SIZE_byte],	bx
+	and	word [r8 + r12 * STD_SIZE_QWORD_byte],	STD_PAGE_mask
+	or	word [r8 + r12 * STD_SIZE_QWORD_byte],	bx
 
 	; next entry from PML1 array
 	inc	r12
@@ -560,10 +560,10 @@ kernel_page_map:
 
 .entry:
 	; store physical source address with corresponding flags
-	mov	qword [r8 + r12 * STD_QWORD_SIZE_byte],	rsi
+	mov	qword [r8 + r12 * STD_SIZE_QWORD_byte],	rsi
 
 	; next part of space
-	add	rsi,	STD_PAGE_SIZE_byte
+	add	rsi,	STD_PAGE_byte
 
 	; next entry from PML1 array
 	inc	r12
@@ -618,22 +618,22 @@ kernel_page_merge:
 	je	.pml4_next	; yes
 
 	; kernel entry is empty?
-	cmp	qword [r15 + rcx * STD_PTR_SIZE_byte],	EMPTY
+	cmp	qword [r15 + rcx * STD_SIZE_PTR_byte],	EMPTY
 	je	.pml4_next	; yes
 
 	; process entry is empty?
-	cmp	qword [r11 + rcx * STD_PTR_SIZE_byte],	EMPTY
+	cmp	qword [r11 + rcx * STD_SIZE_PTR_byte],	EMPTY
 	je	.pml4_map	; yes
 
 	; preserve original register
 	push	rcx
 
 	; kernel PML3 array
-	mov	r14,	qword [r15 + rcx * STD_PTR_SIZE_byte]
+	mov	r14,	qword [r15 + rcx * STD_SIZE_PTR_byte]
 	and	r14,	STD_PAGE_mask	; drop flags
 	or	r14,	qword [kernel_page_mirror]	; convert page address to logical
 	; process PML3 array
-	mov	r10,	qword [r11 + rcx * STD_PTR_SIZE_byte]
+	mov	r10,	qword [r11 + rcx * STD_SIZE_PTR_byte]
 	and	r10,	STD_PAGE_mask	; drop flags
 	or	r10,	qword [kernel_page_mirror]	; convert page address to logical
 
@@ -642,22 +642,22 @@ kernel_page_merge:
 
 .pml3:
 	; kernel entry is empty?
-	cmp	qword [r14 + rcx * STD_PTR_SIZE_byte],	EMPTY
+	cmp	qword [r14 + rcx * STD_SIZE_PTR_byte],	EMPTY
 	je	.pml3_next	; yes
 
 	; process entry is empty?
-	cmp	qword [r10 + rcx * STD_PTR_SIZE_byte],	EMPTY
+	cmp	qword [r10 + rcx * STD_SIZE_PTR_byte],	EMPTY
 	je	.pml3_map	; yes
 
 	; preserve original register
 	push	rcx
 
 	; kernel PML2 array
-	mov	r13,	qword [r14 + rcx * STD_PTR_SIZE_byte]
+	mov	r13,	qword [r14 + rcx * STD_SIZE_PTR_byte]
 	and	r13,	STD_PAGE_mask	; drop flags
 	or	r13,	qword [kernel_page_mirror]	; convert page address to logical
 	; process PML2 array
-	mov	r9,	qword [r10 + rcx * STD_PTR_SIZE_byte]
+	mov	r9,	qword [r10 + rcx * STD_SIZE_PTR_byte]
 	and	r9,	STD_PAGE_mask	; drop flags
 	or	r9,	qword [kernel_page_mirror]	; convert page address to logical
 
@@ -666,22 +666,22 @@ kernel_page_merge:
 
 .pml2:
 	; kernel entry is empty?
-	cmp	qword [r13 + rcx * STD_PTR_SIZE_byte],	EMPTY
+	cmp	qword [r13 + rcx * STD_SIZE_PTR_byte],	EMPTY
 	je	.pml2_next	; yes
 
 	; process entry is empty?
-	cmp	qword [r9 + rcx * STD_PTR_SIZE_byte],	EMPTY
+	cmp	qword [r9 + rcx * STD_SIZE_PTR_byte],	EMPTY
 	je	.pml2_map	; yes
 
 	; preserve original register
 	push	rcx
 
 	; kernel PML1 array
-	mov	r12,	qword [r13 + rcx * STD_PTR_SIZE_byte]
+	mov	r12,	qword [r13 + rcx * STD_SIZE_PTR_byte]
 	and	r12,	STD_PAGE_mask	; drop flags
 	or	r12,	qword [kernel_page_mirror]	; convert page address to logical
 	; process PML1 array
-	mov	r8,	qword [r9 + rcx * STD_PTR_SIZE_byte]
+	mov	r8,	qword [r9 + rcx * STD_SIZE_PTR_byte]
 	and	r8,	STD_PAGE_mask	; drop flags
 	or	r8,	qword [kernel_page_mirror]	; convert page address to logical
 
@@ -690,16 +690,16 @@ kernel_page_merge:
 
 .pml1:
 	; kernel entry is empty?
-	cmp	qword [r12 + rcx * STD_PTR_SIZE_byte],	EMPTY
+	cmp	qword [r12 + rcx * STD_SIZE_PTR_byte],	EMPTY
 	je	.pml1_next	; yes
 
 	; process entry is empty?
-	cmp	qword [r8 + rcx * STD_PTR_SIZE_byte],	EMPTY
+	cmp	qword [r8 + rcx * STD_SIZE_PTR_byte],	EMPTY
 	jne	.pml1_next	; yes
 
 	; map to process
-	push	qword [r12 + rcx * STD_PTR_SIZE_byte]
-	pop	qword [r8 + rcx * STD_PTR_SIZE_byte]
+	push	qword [r12 + rcx * STD_SIZE_PTR_byte]
+	pop	qword [r8 + rcx * STD_SIZE_PTR_byte]
 
 .pml1_next:
 	; next entry
@@ -717,8 +717,8 @@ kernel_page_merge:
 
 .pml2_map:
 	; map to process
-	push	qword [r13 + rcx * STD_PTR_SIZE_byte]
-	pop	qword [r9 + rcx * STD_PTR_SIZE_byte]
+	push	qword [r13 + rcx * STD_SIZE_PTR_byte]
+	pop	qword [r9 + rcx * STD_SIZE_PTR_byte]
 
 .pml2_next:
 	; next entry
@@ -736,8 +736,8 @@ kernel_page_merge:
 
 .pml3_map:
 	; map to process
-	push	qword [r14 + rcx * STD_PTR_SIZE_byte]
-	pop	qword [r10 + rcx * STD_PTR_SIZE_byte]
+	push	qword [r14 + rcx * STD_SIZE_PTR_byte]
+	pop	qword [r10 + rcx * STD_SIZE_PTR_byte]
 
 .pml3_next:
 	; next entry
@@ -755,8 +755,8 @@ kernel_page_merge:
 
 .pml4_map:
 	; map to process
-	push	qword [r15 + rcx * STD_PTR_SIZE_byte]
-	pop	qword [r11 + rcx * STD_PTR_SIZE_byte]
+	push	qword [r15 + rcx * STD_SIZE_PTR_byte]
+	pop	qword [r11 + rcx * STD_SIZE_PTR_byte]
 
 .pml4_next:
 	; next entry
@@ -817,7 +817,7 @@ kernel_page_prepare:
 
 	; R11[ R15 ] entry exist?
 	or	r11,	qword [kernel_page_mirror]	; convert to logical address
-	cmp	qword [r11 + rax * STD_QWORD_SIZE_byte],	EMPTY
+	cmp	qword [r11 + rax * STD_SIZE_QWORD_byte],	EMPTY
 	jne	.pml3	; yes
 
 	; assign page for R15 entry
@@ -825,12 +825,12 @@ kernel_page_prepare:
 	jc	.end
 
 	; store PML3 array address inside PML4 entry
-	mov	qword [r11 + rax * STD_QWORD_SIZE_byte],	rdi
-	or	word [r11 + rax * STD_QWORD_SIZE_byte],	bx	; apply flags
+	mov	qword [r11 + rax * STD_SIZE_QWORD_byte],	rdi
+	or	word [r11 + rax * STD_SIZE_QWORD_byte],	bx	; apply flags
 
 .pml3:
 	; retrieve PML3 array address from PML4 entry
-	mov	r10,	qword [r11 + rax * STD_QWORD_SIZE_byte]
+	mov	r10,	qword [r11 + rax * STD_SIZE_QWORD_byte]
 	and	r10,	STD_PAGE_mask	; drop flags
 
 	; compute entry number of PML3 array
@@ -844,7 +844,7 @@ kernel_page_prepare:
 
 	; R10[ R14 ] entry exist?
 	or	r10,	qword [kernel_page_mirror]	; convert to logical address
-	cmp	qword [r10 + rax * STD_QWORD_SIZE_byte],	EMPTY
+	cmp	qword [r10 + rax * STD_SIZE_QWORD_byte],	EMPTY
 	jne	.pml2	; yes
 
 	; assign page for R14 entry
@@ -852,12 +852,12 @@ kernel_page_prepare:
 	jc	.end
 
 	; store PML2 array address inside PML3 entry
-	mov	qword [r10 + rax * STD_QWORD_SIZE_byte],	rdi
-	or	word [r10 + rax * STD_QWORD_SIZE_byte],	bx	; apply flags
+	mov	qword [r10 + rax * STD_SIZE_QWORD_byte],	rdi
+	or	word [r10 + rax * STD_SIZE_QWORD_byte],	bx	; apply flags
 
 .pml2:
 	; retrieve PML2 array address from PML3 entry
-	mov	r9,	qword [r10 + rax * STD_QWORD_SIZE_byte]
+	mov	r9,	qword [r10 + rax * STD_SIZE_QWORD_byte]
 	and	r9,	STD_PAGE_mask	; drop flags
 
 	; compute entry number of PML2 array
@@ -871,7 +871,7 @@ kernel_page_prepare:
 
 	; R9[ R13 ] entry exist?
 	or	r9,	qword [kernel_page_mirror]	; convert to logical address
-	cmp	qword [r9 + rax * STD_QWORD_SIZE_byte],	EMPTY
+	cmp	qword [r9 + rax * STD_SIZE_QWORD_byte],	EMPTY
 	jne	.pml1	; yes
 
 	; assign page for R13 entry
@@ -879,18 +879,18 @@ kernel_page_prepare:
 	jc	.end
 
 	; store PML1 array address inside PML2 entry
-	mov	qword [r9 + rax * STD_QWORD_SIZE_byte],	rdi
-	or	word [r9 + rax * STD_QWORD_SIZE_byte],	bx	; apply flags
+	mov	qword [r9 + rax * STD_SIZE_QWORD_byte],	rdi
+	or	word [r9 + rax * STD_SIZE_QWORD_byte],	bx	; apply flags
 
 .pml1:
 	; retrieve PML1 array address from PML2 entry
-	mov	r8,	qword [r9 + rax * STD_QWORD_SIZE_byte]
+	mov	r8,	qword [r9 + rax * STD_SIZE_QWORD_byte]
 	or	r8,	qword [kernel_page_mirror]	; convert to logical address
 	and	r8,	STD_PAGE_mask	; drop flags
 
 	; compute entry number of PML1 array
 	mov	rax,	rdx	; restore rest of division
-	mov	rcx,	STD_PAGE_SIZE_byte
+	mov	rcx,	STD_PAGE_byte
 	xor	edx,	edx	; higher of address part is not involved in calculations
 	div	rcx
 
@@ -945,7 +945,7 @@ kernel_page_release:
 	or	r11,	qword [kernel_page_mirror]
 
 	; retrieve PML3 array address from PML4 entry
-	mov	r10,	qword [r11 + rax * STD_QWORD_SIZE_byte]
+	mov	r10,	qword [r11 + rax * STD_SIZE_QWORD_byte]
 	and	r10,	STD_PAGE_mask	; drop flags
 
 	; compute entry number of PML3 array
@@ -961,7 +961,7 @@ kernel_page_release:
 	or	r10,	qword [kernel_page_mirror]
 
 	; retrieve PML2 array address from PML3 entry
-	mov	r9,	qword [r10 + rax * STD_QWORD_SIZE_byte]
+	mov	r9,	qword [r10 + rax * STD_SIZE_QWORD_byte]
 	and	r9,	STD_PAGE_mask	; drop flags
 
 	; compute entry number of PML2 array
@@ -977,12 +977,12 @@ kernel_page_release:
 	or	r9,	qword [kernel_page_mirror]
 
 	; retrieve PML1 array address from PML2 entry
-	mov	r8,	qword [r9 + rax * STD_QWORD_SIZE_byte]
+	mov	r8,	qword [r9 + rax * STD_SIZE_QWORD_byte]
 	and	r8,	STD_PAGE_mask	; drop flags
 
 	; compute entry number of PML1 array
 	mov	rax,	rdx	; restore rest of division
-	mov	rcx,	STD_PAGE_SIZE_byte
+	mov	rcx,	STD_PAGE_byte
 	xor	edx,	edx	; higher of address part is not involved in calculations
 	div	rcx
 
@@ -1000,7 +1000,7 @@ kernel_page_release:
 .pml1:
 	; prepare page for release
 	xor	edi,	edi
-	xchg	rdi,	qword [r8 + r12 * STD_QWORD_SIZE_byte]
+	xchg	rdi,	qword [r8 + r12 * STD_SIZE_QWORD_byte]
 
 	; page exist?
 	test	rdi,	rdi
@@ -1033,11 +1033,11 @@ kernel_page_release:
 
 .pml2_continue:
 	; PML2 entry is empty?
-	cmp	qword [r9 + r13 * STD_QWORD_SIZE_byte],	EMPTY
+	cmp	qword [r9 + r13 * STD_SIZE_QWORD_byte],	EMPTY
 	je	.pml2_empty	; yes
 
 	; retrieve PML1 address
-	mov	r8,	qword [r9 + r13 * STD_QWORD_SIZE_byte]
+	mov	r8,	qword [r9 + r13 * STD_SIZE_QWORD_byte]
 
 	; drop flags and convert to logical address
 	and	r8w,	STD_PAGE_mask
@@ -1068,11 +1068,11 @@ kernel_page_release:
 
 .pml3_continue:
 	; PML3 entry is empty?
-	cmp	qword [r10 + r14 * STD_QWORD_SIZE_byte],	EMPTY
+	cmp	qword [r10 + r14 * STD_SIZE_QWORD_byte],	EMPTY
 	je	.pml3_empty	; yes
 
 	; retrieve PML2 address
-	mov	r9,	qword [r10 + r14 * STD_QWORD_SIZE_byte]
+	mov	r9,	qword [r10 + r14 * STD_SIZE_QWORD_byte]
 
 	; drop flags and convert to logical address
 	and	r9w,	STD_PAGE_mask
@@ -1102,11 +1102,11 @@ kernel_page_release:
 	je	.pml5	; yes
 
 	; PML4 entry is empty?
-	cmp	qword [r11 + r15 * STD_QWORD_SIZE_byte],	EMPTY
+	cmp	qword [r11 + r15 * STD_SIZE_QWORD_byte],	EMPTY
 	je	.pml4_empty	; yes
 
 	; retrieve PML3 address
-	mov	r10,	qword [r11 + r15 * STD_QWORD_SIZE_byte]
+	mov	r10,	qword [r11 + r15 * STD_SIZE_QWORD_byte]
 
 	; drop flags and convert to logical address
 	and	r10w,	STD_PAGE_mask
@@ -1178,7 +1178,7 @@ kernel_page_remove:
 	and	rdx,	STD_PAGE_mask
 
 	; remove page from pagings
-	mov	qword [r11 + rax * STD_QWORD_SIZE_byte],	EMPTY
+	mov	qword [r11 + rax * STD_SIZE_QWORD_byte],	EMPTY
 
 	; return physical address of page
 	mov	rax,	rdx
@@ -1223,7 +1223,7 @@ kernel_page_resolve:
 	je	.pml3	; yes
 
 	; PML2 entry exist?
-	cmp	qword [r9 + r13 * STD_QWORD_SIZE_byte],	EMPTY
+	cmp	qword [r9 + r13 * STD_SIZE_QWORD_byte],	EMPTY
 	jne	.pml2_entry	; yes
 
 	; assign page for PML2 entry
@@ -1232,11 +1232,11 @@ kernel_page_resolve:
 
 	; store PML1 array address inside PML2 entry
 	or	di,	bx	; apply flags
-	mov	qword [r9 + r13 * STD_QWORD_SIZE_byte],	rdi
+	mov	qword [r9 + r13 * STD_SIZE_QWORD_byte],	rdi
 
 .pml2_entry:
 	; retrieve PML1 array address from PML2 entry
-	mov	r8,	qword [r9 + r13 * STD_QWORD_SIZE_byte]
+	mov	r8,	qword [r9 + r13 * STD_SIZE_QWORD_byte]
 	or	r8,	qword [kernel_page_mirror]	; convert page address to logical
 	and	r8,	STD_PAGE_mask	; drop flags
 
@@ -1255,7 +1255,7 @@ kernel_page_resolve:
 	je	.pml4	; yes
 
 	; PML3 entry exist?
-	cmp	qword [r10 + r14 * STD_QWORD_SIZE_byte],	EMPTY
+	cmp	qword [r10 + r14 * STD_SIZE_QWORD_byte],	EMPTY
 	jne	.pml3_entry	; yes
 
 	; assign page for PML3 entry
@@ -1264,11 +1264,11 @@ kernel_page_resolve:
 
 	; store PML2 array address inside PML3 entry
 	or	di,	bx	; apply flags
-	mov	qword [r10 + r14 * STD_QWORD_SIZE_byte],	rdi
+	mov	qword [r10 + r14 * STD_SIZE_QWORD_byte],	rdi
 
 .pml3_entry:
 	; retrieve PML2 array address from PML3 entry
-	mov	r9,	qword [r10 + r14 * STD_QWORD_SIZE_byte]
+	mov	r9,	qword [r10 + r14 * STD_SIZE_QWORD_byte]
 	or	r9,	qword [kernel_page_mirror]	; convert page address to logical
 	and	r9,	STD_PAGE_mask	; drop flags
 
@@ -1287,7 +1287,7 @@ kernel_page_resolve:
 	je	.error	; yes
 
 	; PML4 entry exist?
-	cmp	qword [r11 + r15 * STD_QWORD_SIZE_byte],	EMPTY
+	cmp	qword [r11 + r15 * STD_SIZE_QWORD_byte],	EMPTY
 	jne	.pml4_entry	; yes
 
 	; assign page for PML4 entry
@@ -1296,11 +1296,11 @@ kernel_page_resolve:
 
 	; store PML3 array address inside PML4 entry
 	or	di,	bx	; apply flags
-	mov	qword [r11 + r15 * STD_QWORD_SIZE_byte],	rdi
+	mov	qword [r11 + r15 * STD_SIZE_QWORD_byte],	rdi
 
 .pml4_entry:
 	; retrieve PML3 array address from PML4 entry
-	mov	r10,	qword [r11 + r15 * STD_QWORD_SIZE_byte]
+	mov	r10,	qword [r11 + r15 * STD_SIZE_QWORD_byte]
 	or	r10,	qword [kernel_page_mirror]	; convert page address to logical
 	and	r10,	STD_PAGE_mask	; drop flags
 

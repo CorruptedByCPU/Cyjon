@@ -32,7 +32,7 @@ kernel_memory_alloc:
 	jc	.end	; no enough memory
 
 	; convert page number to its logical address
-	shl	rdi,	STD_PAGE_SIZE_shift
+	shl	rdi,	STD_SHIFT_PAGE
 	add	rdi,	qword [kernel_page_mirror]
 
 	; less memory available
@@ -59,7 +59,7 @@ kernel_memory_alloc_page:
 	push	rcx
 
 	; alloc only 1 page
-	mov	ecx,	STD_PAGE_SIZE_page
+	mov	ecx,	STD_PAGE_page
 	call	kernel_memory_alloc
 	jc	.error	; no enough memory, really? ok
 
@@ -172,7 +172,7 @@ kernel_memory_release:
 	; convert page address to physical, and offset of memory binary map
 	mov	rax,	~KERNEL_PAGE_mirror
 	and	rax,	rdi
-	shr	rax,	STD_PAGE_SIZE_shift
+	shr	rax,	STD_SHIFT_PAGE
 
 	; kernel environment variables/rountines base address
 	mov	rcx,	qword [kernel]
@@ -210,7 +210,7 @@ kernel_memory_release_page:
 	push	rsi
 
 	; release page
-	mov	rsi,	STD_PAGE_SIZE_page
+	mov	rsi,	STD_PAGE_page
 	call	kernel_memory_release
 
 	; restore original registers
@@ -242,12 +242,12 @@ kernel_memory_share:
 	call	kernel_task_active
 
 	; reserve space in binary memory map of process
-	mov	r9,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]
+	mov	r9,	qword [r9 + KERNEL_STRUCTURE_TASK.memory_map]
 	call	kernel_memory_acquire
 	jc	.end	; no enough memory
 
 	; convert page number to logical address
-	shl	rdi,	STD_PAGE_SIZE_shift
+	shl	rdi,	STD_SHIFT_PAGE
 
 	; map source space to process paging array
 	mov	rax,	rdi

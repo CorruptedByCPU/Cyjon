@@ -75,7 +75,7 @@ kernel_exec:
 
 	; prepare default input stream
 	call	kernel_stream
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_in],	rsi
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.stream_in],	rsi
 
 	; connect output with input?
 	test	rax,	LIB_SYS_STREAM_FLOW_out_to_in
@@ -90,38 +90,38 @@ kernel_exec:
 	jz	.no_input	; no
 
 	; redirect output to parents input
-	mov	rsi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_in]
+	mov	rsi,	qword [r9 + KERNEL_STRUCTURE_TASK.stream_in]
 
 	; stream configured
 	jmp	.stream_set
 
 .no_input:
 	; default configuration
-	mov	rsi,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]
+	mov	rsi,	qword [r9 + KERNEL_STRUCTURE_TASK.stream_out]
 
 .stream_set:
 	; update stream output of child
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_out],	rsi
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.stream_out],	rsi
 
 	; increase stream usage
-	inc	qword [rsi + KERNEL_STREAM_STRUCTURE.count]
+	inc	qword [rsi + KERNEL_STRUCTURE_STREAM.count]
 
 	;-----------------------------------------------------------------------
 	; new process initialized
 	;-----------------------------------------------------------------------
 
 	; mark task as ready
-	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_init
+	or	word [r10 + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_init
 
 	; release file content
 	mov	rsi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
 	add	rsi,	~STD_PAGE_mask
-	shr	rsi,	STD_PAGE_SIZE_shift
+	shr	rsi,	STD_SHIFT_PAGE
 	mov	rdi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.address]
 	call	kernel_memory_release
 
 	; return task ID
-	mov	rax,	qword [r10 + KERNEL_TASK_STRUCTURE.pid]
+	mov	rax,	qword [r10 + KERNEL_STRUCTURE_TASK.pid]
 
 .end:
 	; remove file descriptor from stack
@@ -183,7 +183,7 @@ kernel_exec_configure:
 	call	kernel_memory_alloc_page
 
 	; update task entry about paging array
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.cr3],	rdi
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.cr3],	rdi
 
 	;-----------------------------------------------------------------------
 	; context stack and return point (initialization entry)
@@ -198,16 +198,16 @@ kernel_exec_configure:
 
 	; set process context stack pointer
 	mov	rsi,	KERNEL_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsi
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.rsp],	rsi
 
 	; prepare exception exit mode on context stack of process
-	mov	rsi,	KERNEL_STACK_pointer - STD_PAGE_SIZE_byte
+	mov	rsi,	KERNEL_STACK_pointer - STD_PAGE_byte
 	call	kernel_page_address
 
 	; set pointer to return descriptor
 	and	rax,	STD_PAGE_mask	; drop flags
 	add	rax,	qword [kernel_page_mirror]	; convert to logical address
-	add	rax,	STD_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
+	add	rax,	STD_PAGE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
 
 	; set first instruction executed by process
 	mov	rdx,	qword [r13 + LIB_ELF_STRUCTURE.entry_ptr]
@@ -251,7 +251,7 @@ kernel_exec_configure:
 	sub	rax,	rcx
 
 	; alloc stack of size with arguments
-	shr	rcx,	STD_PAGE_SIZE_shift
+	shr	rcx,	STD_SHIFT_PAGE
 	call	kernel_memory_alloc
 
 	; preserve length and pointer to stack
@@ -283,10 +283,10 @@ kernel_exec_configure:
 	call	kernel_page_map
 
 	; process memory usage
-	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
+	add	qword [r10 + KERNEL_STRUCTURE_TASK.page],	rcx
 
 	; process stack size
-	add	qword [r10 + KERNEL_TASK_STRUCTURE.stack],	rcx
+	add	qword [r10 + KERNEL_STRUCTURE_TASK.stack],	rcx
 
 	;-----------------------------------------------------------------------
 	; allocate space for executable segments
@@ -300,7 +300,7 @@ kernel_exec_configure:
 
 	; assign memory space for executable
 	add	rcx,	~STD_PAGE_mask
-	shr	rcx,	STD_PAGE_SIZE_shift
+	shr	rcx,	STD_SHIFT_PAGE
 	call	kernel_memory_alloc
 
 	; preserve executable location and size in Pages
@@ -314,7 +314,7 @@ kernel_exec_configure:
 	call	kernel_page_map
 
 	; process memory usage
-	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
+	add	qword [r10 + KERNEL_STRUCTURE_TASK.page],	rcx
 
 	;-----------------------------------------------------------------------
 	; load program segments in place
@@ -372,13 +372,13 @@ kernel_exec_configure:
 
 	; assign memory space for binary memory map with same size as kernels
 	mov	rcx,	qword [r8 + KERNEL.page_limit]
-	shr	rcx,	STD_DIVIDE_BY_8_shift	; 8 pages per Byte
+	shr	rcx,	STD_SHIFT_8	; 8 pages per Byte
 	add	rcx,	~STD_PAGE_mask	; align up to page boundaries
-	shr	rcx,	STD_PAGE_SIZE_shift	; convert to pages
+	shr	rcx,	STD_SHIFT_PAGE	; convert to pages
 	call	kernel_memory_alloc
 
 	; store binary memory map address of process inside task properties
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.memory_map],	rdi
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.memory_map],	rdi
 
 	; preserve binary memory map location
 	push	rdi
@@ -386,11 +386,11 @@ kernel_exec_configure:
 	; fill memory map with available pages
 	mov	eax,	STD_MAX_unsigned
 	mov	rcx,	qword [r8 + KERNEL.page_limit]
-	shr	rcx,	STD_DIVIDE_BY_32_shift	; 32 pages per chunk
+	shr	rcx,	STD_SHIFT_32	; 32 pages per chunk
 
 	; first 1 MiB is reserved for future devices mapping
-	sub	rcx,	(KERNEL_EXEC_BASE_address >> STD_PAGE_SIZE_shift) >> STD_DIVIDE_BY_32_shift
-	add	rdi,	(KERNEL_EXEC_BASE_address >> STD_PAGE_SIZE_shift) >> STD_DIVIDE_BY_8_shift
+	sub	rcx,	(KERNEL_EXEC_BASE_address >> STD_SHIFT_PAGE) >> STD_SHIFT_32
+	add	rdi,	(KERNEL_EXEC_BASE_address >> STD_SHIFT_PAGE) >> STD_SHIFT_8
 
 	; proceed
 	rep	stosd
@@ -582,7 +582,7 @@ kernel_exec_load:
 	; prepare space for file content
 	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
 	add	rcx,	~STD_PAGE_mask
-	shr	rcx,	STD_PAGE_SIZE_shift
+	shr	rcx,	STD_SHIFT_PAGE
 	call	kernel_memory_alloc
 
 	; load file content into prepared space

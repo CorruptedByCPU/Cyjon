@@ -46,11 +46,11 @@ kernel_task:
 	shr	ebx,	24	; move ID at a begining of EAX register
 
 	; get pointer to current task of AP
-	mov	r9,	qword [r8 + KERNEL.task_ap_address]
-	mov	r10,	qword [r9 + rbx * STD_PTR_SIZE_byte]
+	mov	r9,	qword [r8 + KERNEL.task_cpu_address]
+	mov	r10,	qword [r9 + rbx * STD_SIZE_PTR_byte]
 
 	;=======================================================================
-	; todo, find why task_ap_address[ cpu_id ] doesn't contain task pointer
+	; todo, find why task_cpu_address[ cpu_id ] doesn't contain task pointer
 	; it might be race condition at AP initialization -_-
 	; this bypass is safe
 
@@ -59,15 +59,15 @@ kernel_task:
 	jnz	.ok
 
 	; set initial task as closed
-	mov	r10,	qword [r8 + KERNEL.task_queue_address]
+	mov	r10,	qword [r8 + KERNEL.task_base_address]
 	;=======================================================================
 
 .ok:
 	; save tasks current stack pointer
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsp
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.rsp],	rsp
 
 	; set flag of current task as free for execution by next CPU
-	and	word [r10 + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_exec
+	and	word [r10 + KERNEL_STRUCTURE_TASK.flags],	~KERNEL_TASK_FLAG_exec
 
 	;-----------------------------------------------------------------------
 	; [SELECT]
@@ -82,40 +82,40 @@ kernel_task:
 	jnz	.lock	; no
 
 	; calculate task queue size
-	mov	rax,	KERNEL_TASK_STRUCTURE.SIZE
+	mov	rax,	KERNEL_STRUCTURE_TASK.SIZE
 	mov	ecx,	KERNEL_TASK_limit
 	mul	rcx
 
 	; set queue limit pointer
-	add	rax,	qword [r8 + KERNEL.task_queue_address]
+	add	rax,	qword [r8 + KERNEL.task_base_address]
 
 .next:
 	; move pointer to next task in queue
-	add	r10,	KERNEL_TASK_STRUCTURE.SIZE
+	add	r10,	KERNEL_STRUCTURE_TASK.SIZE
 
 	; end of task queue?
 	cmp	r10,	rax
 	jb	.check	; no
 
 	; start searching from beginning
-	mov	r10,	qword [r8 + KERNEL.task_queue_address]
+	mov	r10,	qword [r8 + KERNEL.task_base_address]
 
 .check:
 	; task is active? (close etc.)
-	test	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active
+	test	word [r10 + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_active
 	jz	.next	; no
 
 	; a dormant task?
-	mov	rdx,	qword [r10 + KERNEL_TASK_STRUCTURE.sleep]
+	mov	rdx,	qword [r10 + KERNEL_STRUCTURE_TASK.sleep]
 	cmp	rdx,	qword [r8 + KERNEL.time_rtc]
 	ja	.next	; yes
 
 	; task can be executed?
-	test	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_exec
+	test	word [r10 + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_exec
 	jnz	.next	; no
 
 	; mark task as selected by current CPU
-	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_exec
+	or	word [r10 + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_exec
 
 	; release access
 	mov	byte [r8 + KERNEL.task_cpu_semaphore],	UNLOCK
@@ -124,21 +124,21 @@ kernel_task:
 	; [RESTORE]
 
 	; set pointer to current task for AP
-	mov	qword [r9 + rbx * STD_PTR_SIZE_byte],	r10
+	mov	qword [r9 + rbx * STD_SIZE_PTR_byte],	r10
 
 	; restore tasks stack pointer
-	mov	rsp,	qword [r10 + KERNEL_TASK_STRUCTURE.rsp]
+	mov	rsp,	qword [r10 + KERNEL_STRUCTURE_TASK.rsp]
 
 	; restore tasks page arrays
-	mov	rax,	qword [r10 + KERNEL_TASK_STRUCTURE.cr3]
+	mov	rax,	qword [r10 + KERNEL_STRUCTURE_TASK.cr3]
 	mov	cr3,	rax
 
 	; first run?
-	test	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_init
+	test	word [r10 + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_init
 	jz	.ready	; no
 
 	; disable init flag
-	and	word [r10 + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_init
+	and	word [r10 + KERNEL_STRUCTURE_TASK.flags],	~KERNEL_TASK_FLAG_init
 
 	; reset FPU state
 	fninit
@@ -148,7 +148,7 @@ kernel_task:
 	FXSAVE64	[rbp]
 
 	; it's a daemon?
-	test	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_daemon
+	test	word [r10 + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_module
 	jz	.no_daemon	; no
 
 	; share with daemon - kernel environment variables/rountines base address
@@ -165,7 +165,7 @@ kernel_task:
 	mov	rcx,	qword [rax]
 
 	; pointer to string
-	add	rax,	STD_QWORD_SIZE_byte
+	add	rax,	STD_SIZE_QWORD_byte
 
 	; and pass them to process
 	mov	qword [rsp + 0x48],	rcx
@@ -224,20 +224,20 @@ kernel_task_add:
 
 	; search for free entry from beginning
 	mov	rax,	KERNEL_TASK_limit
-	mov	r10,	qword [r8 + KERNEL.task_queue_address]
+	mov	r10,	qword [r8 + KERNEL.task_base_address]
 
 .lock:
 	; request an exclusive access
 	mov	al,	LOCK
-	xchg	byte [r8 + KERNEL.task_queue_semaphore],	al
+	xchg	byte [r8 + KERNEL.task_semaphore],	al
 
 .loop:
 	; free queue entry?
-	lock bts	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_secured_bit
+	lock bts	word [r10 + KERNEL_STRUCTURE_TASK.flags],	STD_SIGN_WORD_bit
 	jnc	.found	; yes
 
 	; move pointer to next task in queue
-	add	r10,	KERNEL_TASK_STRUCTURE.SIZE
+	add	r10,	KERNEL_STRUCTURE_TASK.SIZE
 
 	; end of task queue?
 	dec	rax
@@ -252,14 +252,14 @@ kernel_task_add:
 .found:
 	; set process ID
 	call	kernel_task_id_new
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.pid],	rax
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.pid],	rax
 
 	; retieve parent ID
 	call	kernel_task_id_parent
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.pid_parent],	rdx
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.pid_parent],	rdx
 
 	; task doesn't use memory, yet
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.page],	EMPTY
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.page],	EMPTY
 
 	; process name too long?
 	cmp	rcx,	KERNEL_TASK_NAME_limit
@@ -270,11 +270,11 @@ kernel_task_add:
 
 .proper_length:
 	; length of process name
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.length],	rcx
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.name_length],	rcx
 
 	; copy name to task entry
 	mov	rdi,	r10
-	add	rdi,	KERNEL_TASK_STRUCTURE.name
+	add	rdi,	KERNEL_STRUCTURE_TASK.name
 	rep	movsb
 
 	; last character as TERMINATOR
@@ -285,7 +285,7 @@ kernel_task_add:
 
 .end:
 	; release access
-	mov	byte [r8 + KERNEL.task_queue_semaphore],	UNLOCK
+	mov	byte [r8 + KERNEL.task_semaphore],	UNLOCK
 
 	; restore original registers
 	pop	r8
@@ -314,15 +314,15 @@ kernel_task_by_id:
 
 	; search for free entry from beginning
 	mov	rcx,	KERNEL_TASK_limit
-	mov	rbx,	qword [r8 + KERNEL.task_queue_address]
+	mov	rbx,	qword [r8 + KERNEL.task_base_address]
 
 .loop:
 	; our task we are looking for?
-	cmp	qword [rbx + KERNEL_TASK_STRUCTURE.pid],	rdx
+	cmp	qword [rbx + KERNEL_STRUCTURE_TASK.pid],	rdx
 	je	.end	; yes
 
 	; move pointer to next task in queue
-	add	rbx,	KERNEL_TASK_STRUCTURE.SIZE
+	add	rbx,	KERNEL_STRUCTURE_TASK.SIZE
 
 	; end of task queue?
 	dec	rcx
@@ -357,8 +357,8 @@ kernel_task_active:
 
 	; set pointer to current task of CPU
 	mov	r9,	qword [kernel]
-	mov	r9,	qword [r9 + KERNEL.task_ap_address]
-	mov	r9,	qword [r9 + rax * STD_PTR_SIZE_byte]
+	mov	r9,	qword [r9 + KERNEL.task_cpu_address]
+	mov	r9,	qword [r9 + rax * STD_SIZE_PTR_byte]
 
 	; restore original flags
 	popf
@@ -400,7 +400,7 @@ kernel_task_id_parent:
 	call	kernel_task_active
 
 	; return parent ID
-	mov	rdx,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
+	mov	rdx,	qword [r9 + KERNEL_STRUCTURE_TASK.pid]
 
 	; restore original registers
 	pop	r9
@@ -426,9 +426,9 @@ kernel_task_pid:
 
 	; set pointer to current task of CPU
 	mov	r8,	qword [kernel]
-	mov	r8,	qword [r8 + KERNEL.task_ap_address]
-	mov	r8,	qword [r8 + rax * STD_PTR_SIZE_byte]
-	mov	rax,	qword [r8 + KERNEL_TASK_STRUCTURE.pid]
+	mov	r8,	qword [r8 + KERNEL.task_cpu_address]
+	mov	r8,	qword [r8 + rax * STD_SIZE_PTR_byte]
+	mov	rax,	qword [r8 + KERNEL_STRUCTURE_TASK.pid]
 
 	; restore original flags
 	popf

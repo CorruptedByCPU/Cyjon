@@ -12,6 +12,8 @@ kernel_init_gdt:
 	; prepare area for Global Descriptor Table
 	mov	ecx,	TRUE
 	call	kernel_memory_alloc
+
+	; preserve pointer inside KERNEL environment
 	mov	qword [r8 + KERNEL.gdt_header + KERNEL_STRUCTURE_GDT_HEADER.base_address],	rdi
 
 	; create code descriptor ring0 (CS)

@@ -32,7 +32,7 @@ kernel_init_environment:
 	js	.done	; no
 
 	; retrieve entry
-	mov	rax,	qword [rsi + rcx * STD_PTR_SIZE_byte]
+	mov	rax,	qword [rsi + rcx * STD_SIZE_PTR_byte]
 
 	;  USABLE memory area?
 	cmp	qword [rax + LIMINE_MEMMAP_ENTRY.type],	LIMINE_MEMMAP_USABLE
@@ -96,6 +96,9 @@ kernel_init_environment:
 
 	; share page management functions
 	mov	qword [rdi + KERNEL.page_deconstruction],	kernel_page_deconstruction
+
+	; share stream management functions
+	mov	qword [rdi + KERNEL.stream_release],		kernel_stream_release
 
 	; restore original registers
 	pop	rsi

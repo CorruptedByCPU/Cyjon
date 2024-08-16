@@ -5,11 +5,14 @@
 %ifndef	KERNEL_STREAM
 	%define	KERNEL_STREAM
 
-	%define	KERNEL_STREAM_limit		(KERNEL_TASK_limit << STD_MULTIPLE_BY_2_shift)
+	%define	KERNEL_STREAM_limit		(KERNEL_TASK_limit << STD_SHIFT_2)
 
-	%define	KERNEL_STREAM_SIZE_page		(LIB_SYS_STREAM_SIZE_byte >> STD_PAGE_SIZE_shift)
+	%define	KERNEL_STREAM_FLAG_data		0b00000001
+	%define	KERNEL_STREAM_FLAG_modified	0b00000010
+	%define	KERNEL_STREAM_FLAG_null		0b01000000
+	%define	KERNEL_STREAM_FLAG_closed	0b10000000
 
-	struc	KERNEL_STREAM_STRUCTURE
+	struc	KERNEL_STRUCTURE_STREAM
 		.base_address	resq	1
 		.start		resw	1
 		.end		resw	1

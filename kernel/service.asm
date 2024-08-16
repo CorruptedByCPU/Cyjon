@@ -75,8 +75,8 @@ kernel_service_exit:
 	call	kernel_task_active
 
 	; mark task as closed and not active
-	or	word [r9 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_closed
-	and	word [r9 + KERNEL_TASK_STRUCTURE.flags],	~KERNEL_TASK_FLAG_active
+	or	word [r9 + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_close
+	and	word [r9 + KERNEL_STRUCTURE_TASK.flags],	~KERNEL_TASK_FLAG_active
 
 	; release rest of AP time
 	int	0x20
@@ -100,7 +100,7 @@ kernel_service_sleep:
 	add	rdi,	qword [r8 + KERNEL.time_rtc]
 
 	; go to sleep for N ticks
-	mov	qword [r9 + KERNEL_TASK_STRUCTURE.sleep],	rdi
+	mov	qword [r9 + KERNEL_STRUCTURE_TASK.sleep],	rdi
 
 	; release the remaining CPU time
 	int	0x20
@@ -233,13 +233,13 @@ kernel_service_framebuffer:
 
 	; convert to pages
 	add	rax,	~STD_PAGE_mask
-	shr	rax,	STD_PAGE_SIZE_shift
+	shr	rax,	STD_SHIFT_PAGE
 
 	; share framebuffer memory space with process
 	xor	ecx,	ecx	; no framebuffer manager, if error on below function
 	xchg	rcx,	rax	; length of shared space in pages
 	mov	rsi,	qword [r8 + KERNEL.framebuffer_base_address]
-	mov	r11,	qword [r9 + KERNEL_TASK_STRUCTURE.cr3]
+	mov	r11,	qword [r9 + KERNEL_STRUCTURE_TASK.cr3]
 	call	kernel_memory_share
 	jc	.return	; no enough memory?
 
@@ -247,7 +247,7 @@ kernel_service_framebuffer:
 	mov	qword [rdi + LIB_SYS_STRUCTURE_FRAMEBUFFER.base_address],	rax
 
 	; new framebuffer manager
-	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
+	mov	rax,	qword [r9 + KERNEL_STRUCTURE_TASK.pid]
 	mov	qword [r8 + KERNEL.framebuffer_pid],	rax
 
 .return:
@@ -300,11 +300,11 @@ kernel_service_ipc_send:
 .loop:
 	; free entry?
 	mov	rax,	qword [r8 + KERNEL.time_rtc]
-	cmp	qword [rdx + LIB_SYS_STRUCTURE_IPC.ttl],	rax
+	cmp	qword [rdx + STD_IPC_STRUCTURE.ttl],	rax
 	jbe	.found	; yes
 
 	; next entry from list
-	add	rdx,	LIB_SYS_STRUCTURE_IPC.SIZE
+	add	rdx,	STD_IPC_STRUCTURE.SIZE
 
 	; end of message list?
 	dec	rcx
@@ -315,20 +315,20 @@ kernel_service_ipc_send:
 
 .found:
 	; set message time out
-	add	rax,	KERNEL_IPC_timeout
-	mov	qword [rdx + LIB_SYS_STRUCTURE_IPC.ttl],	rax
+	add	rax,	KERNEL_IPC_ttl
+	mov	qword [rdx + STD_IPC_STRUCTURE.ttl],	rax
 
 	; set message source
 	call	kernel_task_pid
-	mov	qword [rdx + LIB_SYS_STRUCTURE_IPC.source],	rax
+	mov	qword [rdx + STD_IPC_STRUCTURE.source],	rax
 
 	; set message target
-	mov	qword [rdx + LIB_SYS_STRUCTURE_IPC.target],	rdi
+	mov	qword [rdx + STD_IPC_STRUCTURE.target],	rdi
 
 	; load data into message
-	mov	ecx,	LIB_SYS_IPC_DATA_size_byte
+	mov	ecx,	STD_IPC_SIZE_byte
 	mov	rdi,	rdx
-	add	rdi,	LIB_SYS_STRUCTURE_IPC.data
+	add	rdi,	STD_IPC_STRUCTURE.data
 	rep	movsb
 
 .end:
@@ -383,12 +383,12 @@ kernel_service_ipc_receive:
 .loop:
 	; message alive?
 	mov	rbx,	qword [r8 + KERNEL.time_rtc]
-	cmp	qword [rsi + LIB_SYS_STRUCTURE_IPC.ttl],	rbx
+	cmp	qword [rsi + STD_IPC_STRUCTURE.ttl],	rbx
 	ja	.check	; yes
 
 .next:
 	; next entry from list?
-	add	rsi,	LIB_SYS_STRUCTURE_IPC.SIZE
+	add	rsi,	STD_IPC_STRUCTURE.SIZE
 	dec	rcx
 	jnz	.loop	; yes
 
@@ -405,26 +405,26 @@ kernel_service_ipc_receive:
 
 	; requested message type?
 	mov	bl,	byte [rsp]
-	cmp	bl,	byte [rsi + LIB_SYS_STRUCTURE_IPC.data + LIB_SYS_STRUCTURE_IPC_DEFAULT.type]
+	cmp	bl,	byte [rsi + STD_IPC_STRUCTURE.data + STD_IPC_STRUCTURE_DEFAULT.type]
 	jne	.next	; no
 
 .any:
 	; message for us?
-	cmp	qword [rsi + LIB_SYS_STRUCTURE_IPC.target],	rax
+	cmp	qword [rsi + STD_IPC_STRUCTURE.target],	rax
 	jne	.next	; no
 
 	; preserve original register
 	push	rsi
 
 	; load message to process descriptor
-	mov	ecx,	LIB_SYS_STRUCTURE_IPC.SIZE
+	mov	ecx,	STD_IPC_STRUCTURE.SIZE
 	rep	movsb
 
 	; restore original register
 	pop	rsi
 
 	; release entry
-	mov	qword [rsi + LIB_SYS_STRUCTURE_IPC.ttl],	EMPTY
+	mov	qword [rsi + STD_IPC_STRUCTURE.ttl],	EMPTY
 
 	; message transferred
 	mov	eax,	TRUE
@@ -461,22 +461,22 @@ kernel_service_memory_alloc:
 
 	; convert size to pages (align up to page boundaries)
 	add	rdi,	~STD_PAGE_mask
-	shr	rdi,	STD_PAGE_SIZE_shift
+	shr	rdi,	STD_SHIFT_PAGE
 
 	; retrieve pointer to current task descriptor
 	call	kernel_task_active
 
 	; set pointer of process paging array
-	mov	r11,	qword [r9 + KERNEL_TASK_STRUCTURE.cr3]
+	mov	r11,	qword [r9 + KERNEL_STRUCTURE_TASK.cr3]
 
 	; aquire memory space from process memory map
-	mov	r9,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]
+	mov	r9,	qword [r9 + KERNEL_STRUCTURE_TASK.memory_map]
 	mov	rcx,	rdi	; number of pages
 	call	kernel_memory_acquire
 	jc	.error	; no enough memory
 
 	; convert first page number to logical address
-	shl	rdi,	STD_PAGE_SIZE_shift
+	shl	rdi,	STD_SHIFT_PAGE
 
 	; assign pages to allocated memory in process space
 	mov	rax,	rdi
@@ -500,7 +500,7 @@ kernel_service_memory_alloc:
 	call	kernel_task_active
 
 	; process memory usage
-	add	qword [r9 + KERNEL_TASK_STRUCTURE.page],	rcx
+	add	qword [r9 + KERNEL_STRUCTURE_TASK.page],	rcx
 
 .end:
 	; restore original registers
@@ -533,7 +533,7 @@ kernel_service_memory_release:
 
 	; convert bytes to pages
 	add	rsi,	~STD_PAGE_mask
-	shr	rsi,	STD_PAGE_SIZE_shift
+	shr	rsi,	STD_SHIFT_PAGE
 
 	; pointer and counter at place
 	mov	rcx,	rsi
@@ -541,7 +541,7 @@ kernel_service_memory_release:
 
 .loop:
 	; delete first physical page from logical address
-	mov	r11,	qword [r9 + KERNEL_TASK_STRUCTURE.cr3]
+	mov	r11,	qword [r9 + KERNEL_STRUCTURE_TASK.cr3]
 	call	kernel_page_remove
 
 	; page removed?
@@ -549,7 +549,7 @@ kernel_service_memory_release:
 	jnz	.release	; yes
 
 	; convert to page number
-	shr	rsi,	STD_PAGE_SIZE_shift
+	shr	rsi,	STD_SHIFT_PAGE
 
 	; continue
 	jmp	.next
@@ -561,17 +561,17 @@ kernel_service_memory_release:
 	call	kernel_memory_release_page
 
 	; release page inside process binary memory map
-	shr	rsi,	STD_PAGE_SIZE_shift
-	mov	rdi,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]
+	shr	rsi,	STD_SHIFT_PAGE
+	mov	rdi,	qword [r9 + KERNEL_STRUCTURE_TASK.memory_map]
 	bts	qword [rdi],	rsi
 
 	; process memory usage
-	dec	qword [r9 + KERNEL_TASK_STRUCTURE.page]
+	dec	qword [r9 + KERNEL_STRUCTURE_TASK.page]
 
 .next:
 	; next page from space
 	inc	rsi
-	shl	rsi,	STD_PAGE_SIZE_shift
+	shl	rsi,	STD_SHIFT_PAGE
 
 	; another page?
 	dec	rcx
@@ -607,21 +607,21 @@ kernel_service_memory_share:
 	; convert Bytes to pages
 	mov	rcx,	rsi
 	add	rcx,	~STD_PAGE_mask
-	shr	rcx,	STD_PAGE_SIZE_shift
+	shr	rcx,	STD_SHIFT_PAGE
 
 	; retrieve task paging structure pointer
 	call	kernel_task_by_id
-	mov	r11,	qword [rbx + KERNEL_TASK_STRUCTURE.cr3]
+	mov	r11,	qword [rbx + KERNEL_STRUCTURE_TASK.cr3]
 
 	; set source pointer in place
 	mov	rsi,	rdi
 
 	; acquire memory space from target process
-	mov	r9,	qword [rbx + KERNEL_TASK_STRUCTURE.memory_map]
+	mov	r9,	qword [rbx + KERNEL_STRUCTURE_TASK.memory_map]
 	call	kernel_memory_acquire
 
 	; convert page number to offset
-	shl	rdi,	STD_PAGE_SIZE_shift
+	shl	rdi,	STD_SHIFT_PAGE
 
 	; connect memory space of parent process with child
 	mov	rax,	rdi
@@ -650,7 +650,7 @@ kernel_service_task_pid:
 	call	kernel_task_active
 
 	; set pointer of process paging array
-	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.pid]
+	mov	rax,	qword [r9 + KERNEL_STRUCTURE_TASK.pid]
 
 	; restore original registers
 	pop	r9
@@ -680,7 +680,7 @@ kernel_service_task_status:
 	jz	.error	; yep
 
 	; set pointer of process paging array
-	mov	ax,	word [rbx + KERNEL_TASK_STRUCTURE.flags]
+	mov	ax,	word [rbx + KERNEL_STRUCTURE_TASK.flags]
 
 .error:
 	; restore original registers
@@ -850,7 +850,7 @@ kernel_service_task:
 .lock:
 	; request an exclusive access
 	mov	al,	LOCK
-	xchg	byte [r8 + KERNEL.task_queue_semaphore],	al
+	xchg	byte [r8 + KERNEL.task_semaphore],	al
 
 	; assigned?
 	test	al,	al
@@ -862,59 +862,59 @@ kernel_service_task:
 
 	; assign place for task descriptor list
 	mov	rdi,	rax
-	add	rdi,	STD_QWORD_SIZE_byte << STD_MULTIPLE_BY_2_shift
+	add	rdi,	STD_SIZE_QWORD_byte << STD_SHIFT_2
 	call	kernel_service_memory_alloc
 
 	; store information about size of this space
 	add	rdi,	~STD_PAGE_mask
-	shr	rdi,	STD_PAGE_SIZE_shift
+	shr	rdi,	STD_SHIFT_PAGE
 	mov	qword [rax],	rdi
 
 	; parse every entry
 	mov	rbx,	KERNEL_TASK_limit
-	mov	r10,	qword [r8 + KERNEL.task_queue_address]
+	mov	r10,	qword [r8 + KERNEL.task_base_address]
 
 	; preserve memory space pointer of tasks descriptors
-	add	rax,	STD_QWORD_SIZE_byte << STD_MULTIPLE_BY_2_shift
+	add	rax,	STD_SIZE_QWORD_byte << STD_SHIFT_2
 	push	rax
 
 .loop:
 	; entry exist?
-	cmp	word [r10 + KERNEL_TASK_STRUCTURE.flags],	EMPTY
+	cmp	word [r10 + KERNEL_STRUCTURE_TASK.flags],	EMPTY
 	je	.next	; no
 
 	; do not pass kernel entry
-	cmp	qword [r10 + KERNEL_TASK_STRUCTURE.pid],	EMPTY
+	cmp	qword [r10 + KERNEL_STRUCTURE_TASK.pid],	EMPTY
 	je	.next
 
 	; share default information about task
 
 	; process ID
-	mov	rdx,	qword [r10 + KERNEL_TASK_STRUCTURE.pid]
+	mov	rdx,	qword [r10 + KERNEL_STRUCTURE_TASK.pid]
 	mov	qword [rax + LIB_SYS_STRUCTURE_TASK.pid],	rdx
 
 	; process parents ID
-	mov	rdx,	qword [r10 + KERNEL_TASK_STRUCTURE.pid_parent]
+	mov	rdx,	qword [r10 + KERNEL_STRUCTURE_TASK.pid_parent]
 	mov	qword [rax + LIB_SYS_STRUCTURE_TASK.pid_parent],	rdx
 
 	; wake up process micotime
-	mov	rdx,	qword [r10 + KERNEL_TASK_STRUCTURE.sleep]
+	mov	rdx,	qword [r10 + KERNEL_STRUCTURE_TASK.sleep]
 	mov	qword [rax + LIB_SYS_STRUCTURE_TASK.sleep],	rdx
 
 	; amount of pages used by process
-	mov	rdx,	qword [r10 + KERNEL_TASK_STRUCTURE.page]
+	mov	rdx,	qword [r10 + KERNEL_STRUCTURE_TASK.page]
 	mov	qword [rax + LIB_SYS_STRUCTURE_TASK.page],	rdx
 
 	; current task status
-	mov	dx,	word [r10 + KERNEL_TASK_STRUCTURE.flags]
+	mov	dx,	word [r10 + KERNEL_STRUCTURE_TASK.flags]
 	mov	word [rax + LIB_SYS_STRUCTURE_TASK.flags],	dx
 
 	; taks name length
-	movzx	ecx,	byte [r10 + KERNEL_TASK_STRUCTURE.length]
+	movzx	ecx,	byte [r10 + KERNEL_STRUCTURE_TASK.name_length]
 	mov	byte [rax + LIB_SYS_STRUCTURE_TASK.length],	cl
 
 	; task name itself
-	lea	rsi,	[r10 + KERNEL_TASK_STRUCTURE.name]
+	lea	rsi,	[r10 + KERNEL_STRUCTURE_TASK.name]
 	lea	rdi,	[rax + LIB_SYS_STRUCTURE_TASK.name]
 	rep	movsb
 
@@ -923,7 +923,7 @@ kernel_service_task:
 
 .next:
 	; move pointer to next entry of task table
-	add	r10,	KERNEL_TASK_STRUCTURE.SIZE
+	add	r10,	KERNEL_STRUCTURE_TASK.SIZE
 
 	; end of tasks inside table?
 	dec	rbx
@@ -936,7 +936,7 @@ kernel_service_task:
 	pop	rax
 
 	; release access
-	mov	byte [r8 + KERNEL.task_queue_semaphore],	UNLOCK
+	mov	byte [r8 + KERNEL.task_semaphore],	UNLOCK
 
 	; restore original registers
 	pop	r10
@@ -985,7 +985,7 @@ kernel_service_thread:
 	call	kernel_memory_alloc_page
 
 	; update task entry about paging array
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.cr3],	rdi
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.cr3],	rdi
 
 	;-----------------------------------------------------------------------
 	; context stack and return point (initialization entry)
@@ -1000,16 +1000,16 @@ kernel_service_thread:
 
 	; set process context stack pointer
 	mov	rsi,	KERNEL_STACK_pointer - (KERNEL_EXEC_STRUCTURE_RETURN.SIZE + KERNEL_EXEC_STACK_OFFSET_registers)
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.rsp],	rsi
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.rsp],	rsi
 
 	; prepare exception exit mode on context stack of process
-	mov	rsi,	KERNEL_STACK_pointer - STD_PAGE_SIZE_byte
+	mov	rsi,	KERNEL_STACK_pointer - STD_PAGE_byte
 	call	kernel_page_address
 
 	; set pointer to return descriptor
 	and	rax,	STD_PAGE_mask	; drop flags
 	add	rax,	qword [kernel_page_mirror]	; convert to logical address
-	add	rax,	STD_PAGE_SIZE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
+	add	rax,	STD_PAGE_byte - KERNEL_EXEC_STRUCTURE_RETURN.SIZE
 
 	; set first instruction executed by thread
 	mov	rdx,	qword [rsp]
@@ -1044,40 +1044,40 @@ kernel_service_thread:
 	call	kernel_page_map
 
 	; process memory usage
-	add	qword [r10 + KERNEL_TASK_STRUCTURE.page],	rcx
+	add	qword [r10 + KERNEL_STRUCTURE_TASK.page],	rcx
 
 	; process stack size
-	add	qword [r10 + KERNEL_TASK_STRUCTURE.stack],	rcx
+	add	qword [r10 + KERNEL_STRUCTURE_TASK.stack],	rcx
 
 	; aquire parent task properties
 	call	kernel_task_active
 
 	; threads use same memory map as parent
-	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.memory_map]
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.memory_map],	rax
+	mov	rax,	qword [r9 + KERNEL_STRUCTURE_TASK.memory_map]
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.memory_map],	rax
 
 	; threads use same streams as parent
 
 	; in
-	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_in]
-	inc	qword [rax + KERNEL_STREAM_STRUCTURE.count]
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_in],	rax
+	mov	rax,	qword [r9 + KERNEL_STRUCTURE_TASK.stream_in]
+	inc	qword [rax + KERNEL_STRUCTURE_STREAM.count]
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.stream_in],	rax
 
 	; out
-	mov	rax,	qword [r9 + KERNEL_TASK_STRUCTURE.stream_out]
-	inc	qword [rax + KERNEL_STREAM_STRUCTURE.count]
-	mov	qword [r10 + KERNEL_TASK_STRUCTURE.stream_out],	rax
+	mov	rax,	qword [r9 + KERNEL_STRUCTURE_TASK.stream_out]
+	inc	qword [rax + KERNEL_STRUCTURE_STREAM.count]
+	mov	qword [r10 + KERNEL_STRUCTURE_TASK.stream_out],	rax
 
 	; map kernel space to process
-	mov	r15,	qword [r9 + KERNEL_TASK_STRUCTURE.cr3]
+	mov	r15,	qword [r9 + KERNEL_STRUCTURE_TASK.cr3]
 	or	r15,	qword [kernel_page_mirror]
 	call	kernel_page_merge
 
 	; mark thread as ready
-	or	word [r10 + KERNEL_TASK_STRUCTURE.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_thread | KERNEL_TASK_FLAG_init
+	or	word [r10 + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_thread | KERNEL_TASK_FLAG_init
 
 	; return process ID of new thread
-	mov	rax,	qword [r10 + KERNEL_TASK_STRUCTURE.pid]
+	mov	rax,	qword [r10 + KERNEL_STRUCTURE_TASK.pid]
 
 	; restore original registers
 	pop	rdi

@@ -24,7 +24,7 @@ kernel_init_acpi:
 	; amount of entries
 	mov	ecx,	dword [edi + KERNEL_STRUCTURE_INIT_ACPI_DEFAULT.length]
 	sub	ecx,	KERNEL_STRUCTURE_INIT_ACPI_DEFAULT.SIZE
-	shr	ecx,	STD_DIVIDE_BY_4_shift
+	shr	ecx,	STD_SHIFT_4
 
 	; pointer to list of RSDT entries
 	add	edi,	KERNEL_STRUCTURE_INIT_ACPI_DEFAULT.SIZE
@@ -35,7 +35,7 @@ kernel_init_acpi:
 	call	.parse
 
 	; next entry from RSDT table
-	add	edi,	STD_DWORD_SIZE_byte
+	add	edi,	STD_SIZE_DWORD_byte
 
 	; end of table?
 	dec	ecx
@@ -51,7 +51,7 @@ kernel_init_acpi:
 	; amount of entries
 	mov	ecx,	dword [edi + KERNEL_STRUCTURE_INIT_ACPI_DEFAULT.length]
 	sub	ecx,	KERNEL_STRUCTURE_INIT_ACPI_DEFAULT.SIZE
-	shr	ecx,	STD_DIVIDE_BY_8_shift
+	shr	ecx,	STD_SHIFT_8
 
 	; pointer to list of XSDT entries
 	add	rdi,	KERNEL_STRUCTURE_INIT_ACPI_DEFAULT.SIZE
@@ -62,7 +62,7 @@ kernel_init_acpi:
 	call	.parse
 
 	; next entry from XSDT table
-	add	rdi,	STD_QWORD_SIZE_byte
+	add	rdi,	STD_SIZE_QWORD_byte
 
 	; end of table?
 	dec	rcx
