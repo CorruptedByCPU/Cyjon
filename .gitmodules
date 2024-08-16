@@ -1,6 +1,6 @@
 [submodule "limine"]
 	path = limine
 	url = https://github.com/limine-bootloader/limine
-[submodule "fern-night"]
-	path = fern-night
-	url = https://github.com/corruptedbycpu/fern-night
+[submodule "foton"]
+	path = foton
+	url = https://github.com/corruptedbycpu/foton
