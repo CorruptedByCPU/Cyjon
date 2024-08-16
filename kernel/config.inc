@@ -56,8 +56,8 @@ struc	KERNEL
 	.io_apic_irq_lines		resd	1
 	.io_apic_semaphore		resb	1
 
-; variables of IPC management functions
-.ipc_base_address		resq	1
+	; variables of IPC management functions
+	.ipc_base_address		resq	1
 .ipc_semaphore			resb	1
 
 	; variables of LAPIC management functions

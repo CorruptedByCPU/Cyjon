@@ -12,6 +12,8 @@ kernel_init_stream:
 	; prepare area for streams
 	mov	ecx,	MACRO_PAGE_ALIGN_UP( KERNEL_STREAM_limit * KERNEL_STRUCTURE_STREAM.SIZE ) >> STD_SHIFT_PAGE
 	call	kernel_memory_alloc
+
+	; preserve pointer inside KERNEL environment
 	mov	qword [r8 + KERNEL.stream_base_address],	rdi
 
 	; restore original registers

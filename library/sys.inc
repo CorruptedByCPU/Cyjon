@@ -69,30 +69,30 @@
 	%define	LIB_SYS_STREAM_out			00000001b
 	%define	LIB_SYS_STREAM_in			00000010b
 
-	%define	LIB_SYS_IPC_DATA_size_byte		40
+	%define	STD_IPC_SIZE_byte		40
 
 	%define	LIB_SYS_IPC_TYPE_ANY			0x00
 	%define	LIB_SYS_IPC_TYPE_MOUSE			0x01
 	%define	LIB_SYS_IPC_TYPE_KEYBOARD		0x02
 
-	struc	LIB_SYS_STRUCTURE_IPC
+	struc	STD_IPC_STRUCTURE
 		.ttl		resq	1
 		.source		resq	1
 		.target		resq	1
-		.data		resb	LIB_SYS_IPC_DATA_size_byte
+		.data		resb	STD_IPC_SIZE_byte
 		.SIZE:
 	endstruc
 
-	struc	LIB_SYS_STRUCTURE_IPC_DEFAULT
+	struc	STD_IPC_STRUCTURE_DEFAULT
 		.type		resb	1
 	endstruc
 
-	struc	LIB_SYS_STRUCTURE_IPC_KEYBOARD
+	struc	STD_IPC_STRUCTURE_KEYBOARD
 		.type		resb	1
 		.key		resw	1
 	endstruc
 
-	struc	LIB_SYS_STRUCTURE_IPC_MOUSE
+	struc	STD_IPC_STRUCTURE_MOUSE
 		.type		resb	1
 		.status		resb	1
 	endstruc

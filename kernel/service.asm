@@ -300,11 +300,11 @@ kernel_service_ipc_send:
 .loop:
 	; free entry?
 	mov	rax,	qword [r8 + KERNEL.time_rtc]
-	cmp	qword [rdx + LIB_SYS_STRUCTURE_IPC.ttl],	rax
+	cmp	qword [rdx + STD_IPC_STRUCTURE.ttl],	rax
 	jbe	.found	; yes
 
 	; next entry from list
-	add	rdx,	LIB_SYS_STRUCTURE_IPC.SIZE
+	add	rdx,	STD_IPC_STRUCTURE.SIZE
 
 	; end of message list?
 	dec	rcx
@@ -315,20 +315,20 @@ kernel_service_ipc_send:
 
 .found:
 	; set message time out
-	add	rax,	KERNEL_IPC_timeout
-	mov	qword [rdx + LIB_SYS_STRUCTURE_IPC.ttl],	rax
+	add	rax,	KERNEL_IPC_ttl
+	mov	qword [rdx + STD_IPC_STRUCTURE.ttl],	rax
 
 	; set message source
 	call	kernel_task_pid
-	mov	qword [rdx + LIB_SYS_STRUCTURE_IPC.source],	rax
+	mov	qword [rdx + STD_IPC_STRUCTURE.source],	rax
 
 	; set message target
-	mov	qword [rdx + LIB_SYS_STRUCTURE_IPC.target],	rdi
+	mov	qword [rdx + STD_IPC_STRUCTURE.target],	rdi
 
 	; load data into message
-	mov	ecx,	LIB_SYS_IPC_DATA_size_byte
+	mov	ecx,	STD_IPC_SIZE_byte
 	mov	rdi,	rdx
-	add	rdi,	LIB_SYS_STRUCTURE_IPC.data
+	add	rdi,	STD_IPC_STRUCTURE.data
 	rep	movsb
 
 .end:
@@ -383,12 +383,12 @@ kernel_service_ipc_receive:
 .loop:
 	; message alive?
 	mov	rbx,	qword [r8 + KERNEL.time_rtc]
-	cmp	qword [rsi + LIB_SYS_STRUCTURE_IPC.ttl],	rbx
+	cmp	qword [rsi + STD_IPC_STRUCTURE.ttl],	rbx
 	ja	.check	; yes
 
 .next:
 	; next entry from list?
-	add	rsi,	LIB_SYS_STRUCTURE_IPC.SIZE
+	add	rsi,	STD_IPC_STRUCTURE.SIZE
 	dec	rcx
 	jnz	.loop	; yes
 
@@ -405,26 +405,26 @@ kernel_service_ipc_receive:
 
 	; requested message type?
 	mov	bl,	byte [rsp]
-	cmp	bl,	byte [rsi + LIB_SYS_STRUCTURE_IPC.data + LIB_SYS_STRUCTURE_IPC_DEFAULT.type]
+	cmp	bl,	byte [rsi + STD_IPC_STRUCTURE.data + STD_IPC_STRUCTURE_DEFAULT.type]
 	jne	.next	; no
 
 .any:
 	; message for us?
-	cmp	qword [rsi + LIB_SYS_STRUCTURE_IPC.target],	rax
+	cmp	qword [rsi + STD_IPC_STRUCTURE.target],	rax
 	jne	.next	; no
 
 	; preserve original register
 	push	rsi
 
 	; load message to process descriptor
-	mov	ecx,	LIB_SYS_STRUCTURE_IPC.SIZE
+	mov	ecx,	STD_IPC_STRUCTURE.SIZE
 	rep	movsb
 
 	; restore original register
 	pop	rsi
 
 	; release entry
-	mov	qword [rsi + LIB_SYS_STRUCTURE_IPC.ttl],	EMPTY
+	mov	qword [rsi + STD_IPC_STRUCTURE.ttl],	EMPTY
 
 	; message transferred
 	mov	eax,	TRUE

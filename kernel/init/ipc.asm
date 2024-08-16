@@ -10,12 +10,11 @@ kernel_init_ipc:
 	push	rdi
 
 	; prepare the space for the stream space
-	mov	rcx,	KERNEL_IPC_limit * LIB_SYS_STRUCTURE_IPC.SIZE
-	add	rcx,	~STD_PAGE_mask
+	mov	rcx,	MACRO_PAGE_ALIGN_UP( KERNEL_IPC_limit * STD_IPC_STRUCTURE.SIZE )
 	shr	rcx,	STD_SHIFT_PAGE
 	call	kernel_memory_alloc
 
-	; preserve pointer to IPC messages
+	; preserve pointer inside KERNEL environment
 	mov	qword [r8 + KERNEL.ipc_base_address],	rdi
 
 	; restore original registers

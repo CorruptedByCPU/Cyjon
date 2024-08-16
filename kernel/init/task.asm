@@ -19,6 +19,8 @@ push	rbx
 	; prepare area for Task entries
 	mov	ecx,	MACRO_PAGE_ALIGN_UP( KERNEL_TASK_limit * KERNEL_STRUCTURE_TASK.SIZE ) >> STD_SHIFT_PAGE
 	call	kernel_memory_alloc
+
+	; preserve pointer inside KERNEL environment
 	mov	qword [r8 + KERNEL.task_base_address],	rdi
 
 	;----------------------------------------------------------------------

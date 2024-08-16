@@ -145,6 +145,18 @@
 	%define	STD_IPC_MOUSE_BUTTON_middle			0b00000100
 	%define	STD_IPC_MOUSE_BUTTON_release			0b10000000
 
+	struc	STD_IPC_STRUCTURE
+		.ttl		resq	1
+		.source		resq	1
+		.target		resq	1
+		.data		resb	STD_IPC_SIZE_byte	; first Byte of data defines TYPE
+		.SIZE:
+	endstruc
+
+	struc	STD_IPC_STRUCTURE_DEFAULT
+		.type		resb	1
+	endstruc
+
 	%define	STD_KEY_BACKSPACE				0x0008
 	%define	STD_KEY_TAB					0x0009
 	%define	STD_KEY_LINE					0x000A
