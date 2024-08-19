@@ -17,7 +17,7 @@ section .text
 ;	rsi - first string pointer
 ;	rdi - second string pointer
 ; out:
-;	CF - if not equal
+;	ZF - if equal
 lib_string_compare:
 	; preserve original register
 	push	rax
@@ -25,13 +25,11 @@ lib_string_compare:
 	push	rsi
 	push	rdi
 
-	; by default not equal
-	stc
-
 .compare:
 	; are they different?
-	mov	al,	byte [rdi]
-	jne	.different	; no
+	mov	al,	byte [rsi]
+	cmp	al,	byte [rdi]
+	jnz	.different	; no
 
 	; next character from strings
 	inc	rsi
@@ -40,9 +38,6 @@ lib_string_compare:
 	; end of strings?
 	dec	rcx
 	jnz	.compare	; no
-
-	; both string are equal
-	clc
 
 .different:
 	; restore original register

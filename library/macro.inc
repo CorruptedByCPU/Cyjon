@@ -21,6 +21,7 @@
 		%%lock:
 			; lock acquired?
 			xchg	byte [r8 + KERNEL.%1],	al
+			test	al,	al	; check
 			jnz	%%lock	; no
 
 			; restore original register

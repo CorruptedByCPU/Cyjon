@@ -81,14 +81,22 @@ kernel_init_vfs:
 	; set this one as default storage
 	mov	qword [r8 + KERNEL.storage_root],	rax
 
+	; preserve original register
+	push	rdi
+
 	; retrieve properties of file
 	mov	ecx,	kernel_init_vfs_path_end - kernel_init_vfs_path
 	mov	rsi,	kernel_init_vfs_path
 	call	kernel_vfs_path
 
 	; file found?
-	test	rsi,	rsi
-	jz	.next	; no
+	test	rdi,	rdi
+
+	; restore original register
+	pop	rdi
+
+	; if no
+	jz	.next
 
 	; kernels current directory
 	mov	qword [r9 + KERNEL_STRUCTURE_TASK.directory],	rdi

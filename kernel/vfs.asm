@@ -31,17 +31,15 @@ kernel_vfs_identify:
 ;	rsi - pointer to string
 ; out:
 ;
-;	rsi - pointer to file entry of EMPTY if not found
+;	rdi - pointer to file entry of EMPTY if not found
 kernel_vfs_path:
 	; preserve original registers
 	push	rax
 	push	rbx
 	push	rcx
-	push	rdi
+	push	rsi
 	push	r8
 	push	r9
-
-	xchg	bx,bx
 
 	; global kernel environment variables/functions/rountines
 	mov	r8,	qword [kernel]
@@ -111,7 +109,7 @@ kernel_vfs_path:
 	pop	rdi
 
 	; equal?
-	jnc	.equal	; yep
+	jz	.equal	; yep
 
 .not_found:
 	; next file
@@ -119,23 +117,42 @@ kernel_vfs_path:
 
 	; check next file?
 	cmp	byte [rdi + LIB_VFS_STRUCTURE.name_length],	EMPTY
-	jne	.search	; yes
+	jne	.check	; yes
 
 	; file not found
-	xor	esi,	esi
+	xor	edi,	edi
 
 	; end of routine
 	jmp	.end
 
 .equal:
 	; last file from path and requested one?
-	cmp	cl,	byte [rdi + LIB_VFS_STRUCTURE.name_length]
-	jne	.directory	; no
+	cmp	cl,	bl
+	jne	.resolve	; no
 
-.directory:
-	; follow bymsolic links (if possible)
-	; ...
+.link:
+	; follow symbolic links (if possible)
+	cmp	byte [rdi + LIB_VFS_STRUCTURE.type],	STD_FILE_TYPE_link
+	jne	.end	; done
 
+	; move pointer to link data
+	mov	rdi,	qword [rdi + LIB_VFS_STRUCTURE.offset]
+
+	; check again
+	jmp	.link
+
+.resolve:
+	; follow symbolic links (if possible)
+	cmp	byte [rdi + LIB_VFS_STRUCTURE.type],	STD_FILE_TYPE_link
+	jne	.next	; done
+
+	; move pointer to link data
+	mov	rdi,	qword [rdi + LIB_VFS_STRUCTURE.offset]
+
+	; check again
+	jmp	.resolve
+
+.next:
 	; move pointer to next file inside path
 	add	rsi,	rcx
 	sub	rbx,	rcx	; left path length
@@ -147,7 +164,7 @@ kernel_vfs_path:
 	; restore original registers
 	pop	r9
 	pop	r8
-	pop	rdi
+	pop	rsi
 	pop	rcx
 	pop	rbx
 	pop	rax

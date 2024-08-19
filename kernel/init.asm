@@ -15,7 +15,6 @@
 	%include	"library/vfs.inc"
 %include	"library/sys.inc"
 	; driver ---------------------------------------------------------------
-%include	"kernel/driver/ps2.inc"
 	%include	"kernel/driver/rtc.inc"
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/config.inc"
@@ -29,10 +28,12 @@
 %include	"kernel/stream.inc"
 	%include	"kernel/vfs.inc"
 	%include	"kernel/task.inc"
-	; kernel environment initialization routines ---------------------------
+	;----------------------------------------------------------------------
+	; variables, structures, definitions of kernel environment initialization
+	;----------------------------------------------------------------------
 	%include	"kernel/init/acpi.inc"
-%include	"kernel/init/ap.inc"
-	%include	"kernel/init/limine.inc"
+	%include	"kernel/init/limine.inc"	; there is no limine.h for Assembly
+	%include	"kernel/init/ap.inc"
 	;=======================================================================
 
 ; we are using Position Independed Code
@@ -58,10 +59,8 @@ section .text
 	; routines
 	;-----------------------------------------------------------------------
 	; library --------------------------------------------------------------
-%include	"library/vfs.asm"
 	%include	"library/elf.asm"
 	; drivers --------------------------------------------------------------
-%include	"kernel/driver/ps2.asm"
 	%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/serial.asm"
 	; kernel ---------------------------------------------------------------
@@ -79,6 +78,7 @@ section .text
 ; %include	"kernel/syscall.asm"
 %include	"kernel/task.asm"
 	%include	"kernel/vfs.asm"
+	%include	"kernel/time.asm"
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/environment.asm"
 	%include	"kernel/init/limine.asm"
@@ -92,13 +92,13 @@ section .text
 	%include	"kernel/init/ipc.asm"
 	%include	"kernel/init/storage.asm"
 	%include	"kernel/init/vfs.asm"
-; %include	"kernel/init/ap.asm"
 ; %include	"kernel/init/cmd.asm"
 ; %include	"kernel/init/daemon.asm"
 ; %include	"kernel/init/exec.asm"
 ; %include	"kernel/init/free.asm"
 ; %include	"kernel/init/library.asm"
 ; %include	"kernel/init/smp.asm"
+	%include	"kernel/init/ap.asm"
 	;=======================================================================
 
 ;------------------------------
@@ -170,29 +170,24 @@ _entry:
 	; initialize VFS directory
 	call	kernel_init_vfs
 
-; ; retrieve file to execute
-; call	kernel_init_cmd
+	; create library management space
+	; call	kernel_init_library
 
-; ; initialize PS2 keyboard/mouse driver
-; call	driver_ps2
+	; load basic list of modules
+	; call	kernel_init_module
 
-; ; prepare library subsystem
-; call	kernel_init_library
-
-; ; execute daemons
-; call	kernel_init_daemon
-
-; ; execute init process
-; call	kernel_init_exec
+	; execute first process
+	; call	kernel_init_cmd
 
 	; EXTRA ---------------------------------------------------------------
 
-	; below, initialization functions does not guarantee original registers preservation
+	; initialize other CPUs
+	; call	kernel_init_smp
+
+	; some clean up
+	; call	kernel_init_clean
 
 	; FINISH --------------------------------------------------------------
 
-; initialize other CPUs
-; jmp	kernel_init_smp
-
-	; hold the door
-	jmp	$
+	; reload BSP configuration
+	jmp	kernel_init_ap
