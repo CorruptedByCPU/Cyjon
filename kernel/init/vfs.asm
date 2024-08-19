@@ -4,92 +4,179 @@
 
 ;-------------------------------------------------------------------------------
 ; void
-kernel_vfs_init:
+kernel_init_vfs:
 	; preserve original registers
 	push	rax
 	push	rcx
 	push	rsi
-	push	rbp
+	push	rdi
 
-	;-----------------------------------------------------------------------
-	; which storage device contains home folder?
-	;-----------------------------------------------------------------------
+	; allocate area for list of open files
+	mov	ecx,	MACRO_PAGE_ALIGN_UP( KERNEL_VFS_limit * KERNEL_STRUCTURE_VFS.SIZE ) >> STD_SHIFT_PAGE
+	call	kernel_memory_alloc
 
-	; limit of devices
+	; preserve pointer inside KERNEL environment
+	mov	qword [r8 + KERNEL.vfs_base_address],	rdi
+
+	; detect VFS storages
+
+	; list length in entries
 	mov	rcx,	KERNEL_STORAGE_limit
 
-	; devices list base address
+	; first entry of devices list
 	mov	rax,	qword [r8 + KERNEL.storage_base_address]
 
 .storage:
 	; no more devices?
 	dec	rcx
-	js	.create	; prepare empty vfs
+	js	.end	; done
 
-	; device exist?
-	cmp	byte [rax + KERNEL_STORAGE_STRUCTURE.device_type],	EMPTY
-	jne	.files	; yes
+	; entry marked as VFS?
+	cmp	byte [rax + KERNEL_STRUCTURE_STORAGE.device_type],	KERNEL_STORAGE_TYPE_vfs
+	je	.vfs	; yes
 
+.next:
 	; next slot
-	add	rax,	KERNEL_STORAGE_STRUCTURE.SIZE
+	add	rax,	KERNEL_STRUCTURE_STORAGE.SIZE
 
 	; next storage
 	jmp	.storage
 
-.files:
-	; preserve original register
-	push	rax
-	push	rcx
+.vfs:
+	; create superblock for VFS
+	mov	ecx,	MACRO_PAGE_ALIGN_UP( LIB_VFS_block ) >> STD_SHIFT_PAGE
+	call	kernel_memory_alloc
 
-	; local structure of file descriptor
-	sub	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
-	mov	rbp,	rsp	; pointer of file descriptor
+	; superblock is of type: directory
+	mov	byte [rdi + LIB_VFS_STRUCTURE.type],		STD_FILE_TYPE_directory
 
-	; change storage pointer to ID
-	sub	rax,	qword [r8 + KERNEL.storage_base_address]
-	shr	rax,	KERNEL_STORAGE_STRUCTURE_SIZE_shift
+	; root directory name
+	mov	byte [rdi + LIB_VFS_STRUCTURE.name_length],	INIT
+	mov	byte [rdi + LIB_VFS_STRUCTURE.name],		STD_ASCII_SLASH
 
-	; search for "welcome.txt" file on storage device
-	mov	ecx,	kernel_vfs_file_welcome_end - kernel_vfs_file_welcome
-	mov	rsi,	kernel_vfs_file_welcome
-	call	kernel_storage_file
+	; superblock content offset
+	push	qword [rax + KERNEL_STRUCTURE_STORAGE.device_block]
+	pop	qword [rdi + LIB_VFS_STRUCTURE.offset]
 
-	; home storage located?
-	cmp	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
-	jne	.init	; yes
+	xchg	bx,bx
 
-	; restore original register
-	pop	rcx
-	pop	rax
+	; realloc VFS structure regarded of memory location
+	mov	rsi,	rdi
+	call	kernel_init_vfs_realloc
+	mov	qword [rdi + LIB_VFS_STRUCTURE.byte],	rcx
 
-	; not a home storage, check next one
-	jmp	.storage
+	; set new location of VFS main block
+	mov	qword [rax + KERNEL_STRUCTURE_STORAGE.device_block],	rdi
 
-.init:
-	; remove file descriptor from stack
-	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
-
-	; restore original register
-	pop	rcx
-	pop	rax
-
-	; preserve home storage id
-	shr	rax,	KERNEL_STORAGE_STRUCTURE_SIZE_shift
-	mov	qword [r8 + KERNEL.storage_home_id],	rax
-
-	; initialize VFS storage
-	call	lib_vfs_init
+	; next storage
+	jmp	.next
 
 .end:
-	; restore original registers
-	pop	rbp
+	; restore original register
+	pop	rdi
 	pop	rsi
-	pop	rbx
+	pop	rcx
 	pop	rax
 
 	; return from routine
 	ret
 
-.create:
-	; home vfs initialized ready
-	jmp	.end
+;------------------------------------------------------------------------------
+; in:
+;	rsi - current directory pointer
+;	rdi - previous directory pointer
+; out:
+;	rcx - new length of current directory in Bytes
+kernel_init_vfs_realloc:
+	; preserve original registers
+	push	rax
+	push	rdx
+	push	rsi
+	push	rdi
+
+	; size of this directory
+	xor	ecx,	ecx
+
+	; file properties
+	mov	rax,	qword [rsi + LIB_VFS_STRUCTURE.offset]
+
+	; for every file
+
+.file:
+	; default file content address
+	mov	rdx,	qword [rsi + LIB_VFS_STRUCTURE.offset]
+	add	qword [rax + LIB_VFS_STRUCTURE.offset],	rdx
+
+	; modify offset depending on file type
+
+	; for default symbolic links
+	cmp	byte [rax + LIB_VFS_STRUCTURE.type],	STD_FILE_TYPE_link
+	jne	.no_symbolic_link
+
+	; current?
+	cmp	byte [rax + LIB_VFS_STRUCTURE.name_length],	1
+	jne	.no_current	; no
+	cmp	byte [rax + LIB_VFS_STRUCTURE.name],		STD_ASCII_DOT
+	jne	.no_current	; also not
+
+	; yes
+	mov	qword [rax + LIB_VFS_STRUCTURE.offset],	rsi
+
+	; next file
+	jmp	.next
+
+.no_current:
+	; previous?
+	cmp	byte [rax + LIB_VFS_STRUCTURE.name_length],	2
+	jne	.no_symbolic_link	; no
+	cmp	word [rax + LIB_VFS_STRUCTURE.name],		(STD_ASCII_DOT << STD_MOVE_BYTE) | STD_ASCII_DOT
+	jne	.no_symbolic_link	; also not
+
+	; yes
+	mov	qword [rax + LIB_VFS_STRUCTURE.offset],	rdi
+
+	; next file
+	jmp	.next
+
+.no_symbolic_link:
+	; for directories
+	cmp	byte [rax + LIB_VFS_STRUCTURE.type],	STD_FILE_TYPE_directory
+	jne	.next	; no
+
+	; preserve original registers
+	push	rcx
+	push	rsi
+	push	rdi
+
+	; parse directory entries
+	mov	rdi,	rsi
+	mov	rsi,	rax
+	call	kernel_init_vfs_realloc
+
+	; update directory content size in Bytes
+	mov	qword [rax + LIB_VFS_STRUCTURE.byte],	rcx
+
+	; restore original registers
+	pop	rdi
+	pop	rsi
+	pop	rcx
+
+.next:
+	; entry parsed
+	add	rcx,	LIB_VFS_STRUCTURE.SIZE
+
+	; move pointer to next file
+	add	rax,	LIB_VFS_STRUCTURE.SIZE
+
+	; no more files?
+	cmp	byte [rax + LIB_VFS_STRUCTURE.name_length],	EMPTY
+	jne	.file	; yes, parse it
+
+	; restore original registers
+	pop	rdi
+	pop	rsi
+	pop	rdx
+	pop	rax
+
+	; return from routine
+	ret

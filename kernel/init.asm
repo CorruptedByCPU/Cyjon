@@ -7,7 +7,7 @@
 	;-----------------------------------------------------------------------
 	; library --------------------------------------------------------------
 	%include	"library/elf.inc"
-%include	"library/vfs.inc"
+	%include	"library/vfs.inc"
 %include	"library/sys.inc"
 	; driver ---------------------------------------------------------------
 %include	"kernel/driver/ps2.inc"
@@ -22,6 +22,7 @@
 %include	"kernel/page.inc"
 %include	"kernel/storage.inc"
 %include	"kernel/stream.inc"
+	%include	"kernel/vfs.inc"
 	%include	"kernel/task.inc"
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/acpi.inc"
@@ -63,19 +64,20 @@ section .text
 	%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/serial.asm"
 	; kernel ---------------------------------------------------------------
-%include	"kernel/exec.asm"
-%include	"kernel/idt.asm"
+; %include	"kernel/exec.asm"
+	%include	"kernel/idt.asm"
 %include	"kernel/io_apic.asm"
 %include	"kernel/lapic.asm"
-%include	"kernel/library.asm"
+; %include	"kernel/library.asm"
 %include	"kernel/log.asm"
 %include	"kernel/memory.asm"
 %include	"kernel/page.asm"
-%include	"kernel/service.asm"
-%include	"kernel/storage.asm"
+; %include	"kernel/service.asm"
+	%include	"kernel/storage.asm"
 %include	"kernel/stream.asm"
-%include	"kernel/syscall.asm"
+; %include	"kernel/syscall.asm"
 %include	"kernel/task.asm"
+	%include	"kernel/vfs.asm"
 	; kernel environment initialization routines ---------------------------
 	%include	"kernel/init/environment.asm"
 	%include	"kernel/init/limine.asm"
@@ -83,18 +85,19 @@ section .text
 	%include	"kernel/init/acpi.asm"
 	%include	"kernel/init/page.asm"
 	%include	"kernel/init/gdt.asm"
+	%include	"kernel/init/idt.asm"
 	%include	"kernel/init/stream.asm"
 	%include	"kernel/init/task.asm"
 	%include	"kernel/init/ipc.asm"
-%include	"kernel/init/idt.asm"
-%include	"kernel/init/ap.asm"
-%include	"kernel/init/cmd.asm"
-%include	"kernel/init/daemon.asm"
-%include	"kernel/init/exec.asm"
-%include	"kernel/init/free.asm"
-%include	"kernel/init/library.asm"
-%include	"kernel/init/smp.asm"
-%include	"kernel/init/storage.asm"
+	%include	"kernel/init/storage.asm"
+	%include	"kernel/init/vfs.asm"
+; %include	"kernel/init/ap.asm"
+; %include	"kernel/init/cmd.asm"
+; %include	"kernel/init/daemon.asm"
+; %include	"kernel/init/exec.asm"
+; %include	"kernel/init/free.asm"
+; %include	"kernel/init/library.asm"
+; %include	"kernel/init/smp.asm"
 	;=======================================================================
 
 ;------------------------------
@@ -148,6 +151,9 @@ _entry:
 
 	; ESSENTIAL -----------------------------------------------------------
 
+	; configure RTC
+	call	driver_rtc_init
+
 	; initialize stream set
 	call	kernel_init_stream
 
@@ -157,28 +163,35 @@ _entry:
 	; create interprocess communication system
 	call	kernel_init_ipc
 
-	; configure RTC
-	call	driver_rtc_init
+	; register all available data carriers
+	call	kernel_init_storage
 
-; retrieve file to execute
-call	kernel_init_cmd
+	; initialize VFS directory
+	call	kernel_init_vfs
 
-; initialize PS2 keyboard/mouse driver
-call	driver_ps2
+; ; retrieve file to execute
+; call	kernel_init_cmd
 
-; register all available data carriers
-call	kernel_init_storage
+; ; initialize PS2 keyboard/mouse driver
+; call	driver_ps2
 
-; prepare library subsystem
-call	kernel_init_library
+; ; prepare library subsystem
+; call	kernel_init_library
 
-; execute daemons
-call	kernel_init_daemon
+; ; execute daemons
+; call	kernel_init_daemon
 
-; execute init process
-call	kernel_init_exec
+; ; execute init process
+; call	kernel_init_exec
+
+	; EXTRA ---------------------------------------------------------------
 
 	; below, initialization functions does not guarantee original registers preservation
 
+	; FINISH --------------------------------------------------------------
+
 ; initialize other CPUs
-jmp	kernel_init_smp
+; jmp	kernel_init_smp
+
+	; hold the door
+	jmp	$

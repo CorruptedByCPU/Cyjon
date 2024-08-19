@@ -10,8 +10,28 @@
 		xchg	bx,	bx
 	%endmacro
 
+	; exclusive access
+	%macro	MACRO_LOCK	1
+			; preserve original register
+			push	rax
+
+			; lock value
+			mov	al,	LOCK
+
+		%%lock:
+			; lock acquired?
+			xchg	byte [r8 + KERNEL.%1],	al
+			jnz	%%lock	; no
+
+			; restore original register
+			pop	rax
+	%endmacro
+	%macro	MACRO_UNLOCK	1
+		mov	byte [r8 + KERNEL.%1],	UNLOCK
+	%endmacro
+
 	%define	MACRO_PAGE_ALIGN_UP( value )( ((value) + ~STD_PAGE_mask) & STD_PAGE_mask )
-	%define	MACRO_PAGE_ALIGN_DOWN( value )( (value) & ~(STD_PAGE_byte - 1) )
+	%define	MACRO_PAGE_ALIGN_DOWN( value )( (value) & STD_PAGE_mask )
 
 	%macro	MACRO_PAGE_ALIGN_UP_REGISTER 1
 		add	%1,	~STD_PAGE_mask	; align up

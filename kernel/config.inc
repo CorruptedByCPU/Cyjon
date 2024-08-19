@@ -87,9 +87,9 @@ struc	KERNEL
 .page_deconstruction		resq	1
 
 ; variables of Storage management functions
-.storage_base_address		resq	1
+	.storage_base_address		resq	1
 .storage_root_id		resb	1
-.storage_semaphore		resb	1
+	.storage_semaphore		resb	1
 
 	; variables of Stream management functions
 	.stream_base_address		resq	1
@@ -112,6 +112,9 @@ struc	KERNEL
 
 	; variables of TSS management functions
 	.tss_table			resb	KERNEL_STRUCTURE_TSS.SIZE
+
+	; variables of VFS management functions
+	.vfs_base_address		resq	1
 
 	; length of this structure in Bytes
 	.SIZE:

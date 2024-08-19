@@ -22,6 +22,8 @@ kernel_init_page:
 	; alloc 1 page for PML4 kernel environment array
 	mov	ecx,	TRUE
 	call	kernel_memory_alloc
+
+	; preserve pointer inside KERNEL environment
 	mov	qword [r8 + KERNEL.page_base_address],	rdi
 
 	; default flags of every page

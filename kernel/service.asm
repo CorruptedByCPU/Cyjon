@@ -775,7 +775,7 @@ kernel_service_storage_read:
 	mov	r8,	qword [kernel]
 
 	; prepare space for file descriptor
-	sub	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
+	sub	rsp,	KERNEL_STRUCTURE_STORAGE_FILE.SIZE
 	mov	rbp,	rsp	; pointer of file descriptor
 
 	; get file properties
@@ -785,11 +785,11 @@ kernel_service_storage_read:
 	call	kernel_storage_file
 
 	; file found?
-	cmp	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
+	cmp	qword [rbp + KERNEL_STRUCTURE_STORAGE_FILE.id],	EMPTY
 	je	.end	; no
 
 	; prepare space for file content
-	mov	rdi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
+	mov	rdi,	qword [rbp + KERNEL_STRUCTURE_STORAGE_FILE.size_byte]
 	call	kernel_service_memory_alloc
 
 	; no enough memory?
@@ -797,7 +797,7 @@ kernel_service_storage_read:
 	jz	.end	; yes
 
 	; load file content into prepared space
-	mov	rsi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id]
+	mov	rsi,	qword [rbp + KERNEL_STRUCTURE_STORAGE_FILE.id]
 	mov	rdi,	rax
 	movzx	eax,	byte [r8 + KERNEL.storage_root_id]
 	call	kernel_storage_read
@@ -806,16 +806,16 @@ kernel_service_storage_read:
 	call	kernel_task_active
 
 	; restore file descriptor
-	mov	rax,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE]
+	mov	rax,	qword [rsp + KERNEL_STRUCTURE_STORAGE_FILE.SIZE]
 
 	; inform process about file location and size
-	push	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
+	push	qword [rbp + KERNEL_STRUCTURE_STORAGE_FILE.size_byte]
 	pop	qword [rax + LIB_SYS_STRUCTURE_STORAGE.size_byte]
 	mov	qword [rax + LIB_SYS_STRUCTURE_STORAGE.address],	rdi
 
 .end:
 	; remove file descriptor from stack
-	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
+	add	rsp,	KERNEL_STRUCTURE_STORAGE_FILE.SIZE
 
 	; restore original registers
 	pop	rdi

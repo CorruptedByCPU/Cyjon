@@ -2,36 +2,25 @@
 ; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;=================================================================================
 
-%define	KERNEL_STORAGE_limit			1
+%ifndef	KERNEL_STORAGE
+	%define	KERNEL_STORAGE
 
-%define	KERNEL_STORAGE_TYPE_memory		00000001b
+	; ignore more storages than hard limit
+	%define	KERNEL_STORAGE_limit		(STD_PAGE_byte / KERNEL_STRUCTURE_STORAGE.SIZE)
 
-%define	KERNEL_STORAGE_FILE_TYPE_regular	00000001b
+	; storage type:
+	%define	KERNEL_STORAGE_TYPE_vfs		00000001b	; Virtual File System
 
-%define	KERNEL_STORAGE_STRUCTURE_SIZE_shift	6
+	; storage class:
+	%define	KERNEL_STORAGE_CLASS_block	00000001b	; whole storage
+	%define	KERNEL_STORAGE_CLASS_partition	00000010b	; part of storage
 
-; this structure should be divisible by power of 2
-struc	KERNEL_STORAGE_STRUCTURE
-	.device_type		resb	1
-
-	; align next label
-	alignb	0x08
-
-	.device_blocks		resq	1
-	.device_first_block	resq	1
-	.storage_file		resq	1
-	.storage_read		resq	1
-
-	; align next label
-	.reserved		resb	24
-
-	.SIZE:
-endstruc
-
-; this structure should be divisible by 8
-struc	KERNEL_STORAGE_STRUCTURE_FILE
-	.id			resq	1
-	.size_byte		resq	1
-	.address		resq	1
-	.SIZE:
-endstruc
+	struc	KERNEL_STRUCTURE_STORAGE
+		.device_type	resb	1
+		.device_class	resb	1
+		.device_block	resq	1	; first usable block of storage
+		.device_byte	resq	1	; size of single BLOCK in Bytes;
+		.device_length	resq	1	; size of storage CLASS in blocks
+		.SIZE:
+	endstruc
+%endif

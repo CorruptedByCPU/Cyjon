@@ -684,7 +684,7 @@ kernel_library_load:
 	mov	r8,	qword [kernel]
 
 	; file descriptor
-	sub	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
+	sub	rsp,	KERNEL_STRUCTURE_STORAGE_FILE.SIZE
 	mov	rbp,	rsp	; pointer of file descriptor
 
 	; get file properties
@@ -692,24 +692,24 @@ kernel_library_load:
 	call	kernel_storage_file
 
 	; prepare error code
-	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_file_not_found
+	mov	qword [rsp + KERNEL_STRUCTURE_STORAGE_FILE.SIZE],	LIB_SYS_ERROR_file_not_found
 
 	; file found?
-	cmp	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
+	cmp	qword [rbp + KERNEL_STRUCTURE_STORAGE_FILE.id],	EMPTY
 	je	.error_level_descriptor	; no
 
 	; prepare error code
-	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_memory_no_enough
+	mov	qword [rsp + KERNEL_STRUCTURE_STORAGE_FILE.SIZE],	LIB_SYS_ERROR_memory_no_enough
 
 	; prepare space for file content
-	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
+	mov	rcx,	qword [rbp + KERNEL_STRUCTURE_STORAGE_FILE.size_byte]
 	add	rcx,	~STD_PAGE_mask
 	shr	rcx,	STD_SHIFT_PAGE
 	call	kernel_memory_alloc
 	jc	.error_level_descriptor	; no enough memory
 
 	; load file content into prepared space
-	mov	rsi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id]
+	mov	rsi,	qword [rbp + KERNEL_STRUCTURE_STORAGE_FILE.id]
 	call	kernel_storage_read
 
 	; preserve file size in pages and location
@@ -717,7 +717,7 @@ kernel_library_load:
 	mov	r13,	rdi
 
 	; prepare error code
-	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_exec_not_executable
+	mov	qword [rsp + KERNEL_STRUCTURE_STORAGE_FILE.SIZE],	LIB_SYS_ERROR_exec_not_executable
 
 	; check if file have proper ELF header
 	call	lib_elf_identify
@@ -728,7 +728,7 @@ kernel_library_load:
 	jne	.error_level_file	; no library
 
 	; prepare error code
-	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_undefinied
+	mov	qword [rsp + KERNEL_STRUCTURE_STORAGE_FILE.SIZE],	LIB_SYS_ERROR_undefinied
 
 	;-----------------------------------------------------------------------
 	; calculate library size in Pages
@@ -779,7 +779,7 @@ kernel_library_load:
 	shr	rcx,	STD_SHIFT_PAGE
 
 	; prepare error code
-	mov	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE],	LIB_SYS_ERROR_memory_no_enough
+	mov	qword [rsp + KERNEL_STRUCTURE_STORAGE_FILE.SIZE],	LIB_SYS_ERROR_memory_no_enough
 
 	; aquire memory space inside library environment
 	mov	r9,	qword [r8 + KERNEL.library_memory_map_address]
@@ -863,7 +863,7 @@ kernel_library_load:
 	jc	.error_level_file	; no enough memory
 
 	; remove file descriptor from stack
-	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
+	add	rsp,	KERNEL_STRUCTURE_STORAGE_FILE.SIZE
 
 	; preserve library content pointer and size in pages
 	mov	qword [r14 + KERNEL_LIBRARY_STRUCTURE.address],	rdi
@@ -948,7 +948,7 @@ kernel_library_load:
 
 .error_level_descriptor:
 	; remove file descriptor from stack
-	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE	
+	add	rsp,	KERNEL_STRUCTURE_STORAGE_FILE.SIZE	
 
 .error_level_default:
 	; free up library entry

@@ -12,7 +12,7 @@ kernel_stream:
 	push	rdi
 	push	r8
 
-	; kernel environment variables/rountines base address
+	; global kernel environment variables/functions/rountines
 	mov	r8,	qword [kernel]
 
 .lock:

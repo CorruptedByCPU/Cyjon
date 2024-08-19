@@ -37,16 +37,16 @@ kernel_init_daemon:
 	mov	rsi,	kernel_daemon_file_gc
 
 	; file descriptor
-	sub	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
+	sub	rsp,	KERNEL_STRUCTURE_STORAGE_FILE.SIZE
 	mov	rbp,	rsp	; pointer of file descriptor
 	call	kernel_exec_load
 
 	; file loaded?
-	cmp	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
+	cmp	qword [rbp + KERNEL_STRUCTURE_STORAGE_FILE.id],	EMPTY
 	je	.end	; no
 
 	; set pointer to file content
-	mov	r13,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.address]
+	mov	r13,	qword [rbp + KERNEL_STRUCTURE_STORAGE_FILE.address]
 
 	;-----------------------------------------------------------------------
 	; prepare task for execution
@@ -213,7 +213,7 @@ kernel_init_daemon:
 
 .end:
 	; remove file descriptor from stack
-	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
+	add	rsp,	KERNEL_STRUCTURE_STORAGE_FILE.SIZE
 
 	; restore original registers
 	pop	r15

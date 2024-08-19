@@ -40,17 +40,17 @@ kernel_exec:
 
 	; file descriptor
 	mov	rcx,	rbx
-	sub	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
+	sub	rsp,	KERNEL_STRUCTURE_STORAGE_FILE.SIZE
 	mov	rbp,	rsp	; pointer of file descriptor
 	call	kernel_exec_load
 	jc	.end	; something wrong with file
 
 	; file loaded?
-	cmp	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
+	cmp	qword [rbp + KERNEL_STRUCTURE_STORAGE_FILE.id],	EMPTY
 	je	.end	; no
 
 	; load library dependencies
-	mov	r13,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.address]
+	mov	r13,	qword [rbp + KERNEL_STRUCTURE_STORAGE_FILE.address]
 	call	kernel_library
 
 	;-----------------------------------------------------------------------
@@ -58,7 +58,7 @@ kernel_exec:
 	;-----------------------------------------------------------------------
 
 	; orignal name/path length
-	mov	rcx,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + 0x50]
+	mov	rcx,	qword [rsp + KERNEL_STRUCTURE_STORAGE_FILE.SIZE + 0x50]
 	call	kernel_exec_configure
 
 	;-----------------------------------------------------------------------
@@ -71,7 +71,7 @@ kernel_exec:
 	;-----------------------------------------------------------------------
 
 	; retrieve stream flow
-	mov	rax,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.SIZE + 0x38]
+	mov	rax,	qword [rsp + KERNEL_STRUCTURE_STORAGE_FILE.SIZE + 0x38]
 
 	; prepare default input stream
 	call	kernel_stream
@@ -114,10 +114,10 @@ kernel_exec:
 	or	word [r10 + KERNEL_STRUCTURE_TASK.flags],	KERNEL_TASK_FLAG_active | KERNEL_TASK_FLAG_init
 
 	; release file content
-	mov	rsi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
+	mov	rsi,	qword [rsp + KERNEL_STRUCTURE_STORAGE_FILE.size_byte]
 	add	rsi,	~STD_PAGE_mask
 	shr	rsi,	STD_SHIFT_PAGE
-	mov	rdi,	qword [rsp + KERNEL_STORAGE_STRUCTURE_FILE.address]
+	mov	rdi,	qword [rsp + KERNEL_STRUCTURE_STORAGE_FILE.address]
 	call	kernel_memory_release
 
 	; return task ID
@@ -125,7 +125,7 @@ kernel_exec:
 
 .end:
 	; remove file descriptor from stack
-	add	rsp,	KERNEL_STORAGE_STRUCTURE_FILE.SIZE
+	add	rsp,	KERNEL_STRUCTURE_STORAGE_FILE.SIZE
 
 	; restore original registers
 	pop	r14
@@ -576,17 +576,17 @@ kernel_exec_load:
 	call	kernel_storage_file
 
 	; file exist?
-	cmp	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id],	EMPTY
+	cmp	qword [rbp + KERNEL_STRUCTURE_STORAGE_FILE.id],	EMPTY
 	je	.end	; no
 
 	; prepare space for file content
-	mov	rcx,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.size_byte]
+	mov	rcx,	qword [rbp + KERNEL_STRUCTURE_STORAGE_FILE.size_byte]
 	add	rcx,	~STD_PAGE_mask
 	shr	rcx,	STD_SHIFT_PAGE
 	call	kernel_memory_alloc
 
 	; load file content into prepared space
-	mov	rsi,	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.id]
+	mov	rsi,	qword [rbp + KERNEL_STRUCTURE_STORAGE_FILE.id]
 	call	kernel_storage_read
 
 	; proper ELF file?
@@ -610,7 +610,7 @@ kernel_exec_load:
 
 .ok:
 	; return file content address
-	mov	qword [rbp + KERNEL_STORAGE_STRUCTURE_FILE.address],	rdi
+	mov	qword [rbp + KERNEL_STRUCTURE_STORAGE_FILE.address],	rdi
 
 .end:
 	; restore original registers
