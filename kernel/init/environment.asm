@@ -18,7 +18,7 @@ kernel_init_environment:
 	xor	rbx,	rbx
 
 	; properties of memory map response
-	mov	rsi,	qword [kernel_limine_memmap_request + LIMINE_MEMMAP_REQUEST.response]
+	mov	rsi,	qword [limine_memmap_request + LIMINE_MEMMAP_REQUEST.response]
 
 	; amount of entries inside memory map
 	mov	rcx,	qword [rsi + LIMINE_MEMMAP_RESPONSE.entry_count]
@@ -57,7 +57,7 @@ kernel_init_environment:
 	;----------------------------------------------------------------------
 
 	; properties of first framebuffer
-	mov	rsi,	qword [kernel_limine_framebuffer_request + LIMINE_FRAMEBUFFER_REQUEST.response]
+	mov	rsi,	qword [limine_framebuffer_request + LIMINE_FRAMEBUFFER_REQUEST.response]
 	mov	rsi,	qword [rsi + LIMINE_FRAMEBUFFER_RESPONSE.framebuffers]
 	mov	rsi,	qword [rsi + INIT]	; properties of first framebuffer
 

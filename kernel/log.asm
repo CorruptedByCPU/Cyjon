@@ -110,7 +110,7 @@ kernel_log:
 
 	; retrieve string pointer
 	mov	rsi,	qword [rbp]
-	call	lib_string_length
+	; call	lib_string_length
 	call	driver_serial_string
 
 	; variable parsed

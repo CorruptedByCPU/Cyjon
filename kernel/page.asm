@@ -1318,11 +1318,5 @@ kernel_page_resolve:
 	ret
 
 .error:
-	; this is critical behavior, it should never occur
-	; you are a bad programmer...
-	mov	ecx,	kernel_log_page_end - kernel_log_page
-	mov	rsi,	kernel_log_page
-	call	driver_serial_string
-
 	; hold the door
 	jmp	$

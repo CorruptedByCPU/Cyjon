@@ -35,7 +35,7 @@ kernel_init_page:
 	;---------------------------------------------------------------------
 
 	; properties of memory map response
-	mov	rsi,	qword [kernel_limine_memmap_request + LIMINE_MEMMAP_REQUEST.response]
+	mov	rsi,	qword [limine_memmap_request + LIMINE_MEMMAP_REQUEST.response]
 
 	; amount of entries inside memory map
 	mov	rcx,	qword [rsi + LIMINE_MEMMAP_RESPONSE.entry_count]
@@ -108,7 +108,7 @@ kernel_init_page:
 	; now something harder ------------------------------------------------
 
 	; kernel file properties
-	mov	rdi,	qword [kernel_limine_kernel_file_request + LIMINE_KERNEL_FILE_REQUEST.response]
+	mov	rdi,	qword [limine_kernel_file_request + LIMINE_KERNEL_FILE_REQUEST.response]
 	mov	rdi,	qword [rdi + LIMINE_KERNEL_FILE_RESPONSE.kernel_file]
 	mov	rdi,	qword [rdi + LIMINE_FILE.address]
 
@@ -119,7 +119,7 @@ kernel_init_page:
 	add	rdi,	qword [rdi + LIB_ELF_STRUCTURE.headers_offset]
 
 	; get pointer to kernel address response
-	mov	rdx,	qword [kernel_limine_kernel_address_request + LIMINE_KERNEL_FILE_ADDRESS_REQUEST.response]
+	mov	rdx,	qword [limine_kernel_address_request + LIMINE_KERNEL_FILE_ADDRESS_REQUEST.response]
 
 .header:
 	; entry doesn't have type set?

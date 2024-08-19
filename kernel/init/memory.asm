@@ -26,7 +26,7 @@ kernel_init_memory:
 	;----------------------------------------------------------------------
 
 	; properties of memory map response
-	mov	rsi,	qword [kernel_limine_memmap_request + LIMINE_MEMMAP_REQUEST.response]
+	mov	rsi,	qword [limine_memmap_request + LIMINE_MEMMAP_REQUEST.response]
 
 	; amount of entries inside memory map
 	mov	rcx,	qword [rsi + LIMINE_MEMMAP_RESPONSE.entry_count]

@@ -17,7 +17,7 @@
 	endstruc
 
 	struc	KERNEL_STRUCTURE_VFS_PROPERTIES
-		.byte		resq	1
+		.length		resq	1	; file: Byte, directories: block
 		.name_length	resb	1
 		.name		resb	LIB_VFS_NAME_limit + 1
 	endstruc

@@ -2,6 +2,11 @@
 ; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;=================================================================================
 
+	;----------------------------------------------------------------------
+	; library as build-in
+	;----------------------------------------------------------------------
+	%include	"library/string.asm"
+
 	;-----------------------------------------------------------------------
 	; structures, definitions
 	;-----------------------------------------------------------------------
@@ -42,7 +47,6 @@ section	.data
 	; variables, constants
 	;-----------------------------------------------------------------------
 %include	"kernel/data.asm"
-%include	"kernel/init/data.asm"
 	;=======================================================================
 
 ; 64 bit code
@@ -56,9 +60,6 @@ section .text
 	; library --------------------------------------------------------------
 %include	"library/vfs.asm"
 	%include	"library/elf.asm"
-%include	"library/string/compare.asm"
-%include	"library/string/length.asm"
-%include	"library/string/word.asm"
 	; drivers --------------------------------------------------------------
 %include	"kernel/driver/ps2.asm"
 	%include	"kernel/driver/rtc.asm"

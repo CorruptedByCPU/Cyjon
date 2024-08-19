@@ -11,7 +11,7 @@ kernel_init_acpi:
 	push	rdi
 
 	; RSDP or XSDP header properties
-	mov	rsi,	qword [kernel_limine_rsdp_request + LIMINE_RSDP_REQUEST.response]
+	mov	rsi,	qword [limine_rsdp_request + LIMINE_RSDP_REQUEST.response]
 	mov	rsi,	qword [rsi + LIMINE_RSDP_RESPONSE.address]
 
 	; check revision number of RSDP/XSDP header

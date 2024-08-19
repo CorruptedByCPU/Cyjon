@@ -26,7 +26,7 @@ kernel_init_limine:
 	;----------------------------------------------------------------------
 
 	; properties of framebuffer request
-	mov	rdi,	qword [kernel_limine_framebuffer_request + LIMINE_FRAMEBUFFER_REQUEST.response]
+	mov	rdi,	qword [limine_framebuffer_request + LIMINE_FRAMEBUFFER_REQUEST.response]
 
 	; linear framebuffer is available?
 	test	rdi,	rdi
@@ -47,7 +47,7 @@ kernel_init_limine:
 	;----------------------------------------------------------------------
 
 	; properties of memory map request
-	mov	rdi,	qword [kernel_limine_memmap_request + LIMINE_MEMMAP_REQUEST.response]
+	mov	rdi,	qword [limine_memmap_request + LIMINE_MEMMAP_REQUEST.response]
 
 	; memory map provided?
 	test	rdi,	rdi
@@ -60,7 +60,7 @@ kernel_init_limine:
 	;----------------------------------------------------------------------
 
 	; properties of RSDP request
-	mov	rdi,	qword [kernel_limine_rsdp_request + LIMINE_RSDP_REQUEST.response]
+	mov	rdi,	qword [limine_rsdp_request + LIMINE_RSDP_REQUEST.response]
 
 	; RSDP pointer available?
 	test	rdi,	rdi
@@ -73,15 +73,15 @@ kernel_init_limine:
 	;----------------------------------------------------------------------
 
 	; information about kernel?
-	cmp	qword [kernel_limine_kernel_file_request + LIMINE_KERNEL_FILE_REQUEST.response],	EMPTY
+	cmp	qword [limine_kernel_file_request + LIMINE_KERNEL_FILE_REQUEST.response],	EMPTY
 	je	.error_kernel	; no
-	cmp	qword [kernel_limine_kernel_address_request + LIMINE_KERNEL_FILE_ADDRESS_REQUEST.response],	EMPTY
+	cmp	qword [limine_kernel_address_request + LIMINE_KERNEL_FILE_ADDRESS_REQUEST.response],	EMPTY
 	je	.error_kernel	; also no
 
 	;----------------------------------------------------------------------
 
 	; properties of module request
-	mov	rdi,	qword [kernel_limine_module_request + LIMINE_MODULE_REQUEST.response]
+	mov	rdi,	qword [limine_module_request + LIMINE_MODULE_REQUEST.response]
 
 	; modules attached?
 	test	rdi,	rdi

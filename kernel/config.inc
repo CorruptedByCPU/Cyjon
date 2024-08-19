@@ -88,7 +88,7 @@ struc	KERNEL
 
 ; variables of Storage management functions
 	.storage_base_address		resq	1
-.storage_root_id		resb	1
+	.storage_root			resq	1
 	.storage_semaphore		resb	1
 
 	; variables of Stream management functions

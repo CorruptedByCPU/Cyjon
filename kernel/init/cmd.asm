@@ -6,11 +6,11 @@
 ; void
 kernel_init_cmd:
 	; kernel file available?
-	cmp	qword [kernel_limine_kernel_file_request + LIMINE_KERNEL_FILE_REQUEST.response],	EMPTY
+	cmp	qword [limine_kernel_file_request + LIMINE_KERNEL_FILE_REQUEST.response],	EMPTY
 	je	.error	; no
 
 	; properties of cmd line
-	mov	rsi,	qword [kernel_limine_kernel_file_request + LIMINE_KERNEL_FILE_REQUEST.response]
+	mov	rsi,	qword [limine_kernel_file_request + LIMINE_KERNEL_FILE_REQUEST.response]
 	mov	rsi,	qword [rsi + LIMINE_KERNEL_FILE_RESPONSE.kernel_file]
 	mov	rsi,	qword [rsi + LIMINE_FILE.cmd]
 

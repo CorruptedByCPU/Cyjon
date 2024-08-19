@@ -11,7 +11,7 @@ kernel_init_free:
 	;-----------------------------------------------------------------------
 
 	; memory map response structure
-	mov	rsi,	qword [kernel_limine_memmap_request + LIMINE_MEMMAP_REQUEST.response]
+	mov	rsi,	qword [limine_memmap_request + LIMINE_MEMMAP_REQUEST.response]
 
 	; first entry of memory map
 	xor	ebx,	ebx

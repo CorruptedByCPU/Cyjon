@@ -6,11 +6,11 @@
 ; void
 kernel_init_smp:
 	; SMP specification available?
-	cmp	qword [kernel_limine_smp_request + LIMINE_SMP_REQUEST.response],	EMPTY
+	cmp	qword [limine_smp_request + LIMINE_SMP_REQUEST.response],	EMPTY
 	je	.alone	; no
 
 	; initialize all available APs on host
-	mov	rsi,	qword [kernel_limine_smp_request + LIMINE_SMP_REQUEST.response]
+	mov	rsi,	qword [limine_smp_request + LIMINE_SMP_REQUEST.response]
 
 	; set amount of APs and set pointer to first entry
 	mov	rcx,	qword [rsi + LIMINE_SMP_RESPONSE.cpu_count]

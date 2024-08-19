@@ -57,7 +57,7 @@ push	rbx
 	push	rdi
 
 	; retrieve available CPUs on host
-	mov	rcx,	qword [kernel_limine_smp_request + LIMINE_SMP_REQUEST.response]
+	mov	rcx,	qword [limine_smp_request + LIMINE_SMP_REQUEST.response]
 	mov	rcx,	qword [rcx + LIMINE_SMP_RESPONSE.cpu_count]
 
 	; calculate CPU list size in Pages

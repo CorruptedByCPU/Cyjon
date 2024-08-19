@@ -21,7 +21,7 @@ kernel_init_storage:
 	mov	qword [r8 + KERNEL.storage_base_address],	rdi
 
 	; register modules of Virtual File System as storages
-	mov	rsi,	qword [kernel_limine_module_request + LIMINE_MODULE_REQUEST.response]
+	mov	rsi,	qword [limine_module_request + LIMINE_MODULE_REQUEST.response]
 
 	; amount of entries on modules list
 	mov	rax,	qword [rsi + LIMINE_MODULE_RESPONSE.module_count]

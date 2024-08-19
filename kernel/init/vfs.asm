@@ -2,14 +2,22 @@
 ; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;=================================================================================
 
+kernel_init_vfs_path	db	"/system/etc/version"
+kernel_init_vfs_path_end:
+
 ;-------------------------------------------------------------------------------
 ; void
 kernel_init_vfs:
 	; preserve original registers
 	push	rax
+	push	rbx
 	push	rcx
 	push	rsi
 	push	rdi
+	push	r9
+
+	; retrieve pointer to currently running task (kernel)
+	call	kernel_task_active
 
 	; allocate area for list of open files
 	mov	ecx,	MACRO_PAGE_ALIGN_UP( KERNEL_VFS_limit * KERNEL_STRUCTURE_VFS.SIZE ) >> STD_SHIFT_PAGE
@@ -20,24 +28,23 @@ kernel_init_vfs:
 
 	; detect VFS storages
 
-	; list length in entries
-	mov	rcx,	KERNEL_STORAGE_limit
-
 	; first entry of devices list
-	mov	rax,	qword [r8 + KERNEL.storage_base_address]
+	xor	eax,	eax
+	mov	rbx,	qword [r8 + KERNEL.storage_base_address]
 
 .storage:
 	; no more devices?
-	dec	rcx
-	js	.end	; done
+	cmp	rax,	KERNEL_STORAGE_limit
+	jnb	.end	; done
 
 	; entry marked as VFS?
-	cmp	byte [rax + KERNEL_STRUCTURE_STORAGE.device_type],	KERNEL_STORAGE_TYPE_vfs
+	cmp	byte [rbx + KERNEL_STRUCTURE_STORAGE.device_type],	KERNEL_STORAGE_TYPE_vfs
 	je	.vfs	; yes
 
 .next:
 	; next slot
-	add	rax,	KERNEL_STRUCTURE_STORAGE.SIZE
+	inc	rax
+	add	rbx,	KERNEL_STRUCTURE_STORAGE.SIZE
 
 	; next storage
 	jmp	.storage
@@ -55,27 +62,47 @@ kernel_init_vfs:
 	mov	byte [rdi + LIB_VFS_STRUCTURE.name],		STD_ASCII_SLASH
 
 	; superblock content offset
-	push	qword [rax + KERNEL_STRUCTURE_STORAGE.device_block]
+	push	qword [rbx + KERNEL_STRUCTURE_STORAGE.device_block]
 	pop	qword [rdi + LIB_VFS_STRUCTURE.offset]
-
-	xchg	bx,bx
 
 	; realloc VFS structure regarded of memory location
 	mov	rsi,	rdi
 	call	kernel_init_vfs_realloc
+	MACRO_PAGE_ALIGN_UP_REGISTER	rcx
 	mov	qword [rdi + LIB_VFS_STRUCTURE.byte],	rcx
 
 	; set new location of VFS main block
-	mov	qword [rax + KERNEL_STRUCTURE_STORAGE.device_block],	rdi
+	mov	qword [rbx + KERNEL_STRUCTURE_STORAGE.device_block],	rdi
+
+	; kernels current directory already assigned?
+	cmp	qword [r9 + KERNEL_STRUCTURE_TASK.directory],	EMPTY
+	jne	.next	; yes
+
+	; set this one as default storage
+	mov	qword [r8 + KERNEL.storage_root],	rax
+
+	; retrieve properties of file
+	mov	ecx,	kernel_init_vfs_path_end - kernel_init_vfs_path
+	mov	rsi,	kernel_init_vfs_path
+	call	kernel_vfs_path
+
+	; file found?
+	test	rsi,	rsi
+	jz	.next	; no
+
+	; kernels current directory
+	mov	qword [r9 + KERNEL_STRUCTURE_TASK.directory],	rdi
 
 	; next storage
 	jmp	.next
 
 .end:
 	; restore original register
+	pop	r9
 	pop	rdi
 	pop	rsi
 	pop	rcx
+	pop	rbx
 	pop	rax
 
 	; return from routine
@@ -154,6 +181,7 @@ kernel_init_vfs_realloc:
 	call	kernel_init_vfs_realloc
 
 	; update directory content size in Bytes
+	MACRO_PAGE_ALIGN_UP_REGISTER	rcx
 	mov	qword [rax + LIB_VFS_STRUCTURE.byte],	rcx
 
 	; restore original registers
