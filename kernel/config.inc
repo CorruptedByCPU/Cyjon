@@ -66,7 +66,7 @@ struc	KERNEL
 
 ; variables of Library management functions
 .library_base_address		resq	1
-.library_memory_map_address	resq	1
+.library_map_address	resq	1
 
 ; pointers of Log management functions
 .log				resq	1

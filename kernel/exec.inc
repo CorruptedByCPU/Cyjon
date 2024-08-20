@@ -2,28 +2,21 @@
 ; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;=================================================================================
 
-%define	KERNEL_EXEC_DESCRIPTOR_offset		0x78
+%ifndef	KERNEL_EXEC
+	%define	KERNEL_EXEC
 
-%define	KERNEL_EXEC_BASE_address		0x0000000000100000
+	%define	KERNEL_EXEC_BASE_address		0x0000000000100000
 
-; whole 223th entry of PML4 table, for easier thread closing
-%define	KERNEL_EXEC_STACK_SIZE_page		1
-%define	KERNEL_EXEC_STACK_pointer		0x0000700000000000
-%define	KERNEL_EXEC_STACK_address		KERNEL_EXEC_STACK_pointer - (KERNEL_EXEC_STACK_SIZE_page << STD_SHIFT_PAGE)
-
-%define	KERNEL_EXEC_STACK_OFFSET_registers	0x78
-
-struc	KERNEL_EXEC_STRUCTURE
-	.pid			resq	1
-	.task_or_status		resq	1
-	.SIZE:
-endstruc
-
-struc	KERNEL_EXEC_STRUCTURE_RETURN
-	.rip		resq	1
-	.cs		resq	1
-	.eflags		resq	1
-	.rsp		resq	1
-	.ss		resq	1
-	.SIZE:
-endstruc
+	struc	KERNEL_STRUCTURE_EXEC_TMP
+		.level			resb	1
+		.socket			resq	1
+		.properties		resq	1
+		.task			resq	1
+		.workbench_address	resq	1
+		.base_address		resq	1
+		.page			resq	1
+		.stack			resq	1
+		.stack_byte		resq	1
+		.SIZE:
+	endstruc
+%endif

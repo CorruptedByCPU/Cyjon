@@ -24,7 +24,7 @@
 %include	"kernel/lapic.inc"
 %include	"kernel/library.inc"
 %include	"kernel/page.inc"
-%include	"kernel/storage.inc"
+	%include	"kernel/storage.inc"
 %include	"kernel/stream.inc"
 	%include	"kernel/vfs.inc"
 	%include	"kernel/task.inc"
@@ -64,7 +64,7 @@ section .text
 	%include	"kernel/driver/rtc.asm"
 	%include	"kernel/driver/serial.asm"
 	; kernel ---------------------------------------------------------------
-; %include	"kernel/exec.asm"
+	%include	"kernel/exec.asm"
 	%include	"kernel/idt.asm"
 %include	"kernel/io_apic.asm"
 %include	"kernel/lapic.asm"
@@ -92,12 +92,11 @@ section .text
 	%include	"kernel/init/ipc.asm"
 	%include	"kernel/init/storage.asm"
 	%include	"kernel/init/vfs.asm"
-; %include	"kernel/init/cmd.asm"
+	%include	"kernel/init/library.asm"
 ; %include	"kernel/init/daemon.asm"
-; %include	"kernel/init/exec.asm"
-; %include	"kernel/init/free.asm"
-; %include	"kernel/init/library.asm"
+	%include	"kernel/init/cmd.asm"
 ; %include	"kernel/init/smp.asm"
+; %include	"kernel/init/free.asm"
 	%include	"kernel/init/ap.asm"
 	;=======================================================================
 
@@ -171,13 +170,13 @@ _entry:
 	call	kernel_init_vfs
 
 	; create library management space
-	; call	kernel_init_library
+	call	kernel_init_library
 
 	; load basic list of modules
 	; call	kernel_init_module
 
 	; execute first process
-	; call	kernel_init_cmd
+	call	kernel_init_cmd
 
 	; EXTRA ---------------------------------------------------------------
 

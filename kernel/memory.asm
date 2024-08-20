@@ -2,6 +2,51 @@
 ; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;=================================================================================
 
+;------------------------------------------------------------------------------
+; in:
+;	rax - first page number
+;	rcx - amount of pages to release
+;	rdi - pointer to memory map
+kernel_memory_dispose:
+	; preserve original registers
+	push	rax
+	push	rcx
+	push	rdi
+
+.loop:
+	; all pages released?
+	dec	rcx
+	js	.end	; yes
+
+	; release page
+	bts	qword [rdi],	rax
+
+	; next page
+	inc	rax
+
+	; continue
+	jmp	.loop
+
+.end:
+	; restore original registers
+	pop	rdi
+	pop	rcx
+	pop	rax
+
+	; return from routine
+	ret
+
+
+
+
+
+
+
+
+
+
+
+
 ;-------------------------------------------------------------------------------
 ; in:
 ;	rcx - length of area in pages

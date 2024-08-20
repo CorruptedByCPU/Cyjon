@@ -782,7 +782,7 @@ kernel_library_load:
 	mov	qword [rsp + KERNEL_STRUCTURE_STORAGE_FILE.SIZE],	LIB_SYS_ERROR_memory_no_enough
 
 	; aquire memory space inside library environment
-	mov	r9,	qword [r8 + KERNEL.library_memory_map_address]
+	mov	r9,	qword [r8 + KERNEL.library_map_address]
 	call	kernel_memory_acquire
 	jc	.error_level_file	; no enough memory
 

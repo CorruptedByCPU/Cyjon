@@ -27,7 +27,7 @@
 		.address		resq	1
 		.size			resq	1
 		.path			resq	1
-		.cmd			resq	1
+		.cmdline		resq	1
 		.unused_by_cyjon:
 	endstruc
 

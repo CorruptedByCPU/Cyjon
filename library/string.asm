@@ -51,6 +51,30 @@ lib_string_compare:
 
 ;------------------------------------------------------------------------------
 ; in:
+;	rsi - pointer to string
+; out:
+;	rcx - length of string
+lib_string_length:
+	; by default string is empty
+	xor	ecx,	ecx
+
+.loop:
+	; end of string?
+	cmp	byte [rsi + rcx],	STD_ASCII_TERMINATOR
+	je	.end	; yes
+
+	; next character from string
+	inc	rcx
+
+	; continue
+	jmp	.loop
+
+.end:
+	; return from routine
+	ret
+
+;------------------------------------------------------------------------------
+; in:
 ;	rcx - length of string
 ;	rsi - pointer to string
 ; out:
