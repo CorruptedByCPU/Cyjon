@@ -70,7 +70,7 @@ section .text
 %include	"kernel/lapic.asm"
 ; %include	"kernel/library.asm"
 %include	"kernel/log.asm"
-%include	"kernel/memory.asm"
+	%include	"kernel/memory.asm"
 %include	"kernel/page.asm"
 ; %include	"kernel/service.asm"
 	%include	"kernel/storage.asm"

@@ -2,6 +2,39 @@
 ; Copyright (C) Andrzej Adamczyk (at https://blackdev.org/). All rights reserved.
 ;=================================================================================
 
+;------------------------------------------------------------------------------
+; in:
+;	rcx - length of path
+;	rsi - path
+; out:
+;	rax - socket pointer
+kernel_vfs_file_open:
+	; preserve original registers
+	push	rdi
+	push	r8
+
+	; global kernel environment variables/functions/rountines
+	mov	r8,	qword [kernel]
+
+	; resolve path
+	xor	eax,	eax
+	call	kernel_vfs_path
+
+	; file exist?
+	test	rdi,	rdi
+	jz	.end	; no
+
+	; debug
+	nop
+
+.end:
+	; restore original registers
+	pop	r8
+	pop	rdi
+
+	; return from routine
+	ret
+
 ;-------------------------------------------------------------------------------
 ; in:
 ;	rcx - length in Bytes

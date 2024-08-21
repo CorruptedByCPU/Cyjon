@@ -236,59 +236,59 @@ kernel_page_clang:
 	; return from routine
 	ret
 
-;-------------------------------------------------------------------------------
-; in:
-;	rdi - physical/logical address of page
-kernel_page_clean:
-	; preserve original register
-	push	rcx
+; ;-------------------------------------------------------------------------------
+; ; in:
+; ;	rdi - physical/logical address of page
+; kernel_page_clean:
+; 	; preserve original register
+; 	push	rcx
 
-	; clean whole 1 page
-	mov	rcx,	STD_PAGE_page
-	call	.proceed
+; 	; clean whole 1 page
+; 	mov	rcx,	STD_PAGE_page
+; 	call	.proceed
 
-	; restore original register
-	pop	rcx
+; 	; restore original register
+; 	pop	rcx
 
-	; return from routine
-	ret
+; 	; return from routine
+; 	ret
 
-;-------------------------------------------------------------------------------
-; out:
-;	rcx - EMPTY
-.proceed:
-	; preserve original registers
-	push	rax
-	push	rdi
+; ;-------------------------------------------------------------------------------
+; ; out:
+; ;	rcx - EMPTY
+; .proceed:
+; 	; preserve original registers
+; 	push	rax
+; 	push	rdi
 
-	; clean area
-	xor	rax,	rax
-	shl	rcx,	STD_SHIFT_512	; 8 Bytes at a time
-	rep	stosq
+; 	; clean area
+; 	xor	rax,	rax
+; 	shl	rcx,	STD_SHIFT_512	; 8 Bytes at a time
+; 	rep	stosq
 
-	; restore original registers
-	pop	rdi
-	pop	rax
+; 	; restore original registers
+; 	pop	rdi
+; 	pop	rax
 
-	; return from routine
-	ret
+; 	; return from routine
+; 	ret
 
-;-------------------------------------------------------------------------------
-; in:
-;	rcx - pages
-;	rdi - physical/logical address
-kernel_page_clean_few:
-	; preserve original register
-	push	rcx
+; ;-------------------------------------------------------------------------------
+; ; in:
+; ;	rcx - pages
+; ;	rdi - physical/logical address
+; kernel_page_clean_few:
+; 	; preserve original register
+; 	push	rcx
 
-	; convert to Bytes and clean up
-	call	kernel_page_clean.proceed
+; 	; convert to Bytes and clean up
+; 	call	kernel_page_clean.proceed
 
-	; restore original register
-	pop	rcx
+; 	; restore original register
+; 	pop	rcx
 
-	; return from routine
-	ret
+; 	; return from routine
+; 	ret
 
 ;-------------------------------------------------------------------------------
 ; in:

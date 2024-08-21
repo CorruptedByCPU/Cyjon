@@ -502,7 +502,7 @@ kernel_stream_set:
 ;	rdi - pointer to stream descriptor
 kernel_stream_release:
 	; preserve original registers
-	push	rsi
+	push	rcx
 	push	rdi
 
 	; lower stream usage
@@ -510,7 +510,7 @@ kernel_stream_release:
 	jnz	.end	; someone is still using it
 
 	; release stream cache
-	mov	rsi,	STD_STREAM_SIZE_page
+	mov	rcx,	STD_STREAM_SIZE_page
 	mov	rdi,	qword [rdi + KERNEL_STRUCTURE_STREAM.base_address]
 	call	kernel_memory_release
 
@@ -521,7 +521,7 @@ kernel_stream_release:
 .end:
 	; restore original registers
 	pop	rdi
-	pop	rsi
+	pop	rcx
 
 	; return from routine
 	ret

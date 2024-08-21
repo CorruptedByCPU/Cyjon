@@ -12,7 +12,7 @@ kernel_io_apic_connect:
 	push	rbx
 	push	rdi
 
-	; kernel environment variables/rountines base address
+	; global kernel environment variables/functions/rountines
 	mov	rdi,	qword [kernel]
 	mov	rdi,	qword [rdi + KERNEL.io_apic_base_address]
 

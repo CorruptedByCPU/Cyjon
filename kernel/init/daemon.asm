@@ -22,7 +22,7 @@ kernel_init_daemon:
 	push	r14
 	push	r15
 
-	; kernel environment variables/rountines base address
+	; global kernel environment variables/functions/rountines
 	mov	r8,	qword [kernel]
 
 	; by default there is no PID for new process

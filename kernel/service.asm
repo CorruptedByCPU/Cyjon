@@ -90,7 +90,7 @@ kernel_service_sleep:
 	push	r8
 	push	r9
 
-	; kernel environment variables/rountines base address
+	; global kernel environment variables/functions/rountines
 	mov	r8,	qword [kernel]
 
 	; retrieve pointer to current task descriptor
@@ -132,7 +132,7 @@ kernel_service_driver_mouse:
 	push	rax
 	push	r8
 
-	; kernel environment variables/rountines base address
+	; global kernel environment variables/functions/rountines
 	mov	r8,	qword [kernel]
 
 	; share information about mouse location and status
@@ -165,7 +165,7 @@ kernel_service_exec:
 	push	rbp
 	push	r8
 
-	; kernel environment variables/rountines base address
+	; global kernel environment variables/functions/rountines
 	mov	r8,	qword [kernel]
 
 	; reorganize registers
@@ -199,7 +199,7 @@ kernel_service_framebuffer:
 	push	r9
 	push	r11
 
-	; kernel environment variables/rountines base address
+	; global kernel environment variables/functions/rountines
 	mov	r8,	qword [kernel]
 
 	; return properties of framebuffer
@@ -278,7 +278,7 @@ kernel_service_ipc_send:
 	push	rdi
 	push	r8
 
-	; kernel environment variables/rountines base address
+	; global kernel environment variables/functions/rountines
 	mov	r8,	qword [kernel]
 
 .lock:
@@ -359,7 +359,7 @@ kernel_service_ipc_receive:
 	push	r8
 	push	rsi
 
-	; kernel environment variables/rountines base address
+	; global kernel environment variables/functions/rountines
 	mov	r8,	qword [kernel]
 
 .lock:
@@ -771,7 +771,7 @@ kernel_service_storage_read:
 	push	r11
 	push	rdi
 
-	; kernel environment variables/rountines base address
+	; global kernel environment variables/functions/rountines
 	mov	r8,	qword [kernel]
 
 	; prepare space for file descriptor
@@ -844,7 +844,7 @@ kernel_service_task:
 	push	r8
 	push	r10
 
-	; kernel environment variables/rountines base address
+	; global kernel environment variables/functions/rountines
 	mov	r8,	qword [kernel]
 
 .lock:

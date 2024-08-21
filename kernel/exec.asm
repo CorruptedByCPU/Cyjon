@@ -15,43 +15,56 @@ local_exec_path_end:
 kernel_exec:
 	; preserve original registers
 	push	rbx
-	push	rcx
 	push	rdi
 	push	rbp
+	push	r8
+	push	r9
+	push	rcx
+
+	; global kernel environment variables/functions/rountines
+	mov	r8,	qword [kernel]
 
 	; prepare temporary execution area
 	sub	rsp,	KERNEL_STRUCTURE_EXEC_TMP.SIZE
 	mov	rbp,	rsp
+
+	; remember executable name and length
+	mov	r10,	rcx
+	mov	r11,	rsi
 
 	; file name length allowed?
 	mov	rax,	STD_ERROR_limit
 	cmp	rcx,	LIB_VFS_NAME_limit
 	ja	.end	; no
 
-
 	; assign area for combined path
 	mov	rcx,	MACRO_PAGE_ALIGN_UP( (local_exec_path_end - local_exec_path) + LIB_VFS_NAME_limit ) >> STD_SHIFT_PAGE
 	call	kernel_memory_alloc
 
-	
+	; remember path pointer
+	mov	qword [rbp + KERNEL_STRUCTURE_EXEC_TMP.path],	rdi
+
+	; insert default path
+	mov	rcx,	local_exec_path_end - local_exec_path
+	mov	rsi,	local_exec_path
+	rep	movsb
+	; and name
+	mov	rsi,	r11
+	mov	rcx,	r10
+	rep	movsb
+
+	; retrieve information about executable file
+	mov	rcx,	local_exec_path_end - local_exec_path
+	add	rcx,	r10
+	mov	rsi,	qword [rbp + KERNEL_STRUCTURE_EXEC_TMP.path]
+	call	kernel_vfs_file_open
+
+	; remember socket id
+	mov	qword [rbp + KERNEL_STRUCTURE_EXEC_TMP.socket],	rax
 
 
-; 	; preserve original registers
-; 	push	rbx
-; 	push	rcx
-; 	push	rdx
-; 	push	rsi
-; 	push	rdi
-; 	push	rbp
-; 	push	r8
-; 	push	r9
-; 	push	r10
-; 	push	r11
-; 	push	r13
-; 	push	r14
 
-; 	; kernel environment variables/rountines base address
-; 	mov	r8,	qword [kernel]
+
 
 ; 	; select file name from string
 ; 	call	lib_string_word
@@ -171,6 +184,8 @@ kernel_exec:
 	add	rsp,	KERNEL_STRUCTURE_EXEC_TMP.SIZE
 
 	; restore original registers
+	pop	r9
+	pop	r8
 	pop	rbp
 	pop	rdi
 	pop	rcx
@@ -603,7 +618,7 @@ kernel_exec:
 ; 	push	rsi
 ; 	push	r8
 
-; 	; kernel environment variables/rountines base address
+; 	; global kernel environment variables/functions/rountines
 ; 	mov	r8,	qword [kernel]
 
 ; 	; get file properties

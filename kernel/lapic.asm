@@ -25,7 +25,7 @@ kernel_lapic_accept:
 ; out:
 ;	eax - cpu id
 kernel_lapic_id:
-	; kernel environment variables/rountines base address
+	; global kernel environment variables/functions/rountines
 	mov	rax,	qword [kernel]
 
 	; retrieve CPU ID from LAPIC
@@ -43,7 +43,7 @@ kernel_lapic_init:
 	push	rax
 	push	rdi
 
-	; kernel environment variables/rountines base address
+	; global kernel environment variables/functions/rountines
 	mov	rdi,	qword [kernel]
 	mov	rdi,	qword [rdi + KERNEL.lapic_base_address]
 

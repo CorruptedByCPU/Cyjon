@@ -146,7 +146,7 @@ kernel_task_select:
 ; void
 kernel_task_switch:
 	; only 1 CPU at a time
-	MACRO_LOCK	task_cpu_semaphore
+	MACRO_LOCK	r8,	KERNEL.task_cpu_semaphore
 
 	; global kernel environment variables/functions/rountines
 	mov	r8,	qword [kernel]
@@ -190,7 +190,7 @@ kernel_task_switch:
 	mov	rsp,	qword [r9 + KERNEL_STRUCTURE_TASK.rsp]
 
 	; unlock access
-	MACRO_UNLOCK	task_cpu_semaphore
+	MACRO_UNLOCK	r8,	KERNEL.task_cpu_semaphore
 
 	; reload CPU cycle counter inside APIC controller
 	call	kernel_lapic_reload
@@ -272,7 +272,7 @@ kernel_task_switch:
 ; 	push	rdi
 ; 	push	r8
 
-; 	; kernel environment variables/rountines base address
+; 	; global kernel environment variables/functions/rountines
 ; 	mov	r8,	qword [kernel]
 
 ; 	; search for free entry from beginning
@@ -362,7 +362,7 @@ kernel_task_switch:
 ; 	push	rcx
 ; 	push	r8
 
-; 	; kernel environment variables/rountines base address
+; 	; global kernel environment variables/functions/rountines
 ; 	mov	r8,	qword [kernel]
 
 ; 	; search for free entry from beginning
@@ -399,7 +399,7 @@ kernel_task_switch:
 ; 	; preserve original registers
 ; 	push	r8
 
-; 	; kernel environment variables/rountines base address
+; 	; global kernel environment variables/functions/rountines
 ; 	mov	r8,	qword [kernel]
 
 ; 	; generate new ID :D

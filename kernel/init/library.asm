@@ -29,8 +29,9 @@ kernel_init_library:
 	mov	qword [r8 + KERNEL.library_map_address],	rdi
 
 	; initialize library memory map
-	xor	eax,	eax
 	mov	rcx,	qword [r8 + KERNEL.page_limit]
+	xor	edi,	edi
+	mov	r9,	qword [r8 + KERNEL.library_base_address]
 	call	kernel_memory_dispose
 
 	; restore original registers

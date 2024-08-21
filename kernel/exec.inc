@@ -17,6 +17,8 @@
 		.page			resq	1
 		.stack			resq	1
 		.stack_byte		resq	1
+		.path			resq	1
+		.path_length		resq	1
 		.SIZE:
 	endstruc
 %endif

@@ -19,7 +19,7 @@ kernel_storage_register:
 	mov	r8,	qword [kernel]
 
 	; acquire exclusive access
-	MACRO_LOCK	storage_semaphore
+	MACRO_LOCK	r8,	KERNEL.storage_semaphore
 
 	; devices limit
 	mov	rcx,	KERNEL_STORAGE_limit
@@ -51,7 +51,7 @@ kernel_storage_register:
 
 .end:
 	; unlock access
-	MACRO_UNLOCK	storage_semaphore
+	MACRO_UNLOCK	r8,	KERNEL.storage_semaphore
 
 	; restore original registers
 	pop	r8

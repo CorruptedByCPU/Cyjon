@@ -680,7 +680,7 @@ kernel_library_load:
 	; locate and load file into memory
 	;-----------------------------------------------------------------------
 
-	; kernel environment variables/rountines base address
+	; global kernel environment variables/functions/rountines
 	mov	r8,	qword [kernel]
 
 	; file descriptor
