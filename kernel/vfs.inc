@@ -20,5 +20,6 @@
 		.length		resq	1	; file: Byte, directories: block
 		.name_length	resb	1
 		.name		resb	LIB_VFS_NAME_limit + 1
+		.SIZE:
 	endstruc
 %endif

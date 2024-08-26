@@ -10,7 +10,7 @@
 	struc	KERNEL_STRUCTURE_EXEC_TMP
 		.level			resb	1
 		.socket			resq	1
-		.properties		resq	1
+		.properties		resb	KERNEL_STRUCTURE_VFS_PROPERTIES.SIZE
 		.task			resq	1
 		.workbench_address	resq	1
 		.base_address		resq	1

@@ -62,9 +62,28 @@ kernel_exec:
 	; remember socket id
 	mov	qword [rbp + KERNEL_STRUCTURE_EXEC_TMP.socket],	rax
 
+	; releaase area of path
+	mov	rcx,	MACRO_PAGE_ALIGN_UP( (local_exec_path_end - local_exec_path) + LIB_VFS_NAME_limit ) >> STD_SHIFT_PAGE
+	mov	rdi,	qword [rbp + KERNEL_STRUCTURE_EXEC_TMP.path]
+	call	kernel_memory_release
 
+	; if executable does not exist
+	test	rax,	rax
+	jnz	.socket_ok	; exist
 
+	MACRO_DEBUF
+	MACRO_DEBUF
+	MACRO_DEBUF
+	jmp	$
 
+.socket:
+	; checkpoint reached: file socket opened
+	inc	byte [rbp + KERNEL_STRUCTURE_EXEC_TMP.level]
+
+	; gather information about file
+	mov	rdi,	rbp
+	add	rdi,	KERNEL_STRUCTURE_EXEC_TMP.properties
+	call	kernel_vfs_file_properties
 
 ; 	; select file name from string
 ; 	call	lib_string_word

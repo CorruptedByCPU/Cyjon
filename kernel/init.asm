@@ -18,7 +18,8 @@
 	%include	"kernel/driver/rtc.inc"
 	; kernel ---------------------------------------------------------------
 	%include	"kernel/config.inc"
-%include	"kernel/exec.inc"
+	%include	"kernel/vfs.inc"
+	%include	"kernel/exec.inc"
 %include	"kernel/io_apic.inc"
 	%include	"kernel/ipc.inc"
 %include	"kernel/lapic.inc"
@@ -26,7 +27,6 @@
 %include	"kernel/page.inc"
 	%include	"kernel/storage.inc"
 %include	"kernel/stream.inc"
-	%include	"kernel/vfs.inc"
 	%include	"kernel/task.inc"
 	;----------------------------------------------------------------------
 	; variables, structures, definitions of kernel environment initialization

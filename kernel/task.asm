@@ -69,7 +69,7 @@ kernel_task_active:
 	; preserve original flags
 	push	rax
 
-	; rom list of active tasks of individual logical processors
+	; from list of active tasks of individual logical processors
 	call	kernel_lapic_id
 
 	; select currently processed position relative to current logical processor
@@ -79,6 +79,25 @@ kernel_task_active:
 
 	; restore original flags
 	pop	rax
+
+	; return from routine
+	ret
+
+;------------------------------------------------------------------------------
+; out:
+;	rax - PID of current process
+kernel_task_pid:
+	; preserve original register
+	push	r9
+
+	; select current task
+	call	kernel_task_active
+
+	; return its PID
+	mov	rax,	qword [r9 + KERNEL_STRUCTURE_TASK.pid]
+
+	; restore original register
+	pop	r9
 
 	; return from routine
 	ret

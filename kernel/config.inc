@@ -107,14 +107,15 @@ struc	KERNEL
 	.task_id			resq	1
 
 	; variables of Time management functions
-.time_rdtsc			resq	1
-.time_rtc			resq	1
+	.time_rdtsc			resq	1
+	.time_rtc			resq	1
 
 	; variables of TSS management functions
 	.tss_table			resb	KERNEL_STRUCTURE_TSS.SIZE
 
 	; variables of VFS management functions
 	.vfs_base_address		resq	1
+	.vfs_semaphore			resb	1
 
 	; length of this structure in Bytes
 	.SIZE:
